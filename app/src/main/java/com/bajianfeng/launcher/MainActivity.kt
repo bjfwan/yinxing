@@ -10,6 +10,7 @@ import android.widget.Toast
 import androidx.activity.OnBackPressedCallback
 import androidx.appcompat.app.AppCompatActivity
 import androidx.recyclerview.widget.GridLayoutManager
+import androidx.recyclerview.widget.ItemTouchHelper
 import androidx.recyclerview.widget.RecyclerView
 import java.text.SimpleDateFormat
 import java.util.Calendar
@@ -53,9 +54,16 @@ class MainActivity : AppCompatActivity() {
         adapter = HomeAppAdapter(
             appList,
             onItemClick = { item -> handleAppClick(item) },
-            onItemLongClick = { item -> handleAppLongClick(item) }
+            onItemLongClick = { item -> handleAppLongClick(item) },
+            onOrderChanged = { saveAppOrder() }
         )
         recyclerView.adapter = adapter
+
+        val callback = ItemMoveCallback(adapter)
+        val touchHelper = ItemTouchHelper(callback)
+        touchHelper.attachToRecyclerView(recyclerView)
+        
+        adapter.setTouchHelper(touchHelper)
     }
 
     override fun onResume() {
@@ -85,25 +93,35 @@ class MainActivity : AppCompatActivity() {
         val prefs = getSharedPreferences("launcher_prefs", MODE_PRIVATE)
         val pm = packageManager
 
+        val savedOrder = prefs.getString("app_order", "")?.split(",") ?: emptyList()
+        val selectedApps = mutableMapOf<String, HomeAppItem>()
+
         val allPrefs = prefs.all
         for ((packageName, isSelected) in allPrefs) {
+            if (packageName == "app_order") continue
             if (isSelected == true) {
                 try {
                     val appInfo = pm.getApplicationInfo(packageName, 0)
-                    appList.add(
-                        HomeAppItem(
-                            packageName = packageName,
-                            appName = appInfo.loadLabel(pm).toString(),
-                            icon = appInfo.loadIcon(pm),
-                            type = HomeAppItem.Type.APP
-                        )
+                    selectedApps[packageName] = HomeAppItem(
+                        packageName = packageName,
+                        appName = appInfo.loadLabel(pm).toString(),
+                        icon = appInfo.loadIcon(pm),
+                        type = HomeAppItem.Type.APP
                     )
                 } catch (e: Exception) {
                 }
             }
         }
 
-        appList.sortBy { it.appName }
+        for (pkg in savedOrder) {
+            selectedApps[pkg]?.let { appList.add(it) }
+        }
+
+        for ((pkg, item) in selectedApps) {
+            if (!savedOrder.contains(pkg)) {
+                appList.add(item)
+            }
+        }
 
         appList.add(
             HomeAppItem(
@@ -131,6 +149,14 @@ class MainActivity : AppCompatActivity() {
                 type = HomeAppItem.Type.WEATHER
             )
         )
+    }
+
+    private fun saveAppOrder() {
+        val prefs = getSharedPreferences("launcher_prefs", MODE_PRIVATE)
+        val order = appList
+            .filter { it.type == HomeAppItem.Type.APP }
+            .joinToString(",") { it.packageName }
+        prefs.edit().putString("app_order", order).apply()
     }
 
     private fun handleAppClick(item: HomeAppItem) {
