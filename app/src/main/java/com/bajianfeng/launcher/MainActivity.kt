@@ -29,9 +29,11 @@ class MainActivity : AppCompatActivity() {
 
         loadApps()
 
-        adapter = HomeAppAdapter(appList) { item ->
-            handleAppClick(item)
-        }
+        adapter = HomeAppAdapter(
+            appList,
+            onItemClick = { item -> handleAppClick(item) },
+            onItemLongClick = { item -> handleAppLongClick(item) }
+        )
         recyclerView.adapter = adapter
     }
 
@@ -107,5 +109,28 @@ class MainActivity : AppCompatActivity() {
                 startActivity(Intent(this, AppManageActivity::class.java))
             }
         }
+    }
+
+    private fun handleAppLongClick(item: HomeAppItem): Boolean {
+        if (item.type == HomeAppItem.Type.APP) {
+            android.app.AlertDialog.Builder(this)
+                .setTitle("移除应用")
+                .setMessage("确定要从桌面移除 ${item.appName} 吗？")
+                .setPositiveButton("确定") { _, _ ->
+                    removeApp(item.packageName)
+                }
+                .setNegativeButton("取消", null)
+                .show()
+            return true
+        }
+        return false
+    }
+
+    private fun removeApp(packageName: String) {
+        val prefs = getSharedPreferences("launcher_prefs", MODE_PRIVATE)
+        prefs.edit().putBoolean(packageName, false).apply()
+        loadApps()
+        adapter.notifyDataSetChanged()
+        Toast.makeText(this, "已移除", Toast.LENGTH_SHORT).show()
     }
 }

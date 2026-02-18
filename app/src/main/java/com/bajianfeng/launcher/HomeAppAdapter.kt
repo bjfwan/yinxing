@@ -10,7 +10,8 @@ import androidx.recyclerview.widget.RecyclerView
 
 class HomeAppAdapter(
     private val appList: List<HomeAppItem>,
-    private val onItemClick: (HomeAppItem) -> Unit
+    private val onItemClick: (HomeAppItem) -> Unit,
+    private val onItemLongClick: (HomeAppItem) -> Boolean
 ) : RecyclerView.Adapter<HomeAppAdapter.ViewHolder>() {
 
     class ViewHolder(view: View) : RecyclerView.ViewHolder(view) {
@@ -31,6 +32,9 @@ class HomeAppAdapter(
         holder.name.text = item.appName
         holder.card.setOnClickListener {
             onItemClick(item)
+        }
+        holder.card.setOnLongClickListener {
+            onItemLongClick(item)
         }
     }
 
