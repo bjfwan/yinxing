@@ -2,6 +2,8 @@ package com.bajianfeng.launcher
 
 import android.content.Intent
 import android.os.Bundle
+import android.os.Handler
+import android.os.Looper
 import android.provider.Settings
 import android.widget.TextView
 import android.widget.Toast
@@ -9,11 +11,23 @@ import androidx.activity.OnBackPressedCallback
 import androidx.appcompat.app.AppCompatActivity
 import androidx.recyclerview.widget.GridLayoutManager
 import androidx.recyclerview.widget.RecyclerView
+import java.text.SimpleDateFormat
+import java.util.Calendar
+import java.util.Locale
 
 class MainActivity : AppCompatActivity() {
     private lateinit var recyclerView: RecyclerView
     private lateinit var adapter: HomeAppAdapter
     private val appList = mutableListOf<HomeAppItem>()
+    private lateinit var tvTime: TextView
+    private lateinit var tvDate: TextView
+    private val handler = Handler(Looper.getMainLooper())
+    private val updateTimeRunnable = object : Runnable {
+        override fun run() {
+            updateTime()
+            handler.postDelayed(this, 1000)
+        }
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -27,6 +41,12 @@ class MainActivity : AppCompatActivity() {
 
         recyclerView = findViewById(R.id.recycler_home)
         recyclerView.layoutManager = GridLayoutManager(this, 2)
+
+        tvTime = findViewById(R.id.tv_time)
+        tvDate = findViewById(R.id.tv_date)
+
+        updateTime()
+        handler.post(updateTimeRunnable)
 
         loadApps()
 
@@ -42,6 +62,21 @@ class MainActivity : AppCompatActivity() {
         super.onResume()
         loadApps()
         adapter.notifyDataSetChanged()
+        handler.post(updateTimeRunnable)
+    }
+
+    override fun onPause() {
+        super.onPause()
+        handler.removeCallbacks(updateTimeRunnable)
+    }
+
+    private fun updateTime() {
+        val calendar = Calendar.getInstance()
+        val timeFormat = SimpleDateFormat("HH:mm", Locale.CHINA)
+        val dateFormat = SimpleDateFormat("yyyy年MM月dd日 EEEE", Locale.CHINA)
+        
+        tvTime.text = timeFormat.format(calendar.time)
+        tvDate.text = dateFormat.format(calendar.time)
     }
 
     private fun loadApps() {
@@ -87,6 +122,15 @@ class MainActivity : AppCompatActivity() {
                 type = HomeAppItem.Type.ADD
             )
         )
+
+        appList.add(
+            HomeAppItem(
+                packageName = "weather",
+                appName = "天气",
+                icon = getDrawable(android.R.drawable.ic_dialog_info)!!,
+                type = HomeAppItem.Type.WEATHER
+            )
+        )
     }
 
     private fun handleAppClick(item: HomeAppItem) {
@@ -109,7 +153,30 @@ class MainActivity : AppCompatActivity() {
             HomeAppItem.Type.ADD -> {
                 startActivity(Intent(this, AppManageActivity::class.java))
             }
+            HomeAppItem.Type.WEATHER -> {
+                openWeather()
+            }
         }
+    }
+
+    private fun openWeather() {
+        val weatherPackages = listOf(
+            "com.google.android.googlequicksearchbox",
+            "com.miui.weather2",
+            "com.huawei.android.totemweather",
+            "com.oppo.weather",
+            "com.vivo.weather"
+        )
+        
+        for (pkg in weatherPackages) {
+            val intent = packageManager.getLaunchIntentForPackage(pkg)
+            if (intent != null) {
+                startActivity(intent)
+                return
+            }
+        }
+        
+        Toast.makeText(this, "未找到天气应用", Toast.LENGTH_SHORT).show()
     }
 
     private fun handleAppLongClick(item: HomeAppItem): Boolean {

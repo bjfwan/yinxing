@@ -16,7 +16,35 @@
         android:textStyle="bold"
         android:textColor="#2C3E50"
         android:gravity="center"
-        android:padding="28dp"/>
+        android:padding="28dp"
+        android:visibility="gone"/>
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:padding="24dp"
+        android:gravity="center">
+
+        <TextView
+            android:id="@+id/tv_time"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:textSize="56sp"
+            android:textStyle="bold"
+            android:textColor="#2C3E50"
+            android:text="12:00"/>
+
+        <TextView
+            android:id="@+id/tv_date"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:textSize="24sp"
+            android:textColor="#7F8C8D"
+            android:layout_marginTop="8dp"
+            android:text="2024年1月1日 星期一"/>
+
+    </LinearLayout>
 
     <androidx.recyclerview.widget.RecyclerView
         android:id="@+id/recycler_home"
