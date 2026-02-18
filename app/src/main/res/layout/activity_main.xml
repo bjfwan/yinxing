@@ -12,11 +12,11 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:text="老人桌面"
-        android:textSize="32sp"
+        android:textSize="36sp"
         android:textStyle="bold"
-        android:textColor="#333333"
+        android:textColor="#2C3E50"
         android:gravity="center"
-        android:padding="24dp"/>
+        android:padding="28dp"/>
 
     <androidx.recyclerview.widget.RecyclerView
         android:id="@+id/recycler_home"

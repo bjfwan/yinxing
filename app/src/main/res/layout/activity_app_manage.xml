@@ -9,11 +9,11 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:text="选择应用"
-        android:textSize="28sp"
+        android:textSize="32sp"
         android:textStyle="bold"
-        android:textColor="#333333"
+        android:textColor="#2C3E50"
         android:gravity="center"
-        android:padding="24dp"
+        android:padding="28dp"
         android:background="#FFFFFF"
         android:elevation="4dp"/>
 

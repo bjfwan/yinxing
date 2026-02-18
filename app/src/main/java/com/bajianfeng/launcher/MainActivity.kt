@@ -3,6 +3,7 @@ package com.bajianfeng.launcher
 import android.content.Intent
 import android.os.Bundle
 import android.provider.Settings
+import android.widget.TextView
 import android.widget.Toast
 import androidx.activity.OnBackPressedCallback
 import androidx.appcompat.app.AppCompatActivity
@@ -113,17 +114,33 @@ class MainActivity : AppCompatActivity() {
 
     private fun handleAppLongClick(item: HomeAppItem): Boolean {
         if (item.type == HomeAppItem.Type.APP) {
-            android.app.AlertDialog.Builder(this)
-                .setTitle("移除应用")
-                .setMessage("确定要从桌面移除 ${item.appName} 吗？")
-                .setPositiveButton("确定") { _, _ ->
-                    removeApp(item.packageName)
-                }
-                .setNegativeButton("取消", null)
-                .show()
+            showRemoveDialog(item)
             return true
         }
         return false
+    }
+
+    private fun showRemoveDialog(item: HomeAppItem) {
+        val dialogView = layoutInflater.inflate(R.layout.dialog_remove_app, null)
+        val dialog = android.app.AlertDialog.Builder(this)
+            .setView(dialogView)
+            .create()
+
+        dialog.window?.setBackgroundDrawableResource(android.R.color.transparent)
+
+        dialogView.findViewById<TextView>(R.id.dialog_message).text = 
+            "确定要从桌面移除 ${item.appName} 吗？"
+
+        dialogView.findViewById<androidx.cardview.widget.CardView>(R.id.btn_cancel).setOnClickListener {
+            dialog.dismiss()
+        }
+
+        dialogView.findViewById<androidx.cardview.widget.CardView>(R.id.btn_confirm).setOnClickListener {
+            dialog.dismiss()
+            removeApp(item.packageName)
+        }
+
+        dialog.show()
     }
 
     private fun removeApp(packageName: String) {
