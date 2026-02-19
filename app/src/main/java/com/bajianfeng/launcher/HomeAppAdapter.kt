@@ -67,9 +67,15 @@ class HomeAppAdapter(
             }
         } else {
             holder.deleteBtn.visibility = View.GONE
+            
+            holder.card.setOnClickListener {
+                onItemClick(item)
+            }
+            
             holder.icon.setOnClickListener {
                 onItemClick(item)
             }
+            
             holder.icon.setOnLongClickListener(null)
             holder.card.setOnTouchListener(null)
         }

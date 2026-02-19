@@ -125,6 +125,15 @@ class MainActivity : AppCompatActivity() {
 
         appList.add(
             HomeAppItem(
+                packageName = "phone",
+                appName = "电话",
+                icon = getDrawable(android.R.drawable.ic_menu_call)!!,
+                type = HomeAppItem.Type.PHONE
+            )
+        )
+
+        appList.add(
+            HomeAppItem(
                 packageName = "settings",
                 appName = "设置",
                 icon = getDrawable(android.R.drawable.ic_menu_preferences)!!,
@@ -168,6 +177,9 @@ class MainActivity : AppCompatActivity() {
                 } else {
                     Toast.makeText(this, "无法打开${item.appName}", Toast.LENGTH_SHORT).show()
                 }
+            }
+            HomeAppItem.Type.PHONE -> {
+                startActivity(Intent(this, PhoneActivity::class.java))
             }
             HomeAppItem.Type.SETTINGS -> {
                 try {

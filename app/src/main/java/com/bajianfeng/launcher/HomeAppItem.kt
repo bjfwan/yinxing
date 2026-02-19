@@ -9,6 +9,6 @@ data class HomeAppItem(
     val type: Type
 ) {
     enum class Type {
-        APP, SETTINGS, ADD, WEATHER
+        APP, SETTINGS, ADD, WEATHER, PHONE
     }
 }
