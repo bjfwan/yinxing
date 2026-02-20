@@ -134,6 +134,15 @@ class MainActivity : AppCompatActivity() {
 
         appList.add(
             HomeAppItem(
+                packageName = "wechat_video",
+                appName = "微信视频",
+                icon = getDrawable(android.R.drawable.ic_menu_call)!!,
+                type = HomeAppItem.Type.WECHAT_VIDEO
+            )
+        )
+
+        appList.add(
+            HomeAppItem(
                 packageName = "settings",
                 appName = "设置",
                 icon = getDrawable(android.R.drawable.ic_menu_preferences)!!,
@@ -180,6 +189,9 @@ class MainActivity : AppCompatActivity() {
             }
             HomeAppItem.Type.PHONE -> {
                 startActivity(Intent(this, PhoneActivity::class.java))
+            }
+            HomeAppItem.Type.WECHAT_VIDEO -> {
+                startActivity(Intent(this, VideoCallActivity::class.java))
             }
             HomeAppItem.Type.SETTINGS -> {
                 try {

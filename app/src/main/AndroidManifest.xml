@@ -47,6 +47,9 @@
         <activity
             android:name=".PhoneActivity"
             android:exported="false" />
+        <activity
+            android:name=".VideoCallActivity"
+            android:exported="false" />
         
         <service
             android:name=".service.WeChatAccessibilityService"

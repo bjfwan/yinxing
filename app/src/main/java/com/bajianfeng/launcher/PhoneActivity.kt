@@ -224,66 +224,70 @@ class PhoneActivity : AppCompatActivity() {
     }
 
     private fun updateContact(contactId: String, name: String, phone: String, photo: Bitmap?) {
-        val ops = ArrayList<ContentProviderOperation>()
+        Thread {
+            try {
+                val ops = ArrayList<ContentProviderOperation>()
 
-        val selection = "${ContactsContract.Data.CONTACT_ID} = ? AND ${ContactsContract.Data.MIMETYPE} = ?"
+                val selection = "${ContactsContract.Data.CONTACT_ID} = ? AND ${ContactsContract.Data.MIMETYPE} = ?"
 
-        ops.add(
-            ContentProviderOperation.newUpdate(ContactsContract.Data.CONTENT_URI)
-                .withSelection(
-                    selection,
-                    arrayOf(contactId, ContactsContract.CommonDataKinds.StructuredName.CONTENT_ITEM_TYPE)
-                )
-                .withValue(ContactsContract.CommonDataKinds.StructuredName.DISPLAY_NAME, name)
-                .build()
-        )
-
-        ops.add(
-            ContentProviderOperation.newUpdate(ContactsContract.Data.CONTENT_URI)
-                .withSelection(
-                    selection,
-                    arrayOf(contactId, ContactsContract.CommonDataKinds.Phone.CONTENT_ITEM_TYPE)
-                )
-                .withValue(ContactsContract.CommonDataKinds.Phone.NUMBER, phone)
-                .build()
-        )
-
-        if (photo != null) {
-            val stream = ByteArrayOutputStream()
-            photo.compress(Bitmap.CompressFormat.PNG, 100, stream)
-            val photoBytes = stream.toByteArray()
-
-            val rawContactId = getRawContactId(contactId)
-            if (rawContactId != null) {
                 ops.add(
-                    ContentProviderOperation.newDelete(ContactsContract.Data.CONTENT_URI)
+                    ContentProviderOperation.newUpdate(ContactsContract.Data.CONTENT_URI)
                         .withSelection(
+                            selection,
+                            arrayOf(contactId, ContactsContract.CommonDataKinds.StructuredName.CONTENT_ITEM_TYPE)
+                        )
+                        .withValue(ContactsContract.CommonDataKinds.StructuredName.DISPLAY_NAME, name)
+                        .build()
+                )
+
+                ops.add(
+                    ContentProviderOperation.newUpdate(ContactsContract.Data.CONTENT_URI)
+                        .withSelection(
+                            selection,
+                            arrayOf(contactId, ContactsContract.CommonDataKinds.Phone.CONTENT_ITEM_TYPE)
+                        )
+                        .withValue(ContactsContract.CommonDataKinds.Phone.NUMBER, phone)
+                        .build()
+                )
+
+                if (photo != null) {
+                    val stream = ByteArrayOutputStream()
+                    photo.compress(Bitmap.CompressFormat.JPEG, 85, stream)
+                    val photoBytes = stream.toByteArray()
+
+                    val rawContactId = getRawContactId(contactId)
+                    if (rawContactId != null) {
+                        contentResolver.delete(
+                            ContactsContract.Data.CONTENT_URI,
                             "${ContactsContract.Data.RAW_CONTACT_ID} = ? AND ${ContactsContract.Data.MIMETYPE} = ?",
                             arrayOf(rawContactId, ContactsContract.CommonDataKinds.Photo.CONTENT_ITEM_TYPE)
                         )
-                        .build()
-                )
 
-                ops.add(
-                    ContentProviderOperation.newInsert(ContactsContract.Data.CONTENT_URI)
-                        .withValue(ContactsContract.Data.RAW_CONTACT_ID, rawContactId)
-                        .withValue(
-                            ContactsContract.Data.MIMETYPE,
-                            ContactsContract.CommonDataKinds.Photo.CONTENT_ITEM_TYPE
+                        ops.add(
+                            ContentProviderOperation.newInsert(ContactsContract.Data.CONTENT_URI)
+                                .withValue(ContactsContract.Data.RAW_CONTACT_ID, rawContactId)
+                                .withValue(
+                                    ContactsContract.Data.MIMETYPE,
+                                    ContactsContract.CommonDataKinds.Photo.CONTENT_ITEM_TYPE
+                                )
+                                .withValue(ContactsContract.CommonDataKinds.Photo.PHOTO, photoBytes)
+                                .build()
                         )
-                        .withValue(ContactsContract.CommonDataKinds.Photo.PHOTO, photoBytes)
-                        .build()
-                )
-            }
-        }
+                    }
+                }
 
-        try {
-            contentResolver.applyBatch(ContactsContract.AUTHORITY, ops)
-            Toast.makeText(this, "联系人已更新", Toast.LENGTH_SHORT).show()
-            loadContacts()
-        } catch (e: Exception) {
-            Toast.makeText(this, "更新失败", Toast.LENGTH_SHORT).show()
-        }
+                contentResolver.applyBatch(ContactsContract.AUTHORITY, ops)
+                
+                runOnUiThread {
+                    Toast.makeText(this, "联系人已更新", Toast.LENGTH_SHORT).show()
+                    loadContacts()
+                }
+            } catch (e: Exception) {
+                runOnUiThread {
+                    Toast.makeText(this, "更新失败: ${e.message}", Toast.LENGTH_SHORT).show()
+                }
+            }
+        }.start()
     }
 
     private fun getRawContactId(contactId: String): String? {
@@ -355,77 +359,105 @@ class PhoneActivity : AppCompatActivity() {
 
     private fun loadImageFromUri(uri: Uri): Bitmap? {
         return try {
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+            val originalBitmap = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
                 val source = ImageDecoder.createSource(contentResolver, uri)
                 ImageDecoder.decodeBitmap(source)
             } else {
                 MediaStore.Images.Media.getBitmap(contentResolver, uri)
             }
+            
+            compressBitmap(originalBitmap, 512, 512)
         } catch (e: Exception) {
             null
         }
     }
 
+    private fun compressBitmap(bitmap: Bitmap, maxWidth: Int, maxHeight: Int): Bitmap {
+        val width = bitmap.width
+        val height = bitmap.height
+        
+        if (width <= maxWidth && height <= maxHeight) {
+            return bitmap
+        }
+        
+        val scale = minOf(
+            maxWidth.toFloat() / width,
+            maxHeight.toFloat() / height
+        )
+        
+        val newWidth = (width * scale).toInt()
+        val newHeight = (height * scale).toInt()
+        
+        return Bitmap.createScaledBitmap(bitmap, newWidth, newHeight, true)
+    }
+
     private fun addContact(name: String, phone: String, photo: Bitmap?) {
-        val ops = ArrayList<ContentProviderOperation>()
+        Thread {
+            try {
+                val ops = ArrayList<ContentProviderOperation>()
 
-        ops.add(
-            ContentProviderOperation.newInsert(ContactsContract.RawContacts.CONTENT_URI)
-                .withValue(ContactsContract.RawContacts.ACCOUNT_TYPE, null)
-                .withValue(ContactsContract.RawContacts.ACCOUNT_NAME, null)
-                .build()
-        )
-
-        ops.add(
-            ContentProviderOperation.newInsert(ContactsContract.Data.CONTENT_URI)
-                .withValueBackReference(ContactsContract.Data.RAW_CONTACT_ID, 0)
-                .withValue(
-                    ContactsContract.Data.MIMETYPE,
-                    ContactsContract.CommonDataKinds.StructuredName.CONTENT_ITEM_TYPE
+                ops.add(
+                    ContentProviderOperation.newInsert(ContactsContract.RawContacts.CONTENT_URI)
+                        .withValue(ContactsContract.RawContacts.ACCOUNT_TYPE, null)
+                        .withValue(ContactsContract.RawContacts.ACCOUNT_NAME, null)
+                        .build()
                 )
-                .withValue(ContactsContract.CommonDataKinds.StructuredName.DISPLAY_NAME, name)
-                .build()
-        )
 
-        ops.add(
-            ContentProviderOperation.newInsert(ContactsContract.Data.CONTENT_URI)
-                .withValueBackReference(ContactsContract.Data.RAW_CONTACT_ID, 0)
-                .withValue(
-                    ContactsContract.Data.MIMETYPE,
-                    ContactsContract.CommonDataKinds.Phone.CONTENT_ITEM_TYPE
+                ops.add(
+                    ContentProviderOperation.newInsert(ContactsContract.Data.CONTENT_URI)
+                        .withValueBackReference(ContactsContract.Data.RAW_CONTACT_ID, 0)
+                        .withValue(
+                            ContactsContract.Data.MIMETYPE,
+                            ContactsContract.CommonDataKinds.StructuredName.CONTENT_ITEM_TYPE
+                        )
+                        .withValue(ContactsContract.CommonDataKinds.StructuredName.DISPLAY_NAME, name)
+                        .build()
                 )
-                .withValue(ContactsContract.CommonDataKinds.Phone.NUMBER, phone)
-                .withValue(
-                    ContactsContract.CommonDataKinds.Phone.TYPE,
-                    ContactsContract.CommonDataKinds.Phone.TYPE_MOBILE
+
+                ops.add(
+                    ContentProviderOperation.newInsert(ContactsContract.Data.CONTENT_URI)
+                        .withValueBackReference(ContactsContract.Data.RAW_CONTACT_ID, 0)
+                        .withValue(
+                            ContactsContract.Data.MIMETYPE,
+                            ContactsContract.CommonDataKinds.Phone.CONTENT_ITEM_TYPE
+                        )
+                        .withValue(ContactsContract.CommonDataKinds.Phone.NUMBER, phone)
+                        .withValue(
+                            ContactsContract.CommonDataKinds.Phone.TYPE,
+                            ContactsContract.CommonDataKinds.Phone.TYPE_MOBILE
+                        )
+                        .build()
                 )
-                .build()
-        )
 
-        if (photo != null) {
-            val stream = ByteArrayOutputStream()
-            photo.compress(Bitmap.CompressFormat.PNG, 100, stream)
-            val photoBytes = stream.toByteArray()
+                if (photo != null) {
+                    val stream = ByteArrayOutputStream()
+                    photo.compress(Bitmap.CompressFormat.JPEG, 85, stream)
+                    val photoBytes = stream.toByteArray()
 
-            ops.add(
-                ContentProviderOperation.newInsert(ContactsContract.Data.CONTENT_URI)
-                    .withValueBackReference(ContactsContract.Data.RAW_CONTACT_ID, 0)
-                    .withValue(
-                        ContactsContract.Data.MIMETYPE,
-                        ContactsContract.CommonDataKinds.Photo.CONTENT_ITEM_TYPE
+                    ops.add(
+                        ContentProviderOperation.newInsert(ContactsContract.Data.CONTENT_URI)
+                            .withValueBackReference(ContactsContract.Data.RAW_CONTACT_ID, 0)
+                            .withValue(
+                                ContactsContract.Data.MIMETYPE,
+                                ContactsContract.CommonDataKinds.Photo.CONTENT_ITEM_TYPE
+                            )
+                            .withValue(ContactsContract.CommonDataKinds.Photo.PHOTO, photoBytes)
+                            .build()
                     )
-                    .withValue(ContactsContract.CommonDataKinds.Photo.PHOTO, photoBytes)
-                    .build()
-            )
-        }
+                }
 
-        try {
-            contentResolver.applyBatch(ContactsContract.AUTHORITY, ops)
-            Toast.makeText(this, "联系人已添加", Toast.LENGTH_SHORT).show()
-            loadContacts()
-        } catch (e: Exception) {
-            Toast.makeText(this, "添加失败", Toast.LENGTH_SHORT).show()
-        }
+                contentResolver.applyBatch(ContactsContract.AUTHORITY, ops)
+                
+                runOnUiThread {
+                    Toast.makeText(this, "联系人已添加", Toast.LENGTH_SHORT).show()
+                    loadContacts()
+                }
+            } catch (e: Exception) {
+                runOnUiThread {
+                    Toast.makeText(this, "添加失败: ${e.message}", Toast.LENGTH_SHORT).show()
+                }
+            }
+        }.start()
     }
 
     private fun loadContacts() {
