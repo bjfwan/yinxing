@@ -1,3 +1,4 @@
 <resources>
     <string name="app_name">OldLauncher</string>
+    <string name="accessibility_service_description">用于自动拨打微信视频通话和接听来电</string>
 </resources>
