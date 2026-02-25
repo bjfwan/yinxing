@@ -29,6 +29,8 @@ class AppListAdapter(
         val appInfo = appList[position]
         holder.icon.setImageDrawable(appInfo.icon)
         holder.name.text = appInfo.appName
+
+        holder.checkbox.setOnCheckedChangeListener(null)
         holder.checkbox.isChecked = appInfo.isSelected
 
         holder.checkbox.setOnCheckedChangeListener { _, isChecked ->

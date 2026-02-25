@@ -4,30 +4,34 @@
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
     android:layout_margin="32dp"
-    app:cardCornerRadius="16dp"
-    app:cardElevation="8dp">
+    app:cardCornerRadius="20dp"
+    app:cardElevation="12dp"
+    app:cardBackgroundColor="#FFFFFF">
 
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="vertical"
-        android:padding="24dp">
+        android:padding="32dp">
 
         <TextView
-            android:layout_width="wrap_content"
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:text="添加微信联系人"
-            android:textSize="28sp"
-            android:textColor="#000000"
-            android:layout_marginBottom="24dp" />
+            android:textSize="30sp"
+            android:textStyle="bold"
+            android:textColor="#2C3E50"
+            android:gravity="center"
+            android:layout_marginBottom="32dp" />
 
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="联系人姓名"
-            android:textSize="20sp"
-            android:textColor="#666666"
-            android:layout_marginBottom="8dp" />
+            android:textSize="22sp"
+            android:textColor="#333333"
+            android:textStyle="bold"
+            android:layout_marginBottom="12dp" />
 
         <EditText
             android:id="@+id/et_contact_name"
@@ -35,58 +39,69 @@
             android:layout_height="wrap_content"
             android:hint="请输入微信好友的备注名或昵称"
             android:textSize="24sp"
-            android:padding="16dp"
-            android:background="@drawable/icon_background"
-            android:layout_marginBottom="24dp" />
+            android:textColorHint="#BBBBBB"
+            android:textColor="#333333"
+            android:padding="20dp"
+            android:background="@drawable/edit_text_background_focused"
+            android:inputType="text"
+            android:maxLines="1"
+            android:imeOptions="actionDone"
+            android:layout_marginBottom="16dp" />
 
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="提示：请输入在微信中显示的名字"
+            android:text="请输入在微信中显示的名字"
             android:textSize="18sp"
             android:textColor="#999999"
-            android:layout_marginBottom="24dp" />
+            android:drawablePadding="8dp"
+            android:layout_marginBottom="32dp" />
 
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:orientation="horizontal"
-            android:gravity="end">
+            android:orientation="horizontal">
 
             <androidx.cardview.widget.CardView
                 android:id="@+id/btn_cancel"
-                android:layout_width="wrap_content"
+                android:layout_width="0dp"
                 android:layout_height="wrap_content"
-                android:layout_marginEnd="16dp"
-                app:cardCornerRadius="12dp"
-                app:cardBackgroundColor="#CCCCCC">
+                android:layout_weight="1"
+                android:layout_marginEnd="12dp"
+                app:cardCornerRadius="14dp"
+                app:cardElevation="2dp"
+                app:cardBackgroundColor="#F0F0F0">
 
                 <TextView
-                    android:layout_width="wrap_content"
+                    android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:text="取消"
                     android:textSize="24sp"
-                    android:textColor="#FFFFFF"
-                    android:paddingHorizontal="32dp"
-                    android:paddingVertical="16dp" />
+                    android:textColor="#666666"
+                    android:gravity="center"
+                    android:paddingVertical="18dp" />
 
             </androidx.cardview.widget.CardView>
 
             <androidx.cardview.widget.CardView
                 android:id="@+id/btn_confirm"
-                android:layout_width="wrap_content"
+                android:layout_width="0dp"
                 android:layout_height="wrap_content"
-                app:cardCornerRadius="12dp"
+                android:layout_weight="1"
+                android:layout_marginStart="12dp"
+                app:cardCornerRadius="14dp"
+                app:cardElevation="2dp"
                 app:cardBackgroundColor="#4CAF50">
 
                 <TextView
-                    android:layout_width="wrap_content"
+                    android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:text="确定"
                     android:textSize="24sp"
                     android:textColor="#FFFFFF"
-                    android:paddingHorizontal="32dp"
-                    android:paddingVertical="16dp" />
+                    android:textStyle="bold"
+                    android:gravity="center"
+                    android:paddingVertical="18dp" />
 
             </androidx.cardview.widget.CardView>
 
