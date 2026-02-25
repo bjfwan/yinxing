@@ -2,6 +2,7 @@ package com.bajianfeng.launcher.service
 
 import android.accessibilityservice.AccessibilityService
 import android.content.Intent
+import android.util.Log
 import android.view.accessibility.AccessibilityEvent
 import android.view.accessibility.AccessibilityNodeInfo
 import com.bajianfeng.launcher.manager.StateDetectionManager
@@ -20,6 +21,8 @@ class WeChatAccessibilityService : AccessibilityService() {
         
         const val ACTION_START_VIDEO_CALL = "com.bajianfeng.launcher.START_VIDEO_CALL"
         const val EXTRA_CONTACT_NAME = "contact_name"
+        
+        private const val TAG = "WeChatAutoService"
     }
     
     private val serviceScope = CoroutineScope(SupervisorJob() + Dispatchers.Main)
@@ -87,61 +90,101 @@ class WeChatAccessibilityService : AccessibilityService() {
         currentTask?.cancel()
         currentTask = serviceScope.launch {
             try {
+                Log.d(TAG, "========== 开始视频通话流程 ==========")
+                Log.d(TAG, "联系人: $contactName")
+                
                 floatingView?.show("正在打开微信")
                 notifyState("正在打开微信", true)
                 
                 val launchStart = System.currentTimeMillis()
+                Log.d(TAG, "步骤1: 启动微信")
+                
                 if (!launchWeChat()) {
+                    Log.e(TAG, "启动微信失败: Intent为null")
                     floatingView?.hide()
                     notifyState("打开微信失败", false)
                     return@launch
                 }
                 
+                Log.d(TAG, "微信Intent已发送，等待2秒")
                 delay(2000)
                 
-                if (rootInActiveWindow?.packageName?.toString() != "com.tencent.mm") {
+                val currentPackage = rootInActiveWindow?.packageName?.toString()
+                Log.d(TAG, "当前前台应用: $currentPackage")
+                
+                if (currentPackage != "com.tencent.mm") {
+                    Log.e(TAG, "微信启动失败: 当前包名=$currentPackage")
                     floatingView?.hide()
                     notifyState("微信启动失败", false)
                     return@launch
                 }
                 
+                Log.d(TAG, "微信启动成功，耗时: ${System.currentTimeMillis() - launchStart}ms")
                 timeoutManager.recordSuccess("launch", System.currentTimeMillis() - launchStart)
                 
                 floatingView?.updateMessage("正在加载首页")
+                Log.d(TAG, "步骤2: 等待首页加载")
                 delay(2000)
                 
                 floatingView?.updateMessage("正在查找联系人")
                 notifyState("正在查找联系人", true)
                 
                 val searchStart = System.currentTimeMillis()
+                Log.d(TAG, "步骤3: 打开搜索")
+                
                 if (!openSearch()) {
+                    Log.e(TAG, "打开搜索失败")
                     floatingView?.hide()
                     notifyState("打开搜索失败", false)
                     return@launch
                 }
                 
+                Log.d(TAG, "搜索框已打开")
+                
                 val searchBoxTimeout = timeoutManager.getTimeout("search")
+                Log.d(TAG, "步骤4: 等待搜索框出现，超时=${searchBoxTimeout}ms")
+                
                 val searchBoxVisible = stateDetector.waitForState("搜索框", searchBoxTimeout) {
-                    stateDetector.isSearchBoxVisible(rootInActiveWindow)
+                    val visible = stateDetector.isSearchBoxVisible(rootInActiveWindow)
+                    if (!visible) {
+                        Log.d(TAG, "搜索框检测: 未找到")
+                    } else {
+                        Log.d(TAG, "搜索框检测: 已找到")
+                    }
+                    visible
                 }
                 
                 if (!searchBoxVisible) {
+                    Log.e(TAG, "搜索框未出现，超时")
                     floatingView?.hide()
                     notifyState("搜索框未出现", false)
                     return@launch
                 }
                 
+                Log.d(TAG, "步骤5: 输入联系人名称: $contactName")
+                
                 if (!searchContact(contactName)) {
+                    Log.e(TAG, "输入联系人失败")
                     floatingView?.hide()
                     notifyState("查找联系人失败", false)
                     return@launch
                 }
                 
+                Log.d(TAG, "联系人名称已输入")
+                Log.d(TAG, "步骤6: 等待搜索结果")
+                
                 val contactFound = stateDetector.waitForState("联系人搜索", 10000L) {
-                    stateDetector.isContactFound(rootInActiveWindow, contactName)
+                    val found = stateDetector.isContactFound(rootInActiveWindow, contactName)
+                    if (!found) {
+                        Log.d(TAG, "联系人检测: 未找到 $contactName")
+                    } else {
+                        Log.d(TAG, "联系人检测: 已找到 $contactName")
+                    }
+                    found
                 }
                 
                 if (!contactFound) {
+                    Log.e(TAG, "未找到联系人: $contactName")
                     floatingView?.hide()
                     notifyState("未找到联系人$contactName", false)
                     return@launch
@@ -153,18 +196,32 @@ class WeChatAccessibilityService : AccessibilityService() {
                 notifyState("正在进入聊天", true)
                 
                 val chatStart = System.currentTimeMillis()
+                Log.d(TAG, "步骤7: 点击联系人进入聊天")
+                
                 if (!openChat()) {
+                    Log.e(TAG, "进入聊天失败")
                     floatingView?.hide()
                     notifyState("进入聊天失败", false)
                     return@launch
                 }
                 
+                Log.d(TAG, "已点击联系人")
+                
                 val chatTimeout = timeoutManager.getTimeout("chat")
+                Log.d(TAG, "步骤8: 等待聊天界面加载，超时=${chatTimeout}ms")
+                
                 val chatLoaded = stateDetector.waitForState("聊天界面", chatTimeout) {
-                    stateDetector.isChatPageLoaded(rootInActiveWindow)
+                    val loaded = stateDetector.isChatPageLoaded(rootInActiveWindow)
+                    if (!loaded) {
+                        Log.d(TAG, "聊天界面检测: 未加载")
+                    } else {
+                        Log.d(TAG, "聊天界面检测: 已加载")
+                    }
+                    loaded
                 }
                 
                 if (!chatLoaded) {
+                    Log.e(TAG, "聊天界面加载超时")
                     floatingView?.hide()
                     notifyState("聊天界面加载超时", false)
                     return@launch
@@ -175,20 +232,28 @@ class WeChatAccessibilityService : AccessibilityService() {
                 floatingView?.updateMessage("正在发起视频")
                 notifyState("正在发起视频", true)
                 
+                Log.d(TAG, "步骤9: 点击视频通话按钮")
+                
                 if (!startVideo()) {
+                    Log.e(TAG, "发起视频失败")
                     floatingView?.hide()
                     notifyState("发起视频失败", false)
                     return@launch
                 }
                 
+                Log.d(TAG, "视频通话已发起")
+                
                 delay(1000)
                 floatingView?.updateMessage("操作成功")
                 notifyState("操作成功", true)
+                
+                Log.d(TAG, "========== 视频通话流程完成 ==========")
                 
                 delay(2000)
                 floatingView?.hide()
                 
             } catch (e: Exception) {
+                Log.e(TAG, "视频通话异常", e)
                 floatingView?.hide()
                 notifyState("操作异常: ${e.message}", false)
             }
@@ -204,38 +269,63 @@ class WeChatAccessibilityService : AccessibilityService() {
     
     private suspend fun openSearch(): Boolean {
         return withContext(Dispatchers.IO) {
-            repeat(20) {
-                val root = rootInActiveWindow ?: return@withContext false
+            Log.d(TAG, "openSearch: 开始查找搜索按钮")
+            repeat(20) { attempt ->
+                val root = rootInActiveWindow
+                if (root == null) {
+                    Log.d(TAG, "openSearch: 尝试$attempt - rootInActiveWindow为null")
+                    delay(500)
+                    return@repeat
+                }
+                
+                Log.d(TAG, "openSearch: 尝试$attempt - 当前窗口: ${root.packageName}")
                 
                 val searchText = AccessibilityUtil.findNodeByText(root, "搜索")
                 if (searchText != null) {
+                    Log.d(TAG, "openSearch: 找到'搜索'节点")
                     val clicked = AccessibilityUtil.clickNode(searchText)
+                    Log.d(TAG, "openSearch: 点击结果=$clicked")
                     AccessibilityUtil.recycleNodes(searchText, root)
                     if (clicked) {
                         delay(1000)
                         return@withContext true
                     }
+                } else {
+                    Log.d(TAG, "openSearch: 未找到'搜索'节点")
                 }
                 
                 AccessibilityUtil.recycleNodes(root)
                 delay(500)
             }
+            Log.e(TAG, "openSearch: 20次尝试后仍未找到搜索按钮")
             false
         }
     }
     
     private suspend fun searchContact(name: String): Boolean {
         return withContext(Dispatchers.IO) {
+            Log.d(TAG, "searchContact: 开始输入联系人名称: $name")
             delay(1000)
             
-            repeat(10) {
-                val root = rootInActiveWindow ?: return@withContext false
+            repeat(10) { attempt ->
+                val root = rootInActiveWindow
+                if (root == null) {
+                    Log.d(TAG, "searchContact: 尝试$attempt - rootInActiveWindow为null")
+                    delay(500)
+                    return@repeat
+                }
                 
+                Log.d(TAG, "searchContact: 尝试$attempt - 查找可编辑节点")
                 val editableNodes = mutableListOf<AccessibilityNodeInfo>()
                 findEditableNodes(root, editableNodes)
                 
+                Log.d(TAG, "searchContact: 找到${editableNodes.size}个可编辑节点")
+                
                 if (editableNodes.isNotEmpty()) {
-                    val success = AccessibilityUtil.setText(editableNodes[0], name)
+                    val node = editableNodes[0]
+                    Log.d(TAG, "searchContact: 节点类型=${node.className}, 可编辑=${node.isEditable}")
+                    val success = AccessibilityUtil.setText(node, name)
+                    Log.d(TAG, "searchContact: 输入结果=$success")
                     editableNodes.forEach { it.recycle() }
                     AccessibilityUtil.recycleNodes(root)
                     if (success) return@withContext true
@@ -244,6 +334,7 @@ class WeChatAccessibilityService : AccessibilityService() {
                 AccessibilityUtil.recycleNodes(root)
                 delay(500)
             }
+            Log.e(TAG, "searchContact: 10次尝试后仍未能输入")
             false
         }
     }
