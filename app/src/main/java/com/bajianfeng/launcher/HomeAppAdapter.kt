@@ -16,8 +16,8 @@ class HomeAppAdapter(
     private val onOrderChanged: () -> Unit
 ) : RecyclerView.Adapter<HomeAppAdapter.ViewHolder>(), ItemTouchHelperAdapter {
 
-    private lateinit var touchHelper: ItemTouchHelper
-    
+    private var touchHelper: ItemTouchHelper? = null
+
     fun setTouchHelper(helper: ItemTouchHelper) {
         touchHelper = helper
     }
@@ -39,45 +39,27 @@ class HomeAppAdapter(
         val item = appList[position]
         holder.icon.setImageDrawable(item.icon)
         holder.name.text = item.appName
-        
+        holder.deleteBtn.visibility = View.GONE
+
+        holder.card.setOnTouchListener(null)
+        holder.icon.setOnLongClickListener(null)
+        holder.deleteBtn.setOnClickListener(null)
+
         if (item.type == HomeAppItem.Type.APP) {
-            holder.deleteBtn.visibility = View.GONE
-            
-            holder.icon.setOnClickListener {
-                onItemClick(item)
-            }
-            
-            holder.icon.setOnLongClickListener {
+            holder.card.setOnClickListener { onItemClick(item) }
+
+            holder.card.setOnLongClickListener {
                 holder.deleteBtn.visibility = View.VISIBLE
                 true
             }
-            
+
             holder.deleteBtn.setOnClickListener {
                 holder.deleteBtn.visibility = View.GONE
                 onItemLongClick(item)
             }
-            
-            holder.card.setOnTouchListener { v, event ->
-                if (event.actionMasked == android.view.MotionEvent.ACTION_DOWN) {
-                    if (::touchHelper.isInitialized) {
-                        touchHelper.startDrag(holder)
-                    }
-                }
-                false
-            }
         } else {
-            holder.deleteBtn.visibility = View.GONE
-            
-            holder.card.setOnClickListener {
-                onItemClick(item)
-            }
-            
-            holder.icon.setOnClickListener {
-                onItemClick(item)
-            }
-            
-            holder.icon.setOnLongClickListener(null)
-            holder.card.setOnTouchListener(null)
+            holder.card.setOnClickListener { onItemClick(item) }
+            holder.card.setOnLongClickListener(null)
         }
     }
 

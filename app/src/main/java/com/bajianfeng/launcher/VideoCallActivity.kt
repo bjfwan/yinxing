@@ -1,6 +1,5 @@
 package com.bajianfeng.launcher
 
-import android.content.Intent
 import android.os.Bundle
 import android.widget.EditText
 import android.widget.Toast
@@ -32,22 +31,23 @@ class VideoCallActivity : AppCompatActivity() {
 
         ttsService = TTSService.getInstance(this)
         ttsService.initialize()
-        
+
         contactManager = ContactManager.getInstance(this)
 
         recyclerView = findViewById(R.id.recycler_video_contacts)
         recyclerView.layoutManager = GridLayoutManager(this, 2)
+        recyclerView.setHasFixedSize(false)
 
         adapter = VideoCallContactAdapter(
             contactList,
             onContactClick = { contact -> startVideoCall(contact) }
         )
-        
+
         manageAdapter = ContactManageAdapter(
             contactList,
             onDeleteClick = { contact -> deleteContact(contact) }
         )
-        
+
         recyclerView.adapter = adapter
 
         findViewById<CardView>(R.id.btn_back).setOnClickListener {
@@ -57,7 +57,7 @@ class VideoCallActivity : AppCompatActivity() {
                 finish()
             }
         }
-        
+
         findViewById<CardView>(R.id.btn_add_contact)?.setOnClickListener {
             if (isManageMode) {
                 showAddContactDialog()
@@ -70,72 +70,81 @@ class VideoCallActivity : AppCompatActivity() {
         checkAccessibilityService()
     }
 
+    override fun onDestroy() {
+        super.onDestroy()
+        WeChatAccessibilityService.getInstance()?.setStateCallback(null)
+    }
+
     private fun switchToManageMode() {
         isManageMode = true
         recyclerView.layoutManager = LinearLayoutManager(this)
         recyclerView.adapter = manageAdapter
-        Toast.makeText(this, "长按可删除联系人", Toast.LENGTH_SHORT).show()
+        manageAdapter.notifyDataSetChanged()
     }
-    
+
     private fun switchToCallMode() {
         isManageMode = false
         recyclerView.layoutManager = GridLayoutManager(this, 2)
         recyclerView.adapter = adapter
+        adapter.notifyDataSetChanged()
     }
-    
+
     private fun showAddContactDialog() {
         val dialogView = layoutInflater.inflate(R.layout.dialog_add_contact, null)
         val dialog = android.app.AlertDialog.Builder(this)
             .setView(dialogView)
             .create()
-        
+
         dialog.window?.setBackgroundDrawableResource(android.R.color.transparent)
-        
+
         val etName = dialogView.findViewById<EditText>(R.id.et_contact_name)
-        
+
         dialogView.findViewById<CardView>(R.id.btn_cancel).setOnClickListener {
             dialog.dismiss()
         }
-        
+
         dialogView.findViewById<CardView>(R.id.btn_confirm).setOnClickListener {
             val name = etName.text.toString().trim()
             if (name.isEmpty()) {
                 Toast.makeText(this, "请输入联系人姓名", Toast.LENGTH_SHORT).show()
                 return@setOnClickListener
             }
-            
+
             val contact = Contact(
                 id = UUID.randomUUID().toString(),
                 name = name,
                 wechatId = name
             )
-            
+
             contactManager.addContact(contact)
             contactList.add(0, contact)
             manageAdapter.notifyItemInserted(0)
             adapter.notifyDataSetChanged()
-            
+
             Toast.makeText(this, "已添加联系人：$name", Toast.LENGTH_SHORT).show()
             dialog.dismiss()
         }
-        
+
         dialog.show()
     }
-    
+
     private fun deleteContact(contact: Contact) {
         val dialog = android.app.AlertDialog.Builder(this)
             .setTitle("删除联系人")
             .setMessage("确定要删除 ${contact.name} 吗？")
             .setPositiveButton("删除") { _, _ ->
                 contactManager.removeContact(contact.id)
-                contactList.remove(contact)
-                manageAdapter.notifyDataSetChanged()
-                adapter.notifyDataSetChanged()
+                val position = contactList.indexOf(contact)
+                if (position >= 0) {
+                    contactList.removeAt(position)
+                    manageAdapter.notifyItemRemoved(position)
+                    adapter.notifyDataSetChanged()
+                }
                 Toast.makeText(this, "已删除", Toast.LENGTH_SHORT).show()
             }
             .setNegativeButton("取消", null)
             .create()
-        
+
         dialog.show()
     }
 
@@ -145,7 +154,7 @@ class VideoCallActivity : AppCompatActivity() {
             showAccessibilityDialog()
             return
         }
-        
+
         if (!PermissionUtil.canDrawOverlays(this)) {
             showOverlayPermissionDialog()
         }
@@ -172,7 +181,7 @@ class VideoCallActivity : AppCompatActivity() {
 
         dialog.show()
     }
-    
+
     private fun showOverlayPermissionDialog() {
         val dialog = android.app.AlertDialog.Builder(this)
             .setTitle("需要悬浮窗权限")
@@ -182,7 +191,7 @@ class VideoCallActivity : AppCompatActivity() {
             }
             .setNegativeButton("取消", null)
             .create()
-        
+
         dialog.show()
     }
 
@@ -190,7 +199,6 @@ class VideoCallActivity : AppCompatActivity() {
         contactList.clear()
         contactList.addAll(contactManager.getContacts())
         adapter.notifyDataSetChanged()
-        manageAdapter.notifyDataSetChanged()
     }
 
     private fun startVideoCall(contact: Contact) {
@@ -203,41 +211,47 @@ class VideoCallActivity : AppCompatActivity() {
         val serviceName = "${packageName}/${WeChatAccessibilityService::class.java.name}"
         if (!PermissionUtil.isAccessibilityServiceEnabled(this, serviceName)) {
             ttsService.speak("请先开启无障碍权限")
-            Toast.makeText(this, "请先开启无障碍权限", Toast.LENGTH_SHORT).show()
             showAccessibilityDialog()
             return
         }
 
-        val pm = packageManager
         try {
-            pm.getPackageInfo("com.tencent.mm", 0)
-        } catch (e: Exception) {
+            packageManager.getPackageInfo("com.tencent.mm", 0)
+        } catch (_: Exception) {
             ttsService.speak("未安装微信应用")
             Toast.makeText(this, "未安装微信", Toast.LENGTH_SHORT).show()
             return
         }
 
         contactManager.incrementCallCount(contact.id)
-        
+
         ttsService.speak("正在为您拨打视频电话")
         Toast.makeText(this, "正在发起视频通话...", Toast.LENGTH_SHORT).show()
 
-        val intent = Intent(this, WeChatAccessibilityService::class.java)
-        intent.action = WeChatAccessibilityService.ACTION_START_VIDEO_CALL
-        intent.putExtra(WeChatAccessibilityService.EXTRA_CONTACT_NAME, contact.name)
-        startService(intent)
+        val service = WeChatAccessibilityService.getInstance()
+        if (service == null) {
+            ttsService.speak("无障碍服务未运行")
+            Toast.makeText(this, "无障碍服务未运行，请重新开启", Toast.LENGTH_SHORT).show()
+            return
+        }
 
-        WeChatAccessibilityService.getInstance()?.setStateCallback { state, success ->
+        service.setStateCallback { state, success ->
             runOnUiThread {
                 ttsService.speak(state)
                 Toast.makeText(this, state, Toast.LENGTH_SHORT).show()
-                
-                if (state == "操作成功" || state.contains("失败")) {
+
+                if (state.contains("已发起") || state.contains("失败")) {
+                    service.setStateCallback(null)
                     if (success) {
                         finish()
                     }
                 }
             }
         }
+
+        val intent = android.content.Intent(this, WeChatAccessibilityService::class.java)
+        intent.action = WeChatAccessibilityService.ACTION_START_VIDEO_CALL
+        intent.putExtra(WeChatAccessibilityService.EXTRA_CONTACT_NAME, contact.name)
+        startService(intent)
     }
 }

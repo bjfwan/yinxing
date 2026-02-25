@@ -10,150 +10,124 @@ import android.util.Log
 import android.view.accessibility.AccessibilityNodeInfo
 
 object AccessibilityUtil {
-    
+
     private const val TAG = "AccessibilityUtil"
-    
+
     fun findNodeByText(root: AccessibilityNodeInfo?, text: String): AccessibilityNodeInfo? {
         if (root == null) return null
-        val nodes = root.findAccessibilityNodeInfosByText(text)
-        return nodes.firstOrNull()
+        return root.findAccessibilityNodeInfosByText(text).firstOrNull()
     }
-    
-    fun findNodeByContentDescription(root: AccessibilityNodeInfo?, desc: String): AccessibilityNodeInfo? {
-        if (root == null) return null
-        return findNodeByContentDescRecursive(root, desc)
-    }
-    
-    private fun findNodeByContentDescRecursive(node: AccessibilityNodeInfo?, desc: String): AccessibilityNodeInfo? {
-        if (node == null) return null
-        
-        val nodeDesc = node.contentDescription?.toString() ?: ""
-        if (nodeDesc.contains(desc)) {
-            return node
-        }
-        
-        for (i in 0 until node.childCount) {
-            val child = node.getChild(i) ?: continue
-            val found = findNodeByContentDescRecursive(child, desc)
-            if (found != null) return found
-        }
-        
-        return null
-    }
-    
+
     fun findNodeById(root: AccessibilityNodeInfo?, id: String): AccessibilityNodeInfo? {
         if (root == null) return null
-        val nodes = root.findAccessibilityNodeInfosByViewId(id)
-        return nodes.firstOrNull()
+        return root.findAccessibilityNodeInfosByViewId(id).firstOrNull()
     }
-    
+
+    fun findAllByText(root: AccessibilityNodeInfo?, text: String): List<AccessibilityNodeInfo> {
+        if (root == null) return emptyList()
+        return root.findAccessibilityNodeInfosByText(text)
+    }
+
     fun clickNode(node: AccessibilityNodeInfo?): Boolean {
         if (node == null) return false
-        
+
         if (node.isClickable) {
-            Log.d(TAG, "clickNode: 节点本身可点击")
             return node.performAction(AccessibilityNodeInfo.ACTION_CLICK)
         }
-        
+
         var parent = node.parent
         var depth = 0
         while (parent != null && depth < 10) {
             if (parent.isClickable) {
-                Log.d(TAG, "clickNode: 在第${depth}层父节点找到可点击节点")
-                val result = parent.performAction(AccessibilityNodeInfo.ACTION_CLICK)
-                return result
+                return parent.performAction(AccessibilityNodeInfo.ACTION_CLICK)
             }
-            val nextParent = parent.parent
-            parent = nextParent
+            parent = parent.parent
             depth++
         }
-        
-        Log.d(TAG, "clickNode: 未找到可点击节点，尝试坐标点击")
+
         return false
     }
-    
+
     fun clickNodeByBounds(service: AccessibilityService, node: AccessibilityNodeInfo?): Boolean {
         if (node == null) return false
-        
         val rect = Rect()
         node.getBoundsInScreen(rect)
-        val x = rect.centerX().toFloat()
-        val y = rect.centerY().toFloat()
-        
-        Log.d(TAG, "clickNodeByBounds: 坐标点击 x=$x, y=$y")
-        
-        return clickByCoordinate(service, x, y)
+        return clickByCoordinate(service, rect.centerX().toFloat(), rect.centerY().toFloat())
     }
 
     fun clickByCoordinate(service: AccessibilityService, x: Float, y: Float): Boolean {
-        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.N) {
-            Log.e(TAG, "clickByCoordinate: API版本不支持手势")
-            return false
-        }
-        
-        Log.d(TAG, "clickByCoordinate: 点击坐标 x=$x, y=$y")
-        
-        val path = Path()
-        path.moveTo(x, y)
-        
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.N) return false
+
+        val path = Path().apply { moveTo(x, y) }
         val gesture = GestureDescription.Builder()
             .addStroke(GestureDescription.StrokeDescription(path, 0, 100))
             .build()
-        
-        var result = false
-        val latch = java.util.concurrent.CountDownLatch(1)
-        
-        val handler = android.os.Handler(android.os.Looper.getMainLooper())
-        
-        handler.post {
-            service.dispatchGesture(gesture, object : AccessibilityService.GestureResultCallback() {
-                override fun onCompleted(gestureDescription: GestureDescription?) {
-                    Log.d(TAG, "clickByCoordinate: 手势完成")
-                    result = true
-                    latch.countDown()
-                }
-                
-                override fun onCancelled(gestureDescription: GestureDescription?) {
-                    Log.e(TAG, "clickByCoordinate: 手势取消")
-                    result = false
-                    latch.countDown()
-                }
-            }, null)
-        }
-        
-        latch.await(3, java.util.concurrent.TimeUnit.SECONDS)
-        return result
+
+        service.dispatchGesture(gesture, null, null)
+        return true
     }
-    
+
+    fun scrollDown(service: AccessibilityService, screenWidth: Int, screenHeight: Int): Boolean {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.N) return false
+
+        val centerX = screenWidth / 2f
+        val startY = screenHeight * 0.7f
+        val endY = screenHeight * 0.3f
+
+        val path = Path().apply {
+            moveTo(centerX, startY)
+            lineTo(centerX, endY)
+        }
+        val gesture = GestureDescription.Builder()
+            .addStroke(GestureDescription.StrokeDescription(path, 0, 300))
+            .build()
+
+        service.dispatchGesture(gesture, null, null)
+        return true
+    }
+
+    fun scrollNodeDown(node: AccessibilityNodeInfo?): Boolean {
+        if (node == null) return false
+        return node.performAction(AccessibilityNodeInfo.ACTION_SCROLL_FORWARD)
+    }
+
     fun setText(node: AccessibilityNodeInfo?, text: String): Boolean {
         if (node == null) return false
-        
         node.performAction(AccessibilityNodeInfo.ACTION_FOCUS)
-        val arguments = Bundle()
-        arguments.putCharSequence(AccessibilityNodeInfo.ACTION_ARGUMENT_SET_TEXT_CHARSEQUENCE, text)
+        val arguments = Bundle().apply {
+            putCharSequence(AccessibilityNodeInfo.ACTION_ARGUMENT_SET_TEXT_CHARSEQUENCE, text)
+        }
         return node.performAction(AccessibilityNodeInfo.ACTION_SET_TEXT, arguments)
     }
-    
+
     fun safeRecycle(node: AccessibilityNodeInfo?) {
         try {
             node?.recycle()
-        } catch (e: IllegalStateException) {
-            Log.w(TAG, "safeRecycle: 节点已回收")
+        } catch (_: IllegalStateException) {
         }
     }
-    
+
     fun recycleNodes(vararg nodes: AccessibilityNodeInfo?) {
         nodes.forEach { safeRecycle(it) }
     }
-    
+
+    fun findScrollableNode(root: AccessibilityNodeInfo?): AccessibilityNodeInfo? {
+        if (root == null) return null
+        if (root.isScrollable) return root
+        for (i in 0 until root.childCount) {
+            val child = root.getChild(i) ?: continue
+            val scrollable = findScrollableNode(child)
+            if (scrollable != null) return scrollable
+        }
+        return null
+    }
+
     fun dumpNodeTree(node: AccessibilityNodeInfo?, depth: Int = 0) {
-        if (node == null) return
+        if (node == null || depth > 5) return
         val indent = "  ".repeat(depth)
         val rect = Rect()
         node.getBoundsInScreen(rect)
-        Log.d(TAG, "${indent}[${node.className}] text='${node.text}' " +
-                "clickable=${node.isClickable} editable=${node.isEditable} " +
-                "bounds=$rect")
+        Log.d(TAG, "${indent}[${node.className}] text='${node.text}' desc='${node.contentDescription}' id='${node.viewIdResourceName}' clickable=${node.isClickable} bounds=$rect")
         for (i in 0 until node.childCount) {
             dumpNodeTree(node.getChild(i), depth + 1)
         }

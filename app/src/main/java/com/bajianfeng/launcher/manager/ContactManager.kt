@@ -8,22 +8,27 @@ import org.json.JSONObject
 
 class ContactManager private constructor(context: Context) {
     private val prefs: SharedPreferences = context.getSharedPreferences("wechat_contacts", Context.MODE_PRIVATE)
-    
+    private var cachedContacts: MutableList<Contact>? = null
+
     companion object {
         @Volatile
         private var instance: ContactManager? = null
-        
+
         fun getInstance(context: Context): ContactManager {
             return instance ?: synchronized(this) {
                 instance ?: ContactManager(context.applicationContext).also { instance = it }
             }
         }
     }
-    
+
     fun getContacts(): List<Contact> {
+        cachedContacts?.let {
+            return it.sortedWith(compareByDescending<Contact> { c -> c.isPinned }.thenByDescending { c -> c.callCount })
+        }
+
         val json = prefs.getString("contacts", "[]") ?: "[]"
         val contacts = mutableListOf<Contact>()
-        
+
         try {
             val jsonArray = JSONArray(json)
             for (i in 0 until jsonArray.length()) {
@@ -40,52 +45,57 @@ class ContactManager private constructor(context: Context) {
                     )
                 )
             }
-        } catch (e: Exception) {
-            e.printStackTrace()
+        } catch (_: Exception) {
         }
-        
+
+        cachedContacts = contacts
         return contacts.sortedWith(compareByDescending<Contact> { it.isPinned }.thenByDescending { it.callCount })
     }
-    
+
     fun addContact(contact: Contact) {
-        val contacts = getContacts().toMutableList()
-        contacts.removeAll { it.id == contact.id }
-        contacts.add(contact)
-        saveContacts(contacts)
+        ensureCache()
+        cachedContacts?.removeAll { it.id == contact.id }
+        cachedContacts?.add(contact)
+        saveContacts()
     }
-    
+
     fun removeContact(contactId: String) {
-        val contacts = getContacts().toMutableList()
-        contacts.removeAll { it.id == contactId }
-        saveContacts(contacts)
+        ensureCache()
+        cachedContacts?.removeAll { it.id == contactId }
+        saveContacts()
     }
-    
+
     fun updateContact(contact: Contact) {
-        val contacts = getContacts().toMutableList()
-        val index = contacts.indexOfFirst { it.id == contact.id }
+        ensureCache()
+        val index = cachedContacts?.indexOfFirst { it.id == contact.id } ?: -1
         if (index >= 0) {
-            contacts[index] = contact
-            saveContacts(contacts)
+            cachedContacts?.set(index, contact)
+            saveContacts()
         }
     }
-    
+
     fun incrementCallCount(contactId: String) {
-        val contacts = getContacts().toMutableList()
-        val index = contacts.indexOfFirst { it.id == contactId }
+        ensureCache()
+        val index = cachedContacts?.indexOfFirst { it.id == contactId } ?: -1
         if (index >= 0) {
-            val contact = contacts[index]
-            contacts[index] = contact.copy(
+            val contact = cachedContacts!![index]
+            cachedContacts!![index] = contact.copy(
                 callCount = contact.callCount + 1,
                 lastCallTime = System.currentTimeMillis()
             )
-            saveContacts(contacts)
+            saveContacts()
         }
     }
-    
-    private fun saveContacts(contacts: List<Contact>) {
+
+    private fun ensureCache() {
+        if (cachedContacts == null) getContacts()
+    }
+
+    private fun saveContacts() {
+        val contacts = cachedContacts ?: return
         val jsonArray = JSONArray()
         contacts.forEach { contact ->
-            val obj = JSONObject().apply {
+            jsonArray.put(JSONObject().apply {
                 put("id", contact.id)
                 put("name", contact.name)
                 put("wechatId", contact.wechatId ?: "")
@@ -93,10 +103,8 @@ class ContactManager private constructor(context: Context) {
                 put("isPinned", contact.isPinned)
                 put("callCount", contact.callCount)
                 put("lastCallTime", contact.lastCallTime)
-            }
-            jsonArray.put(obj)
+            })
         }
-        
-        prefs.edit().putString("contacts", jsonArray.toString()).apply()
+        prefs.edit().putString("contacts", jsonArray.toString()).commit()
     }
 }

@@ -23,6 +23,9 @@ class MainActivity : AppCompatActivity() {
     private lateinit var tvTime: TextView
     private lateinit var tvDate: TextView
     private val handler = Handler(Looper.getMainLooper())
+    private val timeFormat = SimpleDateFormat("HH:mm", Locale.CHINA)
+    private val dateFormat = SimpleDateFormat("yyyy年MM月dd日 EEEE", Locale.CHINA)
+
     private val updateTimeRunnable = object : Runnable {
         override fun run() {
             updateTime()
@@ -42,12 +45,11 @@ class MainActivity : AppCompatActivity() {
 
         recyclerView = findViewById(R.id.recycler_home)
         recyclerView.layoutManager = GridLayoutManager(this, 2)
+        recyclerView.setHasFixedSize(false)
+        recyclerView.setItemViewCacheSize(10)
 
         tvTime = findViewById(R.id.tv_time)
         tvDate = findViewById(R.id.tv_date)
-
-        updateTime()
-        handler.post(updateTimeRunnable)
 
         loadApps()
 
@@ -62,7 +64,6 @@ class MainActivity : AppCompatActivity() {
         val callback = ItemMoveCallback(adapter)
         val touchHelper = ItemTouchHelper(callback)
         touchHelper.attachToRecyclerView(recyclerView)
-        
         adapter.setTouchHelper(touchHelper)
     }
 
@@ -70,6 +71,7 @@ class MainActivity : AppCompatActivity() {
         super.onResume()
         loadApps()
         adapter.notifyDataSetChanged()
+        updateTime()
         handler.post(updateTimeRunnable)
     }
 
@@ -79,12 +81,9 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun updateTime() {
-        val calendar = Calendar.getInstance()
-        val timeFormat = SimpleDateFormat("HH:mm", Locale.CHINA)
-        val dateFormat = SimpleDateFormat("yyyy年MM月dd日 EEEE", Locale.CHINA)
-        
-        tvTime.text = timeFormat.format(calendar.time)
-        tvDate.text = dateFormat.format(calendar.time)
+        val now = Calendar.getInstance().time
+        tvTime.text = timeFormat.format(now)
+        tvDate.text = dateFormat.format(now)
     }
 
     private fun loadApps() {
@@ -92,81 +91,39 @@ class MainActivity : AppCompatActivity() {
 
         val prefs = getSharedPreferences("launcher_prefs", MODE_PRIVATE)
         val pm = packageManager
+        val savedOrder = prefs.getString("app_order", "")
+            ?.split(",")
+            ?.filter { it.isNotEmpty() }
+            ?: emptyList()
 
-        val savedOrder = prefs.getString("app_order", "")?.split(",") ?: emptyList()
         val selectedApps = mutableMapOf<String, HomeAppItem>()
 
-        val allPrefs = prefs.all
-        for ((packageName, isSelected) in allPrefs) {
-            if (packageName == "app_order") continue
-            if (isSelected == true) {
-                try {
-                    val appInfo = pm.getApplicationInfo(packageName, 0)
-                    selectedApps[packageName] = HomeAppItem(
-                        packageName = packageName,
-                        appName = appInfo.loadLabel(pm).toString(),
-                        icon = appInfo.loadIcon(pm),
-                        type = HomeAppItem.Type.APP
-                    )
-                } catch (e: Exception) {
-                }
+        for ((key, value) in prefs.all) {
+            if (key == "app_order") continue
+            if (value !is Boolean || !value) continue
+            try {
+                val appInfo = pm.getApplicationInfo(key, 0)
+                selectedApps[key] = HomeAppItem(
+                    packageName = key,
+                    appName = appInfo.loadLabel(pm).toString(),
+                    icon = appInfo.loadIcon(pm),
+                    type = HomeAppItem.Type.APP
+                )
+            } catch (_: Exception) {
             }
         }
 
         for (pkg in savedOrder) {
-            selectedApps[pkg]?.let { appList.add(it) }
+            selectedApps.remove(pkg)?.let { appList.add(it) }
         }
 
-        for ((pkg, item) in selectedApps) {
-            if (!savedOrder.contains(pkg)) {
-                appList.add(item)
-            }
-        }
+        selectedApps.values.forEach { appList.add(it) }
 
-        appList.add(
-            HomeAppItem(
-                packageName = "phone",
-                appName = "电话",
-                icon = getDrawable(android.R.drawable.ic_menu_call)!!,
-                type = HomeAppItem.Type.PHONE
-            )
-        )
-
-        appList.add(
-            HomeAppItem(
-                packageName = "wechat_video",
-                appName = "微信视频",
-                icon = getDrawable(android.R.drawable.ic_menu_call)!!,
-                type = HomeAppItem.Type.WECHAT_VIDEO
-            )
-        )
-
-        appList.add(
-            HomeAppItem(
-                packageName = "settings",
-                appName = "设置",
-                icon = getDrawable(android.R.drawable.ic_menu_preferences)!!,
-                type = HomeAppItem.Type.SETTINGS
-            )
-        )
-
-        appList.add(
-            HomeAppItem(
-                packageName = "add",
-                appName = "添加",
-                icon = getDrawable(android.R.drawable.ic_input_add)!!,
-                type = HomeAppItem.Type.ADD
-            )
-        )
-
-        appList.add(
-            HomeAppItem(
-                packageName = "weather",
-                appName = "天气",
-                icon = getDrawable(android.R.drawable.ic_dialog_info)!!,
-                type = HomeAppItem.Type.WEATHER
-            )
-        )
+        appList.add(HomeAppItem("phone", "电话", getDrawable(android.R.drawable.ic_menu_call)!!, HomeAppItem.Type.PHONE))
+        appList.add(HomeAppItem("wechat_video", "微信视频", getDrawable(android.R.drawable.ic_menu_call)!!, HomeAppItem.Type.WECHAT_VIDEO))
+        appList.add(HomeAppItem("settings", "设置", getDrawable(android.R.drawable.ic_menu_preferences)!!, HomeAppItem.Type.SETTINGS))
+        appList.add(HomeAppItem("add", "添加", getDrawable(android.R.drawable.ic_input_add)!!, HomeAppItem.Type.ADD))
+        appList.add(HomeAppItem("weather", "天气", getDrawable(android.R.drawable.ic_dialog_info)!!, HomeAppItem.Type.WEATHER))
     }
 
     private fun saveAppOrder() {
@@ -187,25 +144,17 @@ class MainActivity : AppCompatActivity() {
                     Toast.makeText(this, "无法打开${item.appName}", Toast.LENGTH_SHORT).show()
                 }
             }
-            HomeAppItem.Type.PHONE -> {
-                startActivity(Intent(this, PhoneActivity::class.java))
-            }
-            HomeAppItem.Type.WECHAT_VIDEO -> {
-                startActivity(Intent(this, VideoCallActivity::class.java))
-            }
+            HomeAppItem.Type.PHONE -> startActivity(Intent(this, PhoneActivity::class.java))
+            HomeAppItem.Type.WECHAT_VIDEO -> startActivity(Intent(this, VideoCallActivity::class.java))
             HomeAppItem.Type.SETTINGS -> {
                 try {
                     startActivity(Intent(Settings.ACTION_SETTINGS))
-                } catch (e: Exception) {
+                } catch (_: Exception) {
                     Toast.makeText(this, "无法打开设置", Toast.LENGTH_SHORT).show()
                 }
             }
-            HomeAppItem.Type.ADD -> {
-                startActivity(Intent(this, AppManageActivity::class.java))
-            }
-            HomeAppItem.Type.WEATHER -> {
-                openWeather()
-            }
+            HomeAppItem.Type.ADD -> startActivity(Intent(this, AppManageActivity::class.java))
+            HomeAppItem.Type.WEATHER -> openWeather()
         }
     }
 
@@ -217,7 +166,7 @@ class MainActivity : AppCompatActivity() {
             "com.oppo.weather",
             "com.vivo.weather"
         )
-        
+
         for (pkg in weatherPackages) {
             val intent = packageManager.getLaunchIntentForPackage(pkg)
             if (intent != null) {
@@ -225,7 +174,7 @@ class MainActivity : AppCompatActivity() {
                 return
             }
         }
-        
+
         Toast.makeText(this, "未找到天气应用", Toast.LENGTH_SHORT).show()
     }
 
@@ -245,7 +194,7 @@ class MainActivity : AppCompatActivity() {
 
         dialog.window?.setBackgroundDrawableResource(android.R.color.transparent)
 
-        dialogView.findViewById<TextView>(R.id.dialog_message).text = 
+        dialogView.findViewById<TextView>(R.id.dialog_message).text =
             "确定要从桌面移除 ${item.appName} 吗？"
 
         dialogView.findViewById<androidx.cardview.widget.CardView>(R.id.btn_cancel).setOnClickListener {
@@ -262,7 +211,7 @@ class MainActivity : AppCompatActivity() {
 
     private fun removeApp(packageName: String) {
         val prefs = getSharedPreferences("launcher_prefs", MODE_PRIVATE)
-        prefs.edit().putBoolean(packageName, false).apply()
+        prefs.edit().putBoolean(packageName, false).commit()
         loadApps()
         adapter.notifyDataSetChanged()
         Toast.makeText(this, "已移除", Toast.LENGTH_SHORT).show()

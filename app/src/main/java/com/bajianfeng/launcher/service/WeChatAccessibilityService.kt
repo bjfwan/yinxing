@@ -2,10 +2,10 @@ package com.bajianfeng.launcher.service
 
 import android.accessibilityservice.AccessibilityService
 import android.content.Intent
+import android.content.res.Resources
 import android.util.Log
 import android.view.accessibility.AccessibilityEvent
 import android.view.accessibility.AccessibilityNodeInfo
-import com.bajianfeng.launcher.manager.StateDetectionManager
 import com.bajianfeng.launcher.manager.TimeoutManager
 import com.bajianfeng.launcher.ui.FloatingStatusView
 import com.bajianfeng.launcher.util.AccessibilityUtil
@@ -30,8 +30,12 @@ class WeChatAccessibilityService : AccessibilityService() {
     private var stateCallback: ((String, Boolean) -> Unit)? = null
 
     private lateinit var timeoutManager: TimeoutManager
-    private val stateDetector = StateDetectionManager()
     private var floatingView: FloatingStatusView? = null
+
+    private val screenWidth: Int
+        get() = Resources.getSystem().displayMetrics.widthPixels
+    private val screenHeight: Int
+        get() = Resources.getSystem().displayMetrics.heightPixels
 
     override fun onServiceConnected() {
         super.onServiceConnected()
@@ -50,18 +54,19 @@ class WeChatAccessibilityService : AccessibilityService() {
     override fun onDestroy() {
         super.onDestroy()
         instance = null
+        currentTask?.cancel()
         floatingView?.hide()
+        floatingView = null
+        stateCallback = null
         serviceScope.cancel()
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         intent?.let {
-            when (it.action) {
-                ACTION_START_VIDEO_CALL -> {
-                    val contactName = it.getStringExtra(EXTRA_CONTACT_NAME)
-                    if (contactName != null) {
-                        startVideoCall(contactName)
-                    }
+            if (it.action == ACTION_START_VIDEO_CALL) {
+                val contactName = it.getStringExtra(EXTRA_CONTACT_NAME)
+                if (contactName != null) {
+                    startVideoCall(contactName)
                 }
             }
         }
@@ -86,84 +91,76 @@ class WeChatAccessibilityService : AccessibilityService() {
                 floatingView?.show("正在打开微信")
                 notifyState("正在打开微信", true)
 
-                val launchStart = System.currentTimeMillis()
-
                 if (!launchWeChat()) {
-                    fail("打开微信失败")
+                    failAndHide("打开微信失败")
                     return@launch
                 }
 
-                Log.d(TAG, "步骤1: 微信Intent已发送，等待启动")
-
-                val launched = stateDetector.waitForState("微信启动", 15000L) {
-                    rootInActiveWindow?.packageName?.toString() == "com.tencent.mm"
-                }
-
-                if (!launched) {
-                    fail("微信启动超时")
-                    return@launch
-                }
-
-                Log.d(TAG, "微信启动成功，耗时: ${System.currentTimeMillis() - launchStart}ms")
-                timeoutManager.recordSuccess("launch", System.currentTimeMillis() - launchStart)
                 delay(2000)
 
-                floatingView?.updateMessage("正在打开通讯录")
-                notifyState("正在打开通讯录", true)
-                Log.d(TAG, "步骤2: 点击通讯录Tab")
+                if (!waitForWeChat(10000L)) {
+                    failAndHide("微信启动超时")
+                    return@launch
+                }
+
+                Log.d(TAG, "微信已启动")
+                delay(1500)
+
+                floatingView?.updateMessage("正在点击通讯录")
+                notifyState("正在点击通讯录", true)
 
                 if (!clickContactsTab()) {
-                    fail("打开通讯录失败")
+                    failAndHide("点击通讯录失败")
                     return@launch
                 }
 
-                delay(2000)
+                Log.d(TAG, "已点击通讯录Tab")
+                delay(1500)
 
                 floatingView?.updateMessage("正在查找联系人")
                 notifyState("正在查找联系人", true)
-                Log.d(TAG, "步骤3: 在通讯录中查找联系人: $contactName")
 
                 if (!findAndClickContact(contactName)) {
-                    fail("未找到联系人: $contactName")
+                    failAndHide("未找到联系人: $contactName")
                     return@launch
                 }
 
+                Log.d(TAG, "已点击联系人: $contactName")
                 delay(2000)
 
                 floatingView?.updateMessage("正在发起视频通话")
                 notifyState("正在发起视频通话", true)
-                Log.d(TAG, "步骤4: 点击音视频通话按钮")
 
                 if (!clickVideoCallButton()) {
-                    fail("发起视频通话失败")
+                    failAndHide("发起视频通话失败")
                     return@launch
                 }
 
-                delay(1000)
+                Log.d(TAG, "已点击音视频通话按钮")
+                delay(1500)
 
-                Log.d(TAG, "步骤5: 选择视频通话")
-
-                if (!selectVideoCallOption()) {
-                    fail("选择视频通话失败")
+                if (!selectVideoCall()) {
+                    failAndHide("选择视频通话失败")
                     return@launch
                 }
 
-                delay(1000)
-                floatingView?.updateMessage("操作成功")
-                notifyState("操作成功", true)
-                Log.d(TAG, "========== 视频通话流程完成 ==========")
+                Log.d(TAG, "已选择视频通话")
+                floatingView?.updateMessage("视频通话已发起")
+                notifyState("视频通话已发起", true)
 
-                delay(2000)
+                delay(3000)
                 floatingView?.hide()
 
+            } catch (e: CancellationException) {
+                floatingView?.hide()
             } catch (e: Exception) {
                 Log.e(TAG, "视频通话异常", e)
-                fail("操作异常: ${e.message}")
+                failAndHide("操作异常: ${e.message}")
             }
         }
     }
 
-    private fun fail(message: String) {
+    private fun failAndHide(message: String) {
         Log.e(TAG, message)
         floatingView?.hide()
         notifyState(message, false)
@@ -171,183 +168,211 @@ class WeChatAccessibilityService : AccessibilityService() {
 
     private fun launchWeChat(): Boolean {
         val intent = packageManager.getLaunchIntentForPackage("com.tencent.mm")
-        intent?.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-        intent?.let { startActivity(it) }
-        return intent != null
+            ?.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+        return if (intent != null) {
+            startActivity(intent)
+            true
+        } else false
+    }
+
+    private suspend fun waitForWeChat(timeout: Long): Boolean {
+        val startTime = System.currentTimeMillis()
+        while (System.currentTimeMillis() - startTime < timeout) {
+            val root = rootInActiveWindow
+            if (root?.packageName?.toString() == "com.tencent.mm") {
+                return true
+            }
+            delay(500)
+        }
+        return false
     }
 
     private suspend fun clickContactsTab(): Boolean {
-        return withContext(Dispatchers.IO) {
-            repeat(15) { attempt ->
-                val root = rootInActiveWindow
-                if (root == null) {
-                    Log.d(TAG, "clickContactsTab: 尝试$attempt - root为null")
-                    delay(500)
-                    return@repeat
-                }
-
-                Log.d(TAG, "clickContactsTab: 尝试$attempt")
-
-                if (attempt == 0) {
-                    AccessibilityUtil.dumpNodeTree(root, 0)
-                }
-
-                val contactsTab = AccessibilityUtil.findNodeByText(root, "通讯录")
-                if (contactsTab != null) {
-                    Log.d(TAG, "clickContactsTab: 找到'通讯录', class=${contactsTab.className}, clickable=${contactsTab.isClickable}")
-                    var clicked = AccessibilityUtil.clickNode(contactsTab)
-                    if (!clicked) {
-                        Log.d(TAG, "clickContactsTab: 常规点击失败，尝试坐标点击")
-                        clicked = AccessibilityUtil.clickNodeByBounds(this@WeChatAccessibilityService, contactsTab)
-                    }
-                    Log.d(TAG, "clickContactsTab: 点击结果=$clicked")
-                    AccessibilityUtil.safeRecycle(contactsTab)
-                    if (clicked) return@withContext true
-                } else {
-                    Log.d(TAG, "clickContactsTab: 未找到'通讯录'")
-                }
-
+        repeat(15) { attempt ->
+            Log.d(TAG, "clickContactsTab: 尝试$attempt")
+            val root = rootInActiveWindow ?: run {
                 delay(500)
+                return@repeat
             }
-            false
+
+            val contactsNode = AccessibilityUtil.findNodeByText(root, "通讯录")
+            if (contactsNode != null) {
+                Log.d(TAG, "clickContactsTab: 找到'通讯录'节点")
+
+                if (AccessibilityUtil.clickNode(contactsNode)) {
+                    Log.d(TAG, "clickContactsTab: performClick成功")
+                    AccessibilityUtil.safeRecycle(contactsNode)
+                    return true
+                }
+
+                Log.d(TAG, "clickContactsTab: performClick失败，尝试坐标点击")
+                AccessibilityUtil.clickNodeByBounds(this@WeChatAccessibilityService, contactsNode)
+                AccessibilityUtil.safeRecycle(contactsNode)
+                delay(1000)
+
+                val verifyRoot = rootInActiveWindow
+                val newFriends = AccessibilityUtil.findNodeByText(verifyRoot, "新的朋友")
+                if (newFriends != null) {
+                    Log.d(TAG, "clickContactsTab: 验证成功，已进入通讯录页面")
+                    AccessibilityUtil.safeRecycle(newFriends)
+                    return true
+                }
+
+                continue
+            }
+
+            val bottomNodes = findBottomTabNodes(root)
+            if (bottomNodes.size >= 2) {
+                Log.d(TAG, "clickContactsTab: 通过底部Tab索引点击第2个")
+                val secondTab = bottomNodes[1]
+                if (AccessibilityUtil.clickNode(secondTab)) {
+                    bottomNodes.forEach { AccessibilityUtil.safeRecycle(it) }
+                    delay(1000)
+                    return true
+                }
+                AccessibilityUtil.clickNodeByBounds(this@WeChatAccessibilityService, secondTab)
+                bottomNodes.forEach { AccessibilityUtil.safeRecycle(it) }
+                delay(1000)
+
+                val verifyRoot = rootInActiveWindow
+                val newFriends = AccessibilityUtil.findNodeByText(verifyRoot, "新的朋友")
+                if (newFriends != null) {
+                    AccessibilityUtil.safeRecycle(newFriends)
+                    return true
+                }
+            }
+
+            delay(800)
         }
+        return false
+    }
+
+    private fun findBottomTabNodes(root: AccessibilityNodeInfo): List<AccessibilityNodeInfo> {
+        val result = mutableListOf<AccessibilityNodeInfo>()
+        val tabTexts = listOf("微信", "通讯录", "发现", "我")
+        for (text in tabTexts) {
+            val node = AccessibilityUtil.findNodeByText(root, text)
+            if (node != null) {
+                result.add(node)
+            }
+        }
+        return result
     }
 
     private suspend fun findAndClickContact(contactName: String): Boolean {
-        return withContext(Dispatchers.IO) {
-            repeat(20) { attempt ->
-                val root = rootInActiveWindow
-                if (root == null) {
-                    Log.d(TAG, "findAndClickContact: 尝试$attempt - root为null")
-                    delay(500)
-                    return@repeat
-                }
-
-                Log.d(TAG, "findAndClickContact: 尝试$attempt - 查找: $contactName")
-
-                val contactNode = AccessibilityUtil.findNodeByText(root, contactName)
-                if (contactNode != null) {
-                    Log.d(TAG, "findAndClickContact: 找到联系人节点, class=${contactNode.className}, clickable=${contactNode.isClickable}")
-                    var clicked = AccessibilityUtil.clickNode(contactNode)
-                    if (!clicked) {
-                        clicked = AccessibilityUtil.clickNodeByBounds(this@WeChatAccessibilityService, contactNode)
-                    }
-                    Log.d(TAG, "findAndClickContact: 点击结果=$clicked")
-                    AccessibilityUtil.safeRecycle(contactNode)
-                    if (clicked) return@withContext true
-                } else {
-                    Log.d(TAG, "findAndClickContact: 当前页面未找到，尝试滚动")
-                    scrollDown(root)
-                }
-
-                delay(1000)
+        repeat(30) { attempt ->
+            Log.d(TAG, "findAndClickContact: 尝试$attempt")
+            val root = rootInActiveWindow ?: run {
+                delay(500)
+                return@repeat
             }
-            false
+
+            val contactNode = AccessibilityUtil.findNodeByText(root, contactName)
+            if (contactNode != null) {
+                Log.d(TAG, "findAndClickContact: 找到联系人'$contactName'")
+
+                if (AccessibilityUtil.clickNode(contactNode)) {
+                    Log.d(TAG, "findAndClickContact: performClick成功")
+                    AccessibilityUtil.safeRecycle(contactNode)
+                    return true
+                }
+
+                AccessibilityUtil.clickNodeByBounds(this@WeChatAccessibilityService, contactNode)
+                AccessibilityUtil.safeRecycle(contactNode)
+                delay(1000)
+
+                val verifyRoot = rootInActiveWindow
+                val sendMsg = AccessibilityUtil.findNodeByText(verifyRoot, "发消息")
+                if (sendMsg != null) {
+                    Log.d(TAG, "findAndClickContact: 验证成功，已进入联系人详情")
+                    AccessibilityUtil.safeRecycle(sendMsg)
+                    return true
+                }
+
+                continue
+            }
+
+            val scrollable = AccessibilityUtil.findScrollableNode(root)
+            if (scrollable != null) {
+                Log.d(TAG, "findAndClickContact: 未找到，向下滚动")
+                AccessibilityUtil.scrollNodeDown(scrollable)
+            } else {
+                AccessibilityUtil.scrollDown(this@WeChatAccessibilityService, screenWidth, screenHeight)
+            }
+
+            delay(800)
         }
-    }
-
-    private fun scrollDown(root: AccessibilityNodeInfo) {
-        val scrollableNode = findScrollableNode(root)
-        if (scrollableNode != null) {
-            Log.d(TAG, "scrollDown: 找到可滚动节点，执行滚动")
-            scrollableNode.performAction(AccessibilityNodeInfo.ACTION_SCROLL_FORWARD)
-            AccessibilityUtil.safeRecycle(scrollableNode)
-        } else {
-            Log.d(TAG, "scrollDown: 未找到可滚动节点")
-        }
-    }
-
-    private fun findScrollableNode(node: AccessibilityNodeInfo?): AccessibilityNodeInfo? {
-        if (node == null) return null
-
-        if (node.isScrollable) {
-            return node
-        }
-
-        for (i in 0 until node.childCount) {
-            val child = node.getChild(i) ?: continue
-            val found = findScrollableNode(child)
-            if (found != null) return found
-        }
-
-        return null
+        return false
     }
 
     private suspend fun clickVideoCallButton(): Boolean {
-        return withContext(Dispatchers.IO) {
-            repeat(15) { attempt ->
-                val root = rootInActiveWindow
-                if (root == null) {
-                    Log.d(TAG, "clickVideoCallButton: 尝试$attempt - root为null")
-                    delay(500)
-                    return@repeat
-                }
-
-                Log.d(TAG, "clickVideoCallButton: 尝试$attempt")
-
-                if (attempt == 0) {
-                    AccessibilityUtil.dumpNodeTree(root, 0)
-                }
-
-                var btn = AccessibilityUtil.findNodeByText(root, "音视频通话")
-                if (btn == null) {
-                    btn = AccessibilityUtil.findNodeByContentDescription(root, "音视频通话")
-                }
-                if (btn == null) {
-                    btn = AccessibilityUtil.findNodeByContentDescription(root, "更多功能按钮")
-                }
-
-                if (btn != null) {
-                    Log.d(TAG, "clickVideoCallButton: 找到按钮, class=${btn.className}, desc=${btn.contentDescription}, text=${btn.text}")
-                    var clicked = AccessibilityUtil.clickNode(btn)
-                    if (!clicked) {
-                        clicked = AccessibilityUtil.clickNodeByBounds(this@WeChatAccessibilityService, btn)
-                    }
-                    Log.d(TAG, "clickVideoCallButton: 点击结果=$clicked")
-                    AccessibilityUtil.safeRecycle(btn)
-                    if (clicked) return@withContext true
-                } else {
-                    Log.d(TAG, "clickVideoCallButton: 未找到音视频通话按钮")
-                }
-
+        repeat(15) { attempt ->
+            Log.d(TAG, "clickVideoCallButton: 尝试$attempt")
+            val root = rootInActiveWindow ?: run {
                 delay(500)
+                return@repeat
             }
-            false
+
+            val videoCallNode = AccessibilityUtil.findNodeByText(root, "音视频通话")
+            if (videoCallNode != null) {
+                Log.d(TAG, "clickVideoCallButton: 找到'音视频通话'")
+
+                if (AccessibilityUtil.clickNode(videoCallNode)) {
+                    Log.d(TAG, "clickVideoCallButton: performClick成功")
+                    AccessibilityUtil.safeRecycle(videoCallNode)
+                    return true
+                }
+
+                AccessibilityUtil.clickNodeByBounds(this@WeChatAccessibilityService, videoCallNode)
+                AccessibilityUtil.safeRecycle(videoCallNode)
+                delay(1000)
+                return true
+            }
+
+            val sendMsgNode = AccessibilityUtil.findNodeByText(root, "发消息")
+            if (sendMsgNode != null) {
+                Log.d(TAG, "clickVideoCallButton: 在联系人详情页，向下查找")
+                AccessibilityUtil.safeRecycle(sendMsgNode)
+                val scrollable = AccessibilityUtil.findScrollableNode(root)
+                if (scrollable != null) {
+                    AccessibilityUtil.scrollNodeDown(scrollable)
+                } else {
+                    AccessibilityUtil.scrollDown(this@WeChatAccessibilityService, screenWidth, screenHeight)
+                }
+            }
+
+            delay(800)
         }
+        return false
     }
 
-    private suspend fun selectVideoCallOption(): Boolean {
-        return withContext(Dispatchers.IO) {
-            repeat(10) { attempt ->
-                val root = rootInActiveWindow
-                if (root == null) {
-                    delay(500)
-                    return@repeat
-                }
-
-                Log.d(TAG, "selectVideoCallOption: 尝试$attempt")
-
-                if (attempt == 0) {
-                    AccessibilityUtil.dumpNodeTree(root, 0)
-                }
-
-                val videoOption = AccessibilityUtil.findNodeByText(root, "视频通话")
-                if (videoOption != null) {
-                    Log.d(TAG, "selectVideoCallOption: 找到'视频通话'选项")
-                    var clicked = AccessibilityUtil.clickNode(videoOption)
-                    if (!clicked) {
-                        clicked = AccessibilityUtil.clickNodeByBounds(this@WeChatAccessibilityService, videoOption)
-                    }
-                    Log.d(TAG, "selectVideoCallOption: 点击结果=$clicked")
-                    AccessibilityUtil.safeRecycle(videoOption)
-                    if (clicked) return@withContext true
-                } else {
-                    Log.d(TAG, "selectVideoCallOption: 未找到'视频通话'选项")
-                }
-
+    private suspend fun selectVideoCall(): Boolean {
+        repeat(10) { attempt ->
+            Log.d(TAG, "selectVideoCall: 尝试$attempt")
+            delay(500)
+            val root = rootInActiveWindow ?: run {
                 delay(500)
+                return@repeat
             }
-            false
+
+            val allVideoNodes = AccessibilityUtil.findAllByText(root, "视频通话")
+            Log.d(TAG, "selectVideoCall: 找到${allVideoNodes.size}个'视频通话'节点")
+
+            for (node in allVideoNodes) {
+                if (AccessibilityUtil.clickNode(node)) {
+                    Log.d(TAG, "selectVideoCall: performClick成功")
+                    allVideoNodes.forEach { AccessibilityUtil.safeRecycle(it) }
+                    return true
+                }
+
+                AccessibilityUtil.clickNodeByBounds(this@WeChatAccessibilityService, node)
+                allVideoNodes.forEach { AccessibilityUtil.safeRecycle(it) }
+                delay(500)
+                return true
+            }
+
+            delay(500)
         }
+        return false
     }
 }
