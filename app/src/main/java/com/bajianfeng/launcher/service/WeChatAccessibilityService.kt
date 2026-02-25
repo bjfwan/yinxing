@@ -201,18 +201,29 @@ class WeChatAccessibilityService : AccessibilityService() {
 
             val contactsNode = AccessibilityUtil.findNodeByText(root, "通讯录")
             if (contactsNode != null) {
-                Log.d(TAG, "clickContactsTab: 找到'通讯录'节点")
+                val rect = android.graphics.Rect()
+                contactsNode.getBoundsInScreen(rect)
+                Log.d(TAG, "clickContactsTab: 找到'通讯录' bounds=$rect clickable=${contactsNode.isClickable} class=${contactsNode.className}")
+
+                if (attempt == 0) {
+                    AccessibilityUtil.dumpParentChain(contactsNode)
+                }
 
                 if (AccessibilityUtil.clickNode(contactsNode)) {
                     Log.d(TAG, "clickContactsTab: performClick成功")
                     AccessibilityUtil.safeRecycle(contactsNode)
+                    delay(1000)
                     return true
                 }
 
-                Log.d(TAG, "clickContactsTab: performClick失败，尝试坐标点击")
-                AccessibilityUtil.clickNodeByBounds(this@WeChatAccessibilityService, contactsNode)
+                Log.d(TAG, "clickContactsTab: performClick失败，尝试坐标点击 x=${rect.centerX()} y=${rect.centerY()}")
+                AccessibilityUtil.clickByCoordinate(
+                    this@WeChatAccessibilityService,
+                    rect.centerX().toFloat(),
+                    rect.centerY().toFloat()
+                )
                 AccessibilityUtil.safeRecycle(contactsNode)
-                delay(1000)
+                delay(1500)
 
                 val verifyRoot = rootInActiveWindow
                 val newFriends = AccessibilityUtil.findNodeByText(verifyRoot, "新的朋友")
@@ -222,45 +233,26 @@ class WeChatAccessibilityService : AccessibilityService() {
                     return true
                 }
 
+                val contactsAgain = AccessibilityUtil.findNodeByText(verifyRoot, "通讯录")
+                if (contactsAgain != null) {
+                    val newRect = android.graphics.Rect()
+                    contactsAgain.getBoundsInScreen(newRect)
+                    val allContacts = AccessibilityUtil.findAllByText(verifyRoot, "通讯录")
+                    Log.d(TAG, "clickContactsTab: 坐标点击后仍在首页，找到${allContacts.size}个'通讯录'节点")
+                    allContacts.forEach { n ->
+                        val r = android.graphics.Rect()
+                        n.getBoundsInScreen(r)
+                        Log.d(TAG, "  node: class=${n.className} bounds=$r clickable=${n.isClickable} id=${n.viewIdResourceName}")
+                        AccessibilityUtil.safeRecycle(n)
+                    }
+                }
+
                 return@repeat
-            }
-
-            val bottomNodes = findBottomTabNodes(root)
-            if (bottomNodes.size >= 2) {
-                Log.d(TAG, "clickContactsTab: 通过底部Tab索引点击第2个")
-                val secondTab = bottomNodes[1]
-                if (AccessibilityUtil.clickNode(secondTab)) {
-                    bottomNodes.forEach { AccessibilityUtil.safeRecycle(it) }
-                    delay(1000)
-                    return true
-                }
-                AccessibilityUtil.clickNodeByBounds(this@WeChatAccessibilityService, secondTab)
-                bottomNodes.forEach { AccessibilityUtil.safeRecycle(it) }
-                delay(1000)
-
-                val verifyRoot = rootInActiveWindow
-                val newFriends = AccessibilityUtil.findNodeByText(verifyRoot, "新的朋友")
-                if (newFriends != null) {
-                    AccessibilityUtil.safeRecycle(newFriends)
-                    return true
-                }
             }
 
             delay(800)
         }
         return false
-    }
-
-    private fun findBottomTabNodes(root: AccessibilityNodeInfo): List<AccessibilityNodeInfo> {
-        val result = mutableListOf<AccessibilityNodeInfo>()
-        val tabTexts = listOf("微信", "通讯录", "发现", "我")
-        for (text in tabTexts) {
-            val node = AccessibilityUtil.findNodeByText(root, text)
-            if (node != null) {
-                result.add(node)
-            }
-        }
-        return result
     }
 
     private suspend fun findAndClickContact(contactName: String): Boolean {

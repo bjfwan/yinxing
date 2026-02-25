@@ -122,6 +122,23 @@ object AccessibilityUtil {
         return null
     }
 
+    fun dumpParentChain(node: AccessibilityNodeInfo?) {
+        if (node == null) return
+        val rect = Rect()
+        node.getBoundsInScreen(rect)
+        Log.d(TAG, "TARGET: [${node.className}] text='${node.text}' id='${node.viewIdResourceName}' clickable=${node.isClickable} bounds=$rect childCount=${node.childCount}")
+
+        var parent = node.parent
+        var depth = 0
+        while (parent != null && depth < 15) {
+            val pRect = Rect()
+            parent.getBoundsInScreen(pRect)
+            Log.d(TAG, "PARENT[$depth]: [${parent.className}] text='${parent.text}' id='${parent.viewIdResourceName}' clickable=${parent.isClickable} bounds=$pRect childCount=${parent.childCount}")
+            parent = parent.parent
+            depth++
+        }
+    }
+
     fun dumpNodeTree(node: AccessibilityNodeInfo?, depth: Int = 0) {
         if (node == null || depth > 5) return
         val indent = "  ".repeat(depth)
