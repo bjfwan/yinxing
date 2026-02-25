@@ -27,80 +27,51 @@ class StateDetectionManager {
     fun isWeChatLaunched(root: AccessibilityNodeInfo?): Boolean {
         if (root == null) return false
         
-        var score = 0
-        
         val packageName = root.packageName?.toString()
-        if (packageName == "com.tencent.mm") score++
-        
-        val searchIcon = AccessibilityUtil.findNodeById(root, "com.tencent.mm:id/f8y")
-        if (searchIcon != null) {
-            score++
-            searchIcon.recycle()
-        }
-        
-        val bottomNav = AccessibilityUtil.findNodeById(root, "com.tencent.mm:id/c6t")
-        if (bottomNav != null) {
-            score++
-            bottomNav.recycle()
-        }
-        
-        return score >= 2
+        return packageName == "com.tencent.mm"
     }
     
     fun isHomePageLoaded(root: AccessibilityNodeInfo?): Boolean {
         if (root == null) return false
         
-        var score = 0
+        val packageName = root.packageName?.toString()
+        if (packageName != "com.tencent.mm") return false
         
-        val searchIcon = AccessibilityUtil.findNodeById(root, "com.tencent.mm:id/f8y")
-        if (searchIcon != null) {
-            score++
-            searchIcon.recycle()
+        val searchText = AccessibilityUtil.findNodeByText(root, "搜索")
+        if (searchText != null) {
+            searchText.recycle()
+            return true
         }
         
-        val bottomNav = AccessibilityUtil.findNodeById(root, "com.tencent.mm:id/c6t")
-        if (bottomNav != null) {
-            score++
-            bottomNav.recycle()
+        val wechatText = AccessibilityUtil.findNodeByText(root, "微信")
+        if (wechatText != null) {
+            wechatText.recycle()
+            return true
         }
         
-        val chatList = AccessibilityUtil.findNodeById(root, "com.tencent.mm:id/dxh")
-        if (chatList != null && chatList.isScrollable) {
-            score++
-            chatList.recycle()
-        }
-        
-        return score >= 2
+        return true
     }
     
     fun isSearchBoxVisible(root: AccessibilityNodeInfo?): Boolean {
         if (root == null) return false
         
-        var score = 0
-        
-        val searchBox = AccessibilityUtil.findNodeById(root, "com.tencent.mm:id/cd7")
-        if (searchBox != null && searchBox.isEditable) {
-            score++
-            searchBox.recycle()
-        }
-        
         val cancelBtn = AccessibilityUtil.findNodeByText(root, "取消")
         if (cancelBtn != null) {
-            score++
             cancelBtn.recycle()
+            return true
         }
         
-        return score >= 1
+        val searchHint = AccessibilityUtil.findNodeByText(root, "搜索")
+        if (searchHint != null && searchHint.isEditable) {
+            searchHint.recycle()
+            return true
+        }
+        
+        return false
     }
     
     fun isContactFound(root: AccessibilityNodeInfo?, contactName: String): Boolean {
         if (root == null) return false
-        
-        val resultList = AccessibilityUtil.findNodeById(root, "com.tencent.mm:id/tm")
-        if (resultList != null) {
-            resultList.recycle()
-            return true
-        }
         
         val nameNode = AccessibilityUtil.findNodeByText(root, contactName)
         if (nameNode != null) {
@@ -114,20 +85,18 @@ class StateDetectionManager {
     fun isChatPageLoaded(root: AccessibilityNodeInfo?): Boolean {
         if (root == null) return false
         
-        var score = 0
-        
-        val videoBtn = AccessibilityUtil.findNodeById(root, "com.tencent.mm:id/aop")
-        if (videoBtn != null) {
-            score++
-            videoBtn.recycle()
+        val videoText = AccessibilityUtil.findNodeByText(root, "视频通话")
+        if (videoText != null) {
+            videoText.recycle()
+            return true
         }
         
-        val inputBox = AccessibilityUtil.findNodeById(root, "com.tencent.mm:id/aou")
-        if (inputBox != null) {
-            score++
-            inputBox.recycle()
+        val voiceText = AccessibilityUtil.findNodeByText(root, "语音通话")
+        if (voiceText != null) {
+            voiceText.recycle()
+            return true
         }
         
-        return score >= 1
+        return false
     }
 }

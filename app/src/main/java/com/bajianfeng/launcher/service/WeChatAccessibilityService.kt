@@ -97,30 +97,18 @@ class WeChatAccessibilityService : AccessibilityService() {
                     return@launch
                 }
                 
-                val launchTimeout = timeoutManager.getTimeout("launch")
-                val launchSuccess = stateDetector.waitForState("微信启动", launchTimeout) {
-                    stateDetector.isWeChatLaunched(rootInActiveWindow)
-                }
+                delay(2000)
                 
-                if (!launchSuccess) {
+                if (rootInActiveWindow?.packageName?.toString() != "com.tencent.mm") {
                     floatingView?.hide()
-                    notifyState("微信启动超时", false)
+                    notifyState("微信启动失败", false)
                     return@launch
                 }
                 
                 timeoutManager.recordSuccess("launch", System.currentTimeMillis() - launchStart)
                 
                 floatingView?.updateMessage("正在加载首页")
-                val homeTimeout = timeoutManager.getTimeout("home")
-                val homeSuccess = stateDetector.waitForState("首页加载", homeTimeout) {
-                    stateDetector.isHomePageLoaded(rootInActiveWindow)
-                }
-                
-                if (!homeSuccess) {
-                    floatingView?.hide()
-                    notifyState("首页加载超时", false)
-                    return@launch
-                }
+                delay(2000)
                 
                 floatingView?.updateMessage("正在查找联系人")
                 notifyState("正在查找联系人", true)
@@ -219,13 +207,14 @@ class WeChatAccessibilityService : AccessibilityService() {
             repeat(20) {
                 val root = rootInActiveWindow ?: return@withContext false
                 
-                val searchIcon = AccessibilityUtil.findNodeById(root, "com.tencent.mm:id/f8y") 
-                    ?: AccessibilityUtil.findNodeByText(root, "搜索")
-                
-                if (searchIcon != null) {
-                    val clicked = AccessibilityUtil.clickNode(searchIcon)
-                    AccessibilityUtil.recycleNodes(searchIcon, root)
-                    if (clicked) return@withContext true
+                val searchText = AccessibilityUtil.findNodeByText(root, "搜索")
+                if (searchText != null) {
+                    val clicked = AccessibilityUtil.clickNode(searchText)
+                    AccessibilityUtil.recycleNodes(searchText, root)
+                    if (clicked) {
+                        delay(1000)
+                        return@withContext true
+                    }
                 }
                 
                 AccessibilityUtil.recycleNodes(root)
@@ -242,12 +231,13 @@ class WeChatAccessibilityService : AccessibilityService() {
             repeat(10) {
                 val root = rootInActiveWindow ?: return@withContext false
                 
-                val searchBox = AccessibilityUtil.findNodeById(root, "com.tencent.mm:id/cd7")
-                    ?: AccessibilityUtil.findNodeByText(root, "搜索")
+                val editableNodes = mutableListOf<AccessibilityNodeInfo>()
+                findEditableNodes(root, editableNodes)
                 
-                if (searchBox != null) {
-                    val success = AccessibilityUtil.setText(searchBox, name)
-                    AccessibilityUtil.recycleNodes(searchBox, root)
+                if (editableNodes.isNotEmpty()) {
+                    val success = AccessibilityUtil.setText(editableNodes[0], name)
+                    editableNodes.forEach { it.recycle() }
+                    AccessibilityUtil.recycleNodes(root)
                     if (success) return@withContext true
                 }
                 
@@ -258,6 +248,19 @@ class WeChatAccessibilityService : AccessibilityService() {
         }
     }
     
+    private fun findEditableNodes(node: AccessibilityNodeInfo?, result: MutableList<AccessibilityNodeInfo>) {
+        if (node == null) return
+        
+        if (node.isEditable && node.className?.toString()?.contains("EditText") == true) {
+            result.add(node)
+            return
+        }
+        
+        for (i in 0 until node.childCount) {
+            findEditableNodes(node.getChild(i), result)
+        }
+    }
+    
     private suspend fun openChat(): Boolean {
         return withContext(Dispatchers.IO) {
             delay(1000)
@@ -265,10 +268,12 @@ class WeChatAccessibilityService : AccessibilityService() {
             repeat(10) {
                 val root = rootInActiveWindow ?: return@withContext false
                 
-                val nodes = root.findAccessibilityNodeInfosByViewId("com.tencent.mm:id/tm")
-                if (nodes.isNotEmpty()) {
-                    val clicked = AccessibilityUtil.clickNode(nodes[0])
-                    nodes.forEach { it.recycle() }
+                val clickableNodes = mutableListOf<AccessibilityNodeInfo>()
+                findClickableNodes(root, clickableNodes)
+                
+                if (clickableNodes.isNotEmpty()) {
+                    val clicked = AccessibilityUtil.clickNode(clickableNodes[0])
+                    clickableNodes.forEach { it.recycle() }
                     AccessibilityUtil.recycleNodes(root)
                     if (clicked) return@withContext true
                 }
@@ -280,6 +285,19 @@ class WeChatAccessibilityService : AccessibilityService() {
         }
     }
     
+    private fun findClickableNodes(node: AccessibilityNodeInfo?, result: MutableList<AccessibilityNodeInfo>) {
+        if (node == null || result.isNotEmpty()) return
+        
+        if (node.isClickable && node.className?.toString()?.contains("LinearLayout") == true) {
+            result.add(node)
+            return
+        }
+        
+        for (i in 0 until node.childCount) {
+            findClickableNodes(node.getChild(i), result)
+        }
+    }
+    
     private suspend fun startVideo(): Boolean {
         return withContext(Dispatchers.IO) {
             delay(1000)
@@ -287,8 +305,7 @@ class WeChatAccessibilityService : AccessibilityService() {
             repeat(10) {
                 val root = rootInActiveWindow ?: return@withContext false
                 
-                val videoButton = AccessibilityUtil.findNodeById(root, "com.tencent.mm:id/aop")
-                    ?: AccessibilityUtil.findNodeByText(root, "视频通话")
+                val videoButton = AccessibilityUtil.findNodeByText(root, "视频通话")
                 
                 if (videoButton != null) {
                     val clicked = AccessibilityUtil.clickNode(videoButton)
