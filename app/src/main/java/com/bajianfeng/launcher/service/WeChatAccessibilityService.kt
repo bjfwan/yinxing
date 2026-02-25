@@ -29,6 +29,10 @@ class WeChatAccessibilityService : AccessibilityService() {
     private var currentTask: Job? = null
     private var stateCallback: ((String, Boolean) -> Unit)? = null
 
+    fun clearStateCallback() {
+        stateCallback = null
+    }
+
     private lateinit var timeoutManager: TimeoutManager
     private var floatingView: FloatingStatusView? = null
 
@@ -218,7 +222,7 @@ class WeChatAccessibilityService : AccessibilityService() {
                     return true
                 }
 
-                continue
+                return@repeat
             }
 
             val bottomNodes = findBottomTabNodes(root)
@@ -289,7 +293,7 @@ class WeChatAccessibilityService : AccessibilityService() {
                     return true
                 }
 
-                continue
+                return@repeat
             }
 
             val scrollable = AccessibilityUtil.findScrollableNode(root)

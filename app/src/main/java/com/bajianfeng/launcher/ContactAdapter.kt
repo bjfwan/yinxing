@@ -15,6 +15,8 @@ class ContactAdapter(
     private val onContactLongClick: (ContactInfo) -> Unit
 ) : RecyclerView.Adapter<ContactAdapter.ContactViewHolder>() {
 
+    private var cachedCardHeight = 0
+
     class ContactViewHolder(view: View) : RecyclerView.ViewHolder(view) {
         val card: CardView = view.findViewById(R.id.card_contact)
         val photo: ImageView = view.findViewById(R.id.iv_contact_photo)
@@ -26,43 +28,41 @@ class ContactAdapter(
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ContactViewHolder {
         val view = LayoutInflater.from(parent.context)
             .inflate(R.layout.item_contact, parent, false)
+
+        if (cachedCardHeight == 0) {
+            cachedCardHeight = (parent.context.resources.displayMetrics.heightPixels * 0.75).toInt()
+        }
+
         return ContactViewHolder(view)
     }
 
     override fun onBindViewHolder(holder: ContactViewHolder, position: Int) {
         val contact = contacts[position]
-        
-        val displayMetrics = holder.itemView.context.resources.displayMetrics
-        val screenHeight = displayMetrics.heightPixels
-        val cardHeight = (screenHeight * 0.75).toInt()
-        
+
         val layoutParams = holder.card.layoutParams as ViewGroup.MarginLayoutParams
-        layoutParams.height = cardHeight
-        holder.card.layoutParams = layoutParams
-        
+        if (layoutParams.height != cachedCardHeight) {
+            layoutParams.height = cachedCardHeight
+            holder.card.layoutParams = layoutParams
+        }
+
         holder.name.text = contact.name
         holder.number.text = contact.phoneNumber
-        
+
         if (contact.photo != null) {
             holder.photo.setImageBitmap(contact.photo)
+            holder.photo.clearColorFilter()
         } else {
             holder.photo.setImageResource(android.R.drawable.ic_menu_call)
             holder.photo.setColorFilter(Color.parseColor("#2C3E50"))
         }
 
-        holder.photo.setOnClickListener {
-            showPhotoDialog(holder.itemView.context, contact)
-        }
-        
+        holder.photo.setOnClickListener { showPhotoDialog(holder.itemView.context, contact) }
         holder.photo.setOnLongClickListener {
             onContactLongClick(contact)
             true
         }
 
-        holder.callArea.setOnClickListener {
-            onContactClick(contact)
-        }
-        
+        holder.callArea.setOnClickListener { onContactClick(contact) }
         holder.callArea.setOnLongClickListener {
             onContactLongClick(contact)
             true
@@ -75,25 +75,18 @@ class ContactAdapter(
     }
 
     private fun showPhotoDialog(context: android.content.Context, contact: ContactInfo) {
-        val dialog = android.app.AlertDialog.Builder(context)
-            .create()
+        val dialog = android.app.AlertDialog.Builder(context).create()
 
-        val imageView = ImageView(context)
-        imageView.layoutParams = ViewGroup.LayoutParams(
-            ViewGroup.LayoutParams.MATCH_PARENT,
-            ViewGroup.LayoutParams.MATCH_PARENT
-        )
-        imageView.scaleType = ImageView.ScaleType.FIT_CENTER
-        imageView.setPadding(32, 32, 32, 32)
-        
-        if (contact.photo != null) {
-            imageView.setImageBitmap(contact.photo)
-        } else {
-            imageView.setImageResource(android.R.drawable.ic_menu_call)
-        }
-
-        imageView.setOnClickListener {
-            dialog.dismiss()
+        val imageView = ImageView(context).apply {
+            layoutParams = ViewGroup.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT,
+                ViewGroup.LayoutParams.MATCH_PARENT
+            )
+            scaleType = ImageView.ScaleType.FIT_CENTER
+            setPadding(32, 32, 32, 32)
+            if (contact.photo != null) setImageBitmap(contact.photo)
+            else setImageResource(android.R.drawable.ic_menu_call)
+            setOnClickListener { dialog.dismiss() }
         }
 
         dialog.setView(imageView)

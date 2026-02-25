@@ -72,7 +72,7 @@ class VideoCallActivity : AppCompatActivity() {
 
     override fun onDestroy() {
         super.onDestroy()
-        WeChatAccessibilityService.getInstance()?.setStateCallback(null)
+        WeChatAccessibilityService.getInstance()?.clearStateCallback()
     }
 
     private fun switchToManageMode() {
@@ -241,7 +241,7 @@ class VideoCallActivity : AppCompatActivity() {
                 Toast.makeText(this, state, Toast.LENGTH_SHORT).show()
 
                 if (state.contains("已发起") || state.contains("失败")) {
-                    service.setStateCallback(null)
+                    service.clearStateCallback()
                     if (success) {
                         finish()
                     }
