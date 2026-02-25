@@ -280,12 +280,22 @@ class WeChatAccessibilityService : AccessibilityService() {
                 
                 Log.d(TAG, "openSearch: 尝试$attempt - 当前窗口: ${root.packageName}")
                 
+                if (attempt == 0) {
+                    AccessibilityUtil.dumpNodeTree(root, 0)
+                }
+                
                 val searchText = AccessibilityUtil.findNodeByText(root, "搜索")
                 if (searchText != null) {
-                    Log.d(TAG, "openSearch: 找到'搜索'节点")
-                    val clicked = AccessibilityUtil.clickNode(searchText)
-                    Log.d(TAG, "openSearch: 点击结果=$clicked")
-                    AccessibilityUtil.recycleNodes(searchText, root)
+                    Log.d(TAG, "openSearch: 找到'搜索'节点, clickable=${searchText.isClickable}")
+                    var clicked = AccessibilityUtil.clickNode(searchText)
+                    
+                    if (!clicked) {
+                        Log.d(TAG, "openSearch: 常规点击失败，尝试坐标点击")
+                        clicked = AccessibilityUtil.clickNodeByBounds(this@WeChatAccessibilityService, searchText)
+                    }
+                    
+                    Log.d(TAG, "openSearch: 最终点击结果=$clicked")
+                    AccessibilityUtil.recycleNodes(searchText)
                     if (clicked) {
                         delay(1000)
                         return@withContext true
@@ -294,7 +304,6 @@ class WeChatAccessibilityService : AccessibilityService() {
                     Log.d(TAG, "openSearch: 未找到'搜索'节点")
                 }
                 
-                AccessibilityUtil.recycleNodes(root)
                 delay(500)
             }
             Log.e(TAG, "openSearch: 20次尝试后仍未找到搜索按钮")
@@ -326,12 +335,9 @@ class WeChatAccessibilityService : AccessibilityService() {
                     Log.d(TAG, "searchContact: 节点类型=${node.className}, 可编辑=${node.isEditable}")
                     val success = AccessibilityUtil.setText(node, name)
                     Log.d(TAG, "searchContact: 输入结果=$success")
-                    editableNodes.forEach { it.recycle() }
-                    AccessibilityUtil.recycleNodes(root)
+                    editableNodes.forEach { AccessibilityUtil.safeRecycle(it) }
                     if (success) return@withContext true
                 }
-                
-                AccessibilityUtil.recycleNodes(root)
                 delay(500)
             }
             Log.e(TAG, "searchContact: 10次尝试后仍未能输入")
@@ -355,23 +361,34 @@ class WeChatAccessibilityService : AccessibilityService() {
     private suspend fun openChat(): Boolean {
         return withContext(Dispatchers.IO) {
             delay(1000)
+            Log.d(TAG, "openChat: 开始查找搜索结果")
             
-            repeat(10) {
-                val root = rootInActiveWindow ?: return@withContext false
+            repeat(10) { attempt ->
+                val root = rootInActiveWindow
+                if (root == null) {
+                    Log.d(TAG, "openChat: 尝试$attempt - rootInActiveWindow为null")
+                    delay(500)
+                    return@repeat
+                }
                 
                 val clickableNodes = mutableListOf<AccessibilityNodeInfo>()
                 findClickableNodes(root, clickableNodes)
                 
+                Log.d(TAG, "openChat: 尝试$attempt - 找到${clickableNodes.size}个可点击节点")
+                
                 if (clickableNodes.isNotEmpty()) {
-                    val clicked = AccessibilityUtil.clickNode(clickableNodes[0])
-                    clickableNodes.forEach { it.recycle() }
-                    AccessibilityUtil.recycleNodes(root)
+                    var clicked = AccessibilityUtil.clickNode(clickableNodes[0])
+                    if (!clicked) {
+                        clicked = AccessibilityUtil.clickNodeByBounds(this@WeChatAccessibilityService, clickableNodes[0])
+                    }
+                    Log.d(TAG, "openChat: 点击结果=$clicked")
+                    clickableNodes.forEach { AccessibilityUtil.safeRecycle(it) }
                     if (clicked) return@withContext true
                 }
                 
-                AccessibilityUtil.recycleNodes(root)
                 delay(500)
             }
+            Log.e(TAG, "openChat: 10次尝试后仍未能进入聊天")
             false
         }
     }
@@ -392,25 +409,38 @@ class WeChatAccessibilityService : AccessibilityService() {
     private suspend fun startVideo(): Boolean {
         return withContext(Dispatchers.IO) {
             delay(1000)
+            Log.d(TAG, "startVideo: 开始查找视频通话按钮")
             
-            repeat(10) {
-                val root = rootInActiveWindow ?: return@withContext false
+            repeat(10) { attempt ->
+                val root = rootInActiveWindow
+                if (root == null) {
+                    Log.d(TAG, "startVideo: 尝试$attempt - rootInActiveWindow为null")
+                    delay(500)
+                    return@repeat
+                }
                 
                 val videoButton = AccessibilityUtil.findNodeByText(root, "视频通话")
                 
                 if (videoButton != null) {
-                    val clicked = AccessibilityUtil.clickNode(videoButton)
-                    AccessibilityUtil.recycleNodes(videoButton, root)
+                    Log.d(TAG, "startVideo: 找到'视频通话'按钮")
+                    var clicked = AccessibilityUtil.clickNode(videoButton)
+                    if (!clicked) {
+                        clicked = AccessibilityUtil.clickNodeByBounds(this@WeChatAccessibilityService, videoButton)
+                    }
+                    Log.d(TAG, "startVideo: 点击结果=$clicked")
+                    AccessibilityUtil.safeRecycle(videoButton)
                     if (clicked) {
                         delay(500)
                         clickVideoCallOption()
                         return@withContext true
                     }
+                } else {
+                    Log.d(TAG, "startVideo: 尝试$attempt - 未找到'视频通话'按钮")
                 }
                 
-                AccessibilityUtil.recycleNodes(root)
                 delay(500)
             }
+            Log.e(TAG, "startVideo: 10次尝试后仍未找到视频通话按钮")
             false
         }
     }
@@ -421,11 +451,13 @@ class WeChatAccessibilityService : AccessibilityService() {
         
         val videoOption = AccessibilityUtil.findNodeByText(root, "视频通话")
         if (videoOption != null) {
-            AccessibilityUtil.clickNode(videoOption)
-            AccessibilityUtil.recycleNodes(videoOption)
+            var clicked = AccessibilityUtil.clickNode(videoOption)
+            if (!clicked) {
+                clicked = AccessibilityUtil.clickNodeByBounds(this@WeChatAccessibilityService, videoOption)
+            }
+            Log.d(TAG, "clickVideoCallOption: 点击结果=$clicked")
+            AccessibilityUtil.safeRecycle(videoOption)
         }
-        
-        AccessibilityUtil.recycleNodes(root)
     }
     
     private fun handleWindowStateChanged(event: AccessibilityEvent) {
