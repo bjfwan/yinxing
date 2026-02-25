@@ -157,7 +157,7 @@ class PhoneActivity : AppCompatActivity() {
     private fun showEditContactDialog(contact: ContactInfo) {
         selectedPhotoBitmap = contact.photo
         
-        val dialogView = layoutInflater.inflate(R.layout.dialog_add_contact, null)
+        val dialogView = layoutInflater.inflate(R.layout.dialog_add_phone_contact, null)
         val dialog = android.app.AlertDialog.Builder(this)
             .setView(dialogView)
             .create()
@@ -321,7 +321,7 @@ class PhoneActivity : AppCompatActivity() {
     private fun showAddContactDialog() {
         selectedPhotoBitmap = null
         
-        val dialogView = layoutInflater.inflate(R.layout.dialog_add_contact, null)
+        val dialogView = layoutInflater.inflate(R.layout.dialog_add_phone_contact, null)
         val dialog = android.app.AlertDialog.Builder(this)
             .setView(dialogView)
             .create()
