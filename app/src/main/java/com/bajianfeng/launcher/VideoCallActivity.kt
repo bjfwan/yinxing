@@ -1,36 +1,30 @@
 package com.bajianfeng.launcher
 
-import android.Manifest
 import android.content.Intent
-import android.content.pm.PackageManager
-import android.graphics.Bitmap
-import android.graphics.BitmapFactory
-import android.net.Uri
 import android.os.Bundle
-import android.provider.ContactsContract
-import android.widget.TextView
+import android.widget.EditText
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.cardview.widget.CardView
-import androidx.core.app.ActivityCompat
 import androidx.recyclerview.widget.GridLayoutManager
+import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
+import com.bajianfeng.launcher.manager.ContactManager
 import com.bajianfeng.launcher.model.Contact
 import com.bajianfeng.launcher.service.TTSService
 import com.bajianfeng.launcher.service.WeChatAccessibilityService
 import com.bajianfeng.launcher.util.NetworkUtil
 import com.bajianfeng.launcher.util.PermissionUtil
-import java.io.InputStream
+import java.util.UUID
 
 class VideoCallActivity : AppCompatActivity() {
     private lateinit var recyclerView: RecyclerView
     private lateinit var adapter: VideoCallContactAdapter
+    private lateinit var manageAdapter: ContactManageAdapter
     private val contactList = mutableListOf<Contact>()
     private lateinit var ttsService: TTSService
-
-    companion object {
-        private const val PERMISSION_REQUEST = 3001
-    }
+    private lateinit var contactManager: ContactManager
+    private var isManageMode = false
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -38,6 +32,8 @@ class VideoCallActivity : AppCompatActivity() {
 
         ttsService = TTSService.getInstance(this)
         ttsService.initialize()
+        
+        contactManager = ContactManager.getInstance(this)
 
         recyclerView = findViewById(R.id.recycler_video_contacts)
         recyclerView.layoutManager = GridLayoutManager(this, 2)
@@ -46,50 +42,101 @@ class VideoCallActivity : AppCompatActivity() {
             contactList,
             onContactClick = { contact -> startVideoCall(contact) }
         )
+        
+        manageAdapter = ContactManageAdapter(
+            contactList,
+            onDeleteClick = { contact -> deleteContact(contact) }
+        )
+        
         recyclerView.adapter = adapter
 
         findViewById<CardView>(R.id.btn_back).setOnClickListener {
-            finish()
-        }
-
-        if (checkPermissions()) {
-            loadContacts()
-        } else {
-            requestPermissions()
-        }
-
-        checkAccessibilityService()
-    }
-
-    private fun checkPermissions(): Boolean {
-        return ActivityCompat.checkSelfPermission(
-            this,
-            Manifest.permission.READ_CONTACTS
-        ) == PackageManager.PERMISSION_GRANTED
-    }
-
-    private fun requestPermissions() {
-        ActivityCompat.requestPermissions(
-            this,
-            arrayOf(Manifest.permission.READ_CONTACTS),
-            PERMISSION_REQUEST
-        )
-    }
-
-    override fun onRequestPermissionsResult(
-        requestCode: Int,
-        permissions: Array<out String>,
-        grantResults: IntArray
-    ) {
-        super.onRequestPermissionsResult(requestCode, permissions, grantResults)
-        if (requestCode == PERMISSION_REQUEST) {
-            if (grantResults.all { it == PackageManager.PERMISSION_GRANTED }) {
-                loadContacts()
+            if (isManageMode) {
+                switchToCallMode()
             } else {
-                Toast.makeText(this, "需要联系人权限", Toast.LENGTH_SHORT).show()
                 finish()
             }
         }
+        
+        findViewById<CardView>(R.id.btn_add_contact)?.setOnClickListener {
+            if (isManageMode) {
+                showAddContactDialog()
+            } else {
+                switchToManageMode()
+            }
+        }
+
+        loadContacts()
+        checkAccessibilityService()
+    }
+
+    private fun switchToManageMode() {
+        isManageMode = true
+        recyclerView.layoutManager = LinearLayoutManager(this)
+        recyclerView.adapter = manageAdapter
+        Toast.makeText(this, "长按可删除联系人", Toast.LENGTH_SHORT).show()
+    }
+    
+    private fun switchToCallMode() {
+        isManageMode = false
+        recyclerView.layoutManager = GridLayoutManager(this, 2)
+        recyclerView.adapter = adapter
+    }
+    
+    private fun showAddContactDialog() {
+        val dialogView = layoutInflater.inflate(R.layout.dialog_add_contact, null)
+        val dialog = android.app.AlertDialog.Builder(this)
+            .setView(dialogView)
+            .create()
+        
+        dialog.window?.setBackgroundDrawableResource(android.R.color.transparent)
+        
+        val etName = dialogView.findViewById<EditText>(R.id.et_contact_name)
+        
+        dialogView.findViewById<CardView>(R.id.btn_cancel).setOnClickListener {
+            dialog.dismiss()
+        }
+        
+        dialogView.findViewById<CardView>(R.id.btn_confirm).setOnClickListener {
+            val name = etName.text.toString().trim()
+            if (name.isEmpty()) {
+                Toast.makeText(this, "请输入联系人姓名", Toast.LENGTH_SHORT).show()
+                return@setOnClickListener
+            }
+            
+            val contact = Contact(
+                id = UUID.randomUUID().toString(),
+                name = name,
+                wechatId = name
+            )
+            
+            contactManager.addContact(contact)
+            contactList.add(0, contact)
+            manageAdapter.notifyItemInserted(0)
+            adapter.notifyDataSetChanged()
+            
+            Toast.makeText(this, "已添加联系人：$name", Toast.LENGTH_SHORT).show()
+            dialog.dismiss()
+        }
+        
+        dialog.show()
+    }
+    
+    private fun deleteContact(contact: Contact) {
+        val dialog = android.app.AlertDialog.Builder(this)
+            .setTitle("删除联系人")
+            .setMessage("确定要删除 ${contact.name} 吗？")
+            .setPositiveButton("删除") { _, _ ->
+                contactManager.removeContact(contact.id)
+                contactList.remove(contact)
+                manageAdapter.notifyDataSetChanged()
+                adapter.notifyDataSetChanged()
+                Toast.makeText(this, "已删除", Toast.LENGTH_SHORT).show()
+            }
+            .setNegativeButton("取消", null)
+            .create()
+        
+        dialog.show()
     }
 
     private fun checkAccessibilityService() {
@@ -141,46 +188,9 @@ class VideoCallActivity : AppCompatActivity() {
 
     private fun loadContacts() {
         contactList.clear()
-
-        val cursor = contentResolver.query(
-            ContactsContract.CommonDataKinds.Phone.CONTENT_URI,
-            arrayOf(
-                ContactsContract.CommonDataKinds.Phone.CONTACT_ID,
-                ContactsContract.CommonDataKinds.Phone.DISPLAY_NAME,
-                ContactsContract.CommonDataKinds.Phone.NUMBER,
-                ContactsContract.CommonDataKinds.Phone.PHOTO_URI
-            ),
-            null,
-            null,
-            ContactsContract.CommonDataKinds.Phone.DISPLAY_NAME + " ASC"
-        )
-
-        cursor?.use {
-            val idIndex = it.getColumnIndex(ContactsContract.CommonDataKinds.Phone.CONTACT_ID)
-            val nameIndex = it.getColumnIndex(ContactsContract.CommonDataKinds.Phone.DISPLAY_NAME)
-            val numberIndex = it.getColumnIndex(ContactsContract.CommonDataKinds.Phone.NUMBER)
-            val photoIndex = it.getColumnIndex(ContactsContract.CommonDataKinds.Phone.PHOTO_URI)
-
-            while (it.moveToNext()) {
-                val id = it.getString(idIndex)
-                val name = it.getString(nameIndex)
-                val number = it.getString(numberIndex)
-                val photoUri = it.getString(photoIndex)
-
-                val avatarUri = photoUri
-
-                contactList.add(
-                    Contact(
-                        id = id,
-                        name = name,
-                        phoneNumber = number,
-                        avatarUri = avatarUri
-                    )
-                )
-            }
-        }
-
+        contactList.addAll(contactManager.getContacts())
         adapter.notifyDataSetChanged()
+        manageAdapter.notifyDataSetChanged()
     }
 
     private fun startVideoCall(contact: Contact) {
@@ -207,6 +217,8 @@ class VideoCallActivity : AppCompatActivity() {
             return
         }
 
+        contactManager.incrementCallCount(contact.id)
+        
         ttsService.speak("正在为您拨打视频电话")
         Toast.makeText(this, "正在发起视频通话...", Toast.LENGTH_SHORT).show()
 
