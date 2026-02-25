@@ -4,6 +4,9 @@ import android.accessibilityservice.AccessibilityService
 import android.content.Intent
 import android.view.accessibility.AccessibilityEvent
 import android.view.accessibility.AccessibilityNodeInfo
+import com.bajianfeng.launcher.manager.StateDetectionManager
+import com.bajianfeng.launcher.manager.TimeoutManager
+import com.bajianfeng.launcher.ui.FloatingStatusView
 import com.bajianfeng.launcher.util.AccessibilityUtil
 import kotlinx.coroutines.*
 
@@ -23,9 +26,15 @@ class WeChatAccessibilityService : AccessibilityService() {
     private var currentTask: Job? = null
     private var stateCallback: ((String, Boolean) -> Unit)? = null
     
+    private lateinit var timeoutManager: TimeoutManager
+    private val stateDetector = StateDetectionManager()
+    private var floatingView: FloatingStatusView? = null
+    
     override fun onServiceConnected() {
         super.onServiceConnected()
         instance = this
+        timeoutManager = TimeoutManager.getInstance(this)
+        floatingView = FloatingStatusView(this)
     }
     
     override fun onAccessibilityEvent(event: AccessibilityEvent?) {
@@ -48,6 +57,7 @@ class WeChatAccessibilityService : AccessibilityService() {
     override fun onDestroy() {
         super.onDestroy()
         instance = null
+        floatingView?.hide()
         serviceScope.cancel()
     }
     
@@ -77,50 +87,121 @@ class WeChatAccessibilityService : AccessibilityService() {
         currentTask?.cancel()
         currentTask = serviceScope.launch {
             try {
+                floatingView?.show("正在打开微信")
                 notifyState("正在打开微信", true)
                 
+                val launchStart = System.currentTimeMillis()
                 if (!launchWeChat()) {
+                    floatingView?.hide()
                     notifyState("打开微信失败", false)
                     return@launch
                 }
                 
-                delay(3000)
+                val launchTimeout = timeoutManager.getTimeout("launch")
+                val launchSuccess = stateDetector.waitForState("微信启动", launchTimeout) {
+                    stateDetector.isWeChatLaunched(rootInActiveWindow)
+                }
                 
+                if (!launchSuccess) {
+                    floatingView?.hide()
+                    notifyState("微信启动超时", false)
+                    return@launch
+                }
+                
+                timeoutManager.recordSuccess("launch", System.currentTimeMillis() - launchStart)
+                
+                floatingView?.updateMessage("正在加载首页")
+                val homeTimeout = timeoutManager.getTimeout("home")
+                val homeSuccess = stateDetector.waitForState("首页加载", homeTimeout) {
+                    stateDetector.isHomePageLoaded(rootInActiveWindow)
+                }
+                
+                if (!homeSuccess) {
+                    floatingView?.hide()
+                    notifyState("首页加载超时", false)
+                    return@launch
+                }
+                
+                floatingView?.updateMessage("正在查找联系人")
                 notifyState("正在查找联系人", true)
                 
+                val searchStart = System.currentTimeMillis()
                 if (!openSearch()) {
+                    floatingView?.hide()
                     notifyState("打开搜索失败", false)
                     return@launch
                 }
                 
-                delay(1000)
+                val searchBoxTimeout = timeoutManager.getTimeout("search")
+                val searchBoxVisible = stateDetector.waitForState("搜索框", searchBoxTimeout) {
+                    stateDetector.isSearchBoxVisible(rootInActiveWindow)
+                }
+                
+                if (!searchBoxVisible) {
+                    floatingView?.hide()
+                    notifyState("搜索框未出现", false)
+                    return@launch
+                }
                 
                 if (!searchContact(contactName)) {
+                    floatingView?.hide()
                     notifyState("查找联系人失败", false)
                     return@launch
                 }
                 
-                delay(2000)
+                val contactFound = stateDetector.waitForState("联系人搜索", 10000L) {
+                    stateDetector.isContactFound(rootInActiveWindow, contactName)
+                }
                 
+                if (!contactFound) {
+                    floatingView?.hide()
+                    notifyState("未找到联系人$contactName", false)
+                    return@launch
+                }
+                
+                timeoutManager.recordSuccess("search", System.currentTimeMillis() - searchStart)
+                
+                floatingView?.updateMessage("正在进入聊天")
                 notifyState("正在进入聊天", true)
                 
+                val chatStart = System.currentTimeMillis()
                 if (!openChat()) {
+                    floatingView?.hide()
                     notifyState("进入聊天失败", false)
                     return@launch
                 }
                 
-                delay(2000)
+                val chatTimeout = timeoutManager.getTimeout("chat")
+                val chatLoaded = stateDetector.waitForState("聊天界面", chatTimeout) {
+                    stateDetector.isChatPageLoaded(rootInActiveWindow)
+                }
                 
+                if (!chatLoaded) {
+                    floatingView?.hide()
+                    notifyState("聊天界面加载超时", false)
+                    return@launch
+                }
+                
+                timeoutManager.recordSuccess("chat", System.currentTimeMillis() - chatStart)
+                
+                floatingView?.updateMessage("正在发起视频")
                 notifyState("正在发起视频", true)
                 
                 if (!startVideo()) {
+                    floatingView?.hide()
                     notifyState("发起视频失败", false)
                     return@launch
                 }
                 
+                delay(1000)
+                floatingView?.updateMessage("操作成功")
                 notifyState("操作成功", true)
                 
+                delay(2000)
+                floatingView?.hide()
+                
             } catch (e: Exception) {
+                floatingView?.hide()
                 notifyState("操作异常: ${e.message}", false)
             }
         }

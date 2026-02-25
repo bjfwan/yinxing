@@ -96,6 +96,11 @@ class VideoCallActivity : AppCompatActivity() {
         val serviceName = "${packageName}/${WeChatAccessibilityService::class.java.name}"
         if (!PermissionUtil.isAccessibilityServiceEnabled(this, serviceName)) {
             showAccessibilityDialog()
+            return
+        }
+        
+        if (!PermissionUtil.canDrawOverlays(this)) {
+            showOverlayPermissionDialog()
         }
     }
 
@@ -118,6 +123,19 @@ class VideoCallActivity : AppCompatActivity() {
             finish()
         }
 
+        dialog.show()
+    }
+    
+    private fun showOverlayPermissionDialog() {
+        val dialog = android.app.AlertDialog.Builder(this)
+            .setTitle("需要悬浮窗权限")
+            .setMessage("为了显示操作状态，需要开启悬浮窗权限")
+            .setPositiveButton("去设置") { _, _ ->
+                PermissionUtil.openOverlaySettings(this)
+            }
+            .setNegativeButton("取消", null)
+            .create()
+        
         dialog.show()
     }
 
