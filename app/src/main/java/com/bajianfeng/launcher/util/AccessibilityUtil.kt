@@ -19,6 +19,28 @@ object AccessibilityUtil {
         return nodes.firstOrNull()
     }
     
+    fun findNodeByContentDescription(root: AccessibilityNodeInfo?, desc: String): AccessibilityNodeInfo? {
+        if (root == null) return null
+        return findNodeByContentDescRecursive(root, desc)
+    }
+    
+    private fun findNodeByContentDescRecursive(node: AccessibilityNodeInfo?, desc: String): AccessibilityNodeInfo? {
+        if (node == null) return null
+        
+        val nodeDesc = node.contentDescription?.toString() ?: ""
+        if (nodeDesc.contains(desc)) {
+            return node
+        }
+        
+        for (i in 0 until node.childCount) {
+            val child = node.getChild(i) ?: continue
+            val found = findNodeByContentDescRecursive(child, desc)
+            if (found != null) return found
+        }
+        
+        return null
+    }
+    
     fun findNodeById(root: AccessibilityNodeInfo?, id: String): AccessibilityNodeInfo? {
         if (root == null) return null
         val nodes = root.findAccessibilityNodeInfosByViewId(id)
@@ -69,6 +91,8 @@ object AccessibilityUtil {
             return false
         }
         
+        Log.d(TAG, "clickByCoordinate: 点击坐标 x=$x, y=$y")
+        
         val path = Path()
         path.moveTo(x, y)
         
@@ -79,21 +103,25 @@ object AccessibilityUtil {
         var result = false
         val latch = java.util.concurrent.CountDownLatch(1)
         
-        service.dispatchGesture(gesture, object : AccessibilityService.GestureResultCallback() {
-            override fun onCompleted(gestureDescription: GestureDescription?) {
-                Log.d(TAG, "clickByCoordinate: 手势完成")
-                result = true
-                latch.countDown()
-            }
-            
-            override fun onCancelled(gestureDescription: GestureDescription?) {
-                Log.e(TAG, "clickByCoordinate: 手势取消")
-                result = false
-                latch.countDown()
-            }
-        }, null)
+        val handler = android.os.Handler(android.os.Looper.getMainLooper())
         
-        latch.await(2, java.util.concurrent.TimeUnit.SECONDS)
+        handler.post {
+            service.dispatchGesture(gesture, object : AccessibilityService.GestureResultCallback() {
+                override fun onCompleted(gestureDescription: GestureDescription?) {
+                    Log.d(TAG, "clickByCoordinate: 手势完成")
+                    result = true
+                    latch.countDown()
+                }
+                
+                override fun onCancelled(gestureDescription: GestureDescription?) {
+                    Log.e(TAG, "clickByCoordinate: 手势取消")
+                    result = false
+                    latch.countDown()
+                }
+            }, null)
+        }
+        
+        latch.await(3, java.util.concurrent.TimeUnit.SECONDS)
         return result
     }
     

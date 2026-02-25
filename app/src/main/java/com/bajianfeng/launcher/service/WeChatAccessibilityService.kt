@@ -281,27 +281,45 @@ class WeChatAccessibilityService : AccessibilityService() {
                 Log.d(TAG, "openSearch: 尝试$attempt - 当前窗口: ${root.packageName}")
                 
                 if (attempt == 0) {
+                    Log.d(TAG, "openSearch: 输出节点树")
                     AccessibilityUtil.dumpNodeTree(root, 0)
                 }
                 
-                val searchText = AccessibilityUtil.findNodeByText(root, "搜索")
-                if (searchText != null) {
-                    Log.d(TAG, "openSearch: 找到'搜索'节点, clickable=${searchText.isClickable}")
-                    var clicked = AccessibilityUtil.clickNode(searchText)
-                    
+                var searchNode = AccessibilityUtil.findNodeByContentDescription(root, "搜索")
+                if (searchNode == null) {
+                    searchNode = AccessibilityUtil.findNodeByContentDescription(root, "Search")
+                }
+                
+                if (searchNode != null) {
+                    Log.d(TAG, "openSearch: 通过contentDescription找到搜索节点, class=${searchNode.className}, clickable=${searchNode.isClickable}, desc=${searchNode.contentDescription}")
+                    var clicked = AccessibilityUtil.clickNode(searchNode)
                     if (!clicked) {
                         Log.d(TAG, "openSearch: 常规点击失败，尝试坐标点击")
-                        clicked = AccessibilityUtil.clickNodeByBounds(this@WeChatAccessibilityService, searchText)
+                        clicked = AccessibilityUtil.clickNodeByBounds(this@WeChatAccessibilityService, searchNode)
                     }
-                    
-                    Log.d(TAG, "openSearch: 最终点击结果=$clicked")
-                    AccessibilityUtil.recycleNodes(searchText)
+                    Log.d(TAG, "openSearch: 点击结果=$clicked")
+                    AccessibilityUtil.safeRecycle(searchNode)
                     if (clicked) {
                         delay(1000)
                         return@withContext true
                     }
                 } else {
-                    Log.d(TAG, "openSearch: 未找到'搜索'节点")
+                    Log.d(TAG, "openSearch: contentDescription未找到，尝试文本查找")
+                }
+                
+                val textNode = AccessibilityUtil.findNodeByText(root, "搜索")
+                if (textNode != null) {
+                    Log.d(TAG, "openSearch: 通过文本找到节点, class=${textNode.className}, clickable=${textNode.isClickable}")
+                    var clicked = AccessibilityUtil.clickNode(textNode)
+                    if (!clicked) {
+                        clicked = AccessibilityUtil.clickNodeByBounds(this@WeChatAccessibilityService, textNode)
+                    }
+                    Log.d(TAG, "openSearch: 文本节点点击结果=$clicked")
+                    AccessibilityUtil.safeRecycle(textNode)
+                    if (clicked) {
+                        delay(1000)
+                        return@withContext true
+                    }
                 }
                 
                 delay(500)
