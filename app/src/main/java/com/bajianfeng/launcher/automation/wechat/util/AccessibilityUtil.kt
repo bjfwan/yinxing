@@ -4,14 +4,10 @@ import android.accessibilityservice.AccessibilityService
 import android.accessibilityservice.GestureDescription
 import android.graphics.Path
 import android.graphics.Rect
-import android.os.Build
 import android.os.Bundle
-import android.util.Log
 import android.view.accessibility.AccessibilityNodeInfo
 
 object AccessibilityUtil {
-
-    private const val TAG = "AccessibilityUtil"
 
     fun findNodeByText(root: AccessibilityNodeInfo?, text: String): AccessibilityNodeInfo? {
         if (root == null) return null
@@ -26,6 +22,58 @@ object AccessibilityUtil {
     fun findAllByText(root: AccessibilityNodeInfo?, text: String): List<AccessibilityNodeInfo> {
         if (root == null) return emptyList()
         return root.findAccessibilityNodeInfosByText(text)
+    }
+
+    fun findBestTextNode(
+        root: AccessibilityNodeInfo?,
+        text: String,
+        exactMatch: Boolean = true,
+        preferBottom: Boolean = false,
+        excludeEditable: Boolean = true
+    ): AccessibilityNodeInfo? {
+        if (root == null) return null
+        val candidates = root.findAccessibilityNodeInfosByText(text)
+        if (candidates.isEmpty()) {
+            return null
+        }
+
+        val filtered = candidates.filter { node ->
+            val matchesText = if (exactMatch) {
+                node.text?.toString() == text || node.contentDescription?.toString() == text
+            } else {
+                node.text?.toString()?.contains(text) == true || node.contentDescription?.toString()?.contains(text) == true
+            }
+            matchesText && (!excludeEditable || !node.isEditable)
+        }
+
+        val target = filtered.maxByOrNull { node ->
+            val bounds = Rect()
+            node.getBoundsInScreen(bounds)
+            if (preferBottom) bounds.centerY() else -bounds.centerY()
+        }
+
+        candidates.forEach { node ->
+            if (node != target) {
+                safeRecycle(node)
+            }
+        }
+
+        return target
+    }
+
+    fun findFirstEditableNode(root: AccessibilityNodeInfo?): AccessibilityNodeInfo? {
+        if (root == null) return null
+        if (root.isEditable || root.className == "android.widget.EditText") {
+            return root
+        }
+        for (index in 0 until root.childCount) {
+            val child = root.getChild(index) ?: continue
+            val match = findFirstEditableNode(child)
+            if (match != null) {
+                return match
+            }
+        }
+        return null
     }
 
     fun clickNode(node: AccessibilityNodeInfo?): Boolean {
@@ -48,6 +96,10 @@ object AccessibilityUtil {
         return false
     }
 
+    fun performClick(service: AccessibilityService, node: AccessibilityNodeInfo?): Boolean {
+        return clickNode(node) || clickNodeByBounds(service, node)
+    }
+
     fun clickNodeByBounds(service: AccessibilityService, node: AccessibilityNodeInfo?): Boolean {
         if (node == null) return false
         val rect = Rect()
@@ -56,8 +108,6 @@ object AccessibilityUtil {
     }
 
     fun clickByCoordinate(service: AccessibilityService, x: Float, y: Float): Boolean {
-        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.N) return false
-
         val path = Path().apply { moveTo(x, y) }
         val gesture = GestureDescription.Builder()
             .addStroke(GestureDescription.StrokeDescription(path, 0, 100))
@@ -68,8 +118,6 @@ object AccessibilityUtil {
     }
 
     fun scrollDown(service: AccessibilityService, screenWidth: Int, screenHeight: Int): Boolean {
-        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.N) return false
-
         val centerX = screenWidth / 2f
         val startY = screenHeight * 0.7f
         val endY = screenHeight * 0.3f
@@ -122,31 +170,4 @@ object AccessibilityUtil {
         return null
     }
 
-    fun dumpParentChain(node: AccessibilityNodeInfo?) {
-        if (node == null) return
-        val rect = Rect()
-        node.getBoundsInScreen(rect)
-        Log.d(TAG, "TARGET: [${node.className}] text='${node.text}' id='${node.viewIdResourceName}' clickable=${node.isClickable} bounds=$rect childCount=${node.childCount}")
-
-        var parent = node.parent
-        var depth = 0
-        while (parent != null && depth < 15) {
-            val pRect = Rect()
-            parent.getBoundsInScreen(pRect)
-            Log.d(TAG, "PARENT[$depth]: [${parent.className}] text='${parent.text}' id='${parent.viewIdResourceName}' clickable=${parent.isClickable} bounds=$pRect childCount=${parent.childCount}")
-            parent = parent.parent
-            depth++
-        }
-    }
-
-    fun dumpNodeTree(node: AccessibilityNodeInfo?, depth: Int = 0) {
-        if (node == null || depth > 5) return
-        val indent = "  ".repeat(depth)
-        val rect = Rect()
-        node.getBoundsInScreen(rect)
-        Log.d(TAG, "${indent}[${node.className}] text='${node.text}' desc='${node.contentDescription}' id='${node.viewIdResourceName}' clickable=${node.isClickable} bounds=$rect")
-        for (i in 0 until node.childCount) {
-            dumpNodeTree(node.getChild(i), depth + 1)
-        }
-    }
 }

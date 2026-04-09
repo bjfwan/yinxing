@@ -5,19 +5,32 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.TextView
 import androidx.cardview.widget.CardView
+import androidx.recyclerview.widget.DiffUtil
+import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
 import com.bajianfeng.launcher.R
 import com.bajianfeng.launcher.data.contact.Contact
 
 class ContactManageAdapter(
-    private val contacts: MutableList<Contact>,
     private val onDeleteClick: (Contact) -> Unit
-) : RecyclerView.Adapter<ContactManageAdapter.ViewHolder>() {
+) : ListAdapter<Contact, ContactManageAdapter.ViewHolder>(DiffCallback) {
+
+    companion object {
+        private val DiffCallback = object : DiffUtil.ItemCallback<Contact>() {
+            override fun areItemsTheSame(oldItem: Contact, newItem: Contact): Boolean {
+                return oldItem.id == newItem.id
+            }
+
+            override fun areContentsTheSame(oldItem: Contact, newItem: Contact): Boolean {
+                return oldItem == newItem
+            }
+        }
+    }
 
     class ViewHolder(view: View) : RecyclerView.ViewHolder(view) {
-        val tvName: TextView = view.findViewById(R.id.tv_contact_name)
-        val tvCallCount: TextView = view.findViewById(R.id.tv_call_count)
-        val btnDelete: CardView = view.findViewById(R.id.btn_delete)
+        val name: TextView = view.findViewById(R.id.tv_contact_name)
+        val callCount: TextView = view.findViewById(R.id.tv_call_count)
+        val deleteButton: CardView = view.findViewById(R.id.btn_delete)
     }
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder {
@@ -27,16 +40,14 @@ class ContactManageAdapter(
     }
 
     override fun onBindViewHolder(holder: ViewHolder, position: Int) {
-        val contact = contacts[position]
+        val contact = getItem(position)
         val context = holder.itemView.context
-        holder.tvName.text = contact.name
-        holder.tvCallCount.text = context.getString(R.string.video_contact_call_count, contact.callCount)
-        holder.btnDelete.contentDescription = context.getString(R.string.video_contact_delete_description, contact.name)
-
-        holder.btnDelete.setOnClickListener {
+        holder.name.text = contact.name
+        holder.callCount.text = context.getString(R.string.video_contact_call_count, contact.callCount)
+        holder.deleteButton.contentDescription =
+            context.getString(R.string.video_contact_delete_description, contact.name)
+        holder.deleteButton.setOnClickListener {
             onDeleteClick(contact)
         }
     }
-
-    override fun getItemCount() = contacts.size
 }

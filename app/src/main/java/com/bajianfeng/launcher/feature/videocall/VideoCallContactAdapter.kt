@@ -1,22 +1,35 @@
 package com.bajianfeng.launcher.feature.videocall
 
 import android.graphics.BitmapFactory
-import android.graphics.Color
-import android.net.Uri
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.ImageView
 import android.widget.TextView
 import androidx.cardview.widget.CardView
+import androidx.core.graphics.toColorInt
+import androidx.core.net.toUri
+import androidx.recyclerview.widget.DiffUtil
+import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
 import com.bajianfeng.launcher.R
 import com.bajianfeng.launcher.data.contact.Contact
 
 class VideoCallContactAdapter(
-    private val contacts: List<Contact>,
     private val onContactClick: (Contact) -> Unit
-) : RecyclerView.Adapter<VideoCallContactAdapter.ViewHolder>() {
+) : ListAdapter<Contact, VideoCallContactAdapter.ViewHolder>(DiffCallback) {
+
+    companion object {
+        private val DiffCallback = object : DiffUtil.ItemCallback<Contact>() {
+            override fun areItemsTheSame(oldItem: Contact, newItem: Contact): Boolean {
+                return oldItem.id == newItem.id
+            }
+
+            override fun areContentsTheSame(oldItem: Contact, newItem: Contact): Boolean {
+                return oldItem == newItem
+            }
+        }
+    }
 
     class ViewHolder(view: View) : RecyclerView.ViewHolder(view) {
         val card: CardView = view.findViewById(R.id.card_video_contact)
@@ -31,37 +44,28 @@ class VideoCallContactAdapter(
     }
 
     override fun onBindViewHolder(holder: ViewHolder, position: Int) {
-        val contact = contacts[position]
+        val contact = getItem(position)
         val context = holder.itemView.context
         holder.name.text = contact.name
         holder.photo.contentDescription = context.getString(R.string.contact_photo_description, contact.name)
         holder.card.contentDescription = context.getString(R.string.video_contact_action_description, contact.name)
 
         if (contact.avatarUri != null) {
-            try {
-                val uri = Uri.parse(contact.avatarUri)
-
+            runCatching {
+                val uri = contact.avatarUri.toUri()
                 val options = BitmapFactory.Options().apply { inJustDecodeBounds = true }
                 context.contentResolver.openInputStream(uri)?.use {
                     BitmapFactory.decodeStream(it, null, options)
                 }
-
                 options.inSampleSize = calculateInSampleSize(options, 100, 100)
                 options.inJustDecodeBounds = false
-
-                val bitmap = context.contentResolver.openInputStream(uri)?.use {
+                context.contentResolver.openInputStream(uri)?.use {
                     BitmapFactory.decodeStream(it, null, options)
                 }
-
-                if (bitmap != null) {
-                    holder.photo.setImageBitmap(bitmap)
-                    holder.photo.clearColorFilter()
-                } else {
-                    setDefaultAvatar(holder)
-                }
-            } catch (_: Exception) {
-                setDefaultAvatar(holder)
-            }
+            }.getOrNull()?.let { bitmap ->
+                holder.photo.setImageBitmap(bitmap)
+                holder.photo.clearColorFilter()
+            } ?: setDefaultAvatar(holder)
         } else {
             setDefaultAvatar(holder)
         }
@@ -69,11 +73,9 @@ class VideoCallContactAdapter(
         holder.card.setOnClickListener { onContactClick(contact) }
     }
 
-    override fun getItemCount() = contacts.size
-
     private fun setDefaultAvatar(holder: ViewHolder) {
         holder.photo.setImageResource(android.R.drawable.ic_menu_call)
-        holder.photo.setColorFilter(Color.parseColor("#2C3E50"))
+        holder.photo.setColorFilter("#2C3E50".toColorInt())
     }
 
     private fun calculateInSampleSize(options: BitmapFactory.Options, reqWidth: Int, reqHeight: Int): Int {

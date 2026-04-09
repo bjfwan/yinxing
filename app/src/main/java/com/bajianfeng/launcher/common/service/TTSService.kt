@@ -4,22 +4,12 @@ import android.content.Context
 import android.speech.tts.TextToSpeech
 import java.util.Locale
 
-class TTSService private constructor(private val context: Context) {
+class TTSService(context: Context) {
+    private val appContext = context.applicationContext
     private var tts: TextToSpeech? = null
     private var isInitialized = false
     private var isInitializing = false
     private val pendingMessages = mutableListOf<String>()
-
-    companion object {
-        @Volatile
-        private var instance: TTSService? = null
-
-        fun getInstance(context: Context): TTSService {
-            return instance ?: synchronized(this) {
-                instance ?: TTSService(context.applicationContext).also { instance = it }
-            }
-        }
-    }
 
     fun initialize(onReady: (() -> Unit)? = null) {
         if (isInitialized) {
@@ -27,22 +17,22 @@ class TTSService private constructor(private val context: Context) {
             return
         }
 
-        if (isInitializing) return
+        if (isInitializing) {
+            return
+        }
         isInitializing = true
 
-        tts = TextToSpeech(context) { status ->
+        tts = TextToSpeech(appContext) { status ->
             isInitializing = false
             if (status == TextToSpeech.SUCCESS) {
                 tts?.language = Locale.CHINA
                 tts?.setSpeechRate(0.8f)
                 tts?.setPitch(1.0f)
                 isInitialized = true
-
                 synchronized(pendingMessages) {
                     pendingMessages.forEach { speak(it) }
                     pendingMessages.clear()
                 }
-
                 onReady?.invoke()
             }
         }
@@ -69,6 +59,5 @@ class TTSService private constructor(private val context: Context) {
         tts = null
         isInitialized = false
         isInitializing = false
-        instance = null
     }
 }

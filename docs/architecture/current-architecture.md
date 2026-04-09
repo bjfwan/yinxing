@@ -4,7 +4,7 @@
 
 ## 1. 架构概览
 
-当前项目是一个单模块 Android 应用，核心结构已经按职责整理为 `feature`、`data`、`common`、`automation` 四层。
+当前项目是一个单模块 Android 应用，核心结构按 `feature`、`data`、`common`、`automation` 四层整理。
 
 ## 2. 代码分层
 
@@ -12,49 +12,59 @@
 
 - `feature.home`
   - 桌面主页
-  - 桌面卡片与拖拽相关类
+  - 桌面卡片、拖拽排序、低性能模式刷新逻辑
 - `feature.appmanage`
   - 应用管理页
   - 应用列表展示与勾选逻辑
-  - 基于 Launcher 查询的应用可见性适配
 - `feature.phone`
   - 电话联系人页
-  - 电话联系人展示、编辑与状态反馈逻辑
+  - 联系人展示适配器
+  - `PhoneContactDialogController`
 - `feature.videocall`
   - 视频联系人页
-  - 本地视频联系人展示、管理与失败提示逻辑
+  - 联系人展示与管理适配器
+  - `VideoCallCoordinator`
+  - `VideoContactDialogController`
+- `feature.settings`
+  - 低性能模式和系统设置入口
 
 ### 2.2 data
 
 - `data.home`
-  - 桌面已选应用配置
-  - 桌面应用顺序策略
+  - `LauncherPreferences`
+  - `LauncherAppRepository`
+  - 应用排序策略
 - `data.contact`
-  - 视频联系人数据模型
-  - 视频联系人本地存储管理
+  - `Contact`、`ContactManager`、`ContactStorage`
+  - `PhoneContact`、`PhoneContactRepository`
 
 ### 2.3 common
 
+- `common.media`
+  - 应用图标与 URI 缩略图加载
 - `common.service`
-  - 通用语音播报服务
+  - `TTSService`
 - `common.ui`
-  - 公共浮窗视图
+  - `PageStateView`
+  - `FloatingStatusView`
 - `common.util`
-  - 权限与网络工具类
-  - 无障碍服务匹配与权限判断
+  - `PermissionRequestHandler`
+  - `PermissionUtil`
+  - `NetworkUtil`
+  - 无障碍服务匹配工具
 
 ### 2.4 automation
 
 - `automation.wechat`
   - 实验性微信自动化能力
   - 包含状态模型、超时管理、无障碍服务和无障碍工具
-  - 当前与稳定产品目标隔离，不作为当前版本主干能力
 
 ## 3. 数据与存储
 
 - `launcher_prefs`
   - 桌面已选择应用
   - 桌面应用顺序
+  - 低性能模式开关
 - `wechat_contacts`
   - 视频联系人本地列表
 - `ContactsContract`
@@ -76,17 +86,17 @@
 - 没有数据库层
 - 没有依赖注入框架
 - 没有多模块拆分
-- 自动化能力和主业务已经做包级隔离，但仍处在同一 app 模块中
+- 空状态视图和权限流程已经有了公共抽象
+- 自动化能力与主业务已做包级隔离，但仍处在同一 app 模块
 
-## 6. 当前需要继续治理的点
+## 6. 当前仍需关注的点
 
-- `feature.phone.PhoneActivity` 仍直接承担权限申请、联系人增删改查和图片处理，职责偏重
-- `feature.videocall.VideoCallActivity` 同时承担联系人管理、权限检查和自动化触发，主流程与实验性能力仍有耦合
-- 空状态与失败提示视图目前仍是页面内重复实现，后续可继续抽公共组件
-- `automation.wechat` 相关实验性代码仍保留较多旧兼容写法和静态资源，后续需要继续清理
+- `automation.wechat` 仍属于实验性代码，需要继续做设备级稳定性验证
+- `AppManageActivity`、`SettingsActivity`、`VideoCallActivity` 的 UI 自动化覆盖还不够
+- 当前仍主要依赖 SharedPreferences 与系统 Provider，没有更强的状态恢复层
 
 ## 7. 当前架构边界
 
-- 主页、电话、应用管理属于当前主业务
+- 主页、应用管理、电话、设置、视频联系人属于当前主业务
 - 微信自动化属于实验性能力
-- 来电自动接听、通知监听、远程协助不在当前架构交付范围内
+- 来电自动接听、通知监听、远程协助不在当前交付范围内

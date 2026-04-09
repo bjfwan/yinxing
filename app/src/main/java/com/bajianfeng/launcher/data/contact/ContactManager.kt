@@ -2,9 +2,14 @@ package com.bajianfeng.launcher.data.contact
 
 import android.content.Context
 import android.content.SharedPreferences
+import androidx.core.content.edit
 
-class ContactManager private constructor(context: Context) {
-    private val prefs: SharedPreferences = context.getSharedPreferences("wechat_contacts", Context.MODE_PRIVATE)
+class ContactManager(
+    context: Context,
+    private val currentTimeMillis: () -> Long = System::currentTimeMillis
+) {
+    private val prefs: SharedPreferences =
+        context.applicationContext.getSharedPreferences("wechat_contacts", Context.MODE_PRIVATE)
     private var cachedContacts: MutableList<Contact>? = null
 
     companion object {
@@ -30,7 +35,7 @@ class ContactManager private constructor(context: Context) {
     fun addContact(contact: Contact) {
         ensureCache()
         cachedContacts?.removeAll { it.id == contact.id }
-        cachedContacts?.add(contact)
+        cachedContacts?.add(contact.normalized())
         saveContacts()
     }
 
@@ -44,7 +49,7 @@ class ContactManager private constructor(context: Context) {
         ensureCache()
         val index = cachedContacts?.indexOfFirst { it.id == contact.id } ?: -1
         if (index >= 0) {
-            cachedContacts?.set(index, contact)
+            cachedContacts?.set(index, contact.normalized())
             saveContacts()
         }
     }
@@ -57,10 +62,20 @@ class ContactManager private constructor(context: Context) {
             cachedContacts?.set(
                 index,
                 contact.copy(
-                callCount = contact.callCount + 1,
-                lastCallTime = System.currentTimeMillis()
+                    callCount = contact.callCount + 1,
+                    lastCallTime = currentTimeMillis()
+                ).normalized()
             )
-            )
+            saveContacts()
+        }
+    }
+
+    fun setPinned(contactId: String, pinned: Boolean) {
+        ensureCache()
+        val index = cachedContacts?.indexOfFirst { it.id == contactId } ?: -1
+        if (index >= 0) {
+            val contact = cachedContacts?.get(index) ?: return
+            cachedContacts?.set(index, contact.copy(isPinned = pinned).normalized())
             saveContacts()
         }
     }
@@ -71,6 +86,8 @@ class ContactManager private constructor(context: Context) {
 
     private fun saveContacts() {
         val contacts = cachedContacts ?: return
-        prefs.edit().putString("contacts", ContactStorage.encode(contacts)).apply()
+        prefs.edit {
+            putString("contacts", ContactStorage.encode(contacts))
+        }
     }
 }

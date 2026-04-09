@@ -1,8 +1,11 @@
 <resources xmlns:tools="http://schemas.android.com/tools">
-    <!-- Base application theme. -->
     <style name="Base.Theme.OldLauncher" parent="Theme.Material3.DayNight.NoActionBar">
         <item name="android:windowBackground">@drawable/bg_gradient</item>
     </style>
 
     <style name="Theme.OldLauncher" parent="Base.Theme.OldLauncher" />
+
+    <style name="Theme.OldLauncher.AppManage" parent="Base.Theme.OldLauncher">
+        <item name="android:windowBackground">#F5F5F5</item>
+    </style>
 </resources>

@@ -2,14 +2,16 @@ package com.bajianfeng.launcher.data.home
 
 import android.content.Context
 import android.content.SharedPreferences
+import androidx.core.content.edit
 
-class LauncherPreferences private constructor(context: Context) {
+class LauncherPreferences(context: Context) {
     private val prefs: SharedPreferences =
         context.applicationContext.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
 
     companion object {
         private const val PREFS_NAME = "launcher_prefs"
         private const val KEY_APP_ORDER = "app_order"
+        private const val KEY_LOW_PERFORMANCE_MODE = "low_performance_mode"
 
         @Volatile
         private var instance: LauncherPreferences? = null
@@ -23,7 +25,7 @@ class LauncherPreferences private constructor(context: Context) {
 
     fun getSelectedPackages(): Set<String> {
         return prefs.all
-            .filter { (key, value) -> key != KEY_APP_ORDER && value == true }
+            .filter { (key, value) -> isSelectionKey(key) && value == true }
             .keys
     }
 
@@ -32,7 +34,12 @@ class LauncherPreferences private constructor(context: Context) {
     }
 
     fun setPackageSelected(packageName: String, isSelected: Boolean) {
-        prefs.edit().putBoolean(packageName, isSelected).apply()
+        if (prefs.getBoolean(packageName, false) == isSelected) {
+            return
+        }
+        prefs.edit {
+            putBoolean(packageName, isSelected)
+        }
         saveAppOrder(
             HomeAppOrderPolicy.updateOrderForSelection(
                 getAppOrder(),
@@ -51,12 +58,13 @@ class LauncherPreferences private constructor(context: Context) {
     }
 
     fun saveAppOrder(packageNames: List<String>) {
-        prefs.edit()
-            .putString(
-                KEY_APP_ORDER,
-                HomeAppOrderPolicy.normalizeSavedOrder(packageNames).joinToString(",")
-            )
-            .apply()
+        val normalized = HomeAppOrderPolicy.normalizeSavedOrder(packageNames).joinToString(",")
+        if (prefs.getString(KEY_APP_ORDER, null) == normalized) {
+            return
+        }
+        prefs.edit {
+            putString(KEY_APP_ORDER, normalized)
+        }
     }
 
     fun syncAppOrder(selectedPackages: Collection<String>) {
@@ -66,5 +74,40 @@ class LauncherPreferences private constructor(context: Context) {
                 selectedPackages
             )
         )
+    }
+
+    fun isLowPerformanceModeEnabled(): Boolean {
+        return prefs.getBoolean(KEY_LOW_PERFORMANCE_MODE, false)
+    }
+
+    fun setLowPerformanceModeEnabled(enabled: Boolean) {
+        if (prefs.getBoolean(KEY_LOW_PERFORMANCE_MODE, false) == enabled) {
+            return
+        }
+        prefs.edit {
+            putBoolean(KEY_LOW_PERFORMANCE_MODE, enabled)
+        }
+    }
+
+    fun registerListener(listener: SharedPreferences.OnSharedPreferenceChangeListener) {
+        prefs.registerOnSharedPreferenceChangeListener(listener)
+    }
+
+    fun unregisterListener(listener: SharedPreferences.OnSharedPreferenceChangeListener) {
+        prefs.unregisterOnSharedPreferenceChangeListener(listener)
+    }
+
+    fun isLowPerformanceModeKey(key: String?): Boolean {
+        return key == KEY_LOW_PERFORMANCE_MODE
+    }
+
+    fun isSelectionKey(key: String?): Boolean {
+        return !key.isNullOrBlank() &&
+            key != KEY_APP_ORDER &&
+            key != KEY_LOW_PERFORMANCE_MODE
+    }
+
+    fun isHomeAppConfigKey(key: String?): Boolean {
+        return key == KEY_APP_ORDER || isSelectionKey(key)
     }
 }

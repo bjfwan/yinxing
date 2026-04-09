@@ -4,7 +4,8 @@ import androidx.recyclerview.widget.ItemTouchHelper
 import androidx.recyclerview.widget.RecyclerView
 
 class ItemMoveCallback(
-    private val adapter: ItemTouchHelperAdapter
+    private val adapter: ItemTouchHelperAdapter,
+    private var animateDrag: Boolean
 ) : ItemTouchHelper.Callback() {
 
     override fun isLongPressDragEnabled() = false
@@ -40,7 +41,7 @@ class ItemMoveCallback(
 
     override fun onSelectedChanged(viewHolder: RecyclerView.ViewHolder?, actionState: Int) {
         super.onSelectedChanged(viewHolder, actionState)
-        if (actionState == ItemTouchHelper.ACTION_STATE_DRAG) {
+        if (animateDrag && actionState == ItemTouchHelper.ACTION_STATE_DRAG) {
             viewHolder?.itemView?.alpha = 0.7f
             viewHolder?.itemView?.scaleX = 1.05f
             viewHolder?.itemView?.scaleY = 1.05f
@@ -52,6 +53,10 @@ class ItemMoveCallback(
         viewHolder.itemView.alpha = 1.0f
         viewHolder.itemView.scaleX = 1.0f
         viewHolder.itemView.scaleY = 1.0f
+    }
+
+    fun setAnimateDrag(enabled: Boolean) {
+        animateDrag = enabled
     }
 }
 

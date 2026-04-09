@@ -55,7 +55,6 @@
     <string name="contact_delete_failed">删除失败：%1$s</string>
     <string name="contact_added">联系人已添加</string>
     <string name="contact_add_failed">添加失败：%1$s</string>
-    <string name="contact_list_not_refreshed">未授予联系人读取权限，列表未刷新</string>
     <string name="contact_load_failed">联系人加载失败：%1$s</string>
     <string name="dial_failed">拨号失败：%1$s</string>
     <string name="state_phone_permission_title">无法读取联系人</string>
@@ -97,4 +96,10 @@
     <string name="video_contact_action_description">与 %1$s 发起微信视频</string>
     <string name="video_contact_delete_description">删除 %1$s</string>
     <string name="status_operating">正在操作…</string>
+    <string name="settings_title">设置</string>
+    <string name="settings_low_performance_title">低性能模式</string>
+    <string name="settings_low_performance_summary_on">已开启，减少动画和频繁刷新</string>
+    <string name="settings_low_performance_summary_off">已关闭，保持完整动效和秒级刷新</string>
+    <string name="settings_system_title">系统设置</string>
+    <string name="settings_system_summary">打开安卓系统设置，调整网络、声音和显示等项目</string>
 </resources>

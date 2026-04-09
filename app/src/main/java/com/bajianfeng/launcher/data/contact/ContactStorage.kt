@@ -18,12 +18,13 @@ object ContactStorage {
                     Contact(
                         id = obj.getString("id"),
                         name = obj.getString("name"),
+                        phoneNumber = obj.optNullableString("phoneNumber"),
                         wechatId = obj.optNullableString("wechatId"),
                         avatarUri = obj.optNullableString("avatarUri"),
                         isPinned = obj.optBoolean("isPinned", false),
                         callCount = obj.optInt("callCount", 0),
                         lastCallTime = obj.optLong("lastCallTime", 0)
-                    )
+                    ).normalized()
                 )
             }
             contacts
@@ -39,6 +40,7 @@ object ContactStorage {
                 JSONObject().apply {
                     put("id", contact.id)
                     put("name", contact.name)
+                    put("phoneNumber", contact.phoneNumber ?: "")
                     put("wechatId", contact.wechatId ?: "")
                     put("avatarUri", contact.avatarUri ?: "")
                     put("isPinned", contact.isPinned)
