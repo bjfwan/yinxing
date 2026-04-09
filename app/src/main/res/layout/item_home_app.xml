@@ -7,6 +7,7 @@
     android:layout_margin="8dp"
     android:foreground="?android:attr/selectableItemBackground"
     android:clickable="true"
+    android:focusable="true"
     app:cardCornerRadius="16dp"
     app:cardElevation="6dp"
     app:cardBackgroundColor="#FFFFFF">
@@ -25,6 +26,7 @@
                 android:id="@+id/icon"
                 android:layout_width="96dp"
                 android:layout_height="96dp"
+                android:contentDescription="@null"
                 android:scaleType="fitCenter"
                 android:padding="16dp"
                 android:background="@drawable/icon_background"/>

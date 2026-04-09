@@ -16,7 +16,7 @@
         <TextView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="需要开启无障碍权限"
+            android:text="@string/accessibility_dialog_title"
             android:textSize="28sp"
             android:textColor="#2C3E50"
             android:textStyle="bold"
@@ -26,7 +26,7 @@
         <TextView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="自动拨打微信视频需要无障碍服务权限，请在设置中开启"
+            android:text="@string/accessibility_dialog_message"
             android:textSize="20sp"
             android:textColor="#7F8C8D"
             android:gravity="center"
@@ -51,7 +51,7 @@
                 <TextView
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:text="取消"
+                    android:text="@string/action_cancel"
                     android:textSize="24sp"
                     android:textColor="#FFFFFF"
                     android:gravity="center"
@@ -71,7 +71,7 @@
                 <TextView
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:text="去设置"
+                    android:text="@string/action_go_to_settings"
                     android:textSize="24sp"
                     android:textColor="#FFFFFF"
                     android:gravity="center"

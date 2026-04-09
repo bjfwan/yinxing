@@ -1,7 +1,6 @@
 package com.bajianfeng.launcher.feature.phone
 
 import android.Manifest
-import android.app.Activity
 import android.content.ContentProviderOperation
 import android.content.Intent
 import android.content.pm.PackageManager
@@ -13,14 +12,17 @@ import android.os.Build
 import android.os.Bundle
 import android.provider.ContactsContract
 import android.provider.MediaStore
+import android.view.View
 import android.widget.EditText
 import android.widget.ImageView
 import android.widget.TextView
 import android.widget.Toast
+import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
 import androidx.cardview.widget.CardView
 import androidx.core.app.ActivityCompat
+import androidx.core.view.isVisible
 import androidx.recyclerview.widget.GridLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.bajianfeng.launcher.R
@@ -35,12 +37,16 @@ import java.io.ByteArrayOutputStream
 class PhoneActivity : AppCompatActivity() {
     private lateinit var recyclerView: RecyclerView
     private lateinit var adapter: ContactAdapter
+    private lateinit var stateLayout: View
+    private lateinit var stateTitle: TextView
+    private lateinit var stateMessage: TextView
+    private lateinit var stateActionButton: CardView
+    private lateinit var stateActionText: TextView
     private val contactList = mutableListOf<ContactInfo>()
     private var selectedPhotoBitmap: Bitmap? = null
     private var photoPreview: ImageView? = null
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Main)
     private var pendingWriteAction: (() -> Unit)? = null
-    private var pendingMediaAction: (() -> Unit)? = null
 
     private val readContactsPermissionLauncher = registerForActivityResult(
         ActivityResultContracts.RequestPermission()
@@ -48,7 +54,8 @@ class PhoneActivity : AppCompatActivity() {
         if (granted) {
             loadContacts()
         } else {
-            showToast("未授予联系人读取权限")
+            showToast(getString(R.string.permission_read_contacts_denied))
+            showPermissionDeniedState()
         }
     }
 
@@ -60,33 +67,19 @@ class PhoneActivity : AppCompatActivity() {
         if (granted) {
             action?.invoke()
         } else {
-            showToast("未授予联系人编辑权限")
-        }
-    }
-
-    private val mediaPermissionLauncher = registerForActivityResult(
-        ActivityResultContracts.RequestPermission()
-    ) { granted ->
-        val action = pendingMediaAction
-        pendingMediaAction = null
-        if (granted) {
-            action?.invoke()
-        } else {
-            showToast("未授予图片读取权限")
+            showToast(getString(R.string.permission_write_contacts_denied))
         }
     }
 
     private val pickImageLauncher = registerForActivityResult(
-        ActivityResultContracts.StartActivityForResult()
-    ) { result ->
-        if (result.resultCode == Activity.RESULT_OK) {
-            result.data?.data?.let { uri ->
-                selectedPhotoBitmap = loadImageFromUri(uri)
-                if (selectedPhotoBitmap == null) {
-                    showToast("图片读取失败")
-                }
-                photoPreview?.setImageBitmap(selectedPhotoBitmap)
+        ActivityResultContracts.PickVisualMedia()
+    ) { uri ->
+        if (uri != null) {
+            selectedPhotoBitmap = loadImageFromUri(uri)
+            if (selectedPhotoBitmap == null) {
+                showToast(getString(R.string.pick_photo_failed))
             }
+            updatePhotoPreview(selectedPhotoBitmap)
         }
     }
 
@@ -98,6 +91,12 @@ class PhoneActivity : AppCompatActivity() {
         recyclerView.layoutManager = GridLayoutManager(this, 1)
         recyclerView.setHasFixedSize(false)
         recyclerView.setItemViewCacheSize(10)
+
+        stateLayout = findViewById(R.id.layout_state)
+        stateTitle = findViewById(R.id.tv_state_title)
+        stateMessage = findViewById(R.id.tv_state_message)
+        stateActionButton = findViewById(R.id.btn_state_action)
+        stateActionText = findViewById(R.id.tv_state_action)
 
         adapter = ContactAdapter(
             contactList,
@@ -136,15 +135,6 @@ class PhoneActivity : AppCompatActivity() {
         }
         pendingWriteAction = action
         writeContactsPermissionLauncher.launch(Manifest.permission.WRITE_CONTACTS)
-    }
-
-    private fun ensureMediaPermission(action: () -> Unit) {
-        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU || hasPermission(Manifest.permission.READ_MEDIA_IMAGES)) {
-            action()
-            return
-        }
-        pendingMediaAction = action
-        mediaPermissionLauncher.launch(Manifest.permission.READ_MEDIA_IMAGES)
     }
 
     private fun showContactOptions(contact: ContactInfo) {
@@ -186,23 +176,22 @@ class PhoneActivity : AppCompatActivity() {
 
         val etName = dialogView.findViewById<EditText>(R.id.et_name)
         val etPhone = dialogView.findViewById<EditText>(R.id.et_phone)
+        dialogView.findViewById<TextView>(R.id.tv_dialog_title).text = getString(R.string.phone_contact_dialog_edit_title)
         photoPreview = dialogView.findViewById(R.id.iv_photo_preview)
 
         etName.setText(contact.name)
         etPhone.setText(contact.phoneNumber)
-        contact.photo?.let { photoPreview?.setImageBitmap(it) }
+        updatePhotoPreview(contact.photo)
 
         dialogView.findViewById<CardView>(R.id.btn_select_photo).setOnClickListener {
-            ensureMediaPermission {
-                openImagePicker()
-            }
+            openImagePicker()
         }
         dialogView.findViewById<CardView>(R.id.btn_cancel).setOnClickListener { dialog.dismiss() }
         dialogView.findViewById<CardView>(R.id.btn_confirm).setOnClickListener {
             val name = etName.text.toString().trim()
             val phone = etPhone.text.toString().trim()
             if (name.isEmpty() || phone.isEmpty()) {
-                showToast("请填写完整信息")
+                showToast(getString(R.string.fill_required))
                 return@setOnClickListener
             }
             updateContact(contact.id, name, phone, selectedPhotoBitmap)
@@ -218,8 +207,9 @@ class PhoneActivity : AppCompatActivity() {
             .create()
 
         dialog.window?.setBackgroundDrawableResource(android.R.color.transparent)
+        dialogView.findViewById<TextView>(R.id.dialog_title).text = getString(R.string.delete_contact_title)
         dialogView.findViewById<TextView>(R.id.dialog_message).text =
-            "确定要删除联系人 ${contact.name} 吗？"
+            getString(R.string.delete_contact_message, contact.name)
 
         dialogView.findViewById<CardView>(R.id.btn_cancel).setOnClickListener { dialog.dismiss() }
         dialogView.findViewById<CardView>(R.id.btn_confirm).setOnClickListener {
@@ -269,10 +259,10 @@ class PhoneActivity : AppCompatActivity() {
                     }
                     contentResolver.applyBatch(ContactsContract.AUTHORITY, ops)
                 }
-                showToast("联系人已更新")
+                showToast(getString(R.string.contact_updated))
                 refreshContacts()
             } catch (e: Exception) {
-                showToast("更新失败: ${e.message}")
+                showToast(getString(R.string.contact_update_failed, e.message ?: ""))
             }
         }
     }
@@ -299,10 +289,10 @@ class PhoneActivity : AppCompatActivity() {
                     val uri = Uri.withAppendedPath(ContactsContract.Contacts.CONTENT_URI, contactId)
                     contentResolver.delete(uri, null, null)
                 }
-                showToast("联系人已删除")
+                showToast(getString(R.string.contact_deleted))
                 refreshContacts()
             } catch (e: Exception) {
-                showToast("删除失败: ${e.message}")
+                showToast(getString(R.string.contact_delete_failed, e.message ?: ""))
             }
         }
     }
@@ -319,20 +309,19 @@ class PhoneActivity : AppCompatActivity() {
 
         val etName = dialogView.findViewById<EditText>(R.id.et_name)
         val etPhone = dialogView.findViewById<EditText>(R.id.et_phone)
+        dialogView.findViewById<TextView>(R.id.tv_dialog_title).text = getString(R.string.phone_contact_dialog_add_title)
         photoPreview = dialogView.findViewById(R.id.iv_photo_preview)
-        photoPreview?.setImageDrawable(null)
+        updatePhotoPreview(null)
 
         dialogView.findViewById<CardView>(R.id.btn_select_photo).setOnClickListener {
-            ensureMediaPermission {
-                openImagePicker()
-            }
+            openImagePicker()
         }
         dialogView.findViewById<CardView>(R.id.btn_cancel).setOnClickListener { dialog.dismiss() }
         dialogView.findViewById<CardView>(R.id.btn_confirm).setOnClickListener {
             val name = etName.text.toString().trim()
             val phone = etPhone.text.toString().trim()
             if (name.isEmpty() || phone.isEmpty()) {
-                showToast("请填写完整信息")
+                showToast(getString(R.string.fill_required))
                 return@setOnClickListener
             }
             addContact(name, phone, selectedPhotoBitmap)
@@ -342,7 +331,7 @@ class PhoneActivity : AppCompatActivity() {
     }
 
     private fun openImagePicker() {
-        pickImageLauncher.launch(Intent(Intent.ACTION_PICK, MediaStore.Images.Media.EXTERNAL_CONTENT_URI))
+        pickImageLauncher.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly))
     }
 
     private fun loadImageFromUri(uri: Uri): Bitmap? {
@@ -365,6 +354,16 @@ class PhoneActivity : AppCompatActivity() {
         }
         val scale = minOf(maxWidth.toFloat() / bitmap.width, maxHeight.toFloat() / bitmap.height)
         return Bitmap.createScaledBitmap(bitmap, (bitmap.width * scale).toInt(), (bitmap.height * scale).toInt(), true)
+    }
+
+    private fun updatePhotoPreview(bitmap: Bitmap?) {
+        photoPreview?.apply {
+            if (bitmap != null) {
+                setImageBitmap(bitmap)
+            } else {
+                setImageResource(android.R.drawable.ic_menu_camera)
+            }
+        }
     }
 
     private fun bitmapToBytes(bitmap: Bitmap): ByteArray {
@@ -412,10 +411,10 @@ class PhoneActivity : AppCompatActivity() {
                     }
                     contentResolver.applyBatch(ContactsContract.AUTHORITY, ops)
                 }
-                showToast("联系人已添加")
+                showToast(getString(R.string.contact_added))
                 refreshContacts()
             } catch (e: Exception) {
-                showToast("添加失败: ${e.message}")
+                showToast(getString(R.string.contact_add_failed, e.message ?: ""))
             }
         }
     }
@@ -424,7 +423,8 @@ class PhoneActivity : AppCompatActivity() {
         if (hasPermission(Manifest.permission.READ_CONTACTS)) {
             loadContacts()
         } else {
-            showToast("未授予联系人读取权限，列表未刷新")
+            showToast(getString(R.string.contact_list_not_refreshed))
+            showPermissionDeniedState()
         }
     }
 
@@ -432,6 +432,7 @@ class PhoneActivity : AppCompatActivity() {
         if (!hasPermission(Manifest.permission.READ_CONTACTS)) {
             contactList.clear()
             adapter.notifyDataSetChanged()
+            showPermissionDeniedState()
             return
         }
 
@@ -458,10 +459,10 @@ class PhoneActivity : AppCompatActivity() {
 
                         while (cursor.moveToNext()) {
                             val photoUri = cursor.getString(photoIndex)
-                            val photo = photoUri?.let { uri ->
+                            val photo = photoUri?.let { value ->
                                 try {
                                     val options = BitmapFactory.Options().apply { inSampleSize = 2 }
-                                    contentResolver.openInputStream(Uri.parse(uri))?.use { stream ->
+                                    contentResolver.openInputStream(Uri.parse(value))?.use { stream ->
                                         BitmapFactory.decodeStream(stream, null, options)
                                     }
                                 } catch (_: Exception) {
@@ -483,10 +484,69 @@ class PhoneActivity : AppCompatActivity() {
                 contactList.clear()
                 contactList.addAll(contacts)
                 adapter.notifyDataSetChanged()
+                updateListState()
             } catch (e: Exception) {
-                showToast("联系人加载失败: ${e.message}")
+                val message = getString(R.string.contact_load_failed, e.message ?: "")
+                showToast(message)
+                showErrorState(message)
             }
         }
+    }
+
+    private fun updateListState() {
+        if (contactList.isEmpty()) {
+            showEmptyState()
+            return
+        }
+        hideState()
+    }
+
+    private fun showPermissionDeniedState() {
+        showState(
+            getString(R.string.state_phone_permission_title),
+            getString(R.string.state_phone_permission_message),
+            getString(R.string.state_phone_permission_action)
+        ) {
+            readContactsPermissionLauncher.launch(Manifest.permission.READ_CONTACTS)
+        }
+    }
+
+    private fun showEmptyState() {
+        showState(
+            getString(R.string.state_phone_empty_title),
+            getString(R.string.state_phone_empty_message),
+            getString(R.string.state_phone_empty_action)
+        ) {
+            ensureWriteContactsPermission {
+                showAddContactDialog()
+            }
+        }
+    }
+
+    private fun showErrorState(message: String) {
+        showState(
+            getString(R.string.state_phone_error_title),
+            message,
+            getString(R.string.state_phone_error_action)
+        ) {
+            loadContacts()
+        }
+    }
+
+    private fun showState(title: String, message: String, actionText: String, action: () -> Unit) {
+        recyclerView.isVisible = false
+        stateLayout.isVisible = true
+        stateTitle.text = title
+        stateMessage.text = message
+        stateActionButton.isVisible = true
+        stateActionText.text = actionText
+        stateActionButton.setOnClickListener { action() }
+    }
+
+    private fun hideState() {
+        recyclerView.isVisible = true
+        stateLayout.isVisible = false
+        stateActionButton.setOnClickListener(null)
     }
 
     private fun makeCall(phoneNumber: String) {
@@ -503,7 +563,7 @@ class PhoneActivity : AppCompatActivity() {
         try {
             startActivity(callIntent)
         } catch (e: Exception) {
-            showToast("拨号失败: ${e.message}")
+            showToast(getString(R.string.dial_failed, e.message ?: ""))
         }
     }
 

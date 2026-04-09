@@ -16,12 +16,13 @@
 - `feature.appmanage`
   - 应用管理页
   - 应用列表展示与勾选逻辑
+  - 基于 Launcher 查询的应用可见性适配
 - `feature.phone`
   - 电话联系人页
-  - 电话联系人展示与编辑逻辑
+  - 电话联系人展示、编辑与状态反馈逻辑
 - `feature.videocall`
   - 视频联系人页
-  - 本地视频联系人展示与管理逻辑
+  - 本地视频联系人展示、管理与失败提示逻辑
 
 ### 2.2 data
 
@@ -63,6 +64,7 @@
 
 - Android Launcher 能力
 - Contacts Provider
+- 系统照片选择器
 - 电话拨号权限
 - 系统设置页跳转
 - 无障碍服务
@@ -80,7 +82,8 @@
 
 - `feature.phone.PhoneActivity` 仍直接承担权限申请、联系人增删改查和图片处理，职责偏重
 - `feature.videocall.VideoCallActivity` 同时承担联系人管理、权限检查和自动化触发，主流程与实验性能力仍有耦合
-- `feature.appmanage.AppManageActivity` 仍依赖全量应用查询，Android 11+ 的应用可见性兼容性需要单独治理
+- 空状态与失败提示视图目前仍是页面内重复实现，后续可继续抽公共组件
+- `automation.wechat` 相关实验性代码仍保留较多旧兼容写法和静态资源，后续需要继续清理
 
 ## 7. 当前架构边界
 

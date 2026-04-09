@@ -17,7 +17,7 @@
         <TextView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="添加微信联系人"
+            android:text="@string/wechat_contact_dialog_title"
             android:textSize="30sp"
             android:textStyle="bold"
             android:textColor="#2C3E50"
@@ -27,7 +27,7 @@
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="联系人姓名"
+            android:text="@string/label_contact_name"
             android:textSize="22sp"
             android:textColor="#333333"
             android:textStyle="bold"
@@ -37,7 +37,8 @@
             android:id="@+id/et_contact_name"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:hint="请输入微信好友的备注名或昵称"
+            android:autofillHints="personName"
+            android:hint="@string/hint_wechat_contact_name"
             android:textSize="24sp"
             android:textColorHint="#BBBBBB"
             android:textColor="#333333"
@@ -51,7 +52,7 @@
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="请输入在微信中显示的名字"
+            android:text="@string/wechat_contact_name_tip"
             android:textSize="18sp"
             android:textColor="#999999"
             android:drawablePadding="8dp"
@@ -75,7 +76,7 @@
                 <TextView
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:text="取消"
+                    android:text="@string/action_cancel"
                     android:textSize="24sp"
                     android:textColor="#666666"
                     android:gravity="center"
@@ -96,7 +97,7 @@
                 <TextView
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:text="确定"
+                    android:text="@string/action_confirm"
                     android:textSize="24sp"
                     android:textColor="#FFFFFF"
                     android:textStyle="bold"

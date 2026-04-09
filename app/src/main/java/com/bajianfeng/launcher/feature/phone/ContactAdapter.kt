@@ -39,6 +39,7 @@ class ContactAdapter(
 
     override fun onBindViewHolder(holder: ContactViewHolder, position: Int) {
         val contact = contacts[position]
+        val context = holder.itemView.context
 
         val layoutParams = holder.card.layoutParams as ViewGroup.MarginLayoutParams
         if (layoutParams.height != cachedCardHeight) {
@@ -48,6 +49,9 @@ class ContactAdapter(
 
         holder.name.text = contact.name
         holder.number.text = contact.phoneNumber
+        holder.photo.contentDescription = context.getString(R.string.contact_photo_description, contact.name)
+        holder.callArea.contentDescription = context.getString(R.string.contact_call_description, contact.name)
+        holder.card.contentDescription = context.getString(R.string.contact_call_description, contact.name)
 
         if (contact.photo != null) {
             holder.photo.setImageBitmap(contact.photo)

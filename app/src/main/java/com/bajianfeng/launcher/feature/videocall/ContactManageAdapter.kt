@@ -28,8 +28,10 @@ class ContactManageAdapter(
 
     override fun onBindViewHolder(holder: ViewHolder, position: Int) {
         val contact = contacts[position]
+        val context = holder.itemView.context
         holder.tvName.text = contact.name
-        holder.tvCallCount.text = "通话${contact.callCount}次"
+        holder.tvCallCount.text = context.getString(R.string.video_contact_call_count, contact.callCount)
+        holder.btnDelete.contentDescription = context.getString(R.string.video_contact_delete_description, contact.name)
 
         holder.btnDelete.setOnClickListener {
             onDeleteClick(contact)

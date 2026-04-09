@@ -32,11 +32,13 @@ class VideoCallContactAdapter(
 
     override fun onBindViewHolder(holder: ViewHolder, position: Int) {
         val contact = contacts[position]
+        val context = holder.itemView.context
         holder.name.text = contact.name
+        holder.photo.contentDescription = context.getString(R.string.contact_photo_description, contact.name)
+        holder.card.contentDescription = context.getString(R.string.video_contact_action_description, contact.name)
 
         if (contact.avatarUri != null) {
             try {
-                val context = holder.itemView.context
                 val uri = Uri.parse(contact.avatarUri)
 
                 val options = BitmapFactory.Options().apply { inJustDecodeBounds = true }

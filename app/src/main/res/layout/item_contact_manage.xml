@@ -19,7 +19,7 @@
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_weight="1"
-            android:text="联系人"
+            android:text="@string/video_contact_placeholder"
             android:textSize="24sp"
             android:textColor="#000000" />
 
@@ -27,7 +27,7 @@
             android:id="@+id/tv_call_count"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="通话0次"
+            android:text="@string/video_contact_call_count_placeholder"
             android:textSize="18sp"
             android:textColor="#666666"
             android:layout_marginEnd="16dp" />
@@ -42,7 +42,7 @@
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="删除"
+                android:text="@string/action_delete"
                 android:textSize="20sp"
                 android:textColor="#FFFFFF"
                 android:paddingHorizontal="16dp"

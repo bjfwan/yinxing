@@ -1,6 +1,7 @@
 package com.bajianfeng.launcher.feature.home
 
 import android.content.Intent
+import android.net.Uri
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
@@ -9,6 +10,7 @@ import android.widget.TextView
 import android.widget.Toast
 import androidx.activity.OnBackPressedCallback
 import androidx.appcompat.app.AppCompatActivity
+import androidx.appcompat.content.res.AppCompatResources
 import androidx.recyclerview.widget.GridLayoutManager
 import androidx.recyclerview.widget.ItemTouchHelper
 import androidx.recyclerview.widget.RecyclerView
@@ -49,7 +51,7 @@ class MainActivity : AppCompatActivity() {
 
         onBackPressedDispatcher.addCallback(this, object : OnBackPressedCallback(true) {
             override fun handleOnBackPressed() {
-                Toast.makeText(this@MainActivity, "已经是桌面了", Toast.LENGTH_SHORT).show()
+                Toast.makeText(this@MainActivity, getString(R.string.home_toast_already_here), Toast.LENGTH_SHORT).show()
             }
         })
 
@@ -126,11 +128,46 @@ class MainActivity : AppCompatActivity() {
 
         launcherPreferences.syncAppOrder(orderedApps.map { it.packageName })
 
-        appList.add(HomeAppItem("phone", "电话", getDrawable(android.R.drawable.ic_menu_call)!!, HomeAppItem.Type.PHONE))
-        appList.add(HomeAppItem("wechat_video", "微信视频", getDrawable(android.R.drawable.ic_menu_call)!!, HomeAppItem.Type.WECHAT_VIDEO))
-        appList.add(HomeAppItem("settings", "设置", getDrawable(android.R.drawable.ic_menu_preferences)!!, HomeAppItem.Type.SETTINGS))
-        appList.add(HomeAppItem("add", "添加", getDrawable(android.R.drawable.ic_input_add)!!, HomeAppItem.Type.ADD))
-        appList.add(HomeAppItem("weather", "天气", getDrawable(android.R.drawable.ic_dialog_info)!!, HomeAppItem.Type.WEATHER))
+        appList.add(
+            HomeAppItem(
+                "phone",
+                getString(R.string.home_item_phone),
+                AppCompatResources.getDrawable(this, android.R.drawable.ic_menu_call)!!,
+                HomeAppItem.Type.PHONE
+            )
+        )
+        appList.add(
+            HomeAppItem(
+                "wechat_video",
+                getString(R.string.home_item_wechat_video),
+                AppCompatResources.getDrawable(this, android.R.drawable.ic_menu_call)!!,
+                HomeAppItem.Type.WECHAT_VIDEO
+            )
+        )
+        appList.add(
+            HomeAppItem(
+                "settings",
+                getString(R.string.home_item_settings),
+                AppCompatResources.getDrawable(this, android.R.drawable.ic_menu_preferences)!!,
+                HomeAppItem.Type.SETTINGS
+            )
+        )
+        appList.add(
+            HomeAppItem(
+                "add",
+                getString(R.string.home_item_add),
+                AppCompatResources.getDrawable(this, android.R.drawable.ic_input_add)!!,
+                HomeAppItem.Type.ADD
+            )
+        )
+        appList.add(
+            HomeAppItem(
+                "weather",
+                getString(R.string.home_item_weather),
+                AppCompatResources.getDrawable(this, android.R.drawable.ic_dialog_info)!!,
+                HomeAppItem.Type.WEATHER
+            )
+        )
     }
 
     private fun saveAppOrder() {
@@ -148,7 +185,7 @@ class MainActivity : AppCompatActivity() {
                 if (intent != null) {
                     startActivity(intent)
                 } else {
-                    Toast.makeText(this, "无法打开${item.appName}", Toast.LENGTH_SHORT).show()
+                    Toast.makeText(this, getString(R.string.open_app_failed, item.appName), Toast.LENGTH_SHORT).show()
                 }
             }
             HomeAppItem.Type.PHONE -> startActivity(Intent(this, PhoneActivity::class.java))
@@ -157,7 +194,7 @@ class MainActivity : AppCompatActivity() {
                 try {
                     startActivity(Intent(Settings.ACTION_SETTINGS))
                 } catch (_: Exception) {
-                    Toast.makeText(this, "无法打开设置", Toast.LENGTH_SHORT).show()
+                    Toast.makeText(this, getString(R.string.open_settings_failed), Toast.LENGTH_SHORT).show()
                 }
             }
             HomeAppItem.Type.ADD -> startActivity(Intent(this, AppManageActivity::class.java))
@@ -182,7 +219,14 @@ class MainActivity : AppCompatActivity() {
             }
         }
 
-        Toast.makeText(this, "未找到天气应用", Toast.LENGTH_SHORT).show()
+        val browserIntent = Intent(Intent.ACTION_VIEW, Uri.parse(getString(R.string.weather_fallback_url)))
+        if (browserIntent.resolveActivity(packageManager) != null) {
+            startActivity(browserIntent)
+            Toast.makeText(this, getString(R.string.weather_fallback_notice), Toast.LENGTH_SHORT).show()
+            return
+        }
+
+        Toast.makeText(this, getString(R.string.weather_not_available), Toast.LENGTH_SHORT).show()
     }
 
     private fun handleAppLongClick(item: HomeAppItem): Boolean {
@@ -202,7 +246,7 @@ class MainActivity : AppCompatActivity() {
         dialog.window?.setBackgroundDrawableResource(android.R.color.transparent)
 
         dialogView.findViewById<TextView>(R.id.dialog_message).text =
-            "确定要从桌面移除 ${item.appName} 吗？"
+            getString(R.string.remove_app_message, item.appName)
 
         dialogView.findViewById<androidx.cardview.widget.CardView>(R.id.btn_cancel).setOnClickListener {
             dialog.dismiss()
@@ -220,6 +264,6 @@ class MainActivity : AppCompatActivity() {
         launcherPreferences.setPackageSelected(packageName, false)
         loadApps()
         adapter.notifyDataSetChanged()
-        Toast.makeText(this, "已移除", Toast.LENGTH_SHORT).show()
+        Toast.makeText(this, getString(R.string.remove_success), Toast.LENGTH_SHORT).show()
     }
 }

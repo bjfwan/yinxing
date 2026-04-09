@@ -15,9 +15,10 @@
         android:padding="32dp">
 
         <TextView
+            android:id="@+id/tv_dialog_title"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="添加联系人"
+            android:text="@string/phone_contact_dialog_add_title"
             android:textSize="30sp"
             android:textStyle="bold"
             android:textColor="#2C3E50"
@@ -27,7 +28,7 @@
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="姓名"
+            android:text="@string/label_name"
             android:textSize="22sp"
             android:textColor="#333333"
             android:textStyle="bold"
@@ -37,7 +38,8 @@
             android:id="@+id/et_name"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:hint="请输入姓名"
+            android:autofillHints="personName"
+            android:hint="@string/hint_name"
             android:textSize="24sp"
             android:textColorHint="#BBBBBB"
             android:textColor="#333333"
@@ -51,7 +53,7 @@
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="电话号码"
+            android:text="@string/label_phone"
             android:textSize="22sp"
             android:textColor="#333333"
             android:textStyle="bold"
@@ -61,7 +63,8 @@
             android:id="@+id/et_phone"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:hint="请输入电话号码"
+            android:autofillHints="phone"
+            android:hint="@string/hint_phone"
             android:textSize="24sp"
             android:textColorHint="#BBBBBB"
             android:textColor="#333333"
@@ -75,7 +78,7 @@
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="照片"
+            android:text="@string/label_photo"
             android:textSize="22sp"
             android:textColor="#333333"
             android:textStyle="bold"
@@ -88,6 +91,7 @@
             android:layout_gravity="center"
             android:scaleType="centerCrop"
             android:background="@drawable/edit_text_background"
+            android:contentDescription="@string/contact_photo_preview"
             android:src="@android:drawable/ic_menu_camera"
             android:padding="24dp"
             android:layout_marginBottom="16dp" />
@@ -104,7 +108,7 @@
             <TextView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:text="选择照片"
+                android:text="@string/action_select_photo"
                 android:textSize="24sp"
                 android:textColor="#FFFFFF"
                 android:textStyle="bold"
@@ -131,7 +135,7 @@
                 <TextView
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:text="取消"
+                    android:text="@string/action_cancel"
                     android:textSize="24sp"
                     android:textColor="#666666"
                     android:gravity="center"
@@ -152,7 +156,7 @@
                 <TextView
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:text="确定"
+                    android:text="@string/action_confirm"
                     android:textSize="24sp"
                     android:textColor="#FFFFFF"
                     android:textStyle="bold"

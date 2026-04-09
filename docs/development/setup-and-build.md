@@ -33,6 +33,7 @@ $env:GRADLE_USER_HOME="D:\gradle-home"
 $env:Path="$env:JAVA_HOME\bin;$env:Path"
 .\gradlew.bat --no-daemon testDebugUnitTest
 .\gradlew.bat --no-daemon assembleDebug
+.\gradlew.bat --no-daemon lintDebug
 ```
 
 - 如果不设置纯英文路径的 `GRADLE_USER_HOME`，当前 Windows 环境下的 `testDebugUnitTest` 可能出现 `GradleWorkerMain` 启动失败
@@ -62,8 +63,8 @@ app/build/outputs/apk/debug/
 
 - 当前 `assembleDebug` 已验证可通过
 - 当前 `testDebugUnitTest` 已验证可通过，但依赖正确的 `JAVA_HOME` 和纯英文路径的 `GRADLE_USER_HOME`
-- 当前 `lintDebug` 失败，首个阻断项是 `CALL_PHONE` 权限缺少对应的 `uses-feature` 声明
-- 当前 `lintDebug` 还包含大量国际化、可访问性、资源清理和兼容性警告
+- 当前 `lintDebug` 已验证可通过
+- 当前 `lintDebug` 仍保留 46 个非阻断警告，主要是无用资源、旧 API 守卫和实验性自动化代码问题
 - 当前命令行构建会提示 SDK XML 版本告警，说明本机 Android Studio 与命令行工具版本仍需后续统一
 
 ## 7. 推荐协作方式

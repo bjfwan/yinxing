@@ -71,6 +71,6 @@ class ContactManager private constructor(context: Context) {
 
     private fun saveContacts() {
         val contacts = cachedContacts ?: return
-        prefs.edit().putString("contacts", ContactStorage.encode(contacts)).commit()
+        prefs.edit().putString("contacts", ContactStorage.encode(contacts)).apply()
     }
 }

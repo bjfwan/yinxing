@@ -11,7 +11,7 @@
         android:id="@+id/tv_title"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="老人桌面"
+        android:text="@string/home_title"
         android:textSize="36sp"
         android:textStyle="bold"
         android:textColor="#2C3E50"
@@ -33,7 +33,7 @@
             android:textSize="56sp"
             android:textStyle="bold"
             android:textColor="#2C3E50"
-            android:text="12:00"/>
+            android:text="@string/home_time_placeholder"/>
 
         <TextView
             android:id="@+id/tv_date"
@@ -42,7 +42,7 @@
             android:textSize="24sp"
             android:textColor="#7F8C8D"
             android:layout_marginTop="8dp"
-            android:text="2024年1月1日 星期一"/>
+            android:text="@string/home_date_placeholder"/>
 
     </LinearLayout>
 

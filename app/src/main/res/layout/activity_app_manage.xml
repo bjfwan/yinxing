@@ -8,7 +8,7 @@
     <TextView
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="选择应用"
+        android:text="@string/app_manage_title"
         android:textSize="32sp"
         android:textStyle="bold"
         android:textColor="#2C3E50"
@@ -17,10 +17,28 @@
         android:background="#FFFFFF"
         android:elevation="4dp"/>
 
-    <androidx.recyclerview.widget.RecyclerView
-        android:id="@+id/recycler_view"
+    <FrameLayout
         android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:padding="8dp"/>
+        android:layout_height="match_parent">
+
+        <androidx.recyclerview.widget.RecyclerView
+            android:id="@+id/recycler_view"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:padding="8dp"/>
+
+        <TextView
+            android:id="@+id/tv_empty_apps"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center"
+            android:gravity="center"
+            android:padding="32dp"
+            android:text="@string/app_manage_empty_message"
+            android:textColor="#7F8C8D"
+            android:textSize="22sp"
+            android:visibility="gone"/>
+
+    </FrameLayout>
 
 </LinearLayout>

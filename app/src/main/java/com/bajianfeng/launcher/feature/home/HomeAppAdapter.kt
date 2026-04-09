@@ -1,7 +1,6 @@
 package com.bajianfeng.launcher.feature.home
 
 import android.view.LayoutInflater
-import android.view.MotionEvent
 import android.view.View
 import android.view.ViewGroup
 import android.widget.ImageView
@@ -40,10 +39,9 @@ class HomeAppAdapter(
         val item = appList[position]
         holder.icon.setImageDrawable(item.icon)
         holder.name.text = item.appName
+        holder.card.contentDescription = item.appName
 
-        holder.card.setOnTouchListener(null)
         holder.icon.setOnLongClickListener(null)
-        holder.icon.setOnTouchListener(null)
 
         if (item.type == HomeAppItem.Type.APP) {
             holder.card.setOnClickListener { onItemClick(item) }
@@ -52,11 +50,9 @@ class HomeAppAdapter(
                 onItemLongClick(item)
             }
 
-            holder.icon.setOnTouchListener { _, event ->
-                if (event.actionMasked == MotionEvent.ACTION_DOWN) {
-                    touchHelper?.startDrag(holder)
-                }
-                false
+            holder.icon.setOnLongClickListener {
+                touchHelper?.startDrag(holder)
+                true
             }
         } else {
             holder.card.setOnClickListener { onItemClick(item) }
