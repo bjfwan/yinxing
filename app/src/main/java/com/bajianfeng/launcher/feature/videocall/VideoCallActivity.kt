@@ -1,11 +1,14 @@
 package com.bajianfeng.launcher.feature.videocall
 
 import android.os.Bundle
+import android.widget.EditText
 import android.widget.TextView
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.cardview.widget.CardView
 import androidx.core.view.isVisible
+import androidx.core.widget.doAfterTextChanged
+import androidx.recyclerview.widget.DefaultItemAnimator
 import androidx.recyclerview.widget.GridLayoutManager
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
@@ -15,48 +18,42 @@ import com.bajianfeng.launcher.common.ui.PageStateView
 import com.bajianfeng.launcher.common.util.PermissionUtil
 import com.bajianfeng.launcher.data.contact.Contact
 import com.bajianfeng.launcher.data.contact.ContactManager
+import com.bajianfeng.launcher.data.contact.ContactStorage
+import com.bajianfeng.launcher.data.home.LauncherPreferences
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.cancel
+import java.util.UUID
 
 class VideoCallActivity : AppCompatActivity() {
     private lateinit var recyclerView: RecyclerView
-    private lateinit var contactAdapter: VideoCallContactAdapter
+    private lateinit var adapter: VideoCallContactAdapter
     private lateinit var manageAdapter: ContactManageAdapter
     private lateinit var modeActionButton: CardView
     private lateinit var modeActionText: TextView
-    private lateinit var pageStateView: PageStateView
-    private lateinit var contactManager: ContactManager
+    private lateinit var searchLayout: CardView
+    private lateinit var searchInput: EditText
+    private lateinit var clearSearchButton: TextView
+    private lateinit var stateView: PageStateView
     private lateinit var ttsService: TTSService
-    private lateinit var videoCallCoordinator: VideoCallCoordinator
+    private lateinit var contactManager: ContactManager
+    private lateinit var launcherPreferences: LauncherPreferences
     private lateinit var dialogController: VideoContactDialogController
+    private lateinit var coordinator: VideoCallCoordinator
+    private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate)
     private var isManageMode = false
-    private var contacts: List<Contact> = emptyList()
-    private var currentContactId: String? = null
+    private var searchQuery = ""
+    private var allContacts: List<Contact> = emptyList()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_video_call)
 
-        contactManager = ContactManager.getInstance(this)
+        launcherPreferences = LauncherPreferences.getInstance(this)
         ttsService = TTSService(this)
         ttsService.initialize()
-        dialogController = VideoContactDialogController(this, contactManager, ::loadContacts)
-        videoCallCoordinator = VideoCallCoordinator(
-            context = this,
-            ttsService = ttsService,
-            onMessage = { message ->
-                runOnUiThread {
-                    Toast.makeText(this, message, Toast.LENGTH_SHORT).show()
-                }
-            },
-            onNeedAccessibilityPermission = ::showAccessibilityDialog,
-            onNeedOverlayPermission = ::showOverlayPermissionDialog,
-            onCallStarted = {
-                currentContactId?.let(contactManager::incrementCallCount)
-                runOnUiThread {
-                    loadContacts()
-                    finish()
-                }
-            }
-        )
+        contactManager = ContactManager.getInstance(this)
 
         recyclerView = findViewById(R.id.recycler_video_contacts)
         recyclerView.layoutManager = GridLayoutManager(this, 2)
@@ -64,17 +61,52 @@ class VideoCallActivity : AppCompatActivity() {
 
         modeActionButton = findViewById(R.id.btn_mode_action)
         modeActionText = findViewById(R.id.tv_mode_action)
-        pageStateView = findViewById(R.id.view_page_state)
+        searchLayout = findViewById(R.id.layout_manage_search)
+        searchInput = findViewById(R.id.et_contact_search)
+        clearSearchButton = findViewById(R.id.btn_clear_search)
+        stateView = findViewById(R.id.view_page_state)
+        stateView.attachContent(recyclerView)
 
-        contactAdapter = VideoCallContactAdapter { contact ->
-            currentContactId = contact.id
-            videoCallCoordinator.start(contact)
-        }
-        manageAdapter = ContactManageAdapter { contact ->
-            dialogController.showDeleteDialog(contact)
-        }
-        recyclerView.adapter = contactAdapter
+        adapter = VideoCallContactAdapter(
+            scope = scope,
+            lowPerformanceMode = launcherPreferences.isLowPerformanceModeEnabled(),
+            onContactClick = { contact -> coordinator.start(contact) }
+        )
+        manageAdapter = ContactManageAdapter(
+            lowPerformanceMode = launcherPreferences.isLowPerformanceModeEnabled(),
+            onPinClick = { contact -> togglePinned(contact) },
+            onDeleteClick = { contact -> dialogController.showDeleteDialog(contact) }
+        )
 
+        coordinator = VideoCallCoordinator(
+            activity = this,
+            ttsService = ttsService,
+            contactManager = contactManager,
+            onNeedAccessibilityPermission = { dialogController.showAccessibilityDialog() },
+            onNeedOverlayPermission = { contact -> dialogController.showOverlayPermissionDialog(contact) },
+            onContactsChanged = { loadContacts() },
+            onCallCompleted = { finish() }
+        )
+        dialogController = VideoContactDialogController(
+            activity = this,
+            onAddContact = { name -> addContact(name) },
+            onDeleteContact = { contact -> deleteContact(contact) },
+            onOpenAccessibilitySettings = { PermissionUtil.openAccessibilitySettings(this) },
+            onOpenOverlaySettings = { PermissionUtil.openOverlaySettings(this) },
+            onContinueWithoutOverlayPermission = { contact -> coordinator.continueWithVideoCall(contact) }
+        )
+
+        recyclerView.adapter = adapter
+        applyPerformanceMode()
+
+        searchInput.doAfterTextChanged { editable ->
+            searchQuery = editable?.toString().orEmpty()
+            updateSearchUi()
+            renderContacts()
+        }
+        clearSearchButton.setOnClickListener {
+            searchInput.text?.clear()
+        }
         findViewById<CardView>(R.id.btn_back).setOnClickListener {
             if (isManageMode) {
                 switchToCallMode()
@@ -94,11 +126,26 @@ class VideoCallActivity : AppCompatActivity() {
         loadContacts()
     }
 
+    override fun onResume() {
+        super.onResume()
+        applyPerformanceMode()
+        loadContacts()
+    }
+
     override fun onDestroy() {
-        videoCallCoordinator.clearServiceCallback()
-        ttsService.stop()
+        coordinator.clear()
         ttsService.shutdown()
+        scope.cancel()
         super.onDestroy()
+    }
+
+    private fun applyPerformanceMode() {
+        val lowPerformanceMode = launcherPreferences.isLowPerformanceModeEnabled()
+        recyclerView.setItemViewCacheSize(if (lowPerformanceMode) 3 else 8)
+        recyclerView.itemAnimator = if (lowPerformanceMode) null else DefaultItemAnimator()
+        searchLayout.cardElevation = resources.displayMetrics.density * if (lowPerformanceMode) 2 else 4
+        adapter.setLowPerformanceMode(lowPerformanceMode)
+        manageAdapter.setLowPerformanceMode(lowPerformanceMode)
     }
 
     private fun switchToManageMode() {
@@ -106,47 +153,111 @@ class VideoCallActivity : AppCompatActivity() {
         recyclerView.layoutManager = LinearLayoutManager(this)
         recyclerView.adapter = manageAdapter
         updateModeUi()
-        renderState()
+        renderContacts()
     }
 
     private fun switchToCallMode() {
         isManageMode = false
         recyclerView.layoutManager = GridLayoutManager(this, 2)
-        recyclerView.adapter = contactAdapter
+        recyclerView.adapter = adapter
         updateModeUi()
-        renderState()
+        if (searchQuery.isNotBlank()) {
+            searchInput.text?.clear()
+        } else {
+            renderContacts()
+        }
     }
 
     private fun updateModeUi() {
         val text = getString(if (isManageMode) R.string.action_add else R.string.action_manage)
         modeActionText.text = text
         modeActionButton.contentDescription = text
+        searchLayout.isVisible = isManageMode
+        updateSearchUi()
+    }
+
+    private fun updateSearchUi() {
+        clearSearchButton.isVisible = isManageMode && searchQuery.isNotBlank()
+    }
+
+    private fun addContact(name: String) {
+        contactManager.addContact(
+            Contact(
+                id = UUID.randomUUID().toString(),
+                name = name,
+                wechatId = name
+            )
+        )
+        loadContacts()
+        if (searchQuery.isNotBlank()) {
+            searchInput.text?.clear()
+        }
+        Toast.makeText(this, getString(R.string.contact_added_named, name), Toast.LENGTH_SHORT).show()
+    }
+
+    private fun deleteContact(contact: Contact) {
+        contactManager.removeContact(contact.id)
+        loadContacts()
+        Toast.makeText(this, getString(R.string.contact_deleted), Toast.LENGTH_SHORT).show()
+    }
+
+    private fun togglePinned(contact: Contact) {
+        contactManager.updateContact(contact.copy(isPinned = !contact.isPinned))
+        loadContacts()
+        Toast.makeText(
+            this,
+            getString(
+                if (contact.isPinned) R.string.video_contact_unpinned else R.string.video_contact_pinned,
+                contact.name
+            ),
+            Toast.LENGTH_SHORT
+        ).show()
     }
 
     private fun loadContacts() {
-        contacts = contactManager.getContacts()
-        contactAdapter.submitList(contacts)
-        manageAdapter.submitList(contacts)
-        renderState()
+        allContacts = contactManager.getContacts()
+        renderContacts()
     }
 
-    private fun renderState() {
+    private fun renderContacts() {
+        val contacts = ContactStorage.filter(allContacts, if (isManageMode) searchQuery else "")
+        adapter.submitList(contacts)
+        manageAdapter.submitList(contacts)
+        updateState(contacts)
+    }
+
+    private fun updateState(contacts: List<Contact>) {
         if (contacts.isNotEmpty()) {
-            recyclerView.isVisible = true
-            pageStateView.hide()
+            stateView.hide()
             return
         }
 
-        recyclerView.isVisible = false
-        pageStateView.show(
-            getString(R.string.state_video_empty_title),
-            getString(
-                if (isManageMode) R.string.state_video_manage_empty_message
-                else R.string.state_video_empty_message
+        if (isManageMode && searchQuery.isNotBlank() && allContacts.isNotEmpty()) {
+            stateView.show(
+                title = getString(R.string.state_video_search_empty_title),
+                message = getString(R.string.state_video_search_empty_message, searchQuery.trim()),
+                actionText = getString(R.string.action_clear)
+            ) {
+                searchInput.text?.clear()
+            }
+            return
+        }
+
+        stateView.show(
+            title = getString(R.string.state_video_empty_title),
+            message = getString(
+                if (isManageMode) {
+                    R.string.state_video_manage_empty_message
+                } else {
+                    R.string.state_video_empty_message
+                }
             ),
-            getString(
-                if (isManageMode) R.string.state_video_empty_action_add
-                else R.string.state_video_empty_action_manage
+            actionText = getString(
+                if (isManageMode) {
+                    R.string.state_video_empty_action_add
+                } else {
+                    R.string.state_video_empty_action_manage
+                }
             )
         ) {
             if (isManageMode) {
@@ -155,36 +266,5 @@ class VideoCallActivity : AppCompatActivity() {
                 switchToManageMode()
             }
         }
-    }
-
-    private fun showAccessibilityDialog() {
-        val dialogView = layoutInflater.inflate(R.layout.dialog_accessibility_prompt, null)
-        val dialog = android.app.AlertDialog.Builder(this)
-            .setView(dialogView)
-            .create()
-
-        dialog.window?.setBackgroundDrawableResource(android.R.color.transparent)
-        dialogView.findViewById<CardView>(R.id.btn_open_settings).setOnClickListener {
-            PermissionUtil.openAccessibilitySettings(this)
-            dialog.dismiss()
-        }
-        dialogView.findViewById<CardView>(R.id.btn_cancel).setOnClickListener {
-            dialog.dismiss()
-        }
-        dialog.show()
-    }
-
-    private fun showOverlayPermissionDialog(contact: Contact) {
-        android.app.AlertDialog.Builder(this)
-            .setTitle(R.string.overlay_permission_title)
-            .setMessage(R.string.overlay_permission_message)
-            .setPositiveButton(R.string.action_go_to_settings) { _, _ ->
-                PermissionUtil.openOverlaySettings(this)
-            }
-            .setNegativeButton(R.string.action_continue) { _, _ ->
-                videoCallCoordinator.continueWithoutOverlayCheck(contact)
-            }
-            .setNeutralButton(R.string.action_cancel, null)
-            .show()
     }
 }

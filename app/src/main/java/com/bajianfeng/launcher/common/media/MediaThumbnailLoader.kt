@@ -48,6 +48,15 @@ object MediaThumbnailLoader {
         }
     }
 
+    suspend fun loadBitmap(
+        context: Context,
+        uri: Uri,
+        reqWidth: Int,
+        reqHeight: Int
+    ): Bitmap? {
+        return loadUriThumbnail(context, uri, reqWidth, reqHeight)
+    }
+
     fun loadUriThumbnailBlocking(
         context: Context,
         uri: Uri,

@@ -1,26 +1,23 @@
 package com.bajianfeng.launcher.data.contact
 
 import android.content.ContentProviderOperation
+import android.content.ContentResolver
 import android.content.Context
 import android.graphics.Bitmap
-import android.graphics.BitmapFactory
 import android.graphics.ImageDecoder
 import android.net.Uri
 import android.os.Build
 import android.provider.ContactsContract
 import android.provider.MediaStore
-import androidx.core.graphics.scale
-import androidx.core.net.toUri
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.withContext
 import java.io.ByteArrayOutputStream
 
-class PhoneContactRepository(context: Context) {
-    private val appContext = context.applicationContext
-    private val contentResolver = appContext.contentResolver
+class PhoneContactRepository(
+    private val contentResolver: ContentResolver
+) {
+    constructor(context: Context) : this(context.contentResolver)
 
-    suspend fun getContacts(): List<PhoneContact> = withContext(Dispatchers.IO) {
-        val result = mutableListOf<PhoneContact>()
+    fun getContacts(): List<PhoneContact> {
+        val contacts = mutableListOf<PhoneContact>()
         contentResolver.query(
             ContactsContract.CommonDataKinds.Phone.CONTENT_URI,
             arrayOf(
@@ -39,139 +36,104 @@ class PhoneContactRepository(context: Context) {
             val photoIndex = cursor.getColumnIndexOrThrow(ContactsContract.CommonDataKinds.Phone.PHOTO_URI)
 
             while (cursor.moveToNext()) {
-                val photoUri = cursor.getString(photoIndex)
-                val photo = photoUri?.let { decodePhoto(it.toUri()) }
-                result.add(
+                contacts.add(
                     PhoneContact(
                         id = cursor.getString(idIndex),
                         name = cursor.getString(nameIndex),
                         phoneNumber = cursor.getString(numberIndex),
-                        photo = photo
+                        photoUri = cursor.getString(photoIndex)
                     )
                 )
             }
         }
-        result
+        return contacts
     }
 
-    suspend fun addContact(name: String, phone: String, photo: Bitmap?) = withContext(Dispatchers.IO) {
-        val ops = ArrayList<ContentProviderOperation>()
-        ops.add(
+    fun addContact(name: String, phone: String, photo: Bitmap?) {
+        val operations = arrayListOf(
             ContentProviderOperation.newInsert(ContactsContract.RawContacts.CONTENT_URI)
                 .withValue(ContactsContract.RawContacts.ACCOUNT_TYPE, null)
                 .withValue(ContactsContract.RawContacts.ACCOUNT_NAME, null)
-                .build()
-        )
-        ops.add(
+                .build(),
             ContentProviderOperation.newInsert(ContactsContract.Data.CONTENT_URI)
                 .withValueBackReference(ContactsContract.Data.RAW_CONTACT_ID, 0)
-                .withValue(
-                    ContactsContract.Data.MIMETYPE,
-                    ContactsContract.CommonDataKinds.StructuredName.CONTENT_ITEM_TYPE
-                )
+                .withValue(ContactsContract.Data.MIMETYPE, ContactsContract.CommonDataKinds.StructuredName.CONTENT_ITEM_TYPE)
                 .withValue(ContactsContract.CommonDataKinds.StructuredName.DISPLAY_NAME, name)
-                .build()
-        )
-        ops.add(
+                .build(),
             ContentProviderOperation.newInsert(ContactsContract.Data.CONTENT_URI)
                 .withValueBackReference(ContactsContract.Data.RAW_CONTACT_ID, 0)
-                .withValue(
-                    ContactsContract.Data.MIMETYPE,
-                    ContactsContract.CommonDataKinds.Phone.CONTENT_ITEM_TYPE
-                )
+                .withValue(ContactsContract.Data.MIMETYPE, ContactsContract.CommonDataKinds.Phone.CONTENT_ITEM_TYPE)
                 .withValue(ContactsContract.CommonDataKinds.Phone.NUMBER, phone)
-                .withValue(
-                    ContactsContract.CommonDataKinds.Phone.TYPE,
-                    ContactsContract.CommonDataKinds.Phone.TYPE_MOBILE
-                )
+                .withValue(ContactsContract.CommonDataKinds.Phone.TYPE, ContactsContract.CommonDataKinds.Phone.TYPE_MOBILE)
                 .build()
         )
+
         if (photo != null) {
-            ops.add(
+            operations.add(
                 ContentProviderOperation.newInsert(ContactsContract.Data.CONTENT_URI)
                     .withValueBackReference(ContactsContract.Data.RAW_CONTACT_ID, 0)
-                    .withValue(
-                        ContactsContract.Data.MIMETYPE,
-                        ContactsContract.CommonDataKinds.Photo.CONTENT_ITEM_TYPE
-                    )
+                    .withValue(ContactsContract.Data.MIMETYPE, ContactsContract.CommonDataKinds.Photo.CONTENT_ITEM_TYPE)
                     .withValue(ContactsContract.CommonDataKinds.Photo.PHOTO, bitmapToBytes(photo))
                     .build()
             )
         }
-        contentResolver.applyBatch(ContactsContract.AUTHORITY, ops)
+
+        contentResolver.applyBatch(ContactsContract.AUTHORITY, operations)
     }
 
-    suspend fun updateContact(contactId: String, name: String, phone: String, photo: Bitmap?) =
-        withContext(Dispatchers.IO) {
-            val ops = ArrayList<ContentProviderOperation>()
-            val selection = "${ContactsContract.Data.CONTACT_ID} = ? AND ${ContactsContract.Data.MIMETYPE} = ?"
+    fun updateContact(contactId: String, name: String, phone: String, photo: Bitmap?) {
+        val selection = "${ContactsContract.Data.CONTACT_ID} = ? AND ${ContactsContract.Data.MIMETYPE} = ?"
+        val operations = arrayListOf(
+            ContentProviderOperation.newUpdate(ContactsContract.Data.CONTENT_URI)
+                .withSelection(
+                    selection,
+                    arrayOf(contactId, ContactsContract.CommonDataKinds.StructuredName.CONTENT_ITEM_TYPE)
+                )
+                .withValue(ContactsContract.CommonDataKinds.StructuredName.DISPLAY_NAME, name)
+                .build(),
+            ContentProviderOperation.newUpdate(ContactsContract.Data.CONTENT_URI)
+                .withSelection(
+                    selection,
+                    arrayOf(contactId, ContactsContract.CommonDataKinds.Phone.CONTENT_ITEM_TYPE)
+                )
+                .withValue(ContactsContract.CommonDataKinds.Phone.NUMBER, phone)
+                .build()
+        )
 
-            ops.add(
-                ContentProviderOperation.newUpdate(ContactsContract.Data.CONTENT_URI)
-                    .withSelection(
-                        selection,
-                        arrayOf(contactId, ContactsContract.CommonDataKinds.StructuredName.CONTENT_ITEM_TYPE)
-                    )
-                    .withValue(ContactsContract.CommonDataKinds.StructuredName.DISPLAY_NAME, name)
-                    .build()
-            )
-            ops.add(
-                ContentProviderOperation.newUpdate(ContactsContract.Data.CONTENT_URI)
-                    .withSelection(
-                        selection,
-                        arrayOf(contactId, ContactsContract.CommonDataKinds.Phone.CONTENT_ITEM_TYPE)
-                    )
-                    .withValue(ContactsContract.CommonDataKinds.Phone.NUMBER, phone)
-                    .build()
-            )
-
-            if (photo != null) {
-                getRawContactId(contactId)?.let { rawContactId ->
-                    contentResolver.delete(
-                        ContactsContract.Data.CONTENT_URI,
-                        "${ContactsContract.Data.RAW_CONTACT_ID} = ? AND ${ContactsContract.Data.MIMETYPE} = ?",
-                        arrayOf(rawContactId, ContactsContract.CommonDataKinds.Photo.CONTENT_ITEM_TYPE)
-                    )
-                    ops.add(
-                        ContentProviderOperation.newInsert(ContactsContract.Data.CONTENT_URI)
-                            .withValue(ContactsContract.Data.RAW_CONTACT_ID, rawContactId)
-                            .withValue(
-                                ContactsContract.Data.MIMETYPE,
-                                ContactsContract.CommonDataKinds.Photo.CONTENT_ITEM_TYPE
-                            )
-                            .withValue(ContactsContract.CommonDataKinds.Photo.PHOTO, bitmapToBytes(photo))
-                            .build()
-                    )
-                }
+        if (photo != null) {
+            val rawContactId = getRawContactId(contactId)
+            if (rawContactId != null) {
+                contentResolver.delete(
+                    ContactsContract.Data.CONTENT_URI,
+                    "${ContactsContract.Data.RAW_CONTACT_ID} = ? AND ${ContactsContract.Data.MIMETYPE} = ?",
+                    arrayOf(rawContactId, ContactsContract.CommonDataKinds.Photo.CONTENT_ITEM_TYPE)
+                )
+                operations.add(
+                    ContentProviderOperation.newInsert(ContactsContract.Data.CONTENT_URI)
+                        .withValue(ContactsContract.Data.RAW_CONTACT_ID, rawContactId)
+                        .withValue(ContactsContract.Data.MIMETYPE, ContactsContract.CommonDataKinds.Photo.CONTENT_ITEM_TYPE)
+                        .withValue(ContactsContract.CommonDataKinds.Photo.PHOTO, bitmapToBytes(photo))
+                        .build()
+                )
             }
-
-            contentResolver.applyBatch(ContactsContract.AUTHORITY, ops)
         }
 
-    suspend fun deleteContact(contactId: String) = withContext(Dispatchers.IO) {
+        contentResolver.applyBatch(ContactsContract.AUTHORITY, operations)
+    }
+
+    fun deleteContact(contactId: String) {
         val uri = Uri.withAppendedPath(ContactsContract.Contacts.CONTENT_URI, contactId)
         contentResolver.delete(uri, null, null)
     }
 
-    fun loadImageFromUri(uri: Uri): Bitmap? {
-        return runCatching {
-            val original = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
-                ImageDecoder.decodeBitmap(ImageDecoder.createSource(contentResolver, uri))
-            } else {
-                @Suppress("DEPRECATION")
-                MediaStore.Images.Media.getBitmap(contentResolver, uri)
-            }
-            scaleBitmap(original, 512, 512)
-        }.getOrNull()
-    }
-
-    private fun decodePhoto(uri: Uri): Bitmap? {
-        return runCatching {
-            val options = BitmapFactory.Options().apply { inSampleSize = 2 }
-            contentResolver.openInputStream(uri)?.use { stream ->
-                BitmapFactory.decodeStream(stream, null, options)
-            }
-        }.getOrNull()
+    fun loadImage(uri: Uri): Bitmap? {
+        val sourceBitmap = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+            ImageDecoder.decodeBitmap(ImageDecoder.createSource(contentResolver, uri))
+        } else {
+            @Suppress("DEPRECATION")
+            MediaStore.Images.Media.getBitmap(contentResolver, uri)
+        }
+        return scaleBitmap(sourceBitmap, 512, 512)
     }
 
     private fun getRawContactId(contactId: String): String? {
@@ -181,9 +143,9 @@ class PhoneContactRepository(context: Context) {
             "${ContactsContract.RawContacts.CONTACT_ID} = ?",
             arrayOf(contactId),
             null
-        )?.use {
-            if (it.moveToFirst()) {
-                return it.getString(0)
+        )?.use { cursor ->
+            if (cursor.moveToFirst()) {
+                return cursor.getString(0)
             }
         }
         return null
@@ -194,7 +156,8 @@ class PhoneContactRepository(context: Context) {
             return bitmap
         }
         val scale = minOf(maxWidth.toFloat() / bitmap.width, maxHeight.toFloat() / bitmap.height)
-        return bitmap.scale(
+        return Bitmap.createScaledBitmap(
+            bitmap,
             (bitmap.width * scale).toInt(),
             (bitmap.height * scale).toInt(),
             true
@@ -202,9 +165,8 @@ class PhoneContactRepository(context: Context) {
     }
 
     private fun bitmapToBytes(bitmap: Bitmap): ByteArray {
-        return ByteArrayOutputStream().use { stream ->
-            bitmap.compress(Bitmap.CompressFormat.JPEG, 85, stream)
-            stream.toByteArray()
-        }
+        val outputStream = ByteArrayOutputStream()
+        bitmap.compress(Bitmap.CompressFormat.JPEG, 85, outputStream)
+        return outputStream.toByteArray()
     }
 }

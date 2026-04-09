@@ -3,6 +3,7 @@ package com.bajianfeng.launcher.common.ui
 import android.content.Context
 import android.util.AttributeSet
 import android.view.LayoutInflater
+import android.view.View
 import android.widget.FrameLayout
 import android.widget.TextView
 import androidx.cardview.widget.CardView
@@ -18,6 +19,7 @@ class PageStateView @JvmOverloads constructor(
     private val messageView: TextView
     private val actionButton: CardView
     private val actionTextView: TextView
+    private var contentView: View? = null
 
     init {
         LayoutInflater.from(context).inflate(R.layout.view_page_state, this, true)
@@ -25,29 +27,37 @@ class PageStateView @JvmOverloads constructor(
         messageView = findViewById(R.id.tv_page_state_message)
         actionButton = findViewById(R.id.btn_page_state_action)
         actionTextView = findViewById(R.id.tv_page_state_action)
+        isVisible = false
+    }
+
+    fun attachContent(contentView: View) {
+        this.contentView = contentView
     }
 
     fun show(
-        title: String,
-        message: String,
-        actionText: String? = null,
+        title: CharSequence,
+        message: CharSequence,
+        actionText: CharSequence? = null,
         action: (() -> Unit)? = null
     ) {
+        contentView?.isVisible = false
         isVisible = true
         titleView.text = title
         messageView.text = message
-        val showAction = !actionText.isNullOrBlank() && action != null
-        actionButton.isVisible = showAction
-        if (showAction) {
+        val hasAction = !actionText.isNullOrBlank() && action != null
+        actionButton.isVisible = hasAction
+        actionButton.setOnClickListener(null)
+        if (hasAction) {
             actionTextView.text = actionText
             actionButton.setOnClickListener { action?.invoke() }
         } else {
-            actionButton.setOnClickListener(null)
+            actionTextView.text = ""
         }
     }
 
     fun hide() {
-        isVisible = false
         actionButton.setOnClickListener(null)
+        isVisible = false
+        contentView?.isVisible = true
     }
 }
