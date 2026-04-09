@@ -2,8 +2,6 @@ package com.bajianfeng.launcher.data.contact
 
 import android.content.Context
 import android.content.SharedPreferences
-import org.json.JSONArray
-import org.json.JSONObject
 
 class ContactManager private constructor(context: Context) {
     private val prefs: SharedPreferences = context.getSharedPreferences("wechat_contacts", Context.MODE_PRIVATE)
@@ -22,33 +20,11 @@ class ContactManager private constructor(context: Context) {
 
     fun getContacts(): List<Contact> {
         cachedContacts?.let {
-            return it.sortedWith(compareByDescending<Contact> { c -> c.isPinned }.thenByDescending { c -> c.callCount })
+            return ContactStorage.sort(it)
         }
 
-        val json = prefs.getString("contacts", "[]") ?: "[]"
-        val contacts = mutableListOf<Contact>()
-
-        try {
-            val jsonArray = JSONArray(json)
-            for (i in 0 until jsonArray.length()) {
-                val obj = jsonArray.getJSONObject(i)
-                contacts.add(
-                    Contact(
-                        id = obj.getString("id"),
-                        name = obj.getString("name"),
-                        wechatId = obj.optString("wechatId", null),
-                        avatarUri = obj.optString("avatarUri", null),
-                        isPinned = obj.optBoolean("isPinned", false),
-                        callCount = obj.optInt("callCount", 0),
-                        lastCallTime = obj.optLong("lastCallTime", 0)
-                    )
-                )
-            }
-        } catch (_: Exception) {
-        }
-
-        cachedContacts = contacts
-        return contacts.sortedWith(compareByDescending<Contact> { it.isPinned }.thenByDescending { it.callCount })
+        cachedContacts = ContactStorage.decode(prefs.getString("contacts", "[]"))
+        return ContactStorage.sort(cachedContacts.orEmpty())
     }
 
     fun addContact(contact: Contact) {
@@ -77,10 +53,13 @@ class ContactManager private constructor(context: Context) {
         ensureCache()
         val index = cachedContacts?.indexOfFirst { it.id == contactId } ?: -1
         if (index >= 0) {
-            val contact = cachedContacts!![index]
-            cachedContacts!![index] = contact.copy(
+            val contact = cachedContacts?.get(index) ?: return
+            cachedContacts?.set(
+                index,
+                contact.copy(
                 callCount = contact.callCount + 1,
                 lastCallTime = System.currentTimeMillis()
+            )
             )
             saveContacts()
         }
@@ -92,18 +71,6 @@ class ContactManager private constructor(context: Context) {
 
     private fun saveContacts() {
         val contacts = cachedContacts ?: return
-        val jsonArray = JSONArray()
-        contacts.forEach { contact ->
-            jsonArray.put(JSONObject().apply {
-                put("id", contact.id)
-                put("name", contact.name)
-                put("wechatId", contact.wechatId ?: "")
-                put("avatarUri", contact.avatarUri ?: "")
-                put("isPinned", contact.isPinned)
-                put("callCount", contact.callCount)
-                put("lastCallTime", contact.lastCallTime)
-            })
-        }
-        prefs.edit().putString("contacts", jsonArray.toString()).commit()
+        prefs.edit().putString("contacts", ContactStorage.encode(contacts)).commit()
     }
 }

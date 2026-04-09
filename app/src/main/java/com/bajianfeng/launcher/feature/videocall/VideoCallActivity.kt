@@ -68,7 +68,6 @@ class VideoCallActivity : AppCompatActivity() {
         }
 
         loadContacts()
-        checkAccessibilityService()
     }
 
     override fun onDestroy() {
@@ -149,23 +148,10 @@ class VideoCallActivity : AppCompatActivity() {
         dialog.show()
     }
 
-    private fun checkAccessibilityService() {
-        val serviceName = "${packageName}/${WeChatAccessibilityService::class.java.name}"
-        if (!PermissionUtil.isAccessibilityServiceEnabled(this, serviceName)) {
-            showAccessibilityDialog()
-            return
-        }
-
-        if (!PermissionUtil.canDrawOverlays(this)) {
-            showOverlayPermissionDialog()
-        }
-    }
-
     private fun showAccessibilityDialog() {
         val dialogView = layoutInflater.inflate(R.layout.dialog_accessibility_prompt, null)
         val dialog = android.app.AlertDialog.Builder(this)
             .setView(dialogView)
-            .setCancelable(false)
             .create()
 
         dialog.window?.setBackgroundDrawableResource(android.R.color.transparent)
@@ -216,6 +202,10 @@ class VideoCallActivity : AppCompatActivity() {
             return
         }
 
+        if (!PermissionUtil.canDrawOverlays(this)) {
+            Toast.makeText(this, "未开启悬浮窗权限，将不显示状态浮窗", Toast.LENGTH_SHORT).show()
+        }
+
         try {
             packageManager.getPackageInfo("com.tencent.mm", 0)
         } catch (_: Exception) {
@@ -223,8 +213,6 @@ class VideoCallActivity : AppCompatActivity() {
             Toast.makeText(this, "未安装微信", Toast.LENGTH_SHORT).show()
             return
         }
-
-        contactManager.incrementCallCount(contact.id)
 
         ttsService.speak("正在为您拨打视频电话")
         Toast.makeText(this, "正在发起视频通话...", Toast.LENGTH_SHORT).show()
@@ -241,7 +229,7 @@ class VideoCallActivity : AppCompatActivity() {
                 ttsService.speak(state)
                 Toast.makeText(this, state, Toast.LENGTH_SHORT).show()
 
-                if (state.contains("已发起") || state.contains("失败")) {
+                if (!success || state.contains("已发起")) {
                     service.clearStateCallback()
                     if (success) {
                         finish()
@@ -250,9 +238,7 @@ class VideoCallActivity : AppCompatActivity() {
             }
         }
 
-        val intent = android.content.Intent(this, WeChatAccessibilityService::class.java)
-        intent.action = WeChatAccessibilityService.ACTION_START_VIDEO_CALL
-        intent.putExtra(WeChatAccessibilityService.EXTRA_CONTACT_NAME, contact.name)
-        startService(intent)
+        contactManager.incrementCallCount(contact.id)
+        service.requestVideoCall(contact.name)
     }
 }
