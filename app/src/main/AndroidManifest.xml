@@ -27,7 +27,7 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.OldLauncher">
         <activity
-            android:name=".MainActivity"
+            android:name=".feature.home.MainActivity"
             android:exported="true"
             android:launchMode="singleTask"
             android:stateNotNeeded="true">
@@ -42,17 +42,17 @@
             </intent-filter>
         </activity>
         <activity
-            android:name=".AppManageActivity"
+            android:name=".feature.appmanage.AppManageActivity"
             android:exported="false" />
         <activity
-            android:name=".PhoneActivity"
+            android:name=".feature.phone.PhoneActivity"
             android:exported="false" />
         <activity
-            android:name=".VideoCallActivity"
+            android:name=".feature.videocall.VideoCallActivity"
             android:exported="false" />
         
         <service
-            android:name=".service.WeChatAccessibilityService"
+            android:name=".automation.wechat.service.WeChatAccessibilityService"
             android:permission="android.permission.BIND_ACCESSIBILITY_SERVICE"
             android:exported="true">
             <intent-filter>
