@@ -9,12 +9,15 @@ import android.net.Uri
 import android.os.Build
 import android.provider.ContactsContract
 import android.provider.MediaStore
+import com.bajianfeng.launcher.common.media.MediaThumbnailLoader
 import java.io.ByteArrayOutputStream
 
-class PhoneContactRepository(
-    private val contentResolver: ContentResolver
+class PhoneContactRepository private constructor(
+    private val contentResolver: ContentResolver,
+    private val appContext: Context?
 ) {
-    constructor(context: Context) : this(context.contentResolver)
+    constructor(context: Context) : this(context.applicationContext.contentResolver, context.applicationContext)
+    constructor(contentResolver: ContentResolver) : this(contentResolver, null)
 
     fun getContacts(): List<PhoneContact> {
         val contacts = mutableListOf<PhoneContact>()
@@ -41,7 +44,7 @@ class PhoneContactRepository(
                         id = cursor.getString(idIndex),
                         name = cursor.getString(nameIndex),
                         phoneNumber = cursor.getString(numberIndex),
-                        photoUri = cursor.getString(photoIndex)
+                        photoUri = cursor.getString(photoIndex)?.takeIf { it.isNotBlank() }
                     )
                 )
             }
@@ -126,14 +129,22 @@ class PhoneContactRepository(
         contentResolver.delete(uri, null, null)
     }
 
-    fun loadImage(uri: Uri): Bitmap? {
+    fun loadImage(uri: Uri, size: Int = 512): Bitmap? {
+        appContext?.let {
+            return MediaThumbnailLoader.loadUriThumbnailBlocking(it, uri, size, size)
+        }
+
         val sourceBitmap = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
             ImageDecoder.decodeBitmap(ImageDecoder.createSource(contentResolver, uri))
         } else {
             @Suppress("DEPRECATION")
             MediaStore.Images.Media.getBitmap(contentResolver, uri)
         }
-        return scaleBitmap(sourceBitmap, 512, 512)
+        return scaleBitmap(sourceBitmap, size, size)
+    }
+
+    fun loadImageFromUri(uri: Uri, size: Int = 512): Bitmap? {
+        return loadImage(uri, size)
     }
 
     private fun getRawContactId(contactId: String): String? {
@@ -165,8 +176,9 @@ class PhoneContactRepository(
     }
 
     private fun bitmapToBytes(bitmap: Bitmap): ByteArray {
-        val outputStream = ByteArrayOutputStream()
-        bitmap.compress(Bitmap.CompressFormat.JPEG, 85, outputStream)
-        return outputStream.toByteArray()
+        return ByteArrayOutputStream().use { outputStream ->
+            bitmap.compress(Bitmap.CompressFormat.JPEG, 85, outputStream)
+            outputStream.toByteArray()
+        }
     }
 }

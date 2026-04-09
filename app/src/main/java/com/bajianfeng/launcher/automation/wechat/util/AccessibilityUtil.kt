@@ -148,6 +148,7 @@ object AccessibilityUtil {
         return node.performAction(AccessibilityNodeInfo.ACTION_SET_TEXT, arguments)
     }
 
+    @Suppress("DEPRECATION")
     fun safeRecycle(node: AccessibilityNodeInfo?) {
         try {
             node?.recycle()

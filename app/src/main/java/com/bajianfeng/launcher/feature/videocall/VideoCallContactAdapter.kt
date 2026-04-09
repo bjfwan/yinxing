@@ -79,7 +79,7 @@ class VideoCallContactAdapter(
         holder.photo.contentDescription = context.getString(R.string.contact_photo_description, contact.name)
         holder.card.contentDescription = context.getString(R.string.video_contact_action_description, contact.name)
 
-        val photoSize = context.dpToPx(if (lowPerformanceMode) 84 else 100)
+        val photoSize = context.dpToPx(if (lowPerformanceMode) 80 else 100)
         holder.photo.layoutParams = holder.photo.layoutParams.apply {
             width = photoSize
             height = photoSize
@@ -87,7 +87,7 @@ class VideoCallContactAdapter(
 
         holder.photo.setDefaultAvatar()
         holder.photoJob?.cancel()
-        if (contact.avatarUri != null) {
+        if (!contact.avatarUri.isNullOrBlank()) {
             holder.photoJob = scope.launch {
                 val bitmap = MediaThumbnailLoader.loadBitmap(
                     context,
@@ -95,10 +95,11 @@ class VideoCallContactAdapter(
                     photoSize,
                     photoSize
                 )
-                if (holder.bindingAdapterPosition == RecyclerView.NO_POSITION) {
+                val currentPosition = holder.bindingAdapterPosition
+                if (currentPosition == RecyclerView.NO_POSITION) {
                     return@launch
                 }
-                val currentItem = currentList.getOrNull(holder.bindingAdapterPosition)
+                val currentItem = currentList.getOrNull(currentPosition)
                 if (currentItem?.id == contact.id && bitmap != null) {
                     holder.photo.setImageBitmap(bitmap)
                     holder.photo.clearColorFilter()
