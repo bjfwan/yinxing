@@ -21,6 +21,7 @@
 
 - Android SDK 通过 `local.properties` 中的 `sdk.dir` 指定
 - 运行 Gradle 前需要确保 `JAVA_HOME` 可用
+- 如需把 Gradle 缓存放到非系统盘，可额外设置 `GRADLE_USER_HOME`
 
 ## 4. 常用命令
 

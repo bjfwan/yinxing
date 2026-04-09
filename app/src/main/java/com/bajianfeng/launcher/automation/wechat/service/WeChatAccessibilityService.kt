@@ -81,6 +81,10 @@ class WeChatAccessibilityService : AccessibilityService() {
         this.stateCallback = callback
     }
 
+    fun requestVideoCall(contactName: String) {
+        startVideoCall(contactName)
+    }
+
     private fun notifyState(state: String, success: Boolean) {
         stateCallback?.invoke(state, success)
     }

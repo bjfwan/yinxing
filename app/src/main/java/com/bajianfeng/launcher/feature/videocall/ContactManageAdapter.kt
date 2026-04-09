@@ -30,24 +30,11 @@ class ContactManageAdapter(
         val contact = contacts[position]
         holder.tvName.text = contact.name
         holder.tvCallCount.text = "通话${contact.callCount}次"
-        
+
         holder.btnDelete.setOnClickListener {
             onDeleteClick(contact)
         }
     }
 
     override fun getItemCount() = contacts.size
-    
-    fun removeContact(contact: Contact) {
-        val position = contacts.indexOf(contact)
-        if (position >= 0) {
-            contacts.removeAt(position)
-            notifyItemRemoved(position)
-        }
-    }
-    
-    fun addContact(contact: Contact) {
-        contacts.add(0, contact)
-        notifyItemInserted(0)
-    }
 }
