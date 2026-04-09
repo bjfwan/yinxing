@@ -1,11 +1,11 @@
 package com.bajianfeng.launcher.feature.appmanage
 
 import android.os.Bundle
-import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.bajianfeng.launcher.R
+import com.bajianfeng.launcher.data.home.LauncherPreferences
 import kotlinx.coroutines.*
 
 class AppManageActivity : AppCompatActivity() {
@@ -13,10 +13,13 @@ class AppManageActivity : AppCompatActivity() {
     private lateinit var adapter: AppListAdapter
     private val appList = mutableListOf<AppInfo>()
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Main)
+    private lateinit var launcherPreferences: LauncherPreferences
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_app_manage)
+
+        launcherPreferences = LauncherPreferences.getInstance(this)
 
         recyclerView = findViewById(R.id.recycler_view)
         recyclerView.layoutManager = LinearLayoutManager(this)
@@ -40,7 +43,6 @@ class AppManageActivity : AppCompatActivity() {
         scope.launch {
             val apps = withContext(Dispatchers.IO) {
                 val pm = packageManager
-                val prefs = getSharedPreferences("launcher_prefs", MODE_PRIVATE)
                 pm.getInstalledApplications(0)
                     .filter { pm.getLaunchIntentForPackage(it.packageName) != null }
                     .map { app ->
@@ -48,7 +50,7 @@ class AppManageActivity : AppCompatActivity() {
                             packageName = app.packageName,
                             appName = app.loadLabel(pm).toString(),
                             icon = app.loadIcon(pm),
-                            isSelected = prefs.getBoolean(app.packageName, false)
+                            isSelected = launcherPreferences.isPackageSelected(app.packageName)
                         )
                     }
                     .sortedBy { it.appName }
@@ -60,7 +62,6 @@ class AppManageActivity : AppCompatActivity() {
     }
 
     private fun saveAppSelection(packageName: String, isSelected: Boolean) {
-        val prefs = getSharedPreferences("launcher_prefs", MODE_PRIVATE)
-        prefs.edit().putBoolean(packageName, isSelected).commit()
+        launcherPreferences.setPackageSelected(packageName, isSelected)
     }
 }
