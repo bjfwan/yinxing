@@ -25,7 +25,9 @@
 - `refactor/package-structure`
 - `docs/project-roadmap-update`
 
-## 3. 开发流程
+## 3. 完整闭环
+
+### 3.1 开发前
 
 每次开始新任务前，先同步主分支，再创建自己的工作分支。
 
@@ -35,7 +37,9 @@ git pull origin main
 git switch -c feature/your-task-name
 ```
 
-开发完成后，在当前分支提交：
+### 3.2 开发中提交
+
+开发完成后，在当前分支提交并推送远程：
 
 ```bash
 git add .
@@ -43,7 +47,33 @@ git commit -m "feat: add xxx"
 git push -u origin feature/your-task-name
 ```
 
-然后发起 PR，目标分支为 `main`。
+### 3.3 GitHub 合并
+
+推送完成后，在 GitHub 发起 PR，目标分支为 `main`。
+
+流程如下：
+
+1. 选择 `base: main`
+2. 选择 `compare: feature/your-task-name`
+3. 创建 PR
+4. 检查改动范围
+5. 确认无问题后合并到 `main`
+
+### 3.4 合并后本地收尾
+
+PR 合并完成后，本地执行以下命令：
+
+```bash
+git switch main
+git pull origin main
+git branch -d feature/your-task-name
+```
+
+含义如下：
+
+- `git switch main`：切回主分支
+- `git pull origin main`：同步远程最新主分支代码
+- `git branch -d feature/your-task-name`：删除本地已经完成的功能分支
 
 ## 4. 提交规则
 
