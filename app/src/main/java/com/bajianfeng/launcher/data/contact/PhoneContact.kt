@@ -1,8 +1,8 @@
-package com.bajianfeng.launcher.feature.phone
+package com.bajianfeng.launcher.data.contact
 
 import android.graphics.Bitmap
 
-data class ContactInfo(
+data class PhoneContact(
     val id: String,
     val name: String,
     val phoneNumber: String,

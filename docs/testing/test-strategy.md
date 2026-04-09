@@ -4,55 +4,61 @@
 
 ## 1. 当前测试现状
 
-- 当前已补充最小单元测试，覆盖 `ContactStorage`、`HomeAppOrderPolicy` 和无障碍服务匹配逻辑
-- 当前基础命令已验证可跑通，但依赖正确的本地环境变量
-- 当前发布前验证仍以人工验证和基础构建验证为主
+- 当前单元测试已覆盖 `HomeAppOrderPolicy`、`ContactStorage`、`LauncherPreferences`、`ContactManager`、`PermissionRequestHandler`
+- 当前已补主页和电话联系人页的 Robolectric UI 冒烟测试
+- 当前命令行验证基线已经固定为 `testDebugUnitTest`、`assembleDebug`、`lintDebug`
 
 ## 2. 当前已验证结果
 
 - 在 `JAVA_HOME=D:\android\jbr`、`GRADLE_USER_HOME=D:\gradle-home` 下，`testDebugUnitTest` 已通过
 - 在同样环境下，`assembleDebug` 已通过
-- `lintDebug` 当前失败，首个阻断错误位于 `AndroidManifest.xml` 中的电话硬件特性声明缺失
-- 当前 Lint 还暴露了应用可见性、硬编码文案、无障碍和资源清理问题
+- 在同样环境下，`lintDebug` 已通过
+- 当前 `lintDebug` 结果为 `No issues found.`
 
 ## 3. 当前最低验证要求
 
 - `assembleDebug` 通过
 - `testDebugUnitTest` 通过
-- 桌面主页可以正常打开
+- `lintDebug` 通过
+- 主页可以正常打开并展示内置入口
 - 应用管理页可以加载并保存勾选状态
-- 电话联系人页可以加载、添加、编辑、删除和拨号
-- 视频联系人页可以打开、添加和删除联系人
+- 电话联系人页可以处理无权限、空列表、联系人增删改和拨号
+- 视频联系人页可以在呼叫模式与管理模式间切换，并完成联系人新增、删除和微信视频发起前置检查
 
 ## 4. 当前人工测试清单
 
 - 默认桌面切换后，主页入口正常
 - 主页返回键提示正常
 - 设置入口正常
-- 天气入口在有对应厂商应用时可跳转
+- 天气入口在有对应厂商应用时可跳转，兜底浏览器可打开
 - 电话联系人权限申请正常
 - 联系人新增、编辑、删除后页面刷新正常
 - 视频联系人新增、删除后列表刷新正常
+- 微信视频发起前的网络、无障碍、悬浮窗前置检查正常
 
-## 5. 后续自动化测试建议
+## 5. 当前自动化覆盖
 
 - 单元测试
+  - `HomeAppOrderPolicy`
+  - `ContactStorage`
   - `LauncherPreferences`
   - `ContactManager`
-  - 排序和本地存储逻辑
-  - 网络和权限判断的包装逻辑
-- 仪器测试
-  - 主页启动
-  - 页面跳转
-  - 联系人页基本交互
-- 手工专项测试
-  - 老年用户操作路径
-  - 权限拒绝场景
-  - 不同厂商系统兼容性
+  - `PermissionRequestHandler`
+  - 无障碍服务匹配逻辑
+- Robolectric UI 冒烟
+  - `MainActivitySmokeTest`
+  - `PhoneActivitySmokeTest`
 
-## 6. 发布门禁建议
+## 6. 后续自动化测试建议
 
-- 第一阶段：固定 `JAVA_HOME` 与 `GRADLE_USER_HOME` 后，`assembleDebug` + `testDebugUnitTest` 通过，再配合人工冒烟测试
-- 第二阶段：清掉 `lintDebug` 阻断错误，并把高风险告警收敛到可接受范围
-- 第三阶段：补齐核心单元测试后，再引入自动化门禁
-- 第四阶段：补齐 UI 冒烟测试和权限回归测试
+- 补 `VideoCallActivity` 的管理模式和空状态回归测试
+- 补 `AppManageActivity` 与 `SettingsActivity` 的 UI 冒烟测试
+- 如果后续引入设备或模拟器，再补联系人编辑、权限拒绝和页面跳转的仪器测试
+- 手工专项测试继续覆盖老年用户操作路径、权限拒绝场景和不同厂商系统兼容性
+
+## 7. 发布门禁建议
+
+- 第一阶段：固定 `JAVA_HOME` 与 `GRADLE_USER_HOME` 后，强制执行 `assembleDebug` + `testDebugUnitTest` + `lintDebug`
+- 第二阶段：补齐视频联系人、设置页和应用管理页的 UI 冒烟测试
+- 第三阶段：补齐权限拒绝、跨页面跳转和微信自动化关键路径回归
+- 第四阶段：再评估更严格的发布门禁和设备级回归

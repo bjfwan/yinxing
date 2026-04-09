@@ -1,13 +1,14 @@
 package com.bajianfeng.launcher.feature.home
 
-import android.graphics.drawable.Drawable
-
 data class HomeAppItem(
     val packageName: String,
     val appName: String,
-    val icon: Drawable,
-    val type: Type
+    val type: Type,
+    val iconResId: Int? = null
 ) {
+    val stableId: Long
+        get() = "${type.name}:$packageName".hashCode().toLong()
+
     enum class Type {
         APP, SETTINGS, ADD, WEATHER, PHONE, WECHAT_VIDEO
     }

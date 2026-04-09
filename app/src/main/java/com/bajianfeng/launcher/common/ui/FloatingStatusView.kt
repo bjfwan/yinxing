@@ -2,11 +2,13 @@ package com.bajianfeng.launcher.common.ui
 
 import android.content.Context
 import android.graphics.PixelFormat
+import android.os.Build
 import android.os.Handler
 import android.os.Looper
 import android.view.Gravity
 import android.view.LayoutInflater
 import android.view.WindowManager
+import android.widget.FrameLayout
 import android.widget.TextView
 import com.bajianfeng.launcher.R
 
@@ -24,12 +26,21 @@ class FloatingStatusView(private val context: Context) {
             }
 
             try {
-                floatingView = LayoutInflater.from(context).inflate(R.layout.floating_status, null)
+                floatingView = LayoutInflater.from(context).inflate(
+                    R.layout.floating_status,
+                    FrameLayout(context),
+                    false
+                )
 
                 val params = WindowManager.LayoutParams(
                     WindowManager.LayoutParams.WRAP_CONTENT,
                     WindowManager.LayoutParams.WRAP_CONTENT,
-                    WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY,
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                        WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY
+                    } else {
+                        @Suppress("DEPRECATION")
+                        WindowManager.LayoutParams.TYPE_PHONE
+                    },
                     WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE or WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE,
                     PixelFormat.TRANSLUCENT
                 ).apply {

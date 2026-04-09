@@ -23,6 +23,7 @@ app/src/main/java/com/bajianfeng/launcher/
 ├── automation/
 │   └── wechat/
 ├── common/
+│   ├── media/
 │   ├── service/
 │   ├── ui/
 │   └── util/
@@ -33,6 +34,7 @@ app/src/main/java/com/bajianfeng/launcher/
     ├── appmanage/
     ├── home/
     ├── phone/
+    ├── settings/
     └── videocall/
 ```
 
@@ -64,6 +66,8 @@ app/src/main/java/com/bajianfeng/launcher/
 - 新桌面配置或排序策略：`data.home`
 - 新电话功能：`feature.phone`
 - 新视频联系人功能：`feature.videocall`
+- 新设置页功能：`feature.settings`
+- 新图片或缩略图能力：`common.media`
 - 新共享工具：`common`
 - 新本地数据源：`data`
 - 新实验性自动化：`automation`

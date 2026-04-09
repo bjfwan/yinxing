@@ -24,3 +24,4 @@ dependencyResolutionManagement {
 
 rootProject.name = "OldLauncher"
 include(":app")
+include(":benchmark")
