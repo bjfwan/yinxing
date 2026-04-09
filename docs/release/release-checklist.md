@@ -10,7 +10,11 @@
 
 ## 2. 构建检查
 
+- `JAVA_HOME` 已确认可用
+- `GRADLE_USER_HOME` 已确认使用稳定路径
 - `assembleDebug` 通过
+- `testDebugUnitTest` 通过
+- `lintDebug` 没有阻断错误，或已确认存在可接受的基线
 - 目标设备可安装
 - 关键权限声明已确认
 
