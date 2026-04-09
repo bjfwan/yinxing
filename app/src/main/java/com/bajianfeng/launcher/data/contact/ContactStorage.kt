@@ -23,8 +23,10 @@ object ContactStorage {
                         avatarUri = obj.optNullableString("avatarUri"),
                         isPinned = obj.optBoolean("isPinned", false),
                         callCount = obj.optInt("callCount", 0),
-                        lastCallTime = obj.optLong("lastCallTime", 0)
-                    ).normalized()
+                        lastCallTime = obj.optLong("lastCallTime", 0),
+                        searchKeywords = obj.optStringList("searchKeywords")
+                    )
+                        .normalized()
                 )
             }
             contacts
@@ -35,7 +37,10 @@ object ContactStorage {
 
     fun encode(contacts: List<Contact>): String {
         val jsonArray = JSONArray()
-        contacts.forEach { contact ->
+        contacts.forEach { rawContact ->
+            val contact = rawContact.normalized()
+            val keywordArray = JSONArray()
+            contact.searchKeywords.forEach(keywordArray::put)
             jsonArray.put(
                 JSONObject().apply {
                     put("id", contact.id)
@@ -46,10 +51,15 @@ object ContactStorage {
                     put("isPinned", contact.isPinned)
                     put("callCount", contact.callCount)
                     put("lastCallTime", contact.lastCallTime)
+                    put("searchKeywords", keywordArray)
                 }
             )
         }
         return jsonArray.toString()
+    }
+
+    fun normalize(contact: Contact): Contact {
+        return contact.normalized()
     }
 
     fun sort(contacts: List<Contact>): List<Contact> {
@@ -61,8 +71,27 @@ object ContactStorage {
         )
     }
 
+    fun filter(contacts: List<Contact>, query: String): List<Contact> {
+        if (query.isBlank()) {
+            return sort(contacts)
+        }
+        return sort(contacts.filter { it.matchesQuery(query) })
+    }
+
     private fun JSONObject.optNullableString(key: String): String? {
         val value = optString(key).trim()
         return value.takeIf { it.isNotEmpty() }
+    }
+
+    private fun JSONObject.optStringList(key: String): List<String> {
+        val jsonArray = optJSONArray(key) ?: return emptyList()
+        return buildList {
+            for (index in 0 until jsonArray.length()) {
+                val value = jsonArray.optString(index).trim()
+                if (value.isNotEmpty()) {
+                    add(value)
+                }
+            }
+        }
     }
 }

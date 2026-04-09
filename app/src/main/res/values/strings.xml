@@ -30,6 +30,9 @@
     <string name="action_delete">删除</string>
     <string name="action_manage">管理</string>
     <string name="action_go_to_settings">去设置</string>
+    <string name="action_pin">置顶</string>
+    <string name="action_unpin">取消置顶</string>
+    <string name="action_clear">清空</string>
     <string name="action_select_photo">选择照片</string>
     <string name="action_continue">继续</string>
     <string name="label_name">姓名</string>
@@ -55,6 +58,7 @@
     <string name="contact_delete_failed">删除失败：%1$s</string>
     <string name="contact_added">联系人已添加</string>
     <string name="contact_add_failed">添加失败：%1$s</string>
+    <string name="contact_list_not_refreshed">未授予联系人读取权限，列表未刷新</string>
     <string name="contact_load_failed">联系人加载失败：%1$s</string>
     <string name="dial_failed">拨号失败：%1$s</string>
     <string name="state_phone_permission_title">无法读取联系人</string>
@@ -90,11 +94,19 @@
     <string name="state_video_manage_empty_message">当前还没有微信联系人，先添加一个联系人</string>
     <string name="state_video_empty_action_manage">去管理</string>
     <string name="state_video_empty_action_add">新增联系人</string>
+    <string name="state_video_search_empty_title">未找到联系人</string>
+    <string name="state_video_search_empty_message">没有匹配“%1$s”的联系人，可以清空搜索后再试</string>
     <string name="video_contact_placeholder">微信联系人</string>
     <string name="video_contact_call_count">通话%1$d次</string>
     <string name="video_contact_call_count_placeholder">通话0次</string>
+    <string name="video_contact_last_call_summary">通话%1$d次 · 最近%2$s</string>
     <string name="video_contact_action_description">与 %1$s 发起微信视频</string>
     <string name="video_contact_delete_description">删除 %1$s</string>
+    <string name="video_contact_pin_description">置顶 %1$s</string>
+    <string name="video_contact_unpin_description">取消置顶 %1$s</string>
+    <string name="video_contact_pinned">已置顶：%1$s</string>
+    <string name="video_contact_unpinned">已取消置顶：%1$s</string>
+    <string name="video_contact_search_hint">搜索联系人姓名或关键词</string>
     <string name="status_operating">正在操作…</string>
     <string name="settings_title">设置</string>
     <string name="settings_low_performance_title">低性能模式</string>

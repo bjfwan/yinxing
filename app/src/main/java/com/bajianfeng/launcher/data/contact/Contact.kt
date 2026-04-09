@@ -13,9 +13,9 @@ data class Contact(
 ) {
     fun normalized(): Contact {
         val normalizedName = name.trim()
-        val normalizedPhoneNumber = phoneNumber?.trim().orEmpty().ifBlank { null }
-        val normalizedWechatId = wechatId?.trim().orEmpty().ifBlank { null }
-        val normalizedAvatarUri = avatarUri?.trim().orEmpty().ifBlank { null }
+        val normalizedPhoneNumber = phoneNumber?.trim()?.takeIf { it.isNotEmpty() }
+        val normalizedWechatId = wechatId?.trim()?.takeIf { it.isNotEmpty() }
+        val normalizedAvatarUri = avatarUri?.trim()?.takeIf { it.isNotEmpty() }
         return copy(
             name = normalizedName,
             phoneNumber = normalizedPhoneNumber,
@@ -24,33 +24,52 @@ data class Contact(
             searchKeywords = buildSearchKeywords(
                 normalizedName,
                 normalizedPhoneNumber,
-                normalizedWechatId
+                normalizedWechatId,
+                searchKeywords
             )
         )
     }
 
-    companion object {
-        fun buildSearchKeywords(
-            name: String,
-            phoneNumber: String?,
-            wechatId: String?
-        ): List<String> {
-            return buildSet {
-                addToken(name)
-                addToken(phoneNumber)
-                addToken(wechatId)
-                phoneNumber
-                    ?.filter(Char::isDigit)
-                    ?.takeIf { it.isNotEmpty() }
-                    ?.let { add(it) }
-            }.toList()
+    fun matchesQuery(query: String): Boolean {
+        val normalizedQuery = query.toSearchToken()
+        if (normalizedQuery.isEmpty()) {
+            return true
         }
-
-        private fun MutableSet<String>.addToken(value: String?) {
-            val normalized = value?.trim()?.lowercase().orEmpty()
-            if (normalized.isNotEmpty()) {
-                add(normalized)
-            }
+        return buildSearchKeywords(name, phoneNumber, wechatId, searchKeywords).any { keyword ->
+            keyword.contains(normalizedQuery)
         }
     }
+}
+
+private fun buildSearchKeywords(
+    name: String,
+    phoneNumber: String?,
+    wechatId: String?,
+    searchKeywords: List<String>
+): List<String> {
+    return buildList {
+        addSearchKeyword(name)
+        addSearchKeyword(phoneNumber)
+        addSearchKeyword(wechatId)
+        searchKeywords.forEach(::addSearchKeyword)
+    }.distinct()
+}
+
+private fun MutableList<String>.addSearchKeyword(value: String?) {
+    val normalizedValue = value?.toSearchToken().orEmpty()
+    if (normalizedValue.isNotEmpty()) {
+        add(normalizedValue)
+    }
+    val digitsOnlyValue = value
+        ?.filter { it.isDigit() }
+        .orEmpty()
+    if (digitsOnlyValue.isNotEmpty() && digitsOnlyValue != normalizedValue) {
+        add(digitsOnlyValue)
+    }
+}
+
+private fun String.toSearchToken(): String {
+    return trim()
+        .lowercase()
+        .filter { it.isLetterOrDigit() || it == '_' || it == '-' }
 }

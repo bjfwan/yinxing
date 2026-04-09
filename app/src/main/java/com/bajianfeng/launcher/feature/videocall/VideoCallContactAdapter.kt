@@ -1,21 +1,26 @@
 package com.bajianfeng.launcher.feature.videocall
 
-import android.graphics.BitmapFactory
+import android.graphics.Color
+import android.net.Uri
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.ImageView
 import android.widget.TextView
 import androidx.cardview.widget.CardView
-import androidx.core.graphics.toColorInt
-import androidx.core.net.toUri
 import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
 import com.bajianfeng.launcher.R
+import com.bajianfeng.launcher.common.media.MediaThumbnailLoader
 import com.bajianfeng.launcher.data.contact.Contact
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.launch
 
 class VideoCallContactAdapter(
+    private val scope: CoroutineScope,
+    private var lowPerformanceMode: Boolean,
     private val onContactClick: (Contact) -> Unit
 ) : ListAdapter<Contact, VideoCallContactAdapter.ViewHolder>(DiffCallback) {
 
@@ -31,11 +36,18 @@ class VideoCallContactAdapter(
         }
     }
 
+    init {
+        setHasStableIds(true)
+    }
+
     class ViewHolder(view: View) : RecyclerView.ViewHolder(view) {
         val card: CardView = view.findViewById(R.id.card_video_contact)
         val photo: ImageView = view.findViewById(R.id.iv_video_contact_photo)
         val name: TextView = view.findViewById(R.id.tv_video_contact_name)
+        var photoJob: Job? = null
     }
+
+    override fun getItemId(position: Int): Long = getItem(position).id.hashCode().toLong()
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder {
         val view = LayoutInflater.from(parent.context)
@@ -44,52 +56,65 @@ class VideoCallContactAdapter(
     }
 
     override fun onBindViewHolder(holder: ViewHolder, position: Int) {
-        val contact = getItem(position)
+        bind(holder, getItem(position))
+    }
+
+    override fun onViewRecycled(holder: ViewHolder) {
+        holder.photoJob?.cancel()
+        super.onViewRecycled(holder)
+    }
+
+    fun setLowPerformanceMode(enabled: Boolean) {
+        if (lowPerformanceMode == enabled) {
+            return
+        }
+        lowPerformanceMode = enabled
+        notifyItemRangeChanged(0, itemCount)
+    }
+
+    private fun bind(holder: ViewHolder, contact: Contact) {
         val context = holder.itemView.context
+        holder.card.cardElevation = context.dpToPx(if (lowPerformanceMode) 2 else 4).toFloat()
         holder.name.text = contact.name
         holder.photo.contentDescription = context.getString(R.string.contact_photo_description, contact.name)
         holder.card.contentDescription = context.getString(R.string.video_contact_action_description, contact.name)
 
+        val photoSize = context.dpToPx(if (lowPerformanceMode) 84 else 100)
+        holder.photo.layoutParams = holder.photo.layoutParams.apply {
+            width = photoSize
+            height = photoSize
+        }
+
+        holder.photo.setDefaultAvatar()
+        holder.photoJob?.cancel()
         if (contact.avatarUri != null) {
-            runCatching {
-                val uri = contact.avatarUri.toUri()
-                val options = BitmapFactory.Options().apply { inJustDecodeBounds = true }
-                context.contentResolver.openInputStream(uri)?.use {
-                    BitmapFactory.decodeStream(it, null, options)
+            holder.photoJob = scope.launch {
+                val bitmap = MediaThumbnailLoader.loadBitmap(
+                    context,
+                    Uri.parse(contact.avatarUri),
+                    photoSize,
+                    photoSize
+                )
+                if (holder.bindingAdapterPosition == RecyclerView.NO_POSITION) {
+                    return@launch
                 }
-                options.inSampleSize = calculateInSampleSize(options, 100, 100)
-                options.inJustDecodeBounds = false
-                context.contentResolver.openInputStream(uri)?.use {
-                    BitmapFactory.decodeStream(it, null, options)
+                val currentItem = currentList.getOrNull(holder.bindingAdapterPosition)
+                if (currentItem?.id == contact.id && bitmap != null) {
+                    holder.photo.setImageBitmap(bitmap)
+                    holder.photo.clearColorFilter()
                 }
-            }.getOrNull()?.let { bitmap ->
-                holder.photo.setImageBitmap(bitmap)
-                holder.photo.clearColorFilter()
-            } ?: setDefaultAvatar(holder)
-        } else {
-            setDefaultAvatar(holder)
+            }
         }
 
         holder.card.setOnClickListener { onContactClick(contact) }
     }
 
-    private fun setDefaultAvatar(holder: ViewHolder) {
-        holder.photo.setImageResource(android.R.drawable.ic_menu_call)
-        holder.photo.setColorFilter("#2C3E50".toColorInt())
+    private fun ImageView.setDefaultAvatar() {
+        setImageResource(android.R.drawable.ic_menu_call)
+        setColorFilter(Color.parseColor("#2C3E50"))
     }
 
-    private fun calculateInSampleSize(options: BitmapFactory.Options, reqWidth: Int, reqHeight: Int): Int {
-        val height = options.outHeight
-        val width = options.outWidth
-        var inSampleSize = 1
-
-        if (height > reqHeight || width > reqWidth) {
-            val halfHeight = height / 2
-            val halfWidth = width / 2
-            while (halfHeight / inSampleSize >= reqHeight && halfWidth / inSampleSize >= reqWidth) {
-                inSampleSize *= 2
-            }
-        }
-        return inSampleSize
+    private fun android.content.Context.dpToPx(dp: Int): Int {
+        return (dp * resources.displayMetrics.density).toInt()
     }
 }
