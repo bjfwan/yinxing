@@ -27,7 +27,8 @@ app/src/main/java/com/bajianfeng/launcher/
 │   ├── ui/
 │   └── util/
 ├── data/
-│   └── contact/
+│   ├── contact/
+│   └── home/
 └── feature/
     ├── appmanage/
     ├── home/
@@ -39,7 +40,7 @@ app/src/main/java/com/bajianfeng/launcher/
 
 - 页面、页面专属适配器、页面专属模型优先放在对应 `feature` 包内
 - 可跨功能复用的服务、公共视图、工具类放在 `common`
-- 本地数据模型和数据管理器放在 `data`
+- 本地数据模型、偏好设置和数据管理器放在 `data`
 - 实验性自动化能力统一放在 `automation`
 
 ## 4. 命名规则
@@ -60,6 +61,7 @@ app/src/main/java/com/bajianfeng/launcher/
 ## 6. 后续新增文件放置建议
 
 - 新桌面功能：`feature.home`
+- 新桌面配置或排序策略：`data.home`
 - 新电话功能：`feature.phone`
 - 新视频联系人功能：`feature.videocall`
 - 新共享工具：`common`
