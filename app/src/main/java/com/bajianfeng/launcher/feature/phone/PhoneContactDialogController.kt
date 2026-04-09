@@ -136,6 +136,7 @@ class PhoneContactDialogController(
 
         dialog.setOnDismissListener {
             photoPreview = null
+            selectedPhoto = null
         }
         dialog.show()
     }

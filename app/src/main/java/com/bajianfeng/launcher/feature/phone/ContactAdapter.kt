@@ -58,11 +58,6 @@ class ContactAdapter(
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ContactViewHolder {
         val view = LayoutInflater.from(parent.context)
             .inflate(R.layout.item_contact, parent, false)
-
-        if (cachedCardHeight == 0) {
-            cachedCardHeight = (parent.context.resources.displayMetrics.heightPixels * 0.75f).toInt()
-        }
-
         return ContactViewHolder(view)
     }
 
@@ -80,11 +75,19 @@ class ContactAdapter(
             return
         }
         lowPerformanceMode = enabled
+        cachedCardHeight = 0
         notifyItemRangeChanged(0, itemCount)
     }
 
     private fun bind(holder: ContactViewHolder, contact: PhoneContact) {
         val context = holder.itemView.context
+        if (cachedCardHeight == 0) {
+            cachedCardHeight = (
+                context.resources.displayMetrics.heightPixels *
+                    if (lowPerformanceMode) 0.58f else 0.75f
+                ).toInt()
+        }
+
         val layoutParams = holder.card.layoutParams as ViewGroup.MarginLayoutParams
         if (layoutParams.height != cachedCardHeight) {
             layoutParams.height = cachedCardHeight
@@ -100,14 +103,15 @@ class ContactAdapter(
 
         holder.photo.setDefaultAvatar()
         holder.photoJob?.cancel()
-        if (contact.photoUri != null) {
-            val targetSize = context.dpToPx(if (lowPerformanceMode) 160 else 320)
+        if (!contact.photoUri.isNullOrBlank()) {
+            val targetSize = context.dpToPx(if (lowPerformanceMode) 120 else 160)
             holder.photoJob = scope.launch {
                 val bitmap = MediaThumbnailLoader.loadBitmap(context, Uri.parse(contact.photoUri), targetSize, targetSize)
-                if (holder.bindingAdapterPosition == RecyclerView.NO_POSITION) {
+                val currentPosition = holder.bindingAdapterPosition
+                if (currentPosition == RecyclerView.NO_POSITION) {
                     return@launch
                 }
-                val currentItem = currentList.getOrNull(holder.bindingAdapterPosition)
+                val currentItem = currentList.getOrNull(currentPosition)
                 if (currentItem?.id == contact.id && bitmap != null) {
                     holder.photo.setImageBitmap(bitmap)
                     holder.photo.clearColorFilter()
@@ -144,7 +148,7 @@ class ContactAdapter(
             setOnClickListener { dialog.dismiss() }
         }
 
-        if (contact.photoUri != null) {
+        if (!contact.photoUri.isNullOrBlank()) {
             scope.launch {
                 val previewSize = context.dpToPx(if (lowPerformanceMode) 320 else 720)
                 val bitmap = MediaThumbnailLoader.loadBitmap(context, Uri.parse(contact.photoUri), previewSize, previewSize)

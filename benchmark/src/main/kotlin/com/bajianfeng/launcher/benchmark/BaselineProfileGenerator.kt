@@ -1,6 +1,6 @@
 package com.bajianfeng.launcher.benchmark
 
-import androidx.benchmark.macro.BaselineProfileRule
+import androidx.benchmark.macro.junit4.BaselineProfileRule
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.uiautomator.By
 import androidx.test.uiautomator.Until

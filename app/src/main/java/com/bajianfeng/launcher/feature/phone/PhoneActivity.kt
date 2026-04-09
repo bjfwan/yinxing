@@ -12,7 +12,7 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.cardview.widget.CardView
 import androidx.core.app.ActivityCompat
 import androidx.recyclerview.widget.DefaultItemAnimator
-import androidx.recyclerview.widget.GridLayoutManager
+import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.bajianfeng.launcher.R
 import com.bajianfeng.launcher.common.media.MediaThumbnailLoader
@@ -87,7 +87,7 @@ class PhoneActivity : AppCompatActivity() {
         contactRepository = PhoneContactRepository(this)
 
         recyclerView = findViewById(R.id.recycler_contacts)
-        recyclerView.layoutManager = GridLayoutManager(this, 1)
+        recyclerView.layoutManager = LinearLayoutManager(this)
         recyclerView.setHasFixedSize(false)
 
         stateView = findViewById(R.id.view_page_state)
@@ -152,7 +152,7 @@ class PhoneActivity : AppCompatActivity() {
 
     private fun applyPerformanceMode() {
         val lowPerformanceMode = launcherPreferences.isLowPerformanceModeEnabled()
-        recyclerView.setItemViewCacheSize(if (lowPerformanceMode) 2 else 10)
+        recyclerView.setItemViewCacheSize(if (lowPerformanceMode) 3 else 8)
         recyclerView.itemAnimator = if (lowPerformanceMode) null else DefaultItemAnimator()
         adapter.setLowPerformanceMode(lowPerformanceMode)
     }

@@ -2,6 +2,7 @@ package com.bajianfeng.launcher.benchmark
 
 import android.content.Intent
 import androidx.benchmark.junit4.PerfettoTraceRule
+import androidx.benchmark.perfetto.ExperimentalPerfettoCaptureApi
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
 import androidx.test.uiautomator.By
@@ -12,6 +13,7 @@ import org.junit.Test
 import org.junit.runner.RunWith
 
 @RunWith(AndroidJUnit4::class)
+@OptIn(ExperimentalPerfettoCaptureApi::class)
 class HomePerfettoTrace {
     @get:Rule
     val perfettoTraceRule = PerfettoTraceRule()
