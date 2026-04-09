@@ -13,6 +13,9 @@ import androidx.recyclerview.widget.GridLayoutManager
 import androidx.recyclerview.widget.ItemTouchHelper
 import androidx.recyclerview.widget.RecyclerView
 import com.bajianfeng.launcher.R
+import com.bajianfeng.launcher.data.home.HomeAppOrderPolicy
+import com.bajianfeng.launcher.data.home.LauncherPreferences
+import com.bajianfeng.launcher.data.home.OrderedApp
 import com.bajianfeng.launcher.feature.appmanage.AppManageActivity
 import com.bajianfeng.launcher.feature.phone.PhoneActivity
 import com.bajianfeng.launcher.feature.videocall.VideoCallActivity
@@ -26,6 +29,7 @@ class MainActivity : AppCompatActivity() {
     private val appList = mutableListOf<HomeAppItem>()
     private lateinit var tvTime: TextView
     private lateinit var tvDate: TextView
+    private lateinit var launcherPreferences: LauncherPreferences
     private val handler = Handler(Looper.getMainLooper())
     private val timeFormat = SimpleDateFormat("HH:mm", Locale.CHINA)
     private val dateFormat = SimpleDateFormat("yyyy年MM月dd日 EEEE", Locale.CHINA)
@@ -40,6 +44,8 @@ class MainActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
+
+        launcherPreferences = LauncherPreferences.getInstance(this)
 
         onBackPressedDispatcher.addCallback(this, object : OnBackPressedCallback(true) {
             override fun handleOnBackPressed() {
@@ -93,35 +99,32 @@ class MainActivity : AppCompatActivity() {
     private fun loadApps() {
         appList.clear()
 
-        val prefs = getSharedPreferences("launcher_prefs", MODE_PRIVATE)
         val pm = packageManager
-        val savedOrder = prefs.getString("app_order", "")
-            ?.split(",")
-            ?.filter { it.isNotEmpty() }
-            ?: emptyList()
-
-        val selectedApps = mutableMapOf<String, HomeAppItem>()
-
-        for ((key, value) in prefs.all) {
-            if (key == "app_order") continue
-            if (value !is Boolean || !value) continue
+        val selectedApps = launcherPreferences.getSelectedPackages().mapNotNull { packageName ->
             try {
-                val appInfo = pm.getApplicationInfo(key, 0)
-                selectedApps[key] = HomeAppItem(
-                    packageName = key,
+                val appInfo = pm.getApplicationInfo(packageName, 0)
+                HomeAppItem(
+                    packageName = packageName,
                     appName = appInfo.loadLabel(pm).toString(),
                     icon = appInfo.loadIcon(pm),
                     type = HomeAppItem.Type.APP
                 )
             } catch (_: Exception) {
+                null
             }
         }
 
-        for (pkg in savedOrder) {
-            selectedApps.remove(pkg)?.let { appList.add(it) }
+        val selectedAppsByPackage = selectedApps.associateBy { it.packageName }
+        val orderedApps = HomeAppOrderPolicy.orderApps(
+            selectedApps.map { OrderedApp(it.packageName, it.appName) },
+            launcherPreferences.getAppOrder()
+        )
+
+        orderedApps.forEach { app ->
+            selectedAppsByPackage[app.packageName]?.let(appList::add)
         }
 
-        selectedApps.values.forEach { appList.add(it) }
+        launcherPreferences.syncAppOrder(orderedApps.map { it.packageName })
 
         appList.add(HomeAppItem("phone", "电话", getDrawable(android.R.drawable.ic_menu_call)!!, HomeAppItem.Type.PHONE))
         appList.add(HomeAppItem("wechat_video", "微信视频", getDrawable(android.R.drawable.ic_menu_call)!!, HomeAppItem.Type.WECHAT_VIDEO))
@@ -131,11 +134,11 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun saveAppOrder() {
-        val prefs = getSharedPreferences("launcher_prefs", MODE_PRIVATE)
-        val order = appList
-            .filter { it.type == HomeAppItem.Type.APP }
-            .joinToString(",") { it.packageName }
-        prefs.edit().putString("app_order", order).apply()
+        launcherPreferences.saveAppOrder(
+            appList
+                .filter { it.type == HomeAppItem.Type.APP }
+                .map { it.packageName }
+        )
     }
 
     private fun handleAppClick(item: HomeAppItem) {
@@ -214,8 +217,7 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun removeApp(packageName: String) {
-        val prefs = getSharedPreferences("launcher_prefs", MODE_PRIVATE)
-        prefs.edit().putBoolean(packageName, false).commit()
+        launcherPreferences.setPackageSelected(packageName, false)
         loadApps()
         adapter.notifyDataSetChanged()
         Toast.makeText(this, "已移除", Toast.LENGTH_SHORT).show()

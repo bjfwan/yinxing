@@ -15,6 +15,10 @@ class ItemMoveCallback(
         recyclerView: RecyclerView,
         viewHolder: RecyclerView.ViewHolder
     ): Int {
+        if (!adapter.canMoveItem(viewHolder.bindingAdapterPosition)) {
+            return makeMovementFlags(0, 0)
+        }
+
         val dragFlags = ItemTouchHelper.UP or ItemTouchHelper.DOWN or 
                        ItemTouchHelper.LEFT or ItemTouchHelper.RIGHT
         return makeMovementFlags(dragFlags, 0)
@@ -25,8 +29,10 @@ class ItemMoveCallback(
         viewHolder: RecyclerView.ViewHolder,
         target: RecyclerView.ViewHolder
     ): Boolean {
-        adapter.onItemMove(viewHolder.adapterPosition, target.adapterPosition)
-        return true
+        return adapter.onItemMove(
+            viewHolder.bindingAdapterPosition,
+            target.bindingAdapterPosition
+        )
     }
 
     override fun onSwiped(viewHolder: RecyclerView.ViewHolder, direction: Int) {
@@ -50,5 +56,6 @@ class ItemMoveCallback(
 }
 
 interface ItemTouchHelperAdapter {
-    fun onItemMove(fromPosition: Int, toPosition: Int)
+    fun canMoveItem(position: Int): Boolean
+    fun onItemMove(fromPosition: Int, toPosition: Int): Boolean
 }

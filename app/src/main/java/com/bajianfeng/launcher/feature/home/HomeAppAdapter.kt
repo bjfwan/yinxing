@@ -1,6 +1,7 @@
 package com.bajianfeng.launcher.feature.home
 
 import android.view.LayoutInflater
+import android.view.MotionEvent
 import android.view.View
 import android.view.ViewGroup
 import android.widget.ImageView
@@ -27,7 +28,6 @@ class HomeAppAdapter(
         val card: CardView = view.findViewById(R.id.card_item)
         val icon: ImageView = view.findViewById(R.id.icon)
         val name: TextView = view.findViewById(R.id.name)
-        val deleteBtn: ImageView = view.findViewById(R.id.btn_delete)
     }
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder {
@@ -40,23 +40,23 @@ class HomeAppAdapter(
         val item = appList[position]
         holder.icon.setImageDrawable(item.icon)
         holder.name.text = item.appName
-        holder.deleteBtn.visibility = View.GONE
 
         holder.card.setOnTouchListener(null)
         holder.icon.setOnLongClickListener(null)
-        holder.deleteBtn.setOnClickListener(null)
+        holder.icon.setOnTouchListener(null)
 
         if (item.type == HomeAppItem.Type.APP) {
             holder.card.setOnClickListener { onItemClick(item) }
 
             holder.card.setOnLongClickListener {
-                holder.deleteBtn.visibility = View.VISIBLE
-                true
+                onItemLongClick(item)
             }
 
-            holder.deleteBtn.setOnClickListener {
-                holder.deleteBtn.visibility = View.GONE
-                onItemLongClick(item)
+            holder.icon.setOnTouchListener { _, event ->
+                if (event.actionMasked == MotionEvent.ACTION_DOWN) {
+                    touchHelper?.startDrag(holder)
+                }
+                false
             }
         } else {
             holder.card.setOnClickListener { onItemClick(item) }
@@ -66,7 +66,15 @@ class HomeAppAdapter(
 
     override fun getItemCount() = appList.size
 
-    override fun onItemMove(fromPosition: Int, toPosition: Int) {
+    override fun canMoveItem(position: Int): Boolean {
+        return appList.getOrNull(position)?.type == HomeAppItem.Type.APP
+    }
+
+    override fun onItemMove(fromPosition: Int, toPosition: Int): Boolean {
+        if (!canMoveItem(fromPosition) || !canMoveItem(toPosition)) {
+            return false
+        }
+
         if (fromPosition < toPosition) {
             for (i in fromPosition until toPosition) {
                 java.util.Collections.swap(appList, i, i + 1)
@@ -78,5 +86,6 @@ class HomeAppAdapter(
         }
         notifyItemMoved(fromPosition, toPosition)
         onOrderChanged()
+        return true
     }
 }
