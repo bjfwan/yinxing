@@ -1,10 +1,10 @@
 # 当前架构说明
 
-更新时间：2026-04-11
+更新时间：2026-04-12
 
 ## 1. 架构概览
 
-当前项目是一个单模块 Android 应用，核心结构按 `feature`、`data`、`common`、`automation` 四层整理。
+当前项目由 `app` 主应用模块和 `benchmark` 性能测试模块组成，主应用内部按 `feature`、`data`、`common`、`automation` 分层组织。
 
 ## 2. 代码分层
 
@@ -18,11 +18,12 @@
   - 应用列表展示与勾选逻辑
 - `feature.phone`
   - 电话联系人页
-  - 联系人展示适配器
+  - `ContactAdapter`
   - `PhoneContactDialogController`
 - `feature.videocall`
   - 视频联系人页
-  - 联系人展示与管理适配器
+  - `VideoCallContactAdapter`
+  - `ContactManageAdapter`
   - `VideoCallCoordinator`
   - `VideoContactDialogController`
 - `feature.settings`
@@ -33,7 +34,7 @@
 - `data.home`
   - `LauncherPreferences`
   - `LauncherAppRepository`
-  - 应用排序策略
+  - `HomeAppOrderPolicy`
 - `data.contact`
   - `Contact`、`ContactManager`、`ContactStorage`
   - `PhoneContact`、`PhoneContactRepository`
@@ -51,13 +52,22 @@
   - `PermissionRequestHandler`
   - `PermissionUtil`
   - `NetworkUtil`
-  - 无障碍服务匹配工具
+  - `AccessibilityServiceMatcher`
 
 ### 2.4 automation
 
 - `automation.wechat`
   - 实验性微信自动化能力
-  - 包含状态模型、超时管理、无障碍服务和无障碍工具
+  - 包含状态模型、状态检测、超时管理、无障碍服务和辅助工具
+
+### 2.5 testing
+
+- `app/src/test`
+  - 单元测试与 Robolectric UI 冒烟
+- `app/src/androidTest`
+  - 第一批设备级仪器测试脚手架
+- `benchmark`
+  - Baseline Profile 与 Macrobenchmark
 
 ## 3. 数据与存储
 
@@ -85,14 +95,16 @@
 - 没有后端
 - 没有数据库层
 - 没有依赖注入框架
-- 没有多模块拆分
-- 空状态视图和权限流程已经有了公共抽象
-- 自动化能力与主业务已做包级隔离，但仍处在同一 app 模块
+- 主业务仍集中在单个 `app` 模块
+- 空状态视图和权限流程已经形成公共抽象
+- 自动化能力与主业务已做包级隔离，但仍处在同一应用包内
+- 测试层已经拆分为单元测试、Robolectric 与设备级仪器测试三层
 
 ## 6. 当前仍需关注的点
 
 - `automation.wechat` 仍属于实验性代码，需要继续做设备级稳定性验证
-- 主干页面已补 Robolectric UI 冒烟，但低性能模式、权限拒绝和跨页面跳转仍缺设备级回归
+- 第一批仪器测试已搭起脚手架，但当前环境无连接设备，尚未跑通 `connectedDebugAndroidTest`
+- 低性能模式、权限拒绝、系统设置跳转和跨页面链路仍缺更完整的设备级回归
 - 当前仍主要依赖 SharedPreferences 与系统 Provider，没有更强的状态恢复层
 
 ## 7. 当前架构边界

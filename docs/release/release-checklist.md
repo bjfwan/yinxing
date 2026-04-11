@@ -1,6 +1,6 @@
 # 发布检查清单
 
-更新时间：2026-04-09
+更新时间：2026-04-12
 
 ## 1. 版本信息
 
@@ -12,9 +12,10 @@
 
 - `JAVA_HOME` 已确认可用
 - `GRADLE_USER_HOME` 已确认使用稳定路径
-- `assembleDebug` 通过
-- `testDebugUnitTest` 通过
-- `lintDebug` 没有阻断错误，或已确认存在可接受的基线
+- `:app:assembleDebug` 通过
+- `:app:testDebugUnitTest` 通过
+- `:app:assembleDebugAndroidTest` 通过
+- `:app:lintDebug` 没有阻断错误
 - 目标设备可安装
 - 关键权限声明已确认
 
@@ -41,9 +42,12 @@
 - `docs/architecture/` 已更新
 - `docs/development/` 已更新
 - `docs/testing/` 已更新
+- 规划类内容没有误写成已交付能力
 
 ## 6. 发布前回归
 
 - 手工冒烟测试已完成
+- 如环境有设备或模拟器，已执行 `:app:connectedDebugAndroidTest`
+- 当前无设备时，至少确认仪器测试 APK 可以编译
 - 关键已知问题已记录
 - 非当前版本能力没有被写成“已实现”

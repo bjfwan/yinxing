@@ -37,6 +37,7 @@ android {
         targetCompatibility = JavaVersion.VERSION_11
     }
     testOptions {
+        animationsDisabled = true
         unitTests.isIncludeAndroidResources = true
     }
 }
@@ -56,6 +57,8 @@ dependencies {
     testImplementation(libs.json)
     testImplementation(libs.androidx.test.core)
     testImplementation(libs.robolectric)
+    androidTestImplementation(libs.androidx.test.core)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
+    androidTestImplementation(libs.androidx.test.runner)
 }

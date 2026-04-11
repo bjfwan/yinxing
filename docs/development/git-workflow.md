@@ -1,6 +1,6 @@
 # Git 协作规范
 
-更新时间：2026-04-09
+更新时间：2026-04-12
 
 ## 1. 目标
 
@@ -9,18 +9,20 @@
 - `main` 只保留相对稳定、可运行、可演示的代码
 - 日常开发必须先创建分支，再提交代码
 - 不允许直接在 `main` 上开发并提交
+- 功能、测试、文档混合改动时，优先使用能覆盖主任务的分支名
 
 ## 2. 分支规则
 
 - `main`：主分支
-- `feature/*`：新功能开发
+- `feature/*`：新功能或成套能力建设
 - `fix/*`：缺陷修复
 - `refactor/*`：重构调整
-- `docs/*`：文档修改
+- `docs/*`：纯文档修改
 
 分支命名示例：
 
 - `feature/video-call-ui`
+- `feature/docs-and-instrumentation-bootstrap`
 - `fix/contact-list-crash`
 - `refactor/package-structure`
 - `docs/project-roadmap-update`
@@ -47,7 +49,17 @@ git commit -m "feat: add xxx"
 git push -u origin feature/your-task-name
 ```
 
-### 3.3 GitHub 合并
+### 3.3 提交前最低自检
+
+提交前至少完成以下检查：
+
+- `:app:testDebugUnitTest`
+- `:app:assembleDebug`
+- `:app:lintDebug`
+- 如果改动了 `androidTest`，至少保证 `:app:assembleDebugAndroidTest` 可通过
+- 如果本机已连接设备或模拟器，再执行 `:app:connectedDebugAndroidTest`
+
+### 3.4 GitHub 合并
 
 推送完成后，在 GitHub 发起 PR，目标分支为 `main`。
 
@@ -59,7 +71,7 @@ git push -u origin feature/your-task-name
 4. 检查改动范围
 5. 确认无问题后合并到 `main`
 
-### 3.4 合并后本地收尾
+### 3.5 合并后本地收尾
 
 PR 合并完成后，本地执行以下命令：
 
@@ -68,12 +80,6 @@ git switch main
 git pull origin main
 git branch -d feature/your-task-name
 ```
-
-含义如下：
-
-- `git switch main`：切回主分支
-- `git pull origin main`：同步远程最新主分支代码
-- `git branch -d feature/your-task-name`：删除本地已经完成的功能分支
 
 ## 4. 提交规则
 
@@ -89,9 +95,10 @@ git branch -d feature/your-task-name
 提交信息示例：
 
 - `feat: add video call contact screen`
+- `test: add instrumentation smoke coverage`
 - `fix: handle empty contact list`
 - `refactor: reorganize launcher package structure`
-- `docs: add git workflow guide`
+- `docs: refresh project documentation`
 
 ## 5. 合并规则
 
