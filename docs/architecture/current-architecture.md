@@ -1,6 +1,6 @@
 # 当前架构说明
 
-更新时间：2026-04-09
+更新时间：2026-04-11
 
 ## 1. 架构概览
 
@@ -92,7 +92,7 @@
 ## 6. 当前仍需关注的点
 
 - `automation.wechat` 仍属于实验性代码，需要继续做设备级稳定性验证
-- `AppManageActivity`、`SettingsActivity`、`VideoCallActivity` 的 UI 自动化覆盖还不够
+- 主干页面已补 Robolectric UI 冒烟，但低性能模式、权限拒绝和跨页面跳转仍缺设备级回归
 - 当前仍主要依赖 SharedPreferences 与系统 Provider，没有更强的状态恢复层
 
 ## 7. 当前架构边界

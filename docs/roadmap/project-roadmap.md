@@ -1,6 +1,6 @@
 # 项目路线图
 
-更新时间：2026-04-09
+更新时间：2026-04-11
 
 ## 1. 当前判断
 
@@ -12,14 +12,14 @@
 
 ## 2. 已验证现状
 
-- 设置 `JAVA_HOME=D:\android\jbr`、`GRADLE_USER_HOME=D:\gradle-home` 后，`testDebugUnitTest`、`assembleDebug`、`lintDebug` 已验证可通过
+- 在当前工作区于 2026-04-11 直接执行 `.\gradlew.bat testDebugUnitTest`、`.\gradlew.bat assembleDebug`、`.\gradlew.bat lintDebug` 已验证可通过
 - 当前 `lintDebug` 结果已收敛到 `No issues found.`
 - 应用管理页已改为基于 `LauncherAppRepository` 读取和缓存桌面应用
 - 主页已切到仓储层读取桌面入口，并支持低性能模式刷新策略
 - 电话联系人页已下沉为 `PhoneContactRepository` + `PermissionRequestHandler` + `PhoneContactDialogController`
 - 视频联系人页已拆出 `VideoCallCoordinator` 和 `VideoContactDialogController`
 - 公共空状态已经下沉为 `PageStateView`
-- 当前已补 `LauncherPreferences`、`ContactManager`、权限包装和主页/电话联系人页的单测与 UI 冒烟
+- 当前已补 `LauncherPreferences`、`ContactManager`、权限包装单测，以及主页、应用管理、设置、电话联系人、视频联系人页的 UI 冒烟
 
 ## 3. 近期优先级
 
@@ -45,10 +45,15 @@
 - 补齐 `LauncherPreferences`、`ContactManager`、权限包装和主页/电话联系人页测试
 - 清掉当前 `lintDebug` 报告中的全部告警
 
-### 下一阶段 P3
+### 已完成的 P3
 
 - 补 `AppManageActivity`、`SettingsActivity`、`VideoCallActivity` 的 UI 冒烟测试
+- 重新执行 `testDebugUnitTest`、`assembleDebug`、`lintDebug` 全量验收并通过
+
+### 下一阶段 P4
+
 - 继续验证低性能模式对主页和应用管理页的交互影响
+- 如果后续引入设备或模拟器，补设置页系统设置跳转、权限拒绝和跨页面仪器测试
 - 在桌面和电话体验稳定后，再决定是否继续提高微信自动化投入
 
 ## 4. 暂缓事项
