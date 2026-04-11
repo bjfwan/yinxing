@@ -6,6 +6,7 @@ import android.content.pm.ActivityInfo
 import android.content.pm.ApplicationInfo
 import android.content.pm.ResolveInfo
 import android.os.Looper
+import androidx.recyclerview.widget.DefaultItemAnimator
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import androidx.test.core.app.ApplicationProvider
@@ -13,6 +14,7 @@ import com.bajianfeng.launcher.R
 import com.bajianfeng.launcher.data.home.LauncherAppRepository
 import com.bajianfeng.launcher.data.home.LauncherPreferences
 import org.junit.Assert.assertNotNull
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
@@ -30,8 +32,9 @@ class AppManageActivitySmokeTest {
     @Before
     fun setUp() {
         context = ApplicationProvider.getApplicationContext()
+        resetLauncherPreferencesSingleton()
         context.getSharedPreferences("launcher_prefs", Context.MODE_PRIVATE).edit().clear().commit()
-        LauncherPreferences.getInstance(context).setLowPerformanceModeEnabled(true)
+        LauncherPreferences.getInstance(context).setLowPerformanceModeEnabled(false)
         LauncherAppRepository.getInstance(context).invalidateInstalledApps()
         LauncherAppRepository.getInstance(context).invalidateSelections()
         registerLauncherApp("com.example.clock", "时钟")
@@ -39,6 +42,7 @@ class AppManageActivitySmokeTest {
 
     @Test
     fun launchLoadsAppListAndAppliesLowPerformanceMode() {
+        LauncherPreferences.getInstance(context).setLowPerformanceModeEnabled(true)
         val activity = Robolectric.buildActivity(AppManageActivity::class.java).setup().get()
         val recyclerView = activity.findViewById<RecyclerView>(R.id.recycler_view)
 
@@ -48,6 +52,26 @@ class AppManageActivitySmokeTest {
         assertTrue(recyclerView.layoutManager is LinearLayoutManager)
         assertTrue((recyclerView.adapter?.itemCount ?: 0) > 0)
         assertTrue(recyclerView.itemAnimator == null)
+        assertTrue(readAdapterLowPerformanceMode(activity))
+    }
+
+    @Test
+    fun resumeAppliesUpdatedLowPerformanceMode() {
+        val controller = Robolectric.buildActivity(AppManageActivity::class.java).setup()
+        val activity = controller.get()
+        val recyclerView = activity.findViewById<RecyclerView>(R.id.recycler_view)
+
+        waitFor { recyclerView.adapter?.itemCount ?: 0 > 0 }
+
+        assertTrue(recyclerView.itemAnimator is DefaultItemAnimator)
+        assertFalse(readAdapterLowPerformanceMode(activity))
+
+        controller.pause()
+        LauncherPreferences.getInstance(context).setLowPerformanceModeEnabled(true)
+        controller.resume()
+
+        assertTrue(recyclerView.itemAnimator == null)
+        assertTrue(readAdapterLowPerformanceMode(activity))
     }
 
     @Suppress("DEPRECATION")
@@ -77,5 +101,20 @@ class AppManageActivitySmokeTest {
             Thread.sleep(50)
         }
         shadowOf(Looper.getMainLooper()).idle()
+    }
+
+    private fun readAdapterLowPerformanceMode(activity: AppManageActivity): Boolean {
+        val adapterField = activity.javaClass.getDeclaredField("adapter")
+        adapterField.isAccessible = true
+        val adapter = adapterField.get(activity)!!
+        val modeField = adapter.javaClass.getDeclaredField("lowPerformanceMode")
+        modeField.isAccessible = true
+        return modeField.getBoolean(adapter)
+    }
+
+    private fun resetLauncherPreferencesSingleton() {
+        val field = Class.forName("com.bajianfeng.launcher.data.home.LauncherPreferences").getDeclaredField("instance")
+        field.isAccessible = true
+        field.set(null, null)
     }
 }
