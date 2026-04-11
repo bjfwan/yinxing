@@ -1,18 +1,18 @@
 # 测试策略
 
-更新时间：2026-04-09
+更新时间：2026-04-11
 
 ## 1. 当前测试现状
 
 - 当前单元测试已覆盖 `HomeAppOrderPolicy`、`ContactStorage`、`LauncherPreferences`、`ContactManager`、`PermissionRequestHandler`
-- 当前已补主页和电话联系人页的 Robolectric UI 冒烟测试
+- 当前已补主页、应用管理、设置、电话联系人、视频联系人页的 Robolectric UI 冒烟测试
 - 当前命令行验证基线已经固定为 `testDebugUnitTest`、`assembleDebug`、`lintDebug`
 
 ## 2. 当前已验证结果
 
-- 在 `JAVA_HOME=D:\android\jbr`、`GRADLE_USER_HOME=D:\gradle-home` 下，`testDebugUnitTest` 已通过
-- 在同样环境下，`assembleDebug` 已通过
-- 在同样环境下，`lintDebug` 已通过
+- 在当前工作区于 2026-04-11 执行 `.\gradlew.bat testDebugUnitTest` 已通过
+- 在当前工作区于 2026-04-11 执行 `.\gradlew.bat assembleDebug` 已通过
+- 在当前工作区于 2026-04-11 执行 `.\gradlew.bat lintDebug` 已通过
 - 当前 `lintDebug` 结果为 `No issues found.`
 
 ## 3. 当前最低验证要求
@@ -47,18 +47,20 @@
   - 无障碍服务匹配逻辑
 - Robolectric UI 冒烟
   - `MainActivitySmokeTest`
+  - `AppManageActivitySmokeTest`
+  - `SettingsActivitySmokeTest`
   - `PhoneActivitySmokeTest`
+  - `VideoCallActivitySmokeTest`
 
 ## 6. 后续自动化测试建议
 
-- 补 `VideoCallActivity` 的管理模式和空状态回归测试
-- 补 `AppManageActivity` 与 `SettingsActivity` 的 UI 冒烟测试
-- 如果后续引入设备或模拟器，再补联系人编辑、权限拒绝和页面跳转的仪器测试
+- 补主页与应用管理页低性能模式的回归断言
+- 如果后续引入设备或模拟器，再补设置页系统设置跳转、联系人编辑、权限拒绝和页面跳转的仪器测试
 - 手工专项测试继续覆盖老年用户操作路径、权限拒绝场景和不同厂商系统兼容性
 
 ## 7. 发布门禁建议
 
-- 第一阶段：固定 `JAVA_HOME` 与 `GRADLE_USER_HOME` 后，强制执行 `assembleDebug` + `testDebugUnitTest` + `lintDebug`
-- 第二阶段：补齐视频联系人、设置页和应用管理页的 UI 冒烟测试
+- 第一阶段：固定 Gradle Wrapper 环境后，强制执行 `assembleDebug` + `testDebugUnitTest` + `lintDebug`
+- 第二阶段：已补齐主页、应用管理、设置、电话联系人、视频联系人页的 Robolectric UI 冒烟测试
 - 第三阶段：补齐权限拒绝、跨页面跳转和微信自动化关键路径回归
 - 第四阶段：再评估更严格的发布门禁和设备级回归
