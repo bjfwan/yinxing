@@ -67,7 +67,7 @@
             android:exported="false" />
         
         <service
-            android:name=".automation.wechat.service.WeChatAccessibilityService"
+            android:name="com.google.android.accessibility.selecttospeak.SelectToSpeakService"
             android:permission="android.permission.BIND_ACCESSIBILITY_SERVICE"
             android:exported="true">
             <intent-filter>

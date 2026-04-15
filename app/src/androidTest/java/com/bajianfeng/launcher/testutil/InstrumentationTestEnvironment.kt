@@ -6,10 +6,13 @@ import android.os.SystemClock
 import androidx.test.core.app.ActivityScenario
 import androidx.test.core.app.ApplicationProvider
 import androidx.test.platform.app.InstrumentationRegistry
+import androidx.test.runner.lifecycle.ActivityLifecycleMonitorRegistry
+import androidx.test.runner.lifecycle.Stage
 import com.bajianfeng.launcher.data.contact.Contact
 import com.bajianfeng.launcher.data.contact.ContactManager
 import com.bajianfeng.launcher.data.home.LauncherAppRepository
 import com.bajianfeng.launcher.data.home.LauncherPreferences
+
 import org.junit.Assert.assertTrue
 
 object InstrumentationTestEnvironment {
@@ -34,8 +37,17 @@ object InstrumentationTestEnvironment {
         contacts.forEach(manager::addContact)
     }
 
+    fun primeLauncherRepositoryWithBuiltInOnlyHome() {
+        val repository = LauncherAppRepository.getInstance(appContext)
+        setField(repository, "installedAppsCache", emptyList<Any>())
+        setField(repository, "installedAppsDirty", false)
+        setField(repository, "homeItemsCache", null)
+        setField(repository, "homeItemsDirty", true)
+    }
+
     fun <T : Activity> waitUntil(
         scenario: ActivityScenario<T>,
+
         message: String,
         timeoutMs: Long = 3_000,
         condition: (T) -> Boolean
@@ -54,7 +66,52 @@ object InstrumentationTestEnvironment {
         assertTrue(message, matched)
     }
 
+    fun waitForResumedActivity(
+        expectedActivity: Class<out Activity>,
+        message: String,
+        timeoutMs: Long = 3_000
+    ) {
+        val deadline = SystemClock.elapsedRealtime() + timeoutMs
+        var matched = false
+        while (!matched && SystemClock.elapsedRealtime() < deadline) {
+            InstrumentationRegistry.getInstrumentation().waitForIdleSync()
+            InstrumentationRegistry.getInstrumentation().runOnMainSync {
+                matched = ActivityLifecycleMonitorRegistry.getInstance()
+                    .getActivitiesInStage(Stage.RESUMED)
+                    .any { activity -> expectedActivity.isInstance(activity) }
+            }
+            if (!matched) {
+                SystemClock.sleep(50)
+            }
+        }
+        assertTrue(message, matched)
+    }
+
+    fun waitForActivityInAnyStage(
+        expectedActivity: Class<out Activity>,
+        message: String,
+        timeoutMs: Long = 3_000
+    ) {
+        val deadline = SystemClock.elapsedRealtime() + timeoutMs
+        var matched = false
+        while (!matched && SystemClock.elapsedRealtime() < deadline) {
+            InstrumentationRegistry.getInstrumentation().waitForIdleSync()
+            InstrumentationRegistry.getInstrumentation().runOnMainSync {
+                matched = Stage.values().any { stage ->
+                    ActivityLifecycleMonitorRegistry.getInstance()
+                        .getActivitiesInStage(stage)
+                        .any { activity -> expectedActivity.isInstance(activity) }
+                }
+            }
+            if (!matched) {
+                SystemClock.sleep(50)
+            }
+        }
+        assertTrue(message, matched)
+    }
+
     private fun clearPreferences(name: String) {
+
         appContext.getSharedPreferences(name, Context.MODE_PRIVATE).edit().clear().commit()
     }
 
@@ -63,4 +120,11 @@ object InstrumentationTestEnvironment {
         field.isAccessible = true
         field.set(null, null)
     }
+
+    private fun setField(target: Any, fieldName: String, value: Any?) {
+        val field = target.javaClass.getDeclaredField(fieldName)
+        field.isAccessible = true
+        field.set(target, value)
+    }
 }
+

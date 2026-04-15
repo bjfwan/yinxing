@@ -17,7 +17,9 @@
 - `minSdk = 24`
 - 主应用模块：`app`
 - Baseline Profile / Macrobenchmark 模块：`benchmark`
-- 仪器测试运行器：`androidx.test.runner.AndroidJUnitRunner`
+- 主应用仪器测试运行器：`androidx.test.runner.AndroidJUnitRunner`
+- `benchmark` 模块运行器：`androidx.benchmark.junit4.AndroidBenchmarkRunner`
+
 
 ## 3. 本地配置
 
@@ -57,19 +59,78 @@ $env:Path="$env:JAVA_HOME\bin;$env:Path"
 .\gradlew.bat :app:assembleDebugAndroidTest
 ```
 
-### 5.4 执行设备级仪器测试
+### 5.4 检查设备连接
+
+如果 `adb` 已在 `PATH` 中，可直接执行：
+
+```powershell
+adb devices
+```
+
+如果当前终端找不到 `adb`，可直接使用 SDK 内的完整路径：
+
+```powershell
+& 'D:\androidsdk\platform-tools\adb.exe' devices
+```
+
+期望输出示例：
+
+```text
+List of devices attached
+10AD5H082S000H5    device
+```
+
+常见状态说明：
+
+- `device`：已连接，可执行 `connectedDebugAndroidTest`
+- `unauthorized`：设备未授权当前电脑，需要在手机上确认 USB 调试授权
+- `offline`：设备已被识别但连接异常，通常需要重插数据线或重启 `adb`
+- 无设备：说明当前没有真机或模拟器在线
+
+### 5.5 执行设备级仪器测试
 
 ```powershell
 .\gradlew.bat :app:connectedDebugAndroidTest
 ```
 
-### 5.5 运行 Lint
+如果设备在线但执行失败，优先检查：
+
+- 设备屏幕是否点亮并解锁
+- 设备是否弹出了安装确认或安全授权，并被手动拒绝
+- 当前设备是否允许通过 USB / `adb` 安装调试应用
+
+### 5.5.1 运行 Benchmark 分层探针
+
+当 `:benchmark:collectNonMinifiedReleaseBaselineProfile` 看起来卡住时，先不要直接重跑整套基线采集，优先按下面顺序执行分层探针：
+
+```powershell
+.\gradlew.bat :benchmark:connectedNonMinifiedReleaseAndroidTest -Pandroid.testInstrumentationRunnerArguments.class=com.bajianfeng.launcher.benchmark.UiAutomationProbe#launcherUiSmoke
+```
+
+```powershell
+.\gradlew.bat :benchmark:connectedNonMinifiedReleaseAndroidTest -Pandroid.testInstrumentationRunnerArguments.class=com.bajianfeng.launcher.benchmark.MacrobenchmarkProbe#coldStartupProbe
+```
+
+```powershell
+.\gradlew.bat :benchmark:connectedNonMinifiedReleaseAndroidTest -Pandroid.testInstrumentationRunnerArguments.class=com.bajianfeng.launcher.benchmark.BaselineProfileFrameworkProbe#collectProbe
+```
+
+结果解读建议：
+
+- `UiAutomationProbe` 失败：优先看设备是否解锁、默认桌面状态、入口文案/选择器是否变化
+- `MacrobenchmarkProbe` 失败：说明问题已在 Macrobenchmark 基础设施层，不必继续跑 `Baseline Profile`
+- `BaselineProfileFrameworkProbe` 失败或长时间只打印 watchdog 心跳：大概率卡在 `BaselineProfileRule.collect(...)` 框架层或 ROM 兼容性
+- 三个探针都通过后，再执行完整的 `:benchmark:collectNonMinifiedReleaseBaselineProfile`
+
+### 5.6 运行 Lint
 
 ```powershell
 .\gradlew.bat :app:lintDebug
 ```
 
-### 5.6 输出位置
+### 5.7 输出位置
+
+
 
 ```text
 app/build/outputs/apk/debug/
@@ -83,7 +144,9 @@ app/build/outputs/apk/androidTest/debug/
 - 当前已于 2026-04-12 验证 `:app:assembleDebug` 可通过
 - 当前已于 2026-04-12 验证 `:app:lintDebug` 可通过
 - 当前 `lintDebug` 结果为 `No issues found.`
-- 当前未检测到已连接设备，因此未执行 `:app:connectedDebugAndroidTest`
+- 当前已通过 `D:\androidsdk\platform-tools\adb.exe devices` 检测到在线设备 `10AD5H082S000H5`
+- 当前已于 2026-04-12 在真机 `10AD5H082S000H5` 上执行 `:app:connectedDebugAndroidTest` 并通过
+
 
 ## 7. 推荐协作方式
 

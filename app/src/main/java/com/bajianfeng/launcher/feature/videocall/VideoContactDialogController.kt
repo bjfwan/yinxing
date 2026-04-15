@@ -10,7 +10,7 @@ import com.bajianfeng.launcher.data.contact.Contact
 
 class VideoContactDialogController(
     private val activity: AppCompatActivity,
-    private val onAddContact: (String) -> Unit,
+    private val onAddContact: (String, String) -> Unit,
     private val onDeleteContact: (Contact) -> Unit,
     private val onOpenAccessibilitySettings: () -> Unit,
     private val onOpenOverlaySettings: () -> Unit,
@@ -24,17 +24,19 @@ class VideoContactDialogController(
 
         dialog.window?.setBackgroundDrawableResource(android.R.color.transparent)
         val nameField = dialogView.findViewById<EditText>(R.id.et_contact_name)
+        val wechatField = dialogView.findViewById<EditText>(R.id.et_wechat_name)
 
         dialogView.findViewById<CardView>(R.id.btn_cancel).setOnClickListener {
             dialog.dismiss()
         }
         dialogView.findViewById<CardView>(R.id.btn_confirm).setOnClickListener {
             val name = nameField.text.toString().trim()
+            val wechatName = wechatField.text.toString().trim()
             if (name.isEmpty()) {
                 Toast.makeText(activity, activity.getString(R.string.input_contact_name), Toast.LENGTH_SHORT).show()
                 return@setOnClickListener
             }
-            onAddContact(name)
+            onAddContact(name, wechatName)
             dialog.dismiss()
         }
 

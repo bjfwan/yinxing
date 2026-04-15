@@ -9,7 +9,6 @@ import androidx.benchmark.macro.StartupTimingMetric
 import androidx.benchmark.macro.junit4.MacrobenchmarkRule
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.uiautomator.By
-import androidx.test.uiautomator.Until
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -21,15 +20,24 @@ class HomeStartupBenchmark {
 
     @Test
     fun coldStartupWithoutProfile() {
-        measureColdStartup(CompilationMode.None())
+        measureColdStartup(
+            caseName = "冷启动（无 Baseline Profile）",
+            compilationMode = CompilationMode.None()
+        )
     }
 
     @Test
     fun coldStartupWithBaselineProfile() {
-        measureColdStartup(CompilationMode.Partial(BaselineProfileMode.UseIfAvailable))
+        measureColdStartup(
+            caseName = "冷启动（使用 Baseline Profile）",
+            compilationMode = CompilationMode.Partial(BaselineProfileMode.UseIfAvailable)
+        )
     }
 
-    private fun measureColdStartup(compilationMode: CompilationMode) {
+    private fun measureColdStartup(caseName: String, compilationMode: CompilationMode) {
+        val iterations = 5
+        var currentIteration = 0
+        logStep("开始执行 $caseName")
         benchmarkRule.measureRepeated(
             packageName = PACKAGE_NAME,
             metrics = listOf(
@@ -39,13 +47,24 @@ class HomeStartupBenchmark {
             ),
             startupMode = StartupMode.COLD,
             compilationMode = compilationMode,
-            iterations = 5,
+            iterations = iterations,
             setupBlock = {
-                pressHome()
+                logStep("$caseName 准备第 ${currentIteration + 1}/$iterations 次：返回桌面")
+                goHomeWithLog()
             }
         ) {
+            currentIteration += 1
+            logStep("$caseName 第 $currentIteration/$iterations 次：启动应用")
             startActivityAndWait()
-            device.wait(Until.hasObject(By.res(PACKAGE_NAME, "recycler_home")), 5_000)
+            device.waitForIdle()
+            device.logDeviceState("$caseName 第 $currentIteration 次启动后")
+            device.waitForObjectOrThrow(
+                selector = By.res(PACKAGE_NAME, "recycler_home"),
+                description = "$caseName 第 $currentIteration 次首页列表 recycler_home"
+            )
+            logStep("$caseName 第 $currentIteration/$iterations 次完成")
         }
+        logStep("$caseName 执行完成")
     }
 }
+
