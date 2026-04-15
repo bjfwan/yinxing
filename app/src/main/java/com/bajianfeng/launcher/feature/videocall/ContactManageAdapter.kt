@@ -53,10 +53,11 @@ class ContactManageAdapter(
         val contact = getItem(position)
         val context = holder.itemView.context
         holder.card.cardElevation = context.dpToPx(if (lowPerformanceMode) 2 else 4).toFloat()
-        holder.tvName.text = contact.name
+        holder.tvName.text = contact.displayName
         holder.tvMeta.text = buildMetaText(context, contact)
-        holder.btnEdit.contentDescription = context.getString(R.string.action_edit) + contact.name
-        holder.btnDelete.contentDescription = context.getString(R.string.video_contact_delete_description, contact.name)
+        holder.btnEdit.contentDescription = context.getString(R.string.action_edit) + contact.displayName
+        holder.btnDelete.contentDescription = context.getString(R.string.video_contact_delete_description, contact.displayName)
+
         holder.btnEdit.setOnClickListener {
             onEditClick(contact)
         }
@@ -86,7 +87,8 @@ class ContactManageAdapter(
         contact.phoneNumber?.takeIf { it.isNotBlank() }?.let {
             summary += context.getString(R.string.contact_manage_phone_value, it)
         }
-        val wechatName = contact.wechatId?.takeIf { it.isNotBlank() }
+        val wechatName = contact.wechatSearchName?.takeIf { it.isNotBlank() }
+
         if (!wechatName.isNullOrBlank()) {
             summary += context.getString(R.string.contact_manage_wechat_value, wechatName)
         }
