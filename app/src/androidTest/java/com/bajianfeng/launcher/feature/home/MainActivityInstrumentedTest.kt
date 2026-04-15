@@ -48,20 +48,20 @@ class MainActivityInstrumentedTest {
     }
 
     @Test
-    fun clickPhoneEntryOpensPhoneActivity() {
+    fun clickPhoneEntryOpensSystemContactRedirectActivity() {
         launchAndOpenHomeEntry(
             labelResId = R.string.home_item_phone,
             expectedActivity = PhoneActivity::class.java,
-            failureMessage = "点击电话入口后未进入 PhoneActivity"
+            failureMessage = "点击电话簿入口后未进入系统联系人跳转页"
         )
     }
 
     @Test
-    fun clickWechatVideoEntryOpensVideoCallActivity() {
+    fun clickWechatVideoEntryOpensUnifiedContactActivity() {
         launchAndOpenHomeEntry(
             labelResId = R.string.home_item_wechat_video,
             expectedActivity = VideoCallActivity::class.java,
-            failureMessage = "点击微信视频入口后未进入 VideoCallActivity"
+            failureMessage = "点击微信视频入口后未进入统一联系人页"
         )
     }
 

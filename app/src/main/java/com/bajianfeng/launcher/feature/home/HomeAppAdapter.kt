@@ -141,6 +141,9 @@ class HomeAppAdapter(
 
         holder.icon.setOnLongClickListener(null)
         holder.card.setOnClickListener { onItemClick(item) }
+        holder.itemView.setOnClickListener { onItemClick(item) }
+        holder.icon.setOnClickListener { onItemClick(item) }
+        holder.name.setOnClickListener { onItemClick(item) }
         if (item.type == HomeAppItem.Type.APP) {
             holder.card.setOnLongClickListener { onItemLongClick(item) }
             holder.icon.setOnLongClickListener {

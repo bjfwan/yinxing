@@ -14,19 +14,25 @@ object ContactStorage {
             val contacts = mutableListOf<Contact>()
             for (index in 0 until jsonArray.length()) {
                 val obj = jsonArray.getJSONObject(index)
+                val phoneNumber = obj.optNullableString("phoneNumber")
+                val wechatId = obj.optNullableString("wechatId")
                 contacts.add(
                     Contact(
                         id = obj.getString("id"),
                         name = obj.getString("name"),
-                        phoneNumber = obj.optNullableString("phoneNumber"),
-                        wechatId = obj.optNullableString("wechatId"),
+                        phoneNumber = phoneNumber,
+                        wechatId = wechatId,
                         avatarUri = obj.optNullableString("avatarUri"),
+                        preferredAction = Contact.PreferredAction.fromStorage(
+                            obj.optString("preferredAction"),
+                            phoneNumber,
+                            wechatId
+                        ),
                         isPinned = obj.optBoolean("isPinned", false),
                         callCount = obj.optInt("callCount", 0),
                         lastCallTime = obj.optLong("lastCallTime", 0),
                         searchKeywords = obj.optStringList("searchKeywords")
-                    )
-                        .normalized()
+                    ).normalized()
                 )
             }
             contacts
@@ -48,6 +54,7 @@ object ContactStorage {
                     put("phoneNumber", contact.phoneNumber ?: "")
                     put("wechatId", contact.wechatId ?: "")
                     put("avatarUri", contact.avatarUri ?: "")
+                    put("preferredAction", contact.preferredAction.name)
                     put("isPinned", contact.isPinned)
                     put("callCount", contact.callCount)
                     put("lastCallTime", contact.lastCallTime)

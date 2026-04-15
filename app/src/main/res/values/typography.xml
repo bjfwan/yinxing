@@ -1,0 +1,135 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <style name="TextAppearance.OldLauncher" parent="">
+        <item name="android:fontFamily">sans-serif</item>
+        <item name="android:includeFontPadding">false</item>
+    </style>
+
+    <style name="TextAppearance.OldLauncher.Eyebrow">
+
+        <item name="android:fontFamily">sans-serif-medium</item>
+        <item name="android:textSize">16sp</item>
+        <item name="android:textColor">@color/launcher_text_secondary</item>
+        <item name="android:includeFontPadding">false</item>
+        <item name="android:letterSpacing">0.02</item>
+    </style>
+
+    <style name="TextAppearance.OldLauncher.DisplayTime">
+        <item name="android:fontFamily">sans-serif-medium</item>
+        <item name="android:textSize">68sp</item>
+        <item name="android:textStyle">bold</item>
+        <item name="android:textColor">@color/launcher_primary_dark</item>
+        <item name="android:includeFontPadding">false</item>
+        <item name="android:letterSpacing">-0.02</item>
+    </style>
+
+    <style name="TextAppearance.OldLauncher.Date">
+        <item name="android:fontFamily">sans-serif-medium</item>
+        <item name="android:textSize">20sp</item>
+        <item name="android:textColor">@color/launcher_text_secondary</item>
+        <item name="android:includeFontPadding">false</item>
+    </style>
+
+    <style name="TextAppearance.OldLauncher.PageTitle">
+        <item name="android:fontFamily">sans-serif-medium</item>
+        <item name="android:textSize">28sp</item>
+        <item name="android:textStyle">bold</item>
+        <item name="android:textColor">@color/launcher_primary_dark</item>
+        <item name="android:includeFontPadding">false</item>
+    </style>
+
+    <style name="TextAppearance.OldLauncher.PageSubtitle">
+        <item name="android:fontFamily">sans-serif</item>
+        <item name="android:textSize">17sp</item>
+        <item name="android:textColor">@color/launcher_text_secondary</item>
+        <item name="android:includeFontPadding">false</item>
+        <item name="android:lineSpacingExtra">2dp</item>
+    </style>
+
+    <style name="TextAppearance.OldLauncher.CardTitle">
+        <item name="android:fontFamily">sans-serif-medium</item>
+        <item name="android:textSize">22sp</item>
+        <item name="android:textStyle">bold</item>
+        <item name="android:textColor">@color/launcher_text_primary</item>
+        <item name="android:includeFontPadding">false</item>
+    </style>
+
+    <style name="TextAppearance.OldLauncher.CardTitleLarge">
+        <item name="android:fontFamily">sans-serif-medium</item>
+        <item name="android:textSize">26sp</item>
+        <item name="android:textStyle">bold</item>
+        <item name="android:textColor">@color/launcher_text_primary</item>
+        <item name="android:includeFontPadding">false</item>
+    </style>
+
+    <style name="TextAppearance.OldLauncher.Body">
+        <item name="android:fontFamily">sans-serif</item>
+        <item name="android:textSize">18sp</item>
+        <item name="android:textColor">@color/launcher_text_primary</item>
+        <item name="android:includeFontPadding">false</item>
+        <item name="android:lineSpacingExtra">2dp</item>
+    </style>
+
+    <style name="TextAppearance.OldLauncher.Meta">
+        <item name="android:fontFamily">sans-serif</item>
+        <item name="android:textSize">16sp</item>
+        <item name="android:textColor">@color/launcher_text_secondary</item>
+        <item name="android:includeFontPadding">false</item>
+    </style>
+
+    <style name="TextAppearance.OldLauncher.HintStrong">
+        <item name="android:fontFamily">sans-serif-medium</item>
+        <item name="android:textSize">15sp</item>
+        <item name="android:textStyle">bold</item>
+        <item name="android:textColor">@color/launcher_action_dark</item>
+        <item name="android:includeFontPadding">false</item>
+    </style>
+
+    <style name="TextAppearance.OldLauncher.ButtonPrimary">
+        <item name="android:fontFamily">sans-serif-medium</item>
+        <item name="android:textSize">18sp</item>
+        <item name="android:textStyle">bold</item>
+        <item name="android:textColor">@android:color/white</item>
+        <item name="android:includeFontPadding">false</item>
+    </style>
+
+    <style name="TextAppearance.OldLauncher.ButtonSecondary">
+        <item name="android:fontFamily">sans-serif-medium</item>
+        <item name="android:textSize">18sp</item>
+        <item name="android:textStyle">bold</item>
+        <item name="android:textColor">@color/launcher_primary_dark</item>
+        <item name="android:includeFontPadding">false</item>
+    </style>
+
+    <style name="TextAppearance.OldLauncher.ButtonDanger">
+        <item name="android:fontFamily">sans-serif-medium</item>
+        <item name="android:textSize">18sp</item>
+        <item name="android:textStyle">bold</item>
+        <item name="android:textColor">@color/launcher_danger</item>
+        <item name="android:includeFontPadding">false</item>
+    </style>
+
+    <style name="TextAppearance.OldLauncher.StateTitle">
+        <item name="android:fontFamily">sans-serif-medium</item>
+        <item name="android:textSize">24sp</item>
+        <item name="android:textStyle">bold</item>
+        <item name="android:textColor">@color/launcher_text_primary</item>
+        <item name="android:includeFontPadding">false</item>
+    </style>
+
+    <style name="TextAppearance.OldLauncher.StateBody">
+        <item name="android:fontFamily">sans-serif</item>
+        <item name="android:textSize">18sp</item>
+        <item name="android:textColor">@color/launcher_text_secondary</item>
+        <item name="android:includeFontPadding">false</item>
+        <item name="android:lineSpacingExtra">4dp</item>
+    </style>
+
+    <style name="TextAppearance.OldLauncher.Input">
+        <item name="android:fontFamily">sans-serif</item>
+        <item name="android:textSize">18sp</item>
+        <item name="android:textColor">@color/launcher_text_primary</item>
+        <item name="android:textColorHint">@color/launcher_text_muted</item>
+        <item name="android:includeFontPadding">false</item>
+    </style>
+</resources>

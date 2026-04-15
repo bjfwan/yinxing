@@ -1,7 +1,5 @@
 package com.bajianfeng.launcher.feature.videocall
 
-import android.graphics.Color
-import android.text.format.DateFormat
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -15,7 +13,7 @@ import com.bajianfeng.launcher.data.contact.Contact
 
 class ContactManageAdapter(
     private var lowPerformanceMode: Boolean,
-    private val onPinClick: (Contact) -> Unit,
+    private val onEditClick: (Contact) -> Unit,
     private val onDeleteClick: (Contact) -> Unit
 ) : ListAdapter<Contact, ContactManageAdapter.ViewHolder>(DiffCallback) {
 
@@ -39,8 +37,7 @@ class ContactManageAdapter(
         val card: CardView = view as CardView
         val tvName: TextView = view.findViewById(R.id.tv_contact_name)
         val tvMeta: TextView = view.findViewById(R.id.tv_contact_meta)
-        val btnPin: CardView = view.findViewById(R.id.btn_pin)
-        val tvPinAction: TextView = view.findViewById(R.id.tv_pin_action)
+        val btnEdit: CardView = view.findViewById(R.id.btn_edit)
         val btnDelete: CardView = view.findViewById(R.id.btn_delete)
     }
 
@@ -58,17 +55,10 @@ class ContactManageAdapter(
         holder.card.cardElevation = context.dpToPx(if (lowPerformanceMode) 2 else 4).toFloat()
         holder.tvName.text = contact.name
         holder.tvMeta.text = buildMetaText(context, contact)
-        holder.tvPinAction.text = context.getString(if (contact.isPinned) R.string.action_unpin else R.string.action_pin)
-        holder.btnPin.setCardBackgroundColor(
-            Color.parseColor(if (contact.isPinned) "#F5A623" else "#2C3E50")
-        )
-        holder.btnPin.contentDescription = context.getString(
-            if (contact.isPinned) R.string.video_contact_unpin_description else R.string.video_contact_pin_description,
-            contact.name
-        )
+        holder.btnEdit.contentDescription = context.getString(R.string.action_edit) + contact.name
         holder.btnDelete.contentDescription = context.getString(R.string.video_contact_delete_description, contact.name)
-        holder.btnPin.setOnClickListener {
-            onPinClick(contact)
+        holder.btnEdit.setOnClickListener {
+            onEditClick(contact)
         }
         holder.btnDelete.setOnClickListener {
             onDeleteClick(contact)
@@ -84,15 +74,26 @@ class ContactManageAdapter(
     }
 
     private fun buildMetaText(context: android.content.Context, contact: Contact): String {
-        return if (contact.lastCallTime > 0L) {
+        val summary = mutableListOf(
             context.getString(
-                R.string.video_contact_last_call_summary,
-                contact.callCount,
-                DateFormat.format("MM-dd HH:mm", contact.lastCallTime)
+                if (contact.preferredAction == Contact.PreferredAction.WECHAT_VIDEO) {
+                    R.string.contact_manage_default_wechat
+                } else {
+                    R.string.contact_manage_default_phone
+                }
             )
-        } else {
-            context.getString(R.string.video_contact_call_count, contact.callCount)
+        )
+        contact.phoneNumber?.takeIf { it.isNotBlank() }?.let {
+            summary += context.getString(R.string.contact_manage_phone_value, it)
         }
+        val wechatName = contact.wechatId?.takeIf { it.isNotBlank() }
+        if (!wechatName.isNullOrBlank()) {
+            summary += context.getString(R.string.contact_manage_wechat_value, wechatName)
+        }
+        if (summary.size == 1) {
+            summary += context.getString(R.string.contact_manage_empty_detail)
+        }
+        return summary.joinToString(" · ")
     }
 
     private fun android.content.Context.dpToPx(dp: Int): Int {

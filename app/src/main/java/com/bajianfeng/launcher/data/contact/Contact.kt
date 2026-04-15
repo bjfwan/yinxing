@@ -6,11 +6,29 @@ data class Contact(
     val phoneNumber: String? = null,
     val wechatId: String? = null,
     val avatarUri: String? = null,
+    val preferredAction: PreferredAction = PreferredAction.PHONE,
     val isPinned: Boolean = false,
     val callCount: Int = 0,
     val lastCallTime: Long = 0,
     val searchKeywords: List<String> = emptyList()
 ) {
+    enum class PreferredAction {
+        PHONE,
+        WECHAT_VIDEO;
+
+        companion object {
+            fun fromStorage(value: String?, phoneNumber: String?, wechatId: String?): PreferredAction {
+                val normalized = value?.trim().orEmpty()
+                values().firstOrNull { it.name == normalized }?.let { return it }
+                return if (phoneNumber.isNullOrBlank() && !wechatId.isNullOrBlank()) {
+                    WECHAT_VIDEO
+                } else {
+                    PHONE
+                }
+            }
+        }
+    }
+
     fun normalized(): Contact {
         val normalizedName = name.trim()
         val normalizedPhoneNumber = phoneNumber?.trim()?.takeIf { it.isNotEmpty() }
