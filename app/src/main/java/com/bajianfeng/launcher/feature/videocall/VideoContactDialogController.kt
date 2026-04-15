@@ -40,7 +40,8 @@ class VideoContactDialogController(
     fun showDeleteDialog(contact: Contact) {
         AlertDialog.Builder(activity)
             .setTitle(R.string.delete_contact_title)
-            .setMessage(activity.getString(R.string.video_contact_delete_message, contact.name))
+            .setMessage(activity.getString(R.string.video_contact_delete_message, contact.displayName))
+
             .setPositiveButton(R.string.action_delete) { _, _ ->
                 onDeleteContact(contact)
             }
@@ -97,8 +98,9 @@ class VideoContactDialogController(
         photoPreview = dialogView.findViewById(R.id.iv_photo_preview)
         selectedAvatarUri = initialContact?.avatarUri
 
-        nameField.setText(initialContact?.name.orEmpty())
-        wechatField.setText(initialContact?.wechatId.orEmpty())
+        nameField.setText(initialContact?.displayName.orEmpty())
+        wechatField.setText(initialContact?.wechatSearchName.orEmpty())
+
         phoneField.setText(initialContact?.phoneNumber.orEmpty())
         actionGroup.check(
             if ((initialContact?.preferredAction ?: Contact.PreferredAction.PHONE) == Contact.PreferredAction.WECHAT_VIDEO) {
@@ -132,7 +134,12 @@ class VideoContactDialogController(
                 Toast.makeText(activity, activity.getString(R.string.contact_phone_required), Toast.LENGTH_SHORT).show()
                 return@setOnClickListener
             }
+            if (preferredAction == Contact.PreferredAction.WECHAT_VIDEO && wechatName.isEmpty()) {
+                Toast.makeText(activity, activity.getString(R.string.contact_wechat_search_name_required), Toast.LENGTH_SHORT).show()
+                return@setOnClickListener
+            }
             onSaveContact(initialContact, name, phone, wechatName, preferredAction, selectedAvatarUri)
+
             dialog.dismiss()
         }
 

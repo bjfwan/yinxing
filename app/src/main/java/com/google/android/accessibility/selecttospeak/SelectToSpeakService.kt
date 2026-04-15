@@ -17,6 +17,8 @@ import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import java.util.concurrent.atomic.AtomicLong
+
 
 class SelectToSpeakService : AccessibilityService() {
 
@@ -52,14 +54,100 @@ class SelectToSpeakService : AccessibilityService() {
             CLASS_CONTACT_INFO,
             CLASS_SEARCH_UI
         )
+
+        private val requestCounter = AtomicLong(0)
+        private val requestListeners = linkedMapOf<String, (VideoCallProgress) -> Unit>()
+        private var pendingRequest: PendingRequest? = null
+
+        fun requestVideoCall(contactName: String, listener: (VideoCallProgress) -> Unit): String {
+            val requestId = "wechat-call-${System.currentTimeMillis()}-${requestCounter.incrementAndGet()}"
+            var shouldNotifyBusy = false
+            var shouldNotifyWaiting = false
+            var activeService: SelectToSpeakService? = null
+            synchronized(this) {
+                requestListeners[requestId] = listener
+                val service = instance
+                if (pendingRequest != null || service?.hasActiveSession() == true) {
+                    shouldNotifyBusy = true
+                } else {
+                    pendingRequest = PendingRequest(requestId, contactName)
+                    activeService = service
+                    shouldNotifyWaiting = service == null
+                }
+            }
+            if (shouldNotifyBusy) {
+                deliverProgress(
+                    requestId,
+                    VideoCallProgress(
+                        message = "已有进行中的微信视频任务，请稍候",
+                        success = false,
+                        terminal = true
+                    )
+                )
+                return requestId
+            }
+            if (shouldNotifyWaiting) {
+                deliverProgress(
+                    requestId,
+                    VideoCallProgress(
+                        message = "正在等待无障碍服务连接",
+                        success = true,
+                        terminal = false
+                    )
+                )
+            }
+            activeService?.consumePendingRequest()
+            return requestId
+        }
+
+        fun clearRequestListener(requestId: String) {
+            synchronized(this) {
+                requestListeners.remove(requestId)
+                if (pendingRequest?.requestId == requestId) {
+                    pendingRequest = null
+                }
+            }
+        }
+
+        internal fun resetForTesting() {
+            synchronized(this) {
+                requestListeners.clear()
+                pendingRequest = null
+                requestCounter.set(0)
+            }
+        }
+
+        private fun takePendingRequest(): PendingRequest? {
+            return synchronized(this) {
+                pendingRequest?.also { pendingRequest = null }
+            }
+        }
+
+        private fun deliverProgress(requestId: String, progress: VideoCallProgress) {
+            val listener = synchronized(this) { requestListeners[requestId] }
+            listener?.invoke(progress)
+            if (progress.terminal) {
+                clearRequestListener(requestId)
+            }
+        }
     }
+
+    data class VideoCallProgress(
+        val message: String,
+        val success: Boolean,
+        val terminal: Boolean
+    )
+
+    private data class PendingRequest(
+        val requestId: String,
+        val contactName: String
+    )
 
     private val serviceScope = CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate)
     private var processJob: Job? = null
     private var timeoutJob: Job? = null
     private var totalTimeoutJob: Job? = null
     private var wechatWaitJob: Job? = null  // 专门用于轮询等待微信前台，与 processJob 独立
-    private var stateCallback: ((String, Boolean) -> Unit)? = null
     private lateinit var timeoutManager: TimeoutManager
     private var floatingView: FloatingStatusView? = null
     private var currentSession: VideoCallSession? = null
@@ -77,6 +165,7 @@ class SelectToSpeakService : AccessibilityService() {
         instance = this
         timeoutManager = TimeoutManager.getInstance(this)
         floatingView = FloatingStatusView(this)
+        consumePendingRequest()
     }
 
     override fun onAccessibilityEvent(event: AccessibilityEvent?) {
@@ -90,7 +179,6 @@ class SelectToSpeakService : AccessibilityService() {
         if (isMeaningfulWeChatClassName(className)) {
             lastWeChatClassName = className
         }
-
 
         updateCachedWeChatRoot(event.source)
 
@@ -107,19 +195,19 @@ class SelectToSpeakService : AccessibilityService() {
                             session.searchTextApplied = false
                             transitionTo(session, Step.WAITING_LAUNCHER_UI, "正在查找联系人")
                         } else {
-                            scheduleProcess(session, 100L)
+                            scheduleAdaptiveProcess(session, DelayProfile.STABLE)
                         }
                     }
                     CLASS_CHATTING_UI,
                     CLASS_CONTACT_INFO,
-                    CLASS_SEARCH_UI -> scheduleProcess(session, 120L)
-                    else -> scheduleProcess(session, 150L)
+                    CLASS_SEARCH_UI -> scheduleAdaptiveProcess(session, DelayProfile.STABLE)
+                    else -> scheduleAdaptiveProcess(session, DelayProfile.TRANSITION)
                 }
             }
             AccessibilityEvent.TYPE_WINDOW_CONTENT_CHANGED,
             AccessibilityEvent.TYPE_VIEW_CLICKED,
             AccessibilityEvent.TYPE_VIEW_SCROLLED,
-            AccessibilityEvent.TYPE_VIEW_TEXT_CHANGED -> scheduleProcess(session, 80L)
+            AccessibilityEvent.TYPE_VIEW_TEXT_CHANGED -> scheduleAdaptiveProcess(session, DelayProfile.FAST)
             else -> Unit
         }
     }
@@ -133,7 +221,6 @@ class SelectToSpeakService : AccessibilityService() {
         cancelSession(false)
         floatingView?.hide()
         floatingView = null
-        stateCallback = null
         serviceScope.cancel()
         super.onDestroy()
     }
@@ -141,33 +228,60 @@ class SelectToSpeakService : AccessibilityService() {
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         if (intent?.action == ACTION_START_VIDEO_CALL) {
             intent.getStringExtra(EXTRA_CONTACT_NAME)?.let { contactName ->
-                startVideoCall(contactName)
+                requestVideoCall(contactName) { }
             }
         }
         return START_STICKY
     }
 
-    fun setStateCallback(callback: (String, Boolean) -> Unit) {
-        stateCallback = callback
+    private fun notifyState(session: VideoCallSession, state: String, success: Boolean, terminal: Boolean) {
+        deliverProgress(
+            session.requestId,
+            VideoCallProgress(
+                message = state,
+                success = success,
+                terminal = terminal
+            )
+        )
     }
 
-    fun clearStateCallback() {
-        stateCallback = null
+    private fun hasActiveSession(): Boolean {
+        return currentSession != null
     }
 
-    fun requestVideoCall(contactName: String) {
-        startVideoCall(contactName)
+    private fun consumePendingRequest() {
+        val request = takePendingRequest() ?: return
+        if (hasActiveSession()) {
+            deliverProgress(
+                request.requestId,
+                VideoCallProgress(
+                    message = "已有进行中的微信视频任务，请稍候",
+                    success = false,
+                    terminal = true
+                )
+            )
+            return
+        }
+        startVideoCall(request.requestId, request.contactName)
     }
 
-    private fun notifyState(state: String, success: Boolean) {
-        stateCallback?.invoke(state, success)
-    }
-
-    private fun startVideoCall(contactName: String) {
+    private fun startVideoCall(requestId: String, contactName: String) {
+        if (hasActiveSession()) {
+            deliverProgress(
+                requestId,
+                VideoCallProgress(
+                    message = "已有进行中的微信视频任务，请稍候",
+                    success = false,
+                    terminal = true
+                )
+            )
+            return
+        }
         cancelSession(false)
         lastMissingRootLogAt = 0L
         lastWeChatClassName = null
         val session = VideoCallSession(
+            requestId = requestId,
             contactName = contactName,
             step = Step.WAITING_HOME,
             stepStartedAt = System.currentTimeMillis(),
@@ -189,6 +303,7 @@ class SelectToSpeakService : AccessibilityService() {
     }
 
     /**
+
      * 独立的微信等待循环：等待 onAccessibilityEvent 缓存到有效的微信 root。
      * waitLoop 除了确认首页已就绪，也会在“已进微信但不在首页”时主动触发归一化处理。
      */
@@ -197,7 +312,8 @@ class SelectToSpeakService : AccessibilityService() {
         wechatWaitJob = serviceScope.launch {
             var attempts = 0
             while (currentSession === session && session.step == Step.WAITING_HOME) {
-                delay(500L)
+                session.actionAttempts["home_wait_loop"] = attempts
+                delay(adaptiveDelay(session, DelayProfile.WAIT_LOOP, attemptKey = "home_wait_loop"))
                 attempts++
                 val root = getWeChatRoot()
                 if (root == null) {
@@ -220,11 +336,16 @@ class SelectToSpeakService : AccessibilityService() {
                     break
                 }
                 if (page != WeChatPage.UNKNOWN || attempts <= MAX_UNKNOWN_HOME_OBSERVE_ATTEMPTS) {
-                    scheduleProcess(session, 60L)
+                    scheduleAdaptiveProcess(
+                        session,
+                        if (page == WeChatPage.UNKNOWN) DelayProfile.WAIT_LOOP else DelayProfile.TRANSITION,
+                        attemptKey = "home_wait_loop"
+                    )
                 }
             }
         }
     }
+
 
     private fun scheduleProcess(session: VideoCallSession, delayMillis: Long) {
         processJob?.cancel()
@@ -355,30 +476,32 @@ class SelectToSpeakService : AccessibilityService() {
     }
 
     private fun isLauncherReady(root: AccessibilityNodeInfo, currentClass: String?): Boolean {
-
-        if (isSearchPage(root) || isContactInfoPage(root) || isChatPage(root, currentClass)) {
-            return false
-        }
-        if (currentClass == CLASS_LAUNCHER_UI && root.childCount > 0) {
+        val snapshot = snapshotOf(root)
+        if (snapshot != null && WeChatUiSnapshotAnalyzer.isLauncherReady(snapshot)) {
             return true
         }
-        val tabs = listOf("微信", "通讯录", "发现", "我")
-        val matched = tabs.count { root.findAccessibilityNodeInfosByText(it).isNotEmpty() }
-        return matched >= 2
+        return currentClass == CLASS_LAUNCHER_UI && root.childCount > 0
     }
 
     private fun isChatPage(root: AccessibilityNodeInfo, currentClass: String?): Boolean {
         if (currentClass == CLASS_CHATTING_UI) {
             return true
         }
-        if (currentClass == CLASS_SEARCH_UI || isSearchPage(root) || isContactInfoPage(root)) {
-            return false
+        val snapshot = snapshotOf(root)
+        if (snapshot != null) {
+            if (currentClass == CLASS_SEARCH_UI || WeChatUiSnapshotAnalyzer.isSearchPage(snapshot) || WeChatUiSnapshotAnalyzer.isContactInfoPage(snapshot)) {
+                return false
+            }
+            if (WeChatUiSnapshotAnalyzer.isChatPageLike(snapshot)) {
+                return true
+            }
         }
         if (!hasEditableNode(root)) {
             return false
         }
         return hasConversationChrome(root) || currentClass == CLASS_LAUNCHER_UI
     }
+
 
     private fun hasConversationChrome(root: AccessibilityNodeInfo?): Boolean {
         val byId = findNodeByIds(
@@ -422,6 +545,10 @@ class SelectToSpeakService : AccessibilityService() {
 
 
     private fun isSearchPage(root: AccessibilityNodeInfo): Boolean {
+        val snapshot = snapshotOf(root)
+        if (snapshot != null) {
+            return WeChatUiSnapshotAnalyzer.isSearchPage(snapshot)
+        }
         return hasEditableNode(root) && (
             hasExactText(root, "取消") ||
                 hasExactText(root, "搜索") ||
@@ -430,8 +557,13 @@ class SelectToSpeakService : AccessibilityService() {
     }
 
     private fun isContactInfoPage(root: AccessibilityNodeInfo): Boolean {
+        val snapshot = snapshotOf(root)
+        if (snapshot != null) {
+            return WeChatUiSnapshotAnalyzer.isContactInfoPage(snapshot)
+        }
         return hasExactText(root, "音视频通话") || hasExactText(root, "发消息")
     }
+
 
     private fun isTargetConversationPage(
         root: AccessibilityNodeInfo,
@@ -446,6 +578,10 @@ class SelectToSpeakService : AccessibilityService() {
     }
 
     private fun containsContactName(root: AccessibilityNodeInfo?, contactName: String): Boolean {
+        val snapshot = snapshotOf(root)
+        if (snapshot != null && WeChatUiSnapshotAnalyzer.containsContactName(snapshot, contactName)) {
+            return true
+        }
         val titleNode = findNodeByExactText(root, contactName, "com.tencent.mm:id/kbq", "com.tencent.mm:id/odf")
         if (titleNode != null) {
             AccessibilityUtil.safeRecycle(titleNode)
@@ -464,6 +600,7 @@ class SelectToSpeakService : AccessibilityService() {
         }
         return false
     }
+
 
     private fun findNodeByExactText(root: AccessibilityNodeInfo?, expectedText: String, vararg ids: String): AccessibilityNodeInfo? {
         for (id in ids) {
@@ -518,10 +655,11 @@ class SelectToSpeakService : AccessibilityService() {
     private fun updateProgress(session: VideoCallSession, message: String) {
         if (session.lastAnnouncedMessage != message) {
             session.lastAnnouncedMessage = message
-            notifyState(message, true)
+            notifyState(session, message, success = true, terminal = false)
         }
         floatingView?.updateMessage(message)
     }
+
 
     private fun incrementActionAttempt(session: VideoCallSession, key: String): Int {
         val next = (session.actionAttempts[key] ?: 0) + 1
@@ -545,14 +683,64 @@ class SelectToSpeakService : AccessibilityService() {
         return true
     }
 
+    private enum class DelayProfile(
+        val minDelay: Long,
+        val maxDelay: Long,
+        val timeoutDivisor: Long
+    ) {
+        FAST(80L, 220L, 90L),
+        STABLE(120L, 320L, 55L),
+        TRANSITION(160L, 480L, 36L),
+        RECOVER(220L, 720L, 28L),
+        WAIT_LOOP(260L, 760L, 26L),
+        SHEET(200L, 650L, 24L)
+    }
+
+    private fun adaptiveDelay(
+        session: VideoCallSession,
+        profile: DelayProfile,
+        attemptKey: String? = null,
+        actionSucceeded: Boolean? = null
+    ): Long {
+        val stepTimeout = timeoutFor(session.step)
+        val base = (stepTimeout / profile.timeoutDivisor).coerceIn(profile.minDelay, profile.maxDelay)
+        val attemptCount = attemptKey?.let { session.actionAttempts[it] ?: 0 } ?: 0
+        val attemptBoost = if (attemptCount > 0) {
+            (base * 0.28f * attemptCount).toLong()
+        } else {
+            0L
+        }
+        val failureBoost = if (actionSucceeded == false) base / 3 else 0L
+        return (base + attemptBoost + failureBoost).coerceIn(profile.minDelay, profile.maxDelay)
+    }
+
+    private fun scheduleAdaptiveProcess(
+        session: VideoCallSession,
+        profile: DelayProfile,
+        attemptKey: String? = null,
+        actionSucceeded: Boolean? = null
+    ) {
+        scheduleProcess(session, adaptiveDelay(session, profile, attemptKey, actionSucceeded))
+    }
+
+    private fun settleWindow(
+        session: VideoCallSession,
+        profile: DelayProfile,
+        attemptKey: String,
+        minWindow: Long
+    ): Long {
+        return adaptiveDelay(session, profile, attemptKey = attemptKey).coerceAtLeast(minWindow)
+    }
+
     private fun rerouteTo(session: VideoCallSession, nextStep: Step, message: String) {
+
         session.step = nextStep
         session.stepStartedAt = System.currentTimeMillis()
         session.moreButtonClickedAt = 0L
         session.actionAttempts.clear()
         updateProgress(session, message)
         armTimeout(nextStep, timeoutFor(nextStep), failureMessageFor(nextStep, session.contactName))
-        scheduleProcess(session, 120L)
+        scheduleAdaptiveProcess(session, DelayProfile.TRANSITION)
     }
 
     private fun processCurrentWindow() {
@@ -568,14 +756,12 @@ class SelectToSpeakService : AccessibilityService() {
                     "processCurrentWindow: 微信窗口未找到，当前前台包名=$fallbackPkg, step=${session.step}, contact=${session.contactName}\nwindows=${describeWindows()}"
                 )
             }
-            scheduleProcess(session, 500L)
+            scheduleAdaptiveProcess(session, DelayProfile.WAIT_LOOP)
             return
         }
 
         val currentClass = resolveCurrentWeChatClass(root)
         Log.d(TAG, "processCurrentWindow: step=${session.step} class=$currentClass rawClass=${root.className} lastUiClass=$lastWeChatClassName")
-
-
 
         when (session.step) {
             Step.WAITING_HOME -> handleWaitingHome(session, root, currentClass)
@@ -585,6 +771,56 @@ class SelectToSpeakService : AccessibilityService() {
             Step.WAITING_CONTACT_DETAIL -> handleContactDetail(session, root)
             Step.WAITING_VIDEO_OPTIONS -> handleVideoOptions(session, root)
         }
+    }
+
+    private fun snapshotOf(root: AccessibilityNodeInfo?): WeChatUiSnapshot? {
+        return WeChatUiSnapshot.fromNode(root)
+    }
+
+    private fun tryDismissTransientUi(session: VideoCallSession, root: AccessibilityNodeInfo?): Boolean {
+        val action = snapshotOf(root)?.let(WeChatUiSnapshotAnalyzer::suggestDismissAction)
+            ?: WeChatDismissAction.NONE
+        val dismissed = when (action) {
+            WeChatDismissAction.SEARCH_CANCEL -> clickSearchCancel(root)
+            WeChatDismissAction.SHEET_CANCEL -> clickVideoCallSheetCancel(root)
+            WeChatDismissAction.CLOSE_DIALOG -> clickKnownDialogClose(root)
+            WeChatDismissAction.NONE -> false
+        }
+        if (!dismissed) {
+            return false
+        }
+        val message = when (action) {
+            WeChatDismissAction.SEARCH_CANCEL -> "正在关闭搜索"
+            WeChatDismissAction.SHEET_CANCEL -> "正在关闭弹窗"
+            WeChatDismissAction.CLOSE_DIALOG -> "正在关闭提示"
+            WeChatDismissAction.NONE -> "正在恢复页面"
+        }
+        updateProgress(session, message)
+        scheduleAdaptiveProcess(session, DelayProfile.RECOVER)
+        return true
+    }
+
+    private fun recoverToHome(
+        session: VideoCallSession,
+        root: AccessibilityNodeInfo,
+        currentClass: String?,
+        reason: String
+    ) {
+        updateProgress(session, "正在返回微信首页")
+        if (tryDismissTransientUi(session, root)) {
+            return
+        }
+        if (!ensureAttemptBudget(session, "home_back", MAX_HOME_BACK_ATTEMPTS, "返回微信首页失败", root)) {
+            return
+        }
+        val backSuccess = performGlobalAction(GLOBAL_ACTION_BACK)
+        Log.d(TAG, "$reason class=$currentClass, backSuccess=$backSuccess")
+        scheduleAdaptiveProcess(
+            session,
+            DelayProfile.RECOVER,
+            attemptKey = "home_back",
+            actionSucceeded = backSuccess
+        )
     }
 
     // ── 步骤处理 ──────────────────────────────────────────────────────────────
@@ -604,50 +840,41 @@ class SelectToSpeakService : AccessibilityService() {
                     transitionTo(session, Step.WAITING_CONTACT_DETAIL, "已进入目标联系人，正在发起视频")
                     return
                 }
-                updateProgress(session, "正在返回微信首页")
-                if (!ensureAttemptBudget(session, "home_back", MAX_HOME_BACK_ATTEMPTS, "返回微信首页失败", root)) {
-                    return
-                }
-                val backSuccess = performGlobalAction(GLOBAL_ACTION_BACK)
-                Log.d(
-                    TAG,
-                    "WAITING_HOME: 当前处于非目标联系人页 class=$currentClass，执行返回 success=$backSuccess"
+                recoverToHome(
+                    session = session,
+                    root = root,
+                    currentClass = currentClass,
+                    reason = "WAITING_HOME: 当前处于非目标联系人页"
                 )
-                scheduleProcess(session, if (backSuccess) 500L else 700L)
             }
             WeChatPage.SEARCH -> {
-                updateProgress(session, "正在返回微信首页")
-                if (!ensureAttemptBudget(session, "home_back", MAX_HOME_BACK_ATTEMPTS, "返回微信首页失败", root)) {
-                    return
-                }
-                val backSuccess = performGlobalAction(GLOBAL_ACTION_BACK)
-                Log.d(
-                    TAG,
-                    "WAITING_HOME: 当前在搜索页 class=$currentClass，执行返回 success=$backSuccess"
+                recoverToHome(
+                    session = session,
+                    root = root,
+                    currentClass = currentClass,
+                    reason = "WAITING_HOME: 当前在搜索页"
                 )
-                scheduleProcess(session, if (backSuccess) 500L else 700L)
             }
             WeChatPage.UNKNOWN -> {
-
                 val observeAttempt = incrementActionAttempt(session, "home_observe")
                 Log.d(
                     TAG,
                     "WAITING_HOME: 未识别页面 class=$currentClass observeAttempt=$observeAttempt childCount=${root.childCount}"
                 )
                 if (observeAttempt <= MAX_UNKNOWN_HOME_OBSERVE_ATTEMPTS) {
-                    scheduleProcess(session, 300L)
+                    scheduleAdaptiveProcess(session, DelayProfile.STABLE, attemptKey = "home_observe")
                     return
                 }
-                updateProgress(session, "正在返回微信首页")
-                if (!ensureAttemptBudget(session, "home_back", MAX_HOME_BACK_ATTEMPTS, "返回微信首页失败", root)) {
-                    return
-                }
-                val backSuccess = performGlobalAction(GLOBAL_ACTION_BACK)
-                Log.d(TAG, "WAITING_HOME: 未识别页面，尝试返回首页 success=$backSuccess")
-                scheduleProcess(session, if (backSuccess) 500L else 700L)
+                recoverToHome(
+                    session = session,
+                    root = root,
+                    currentClass = currentClass,
+                    reason = "WAITING_HOME: 未识别页面，尝试返回首页"
+                )
             }
         }
     }
+
 
     private fun handleLauncherUI(session: VideoCallSession, root: AccessibilityNodeInfo) {
         val currentClass = resolveCurrentWeChatClass(root)
@@ -665,9 +892,13 @@ class SelectToSpeakService : AccessibilityService() {
             session.launcherPrepared = true
             val tabClicked = clickMessageTab(root)
             Log.d(TAG, "WAITING_LAUNCHER_UI: clickMessageTab=$tabClicked")
-            scheduleProcess(session, if (tabClicked) 250L else 160L)
+            scheduleAdaptiveProcess(
+                session,
+                if (tabClicked) DelayProfile.TRANSITION else DelayProfile.STABLE
+            )
             return
         }
+
 
         val contactNode = findNodeByExactText(root, session.contactName, "com.tencent.mm:id/kbq")
             ?: AccessibilityUtil.findBestTextNode(
@@ -699,7 +930,8 @@ class SelectToSpeakService : AccessibilityService() {
             return
         }
         session.launcherPrepared = false
-        scheduleProcess(session, 250L)
+        scheduleAdaptiveProcess(session, DelayProfile.TRANSITION, attemptKey = "search_entry")
+
     }
 
     private fun handleSearchFallback(session: VideoCallSession, root: AccessibilityNodeInfo) {
@@ -734,8 +966,9 @@ class SelectToSpeakService : AccessibilityService() {
                 if (!ensureAttemptBudget(session, "search_input", MAX_SEARCH_INPUT_ATTEMPTS, "输入搜索名称失败", root)) {
                     return
                 }
-                scheduleProcess(session, 180L)
+                scheduleAdaptiveProcess(session, DelayProfile.STABLE, attemptKey = "search_input")
                 return
+
             }
             session.searchTextApplied = true
             transitionTo(session, Step.WAITING_CONTACT_RESULT, "正在查找联系人")
@@ -789,7 +1022,9 @@ class SelectToSpeakService : AccessibilityService() {
             failAndHide("未找到联系人: ${session.contactName}", root)
             return
         }
-        scheduleProcess(session, 250L)
+        val pollCount = incrementActionAttempt(session, "contact_result_poll")
+        scheduleAdaptiveProcess(session, DelayProfile.STABLE, attemptKey = "contact_result_poll", actionSucceeded = pollCount == 1)
+
     }
 
     private fun handleContactDetail(session: VideoCallSession, root: AccessibilityNodeInfo) {
@@ -844,9 +1079,10 @@ class SelectToSpeakService : AccessibilityService() {
         val now = System.currentTimeMillis()
         if (session.moreButtonClickedAt > 0L) {
             val elapsed = now - session.moreButtonClickedAt
-            if (elapsed < 700L) {
-                Log.d(TAG, "WAITING_CONTACT_DETAIL: 等待更多菜单展开 elapsed=${elapsed}ms")
-                scheduleProcess(session, 220L)
+            val settleWindow = settleWindow(session, DelayProfile.SHEET, "contact_detail_menu_wait", minWindow = 420L)
+            if (elapsed < settleWindow) {
+                Log.d(TAG, "WAITING_CONTACT_DETAIL: 等待更多菜单展开 elapsed=${elapsed}ms settleWindow=${settleWindow}ms")
+                scheduleAdaptiveProcess(session, DelayProfile.SHEET, attemptKey = "contact_detail_menu_wait")
                 return
             }
         }
@@ -855,13 +1091,14 @@ class SelectToSpeakService : AccessibilityService() {
         Log.d(TAG, "WAITING_CONTACT_DETAIL: clickMoreButton=$moreClicked")
         if (moreClicked) {
             session.moreButtonClickedAt = now
-            scheduleProcess(session, 420L)
+            scheduleAdaptiveProcess(session, DelayProfile.SHEET, attemptKey = "contact_detail_menu_click", actionSucceeded = true)
             return
         }
         if (!ensureAttemptBudget(session, "contact_detail", MAX_CONTACT_DETAIL_ATTEMPTS, "打开联系人失败", root)) {
             return
         }
-        scheduleProcess(session, 250L)
+        scheduleAdaptiveProcess(session, DelayProfile.STABLE, attemptKey = "contact_detail")
+
     }
 
     private fun handleVideoOptions(session: VideoCallSession, root: AccessibilityNodeInfo) {
@@ -892,9 +1129,10 @@ class SelectToSpeakService : AccessibilityService() {
             finishVideoCallStarted(session)
             return
         }
-        if (elapsed < 900L) {
-            Log.d(TAG, "WAITING_VIDEO_OPTIONS: 等待弹窗稳定 elapsed=${elapsed}ms")
-            scheduleProcess(session, 200L)
+        val settleWindow = settleWindow(session, DelayProfile.SHEET, "video_sheet_wait", minWindow = 500L)
+        if (elapsed < settleWindow) {
+            Log.d(TAG, "WAITING_VIDEO_OPTIONS: 等待弹窗稳定 elapsed=${elapsed}ms settleWindow=${settleWindow}ms")
+            scheduleAdaptiveProcess(session, DelayProfile.SHEET, attemptKey = "video_sheet_wait")
             return
         }
         val clicked = clickVideoCallOption(root)
@@ -906,7 +1144,9 @@ class SelectToSpeakService : AccessibilityService() {
         if (!ensureAttemptBudget(session, "video_option", MAX_VIDEO_OPTION_ATTEMPTS, "发起视频通话失败", root)) {
             return
         }
-        scheduleProcess(session, 250L)
+        scheduleAdaptiveProcess(session, DelayProfile.TRANSITION, attemptKey = "video_option")
+
+
     }
 
     // ── 状态机辅助 ────────────────────────────────────────────────────────────
@@ -918,7 +1158,7 @@ class SelectToSpeakService : AccessibilityService() {
         session.moreButtonClickedAt = 0L
         updateProgress(session, message)
         armTimeout(nextStep, timeoutFor(nextStep), failureMessageFor(nextStep, session.contactName))
-        scheduleProcess(session, 120L)
+        scheduleAdaptiveProcess(session, DelayProfile.TRANSITION)
     }
 
 
@@ -926,7 +1166,7 @@ class SelectToSpeakService : AccessibilityService() {
         recordStepSuccess(session.step, System.currentTimeMillis() - session.stepStartedAt)
         session.moreButtonClickedAt = 0L
         floatingView?.updateMessage("视频通话已发起")
-        notifyState("视频通话已发起", true)
+        notifyState(session, "视频通话已发起", success = true, terminal = true)
         currentSession = null
         timeoutJob?.cancel()
         totalTimeoutJob?.cancel()
@@ -937,6 +1177,7 @@ class SelectToSpeakService : AccessibilityService() {
             floatingView?.hide()
         }
     }
+
 
     private fun timeoutFor(step: Step): Long {
         return when (step) {
@@ -990,6 +1231,7 @@ class SelectToSpeakService : AccessibilityService() {
     }
 
     private fun cancelSession(notifyFailure: Boolean) {
+        val session = currentSession
         processJob?.cancel()
         timeoutJob?.cancel()
         totalTimeoutJob?.cancel()
@@ -1004,16 +1246,20 @@ class SelectToSpeakService : AccessibilityService() {
         cachedWeChatRoot = null
         currentSession = null
         floatingView?.hide()
-        if (notifyFailure) {
-            notifyState("操作已取消", false)
+        if (notifyFailure && session != null) {
+            notifyState(session, "操作已取消", success = false, terminal = true)
         }
     }
 
     private fun failAndHide(message: String, root: AccessibilityNodeInfo? = getWeChatRoot()) {
+        val session = currentSession
         logErrorLong(buildFailureDiagnostics(message, root))
         cancelSession(false)
-        notifyState(message, false)
+        if (session != null) {
+            notifyState(session, message, success = false, terminal = true)
+        }
     }
+
 
     private fun buildFailureDiagnostics(message: String, root: AccessibilityNodeInfo?): String {
         val session = currentSession
@@ -1150,7 +1396,41 @@ class SelectToSpeakService : AccessibilityService() {
     }
 
 
+    private fun clickSearchCancel(root: AccessibilityNodeInfo?): Boolean {
+        val node = AccessibilityUtil.findBestTextNode(root, "取消", exactMatch = true, preferBottom = false, excludeEditable = false)
+            ?: return false
+        val success = AccessibilityUtil.performClick(this, node)
+        AccessibilityUtil.safeRecycle(node)
+        return success
+    }
+
+    private fun clickVideoCallSheetCancel(root: AccessibilityNodeInfo?): Boolean {
+        if (!isVideoCallSheetVisible(root)) {
+            return false
+        }
+        val node = AccessibilityUtil.findBestTextNode(root, "取消", exactMatch = true, preferBottom = true, excludeEditable = false)
+            ?: return false
+        val success = AccessibilityUtil.performClick(this, node)
+        AccessibilityUtil.safeRecycle(node)
+        return success
+    }
+
+    private fun clickKnownDialogClose(root: AccessibilityNodeInfo?): Boolean {
+        val closeTexts = listOf("关闭", "我知道了", "稍后再说", "以后再说", "暂不")
+        for (text in closeTexts) {
+            val node = AccessibilityUtil.findBestTextNode(root, text, exactMatch = true, preferBottom = true, excludeEditable = false)
+                ?: continue
+            val success = AccessibilityUtil.performClick(this, node)
+            AccessibilityUtil.safeRecycle(node)
+            if (success) {
+                return true
+            }
+        }
+        return false
+    }
+
     private fun clickMoreButton(root: AccessibilityNodeInfo?): Boolean {
+
         val byId = findNodeByIds(
             root,
             "com.tencent.mm:id/bjz",
@@ -1241,10 +1521,15 @@ class SelectToSpeakService : AccessibilityService() {
     }
 
     private fun isVideoCallSheetVisible(root: AccessibilityNodeInfo?): Boolean {
+        val snapshot = snapshotOf(root)
+        if (snapshot != null) {
+            return WeChatUiSnapshotAnalyzer.isVideoCallSheetVisible(snapshot)
+        }
         return hasExactText(root, "视频通话") &&
             hasExactText(root, "语音通话") &&
             hasExactText(root, "取消")
     }
+
 
     private fun hasExactText(root: AccessibilityNodeInfo?, text: String): Boolean {
         val node = AccessibilityUtil.findBestTextNode(
@@ -1262,26 +1547,14 @@ class SelectToSpeakService : AccessibilityService() {
     }
 
     private fun hasNoSearchResult(root: AccessibilityNodeInfo?): Boolean {
-        val candidates = listOf("无搜索结果", "没有找到", "无结果")
-        for (text in candidates) {
-            val node = AccessibilityUtil.findBestTextNode(
-                root,
-                text,
-                exactMatch = false,
-                preferBottom = false,
-                excludeEditable = false
-            )
-            if (node != null) {
-                AccessibilityUtil.safeRecycle(node)
-                return true
-            }
-        }
-        return false
+        return snapshotOf(root)?.let(WeChatUiSnapshotAnalyzer::hasNoSearchResult) ?: false
     }
+
 
     // ── 数据类 & 枚举 ─────────────────────────────────────────────────────────
 
     private data class VideoCallSession(
+        val requestId: String,
         val contactName: String,
         var step: Step,
         var stepStartedAt: Long,
@@ -1292,6 +1565,7 @@ class SelectToSpeakService : AccessibilityService() {
         var lastAnnouncedMessage: String? = null,
         val actionAttempts: MutableMap<String, Int> = mutableMapOf()
     )
+
 
     private enum class WeChatPage {
         HOME,

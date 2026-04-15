@@ -76,7 +76,8 @@ class VideoCallContactAdapter(
     private fun bind(holder: ViewHolder, contact: Contact) {
         val context = holder.itemView.context
         holder.card.cardElevation = context.dpToPx(if (lowPerformanceMode) 2 else 4).toFloat()
-        holder.name.text = contact.name
+        holder.name.text = contact.displayName
+
         holder.action.text = context.getString(
             if (contact.preferredAction == Contact.PreferredAction.WECHAT_VIDEO) {
                 R.string.contact_card_action_wechat
@@ -84,8 +85,9 @@ class VideoCallContactAdapter(
                 R.string.contact_card_action_phone
             }
         )
-        holder.photo.contentDescription = context.getString(R.string.contact_photo_description, contact.name)
-        holder.card.contentDescription = context.getString(R.string.video_contact_action_description, contact.name)
+        holder.photo.contentDescription = context.getString(R.string.contact_photo_description, contact.displayName)
+        holder.card.contentDescription = context.getString(R.string.video_contact_action_description, contact.displayName)
+
 
         val photoSize = context.dpToPx(if (lowPerformanceMode) 88 else 112)
         holder.photo.layoutParams = holder.photo.layoutParams.apply {

@@ -12,6 +12,20 @@ data class Contact(
     val lastCallTime: Long = 0,
     val searchKeywords: List<String> = emptyList()
 ) {
+    val displayName: String
+        get() = name
+
+    val wechatSearchName: String?
+        get() = wechatId
+
+    fun requiresWechatSearchName(): Boolean {
+        return preferredAction == PreferredAction.WECHAT_VIDEO
+    }
+
+    fun hasWechatSearchName(): Boolean {
+        return !wechatSearchName.isNullOrBlank()
+    }
+
     enum class PreferredAction {
         PHONE,
         WECHAT_VIDEO;

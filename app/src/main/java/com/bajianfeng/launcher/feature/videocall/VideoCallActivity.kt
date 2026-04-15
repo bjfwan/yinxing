@@ -16,9 +16,9 @@ import androidx.core.app.ActivityCompat
 import androidx.core.view.isVisible
 import androidx.core.widget.doAfterTextChanged
 import androidx.recyclerview.widget.DefaultItemAnimator
-import androidx.recyclerview.widget.GridLayoutManager
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
+
 import com.bajianfeng.launcher.R
 import com.bajianfeng.launcher.common.service.TTSService
 import com.bajianfeng.launcher.common.ui.PageStateView
@@ -73,8 +73,9 @@ class VideoCallActivity : AppCompatActivity() {
         contactManager = ContactManager.getInstance(this)
 
         recyclerView = findViewById(R.id.recycler_video_contacts)
-        recyclerView.layoutManager = GridLayoutManager(this, 2)
+        recyclerView.layoutManager = LinearLayoutManager(this)
         recyclerView.setHasFixedSize(false)
+
 
         modeActionButton = findViewById(R.id.btn_mode_action)
         modeActionText = findViewById(R.id.tv_mode_action)
@@ -100,11 +101,12 @@ class VideoCallActivity : AppCompatActivity() {
             activity = this,
             ttsService = ttsService,
             contactManager = contactManager,
+            automationGateway = SelectToSpeakAutomationGateway,
             onNeedAccessibilityPermission = { dialogController.showAccessibilityDialog() },
             onNeedOverlayPermission = { contact -> dialogController.showOverlayPermissionDialog(contact) },
-            onContactsChanged = { loadContacts() },
             onCallCompleted = { loadContacts() }
         )
+
         dialogController = VideoContactDialogController(
             activity = this,
             onPickPhoto = { openImagePicker() },
@@ -179,7 +181,7 @@ class VideoCallActivity : AppCompatActivity() {
 
     private fun switchToCallMode() {
         isManageMode = false
-        recyclerView.layoutManager = GridLayoutManager(this, 2)
+        recyclerView.layoutManager = LinearLayoutManager(this)
         recyclerView.adapter = adapter
         updateModeUi()
         if (searchQuery.isNotBlank()) {
@@ -188,6 +190,7 @@ class VideoCallActivity : AppCompatActivity() {
             renderContacts()
         }
     }
+
 
     private fun updateModeUi() {
         val actionText = getString(if (isManageMode) R.string.action_add else R.string.action_manage)
@@ -219,10 +222,9 @@ class VideoCallActivity : AppCompatActivity() {
     ) {
         val contactId = original?.id ?: UUID.randomUUID().toString()
         val resolvedAvatarUri = resolveAvatarUri(contactId, original?.avatarUri, avatarUri)
-        val normalizedWechatId = wechatId.ifBlank {
-            if (preferredAction == Contact.PreferredAction.WECHAT_VIDEO) name else ""
-        }
+        val normalizedWechatId = wechatId.trim()
         val contact = Contact(
+
             id = contactId,
             name = name,
             phoneNumber = phone.takeIf { it.isNotBlank() },
