@@ -3,7 +3,7 @@ package com.bajianfeng.launcher.feature.videocall
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import com.bajianfeng.launcher.R
-import com.bajianfeng.launcher.automation.wechat.service.WeChatAccessibilityService
+import com.google.android.accessibility.selecttospeak.SelectToSpeakService
 import com.bajianfeng.launcher.common.service.TTSService
 import com.bajianfeng.launcher.common.util.NetworkUtil
 import com.bajianfeng.launcher.common.util.PermissionUtil
@@ -25,7 +25,7 @@ class VideoCallCoordinator(
             return
         }
 
-        val serviceName = "${activity.packageName}/${WeChatAccessibilityService::class.java.name}"
+        val serviceName = "${activity.packageName}/${SelectToSpeakService::class.java.name}"
         if (!PermissionUtil.isAccessibilityServiceEnabled(activity, serviceName)) {
             speakAndToast(R.string.accessibility_required, R.string.accessibility_required)
             onNeedAccessibilityPermission()
@@ -46,7 +46,7 @@ class VideoCallCoordinator(
             return
         }
 
-        val service = WeChatAccessibilityService.getInstance()
+        val service = SelectToSpeakService.getInstance()
         if (service == null) {
             speakAndToast(R.string.accessibility_service_not_running, R.string.accessibility_service_not_running)
             return
@@ -68,12 +68,13 @@ class VideoCallCoordinator(
 
         contactManager.incrementCallCount(contact.id)
         onContactsChanged()
-        service.requestVideoCall(contact.name)
+        val targetName = contact.wechatId?.takeIf { it.isNotBlank() } ?: contact.name
+        service.requestVideoCall(targetName)
     }
 
     fun clear() {
         ttsService.stop()
-        WeChatAccessibilityService.getInstance()?.clearStateCallback()
+        SelectToSpeakService.getInstance()?.clearStateCallback()
     }
 
     private fun speakAndToast(detailResId: Int, toastResId: Int) {

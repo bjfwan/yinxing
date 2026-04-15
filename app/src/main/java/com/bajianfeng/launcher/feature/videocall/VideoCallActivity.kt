@@ -89,7 +89,7 @@ class VideoCallActivity : AppCompatActivity() {
         )
         dialogController = VideoContactDialogController(
             activity = this,
-            onAddContact = { name -> addContact(name) },
+            onAddContact = { name, wechatId -> addContact(name, wechatId) },
             onDeleteContact = { contact -> deleteContact(contact) },
             onOpenAccessibilitySettings = { PermissionUtil.openAccessibilitySettings(this) },
             onOpenOverlaySettings = { PermissionUtil.openOverlaySettings(this) },
@@ -180,12 +180,12 @@ class VideoCallActivity : AppCompatActivity() {
         clearSearchButton.isVisible = isManageMode && searchQuery.isNotBlank()
     }
 
-    private fun addContact(name: String) {
+    private fun addContact(name: String, wechatId: String) {
         contactManager.addContact(
             Contact(
                 id = UUID.randomUUID().toString(),
                 name = name,
-                wechatId = name
+                wechatId = wechatId.ifBlank { name }
             )
         )
         loadContacts()

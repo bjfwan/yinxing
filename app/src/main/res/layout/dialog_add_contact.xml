@@ -52,6 +52,40 @@
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
+            android:text="@string/contact_display_name_tip"
+            android:textSize="18sp"
+            android:textColor="#999999"
+            android:drawablePadding="8dp"
+            android:layout_marginBottom="24dp" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/label_wechat_search_name"
+            android:textSize="22sp"
+            android:textColor="#333333"
+            android:textStyle="bold"
+            android:layout_marginBottom="12dp" />
+
+        <EditText
+            android:id="@+id/et_wechat_name"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:autofillHints="nickname"
+            android:hint="@string/hint_wechat_search_name"
+            android:textSize="24sp"
+            android:textColorHint="#BBBBBB"
+            android:textColor="#333333"
+            android:padding="20dp"
+            android:background="@drawable/edit_text_background_focused"
+            android:inputType="text"
+            android:maxLines="1"
+            android:imeOptions="actionDone"
+            android:layout_marginBottom="16dp" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
             android:text="@string/wechat_contact_name_tip"
             android:textSize="18sp"
             android:textColor="#999999"

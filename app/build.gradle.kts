@@ -40,6 +40,7 @@ android {
         animationsDisabled = true
         unitTests.isIncludeAndroidResources = true
     }
+
 }
 
 dependencies {

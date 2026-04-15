@@ -13,7 +13,10 @@
 
 - 在当前工作区于 2026-04-12 执行 `.\gradlew.bat :app:assembleDebugAndroidTest :app:testDebugUnitTest :app:assembleDebug :app:lintDebug` 已通过
 - 当前 `lintDebug` 结果为 `No issues found.`
-- 当前未检测到已连接设备，因此未执行 `:app:connectedDebugAndroidTest`
+- 当前已通过 `D:\androidsdk\platform-tools\adb.exe devices` 检测到在线设备 `10AD5H082S000H5`
+- 当前已于 2026-04-12 在真机 `10AD5H082S000H5` 上执行 `:app:connectedDebugAndroidTest` 并通过
+
+
 
 ## 3. 当前最低验证要求
 
@@ -56,13 +59,22 @@
   - `MainActivityInstrumentedTest`
   - `SettingsActivityInstrumentedTest`
   - `VideoCallActivityInstrumentedTest`
+- Benchmark / Baseline Profile 分层探针
+  - `UiAutomationProbe#launcherUiSmoke`
+  - `MacrobenchmarkProbe#coldStartupProbe`
+  - `BaselineProfileFrameworkProbe#collectProbe`
+  - `BaselineProfileGenerator#generate`
+
 
 ## 6. 第一批仪器测试范围
 
 - 主页启动后能加载出内置入口并展示时间日期
+- 主页点击“电话”入口后可进入 `PhoneActivity`
+- 主页点击“微信视频”入口后可进入 `VideoCallActivity`
 - 设置页切换低性能模式后，摘要文案与偏好值同步更新
 - 视频联系人页在空数据时展示空状态
 - 视频联系人页在管理模式下可搜索到空结果并清空搜索恢复列表
+
 
 ## 7. 后续自动化测试建议
 
@@ -77,3 +89,12 @@
 - 第二阶段：触及设备级测试代码时，额外执行 `:app:assembleDebugAndroidTest`
 - 第三阶段：接入可用设备后，把 `:app:connectedDebugAndroidTest` 纳入提测门禁
 - 第四阶段：继续补齐权限拒绝、跨页面跳转和微信自动化关键路径回归
+
+## 9. Benchmark 分层诊断建议
+
+- 当基线采集“看起来卡住”时，先跑 `UiAutomationProbe#launcherUiSmoke`，确认设备解锁、默认桌面与 UI 选择器都正常
+- 第二步跑 `MacrobenchmarkProbe#coldStartupProbe`，确认问题是否已发生在 `MacrobenchmarkRule.measureRepeated(...)` 之前/之中
+- 第三步跑 `BaselineProfileFrameworkProbe#collectProbe`，专门观察是否能进入 `BaselineProfileRule.collect(...)` 的 lambda
+- 最后再跑 `BaselineProfileGenerator#generate`，避免每次都直接进入高成本、低可见性的全量基线采集
+- 如果前两层通过、第三层持续只输出 watchdog 心跳且未进入 lambda，应优先怀疑 ROM 与 AndroidX Benchmark/Baseline Profile 基础设施兼容性
+

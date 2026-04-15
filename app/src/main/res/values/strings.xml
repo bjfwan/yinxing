@@ -1,6 +1,7 @@
 <resources>
     <string name="app_name">OldLauncher</string>
     <string name="accessibility_service_description">用于自动拨打微信视频通话和接听来电</string>
+    <string name="select_to_speak_service_description">微信视频通话辅助朗读服务（需与主服务同时开启）</string>
     <string name="home_title">老人桌面</string>
     <string name="home_time_placeholder">12:00</string>
     <string name="home_date_placeholder">2024年1月1日 星期一</string>
@@ -43,6 +44,9 @@
     <string name="label_contact_name">联系人姓名</string>
     <string name="hint_wechat_contact_name">请输入微信好友的备注名或昵称</string>
     <string name="wechat_contact_name_tip">请输入在微信中显示的名字</string>
+    <string name="label_wechat_search_name">微信搜索名称</string>
+    <string name="hint_wechat_search_name">请输入微信备注名或昵称，留空则默认和显示名称一致</string>
+    <string name="contact_display_name_tip">这是桌面上展示给你的联系人名称</string>
     <string name="phone_contact_dialog_add_title">添加联系人</string>
     <string name="phone_contact_dialog_edit_title">编辑联系人</string>
     <string name="wechat_contact_dialog_title">添加微信联系人</string>

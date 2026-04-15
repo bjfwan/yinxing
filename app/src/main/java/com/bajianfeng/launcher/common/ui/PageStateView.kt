@@ -47,9 +47,12 @@ class PageStateView @JvmOverloads constructor(
         val hasAction = !actionText.isNullOrBlank() && action != null
         actionButton.isVisible = hasAction
         actionButton.setOnClickListener(null)
+        actionTextView.setOnClickListener(null)
         if (hasAction) {
             actionTextView.text = actionText
-            actionButton.setOnClickListener { action?.invoke() }
+            val clickAction = View.OnClickListener { action?.invoke() }
+            actionButton.setOnClickListener(clickAction)
+            actionTextView.setOnClickListener(clickAction)
         } else {
             actionTextView.text = ""
         }
@@ -57,7 +60,9 @@ class PageStateView @JvmOverloads constructor(
 
     fun hide() {
         actionButton.setOnClickListener(null)
+        actionTextView.setOnClickListener(null)
         isVisible = false
         contentView?.isVisible = true
     }
+
 }

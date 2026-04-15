@@ -19,6 +19,11 @@ object AccessibilityUtil {
         return root.findAccessibilityNodeInfosByViewId(id).firstOrNull()
     }
 
+    fun findAllById(root: AccessibilityNodeInfo?, id: String): List<AccessibilityNodeInfo> {
+        if (root == null) return emptyList()
+        return root.findAccessibilityNodeInfosByViewId(id)
+    }
+
     fun findAllByText(root: AccessibilityNodeInfo?, text: String): List<AccessibilityNodeInfo> {
         if (root == null) return emptyList()
         return root.findAccessibilityNodeInfosByText(text)
@@ -32,10 +37,15 @@ object AccessibilityUtil {
         excludeEditable: Boolean = true
     ): AccessibilityNodeInfo? {
         if (root == null) return null
-        val candidates = root.findAccessibilityNodeInfosByText(text)
-        if (candidates.isEmpty()) {
-            return null
+        // findAccessibilityNodeInfosByText 只匹配 text 属性，不匹配 contentDescription
+        // 先用系统 API 找，再用递归兜底找 contentDescription
+        val candidates = root.findAccessibilityNodeInfosByText(text).toMutableList()
+        val fromDesc = findNodesByContentDescription(root, text, exactMatch)
+        for (node in fromDesc) {
+            if (candidates.none { it == node }) candidates.add(node)
         }
+
+        if (candidates.isEmpty()) return null
 
         val filtered = candidates.filter { node ->
             val matchesText = if (exactMatch) {
@@ -59,6 +69,30 @@ object AccessibilityUtil {
         }
 
         return target
+    }
+
+    /**
+     * 递归遍历节点树，收集 contentDescription 匹配的节点。
+     * 用于弥补 findAccessibilityNodeInfosByText 不搜索 contentDescription 的缺陷。
+     */
+    fun findNodesByContentDescription(
+        root: AccessibilityNodeInfo?,
+        text: String,
+        exactMatch: Boolean = true
+    ): List<AccessibilityNodeInfo> {
+        if (root == null) return emptyList()
+        val result = mutableListOf<AccessibilityNodeInfo>()
+        fun traverse(node: AccessibilityNodeInfo) {
+            val desc = node.contentDescription?.toString()
+            val matches = if (exactMatch) desc == text else desc?.contains(text) == true
+            if (matches) result.add(node)
+            for (i in 0 until node.childCount) {
+                val child = node.getChild(i) ?: continue
+                traverse(child)
+            }
+        }
+        traverse(root)
+        return result
     }
 
     fun findFirstEditableNode(root: AccessibilityNodeInfo?): AccessibilityNodeInfo? {
@@ -104,6 +138,7 @@ object AccessibilityUtil {
         if (node == null) return false
         val rect = Rect()
         node.getBoundsInScreen(rect)
+        if (rect.isEmpty) return false
         return clickByCoordinate(service, rect.centerX().toFloat(), rect.centerY().toFloat())
     }
 
@@ -113,8 +148,7 @@ object AccessibilityUtil {
             .addStroke(GestureDescription.StrokeDescription(path, 0, 100))
             .build()
 
-        service.dispatchGesture(gesture, null, null)
-        return true
+        return service.dispatchGesture(gesture, null, null)
     }
 
     fun scrollDown(service: AccessibilityService, screenWidth: Int, screenHeight: Int): Boolean {
@@ -169,6 +203,56 @@ object AccessibilityUtil {
             if (scrollable != null) return scrollable
         }
         return null
+    }
+
+    fun summarizeNode(node: AccessibilityNodeInfo?): String {
+        if (node == null) return "null"
+        val bounds = Rect()
+        node.getBoundsInScreen(bounds)
+        val parts = mutableListOf<String>()
+        parts += "class=${node.className ?: "null"}"
+        parts += "package=${node.packageName ?: "null"}"
+        node.viewIdResourceName?.takeIf { it.isNotBlank() }?.let { parts += "id=$it" }
+        normalize(node.text)?.let { parts += "text=$it" }
+        normalize(node.contentDescription)?.let { parts += "desc=$it" }
+        parts += "clickable=${node.isClickable}"
+        parts += "enabled=${node.isEnabled}"
+        parts += "editable=${node.isEditable}"
+        parts += "bounds=$bounds"
+        parts += "children=${node.childCount}"
+        return parts.joinToString(", ")
+    }
+
+    fun dumpTree(root: AccessibilityNodeInfo?, maxDepth: Int = 8, maxNodes: Int = 160): String {
+        if (root == null) return "root=null"
+        val builder = StringBuilder()
+        var visited = 0
+
+        fun append(node: AccessibilityNodeInfo?, depth: Int) {
+            if (node == null || visited >= maxNodes) return
+            repeat(depth) { builder.append("  ") }
+            builder.append("- ").append(summarizeNode(node)).append('\n')
+            visited++
+            if (depth >= maxDepth) return
+            for (index in 0 until node.childCount) {
+                if (visited >= maxNodes) return
+                val child = node.getChild(index) ?: continue
+                append(child, depth + 1)
+                safeRecycle(child)
+            }
+        }
+
+        append(root, 0)
+        if (visited >= maxNodes) {
+            builder.append("... truncated at ").append(maxNodes).append(" nodes")
+        }
+        return builder.toString()
+    }
+
+    private fun normalize(value: CharSequence?, maxLength: Int = 40): String? {
+        val text = value?.toString()?.replace('\n', ' ')?.trim().orEmpty()
+        if (text.isEmpty()) return null
+        return if (text.length <= maxLength) text else text.take(maxLength) + "..."
     }
 
 }
