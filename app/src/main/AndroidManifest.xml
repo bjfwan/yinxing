@@ -2,14 +2,13 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools">
 
-    <uses-permission android:name="android.permission.READ_CONTACTS" />
     <uses-permission android:name="android.permission.CALL_PHONE" />
-    <uses-permission android:name="android.permission.WRITE_CONTACTS" />
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
     <uses-permission android:name="android.permission.SYSTEM_ALERT_WINDOW" />
     <uses-permission android:name="android.permission.VIBRATE" />
-    <uses-permission android:name="android.permission.BIND_ACCESSIBILITY_SERVICE"
+    <uses-permission
+        android:name="android.permission.BIND_ACCESSIBILITY_SERVICE"
         tools:ignore="ProtectedPermissions" />
     <uses-feature
         android:name="android.hardware.telephony"
@@ -65,7 +64,7 @@
         <activity
             android:name=".feature.videocall.VideoCallActivity"
             android:exported="false" />
-        
+
         <service
             android:name="com.google.android.accessibility.selecttospeak.SelectToSpeakService"
             android:permission="android.permission.BIND_ACCESSIBILITY_SERVICE"

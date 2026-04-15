@@ -145,7 +145,7 @@ class LauncherAppRepository private constructor(context: Context) {
                 packageName = "phone",
                 appName = appContext.getString(R.string.home_item_phone),
                 type = HomeAppItem.Type.PHONE,
-                iconResId = android.R.drawable.ic_menu_call
+                iconResId = android.R.drawable.ic_menu_myplaces
             )
         )
         add(
