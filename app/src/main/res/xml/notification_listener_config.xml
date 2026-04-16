@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  NotificationListenerService 配置。
+  不限制 packageNames，避免被微信识别为针对性监听工具（与无障碍服务同理）。
+-->
+<notification-listener xmlns:android="http://schemas.android.com/apk/res/android"
+    android:description="@string/incoming_call_notification_service_description" />

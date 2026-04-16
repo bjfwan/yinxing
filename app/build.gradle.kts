@@ -53,6 +53,7 @@ dependencies {
     implementation(libs.androidx.profileinstaller)
     implementation(libs.kotlinx.coroutines.core)
     implementation(libs.kotlinx.coroutines.android)
+    implementation(libs.androidx.localbroadcastmanager)
     baselineProfile(project(":benchmark"))
     testImplementation(libs.junit)
     testImplementation(libs.json)

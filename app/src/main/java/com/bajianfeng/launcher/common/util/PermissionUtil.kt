@@ -1,8 +1,11 @@
 package com.bajianfeng.launcher.common.util
 
+import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
 import android.provider.Settings
+import android.text.TextUtils
+import com.bajianfeng.launcher.feature.incoming.WeChatIncomingCallService
 
 object PermissionUtil {
 
@@ -50,6 +53,28 @@ object PermissionUtil {
 
     fun openOverlaySettings(context: Context) {
         val intent = Intent(Settings.ACTION_MANAGE_OVERLAY_PERMISSION)
+        intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK
+        context.startActivity(intent)
+    }
+
+    /**
+     * 检查通知监听权限（WeChatIncomingCallService 所需）。
+     * 通过读取 Settings.Secure.ENABLED_NOTIFICATION_LISTENERS 判断。
+     */
+    fun isNotificationListenerEnabled(context: Context): Boolean {
+        val flat = Settings.Secure.getString(
+            context.contentResolver,
+            "enabled_notification_listeners"
+        ) ?: return false
+        val componentName = ComponentName(context, WeChatIncomingCallService::class.java)
+        return flat.split(":").any { entry ->
+            runCatching { ComponentName.unflattenFromString(entry) == componentName }.getOrDefault(false)
+        }
+    }
+
+    /** 跳转到系统通知使用权设置页 */
+    fun openNotificationListenerSettings(context: Context) {
+        val intent = Intent(Settings.ACTION_NOTIFICATION_LISTENER_SETTINGS)
         intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK
         context.startActivity(intent)
     }

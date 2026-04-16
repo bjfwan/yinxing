@@ -67,7 +67,11 @@
     <string name="contact_action_wechat">微信视频</string>
     <string name="contact_card_action_phone">点击后拨打电话</string>
     <string name="contact_card_action_wechat">点击后发起微信视频</string>
+    <string name="contact_card_action_wechat_compact">微信视频</string>
+    <string name="video_contact_wechat_action_description">给 %1$s 发起微信视频</string>
+    <string name="video_contact_phone_action_description">给 %1$s 拨打电话</string>
     <string name="contact_manage_default_phone">默认：电话</string>
+
     <string name="contact_manage_default_wechat">默认：微信视频</string>
     <string name="contact_manage_phone_value">手机号：%1$s</string>
     <string name="contact_manage_wechat_value">微信搜索名：%1$s</string>
@@ -153,4 +157,19 @@
     <string name="settings_low_performance_summary_off">已关闭，保持完整动效和秒级刷新</string>
     <string name="settings_system_title">系统设置</string>
     <string name="settings_system_summary">打开安卓系统设置，调整网络、声音和显示等项目</string>
+
+    <!-- 通知监听权限设置项 -->
+    <string name="settings_notification_listener_title">微信来电接收</string>
+    <string name="settings_notification_listener_summary_on">已开启，可接收微信视频来电提醒</string>
+    <string name="settings_notification_listener_summary_off">未开启，点击前往系统设置授权</string>
+    <string name="settings_notification_listener_status_on">已授权</string>
+    <string name="settings_notification_listener_status_off">未授权</string>
+
+    <!-- 微信来电页 -->
+    <string name="incoming_call_subtitle">微信视频来电</string>
+    <string name="incoming_call_unknown_caller">来电中</string>
+    <string name="incoming_call_accept">接听</string>
+    <string name="incoming_call_decline">拒绝</string>
+    <string name="incoming_call_icon_description">来电图标</string>
+    <string name="incoming_call_notification_service_description">用于接收微信视频来电通知并显示来电页</string>
 </resources>

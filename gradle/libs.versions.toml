@@ -18,6 +18,7 @@ robolectric = "4.16.1"
 androidxBenchmark = "1.5.0-alpha05"
 androidxProfileInstaller = "1.4.1"
 uiautomator = "2.4.0-beta02"
+localbroadcastmanager = "1.1.0"
 
 [libraries]
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
@@ -39,6 +40,7 @@ androidx-benchmark-junit4 = { group = "androidx.benchmark", name = "benchmark-ju
 androidx-benchmark-macro-junit4 = { group = "androidx.benchmark", name = "benchmark-macro-junit4", version.ref = "androidxBenchmark" }
 androidx-profileinstaller = { group = "androidx.profileinstaller", name = "profileinstaller", version.ref = "androidxProfileInstaller" }
 robolectric = { group = "org.robolectric", name = "robolectric", version.ref = "robolectric" }
+androidx-localbroadcastmanager = { group = "androidx.localbroadcastmanager", name = "localbroadcastmanager", version.ref = "localbroadcastmanager" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }

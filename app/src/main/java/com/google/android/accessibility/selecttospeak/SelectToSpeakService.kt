@@ -880,6 +880,13 @@ class SelectToSpeakService : AccessibilityService() {
         val currentClass = resolveCurrentWeChatClass(root)
         val page = detectWeChatPage(root, currentClass)
 
+        if (page == WeChatPage.SEARCH) {
+            Log.d(TAG, "WAITING_LAUNCHER_UI: 搜索页已打开，切换到搜索阶段")
+            session.launcherPrepared = false
+            transitionTo(session, Step.WAITING_SEARCH_FALLBACK, "正在打开搜索")
+            return
+        }
+
         if (page != WeChatPage.HOME) {
             Log.d(TAG, "WAITING_LAUNCHER_UI: 当前页面=$page，重新归一化到首页")
             session.launcherPrepared = false
@@ -887,6 +894,7 @@ class SelectToSpeakService : AccessibilityService() {
             rerouteTo(session, Step.WAITING_HOME, "正在返回微信首页")
             return
         }
+
 
         if (!session.launcherPrepared) {
             session.launcherPrepared = true
@@ -979,8 +987,9 @@ class SelectToSpeakService : AccessibilityService() {
     }
 
     private fun handleContactResult(session: VideoCallSession, root: AccessibilityNodeInfo) {
-        val currentClass = root.className?.toString()
+        val currentClass = resolveCurrentWeChatClass(root)
         when (detectWeChatPage(root, currentClass)) {
+
             WeChatPage.SEARCH -> Unit
             WeChatPage.CHAT,
             WeChatPage.CONTACT_DETAIL -> {
@@ -1028,8 +1037,9 @@ class SelectToSpeakService : AccessibilityService() {
     }
 
     private fun handleContactDetail(session: VideoCallSession, root: AccessibilityNodeInfo) {
-        val currentClass = root.className?.toString()
+        val currentClass = resolveCurrentWeChatClass(root)
         when (detectWeChatPage(root, currentClass)) {
+
             WeChatPage.CHAT,
             WeChatPage.CONTACT_DETAIL -> {
                 if (!isTargetConversationPage(root, currentClass, session.contactName)) {
