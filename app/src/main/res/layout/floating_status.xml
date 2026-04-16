@@ -8,13 +8,28 @@
     app:cardCornerRadius="12dp"
     app:cardElevation="8dp">
 
-    <TextView
-        android:id="@+id/tv_status"
+    <LinearLayout
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:padding="16dp"
-        android:text="@string/status_operating"
-        android:textColor="#FFFFFF"
-        android:textSize="24sp" />
+        android:orientation="vertical"
+        android:padding="16dp">
+
+        <TextView
+            android:id="@+id/tv_status"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/status_operating"
+            android:textColor="#FFFFFF"
+            android:textSize="24sp" />
+
+        <TextView
+            android:id="@+id/tv_status_step"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="6dp"
+            android:textColor="#CCFFFFFF"
+            android:textSize="16sp"
+            android:visibility="gone" />
+    </LinearLayout>
 
 </androidx.cardview.widget.CardView>

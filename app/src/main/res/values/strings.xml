@@ -158,12 +158,38 @@
     <string name="settings_system_title">系统设置</string>
     <string name="settings_system_summary">打开安卓系统设置，调整网络、声音和显示等项目</string>
 
+    <!-- 权限管理通用 -->
+    <string name="settings_section_permissions">权限管理</string>
+    <string name="settings_section_other">其他</string>
+    <string name="settings_permission_status_granted">已授权</string>
+    <string name="settings_permission_status_denied">未授权</string>
+    <string name="settings_permission_go_set">去设置</string>
+
+    <!-- 无障碍服务 -->
+    <string name="settings_accessibility_title">无障碍服务</string>
+    <string name="settings_accessibility_summary_on">已开启，自动拨打微信视频可正常使用</string>
+    <string name="settings_accessibility_summary_off">未开启，点击前往系统设置授权</string>
+
     <!-- 通知监听权限设置项 -->
     <string name="settings_notification_listener_title">微信来电接收</string>
     <string name="settings_notification_listener_summary_on">已开启，可接收微信视频来电提醒</string>
     <string name="settings_notification_listener_summary_off">未开启，点击前往系统设置授权</string>
     <string name="settings_notification_listener_status_on">已授权</string>
     <string name="settings_notification_listener_status_off">未授权</string>
+
+    <!-- 电池优化豁免 -->
+    <string name="settings_battery_title">电池无限制</string>
+    <string name="settings_battery_summary_on">已豁免，后台来电不会被系统中断</string>
+    <string name="settings_battery_summary_off">未豁免，长时间后台可能被系统杀掉，点击授权</string>
+
+    <!-- 自启动 -->
+    <string name="settings_autostart_title">开机自启动</string>
+    <string name="settings_autostart_summary">开机后自动启动，保证来电始终在线，点击前往系统设置开启</string>
+
+    <!-- 悬浮窗 -->
+    <string name="settings_overlay_title">悬浮窗权限</string>
+    <string name="settings_overlay_summary_on">已开启，视频通话进度可显示在悬浮窗</string>
+    <string name="settings_overlay_summary_off">未开启，点击前往系统设置授权</string>
 
     <!-- 微信来电页 -->
     <string name="incoming_call_subtitle">微信视频来电</string>
