@@ -89,8 +89,10 @@ class VideoCallActivity : AppCompatActivity() {
         adapter = VideoCallContactAdapter(
             scope = scope,
             lowPerformanceMode = launcherPreferences.isLowPerformanceModeEnabled(),
-            onContactClick = { contact -> performPrimaryAction(contact) }
+            onContactClick = { contact -> performPrimaryAction(contact) },
+            onWechatVideoClick = { contact -> coordinator.start(contact) }
         )
+
         manageAdapter = ContactManageAdapter(
             lowPerformanceMode = launcherPreferences.isLowPerformanceModeEnabled(),
             onEditClick = { contact -> dialogController.showEditContactDialog(contact) },

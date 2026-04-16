@@ -21,8 +21,10 @@ import kotlinx.coroutines.launch
 class VideoCallContactAdapter(
     private val scope: CoroutineScope,
     private var lowPerformanceMode: Boolean,
-    private val onContactClick: (Contact) -> Unit
+    private val onContactClick: (Contact) -> Unit,
+    private val onWechatVideoClick: (Contact) -> Unit
 ) : ListAdapter<Contact, VideoCallContactAdapter.ViewHolder>(DiffCallback) {
+
 
     companion object {
         private val DiffCallback = object : DiffUtil.ItemCallback<Contact>() {
@@ -78,18 +80,24 @@ class VideoCallContactAdapter(
         holder.card.cardElevation = context.dpToPx(if (lowPerformanceMode) 2 else 4).toFloat()
         holder.name.text = contact.displayName
 
+        val isWechat = contact.preferredAction == Contact.PreferredAction.WECHAT_VIDEO
         holder.action.text = context.getString(
-            if (contact.preferredAction == Contact.PreferredAction.WECHAT_VIDEO) {
-                R.string.contact_card_action_wechat
-            } else {
-                R.string.contact_card_action_phone
-            }
+            if (isWechat) R.string.contact_card_action_wechat_compact
+            else R.string.contact_card_action_phone
+        )
+        holder.action.contentDescription = context.getString(
+            if (isWechat) R.string.video_contact_wechat_action_description
+            else R.string.video_contact_phone_action_description,
+            contact.displayName
         )
         holder.photo.contentDescription = context.getString(R.string.contact_photo_description, contact.displayName)
         holder.card.contentDescription = context.getString(R.string.video_contact_action_description, contact.displayName)
 
+        val photoSize = context.dpToPx(if (lowPerformanceMode) 128 else 160)
 
-        val photoSize = context.dpToPx(if (lowPerformanceMode) 88 else 112)
+
+
+
         holder.photo.layoutParams = holder.photo.layoutParams.apply {
             width = photoSize
             height = photoSize
@@ -120,7 +128,14 @@ class VideoCallContactAdapter(
         holder.card.setOnClickListener { onContactClick(contact) }
         holder.photo.setOnClickListener { onContactClick(contact) }
         holder.name.setOnClickListener { onContactClick(contact) }
-        holder.action.setOnClickListener { onContactClick(contact) }
+        holder.action.setOnClickListener {
+            if (contact.preferredAction == Contact.PreferredAction.WECHAT_VIDEO) {
+                onWechatVideoClick(contact)
+            } else {
+                onContactClick(contact)
+            }
+        }
+
     }
 
     private fun ImageView.setDefaultAvatar(context: android.content.Context, action: Contact.PreferredAction) {
