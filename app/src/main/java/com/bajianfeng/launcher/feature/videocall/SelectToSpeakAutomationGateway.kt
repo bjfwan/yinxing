@@ -9,7 +9,9 @@ object SelectToSpeakAutomationGateway : VideoCallAutomationGateway {
                 VideoCallStateUpdate(
                     message = update.message,
                     success = update.success,
-                    terminal = update.terminal
+                    terminal = update.terminal,
+                    step = update.step,
+                    page = update.page
                 )
             )
         }

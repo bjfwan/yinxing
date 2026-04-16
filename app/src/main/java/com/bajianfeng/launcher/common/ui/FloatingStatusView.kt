@@ -7,6 +7,7 @@ import android.os.Handler
 import android.os.Looper
 import android.view.Gravity
 import android.view.LayoutInflater
+import android.view.View
 import android.view.WindowManager
 import android.widget.FrameLayout
 import android.widget.TextView
@@ -15,13 +16,13 @@ import com.bajianfeng.launcher.R
 class FloatingStatusView(private val context: Context) {
     private val windowManager = context.getSystemService(Context.WINDOW_SERVICE) as WindowManager
     private val mainHandler = Handler(Looper.getMainLooper())
-    private var floatingView: android.view.View? = null
+    private var floatingView: View? = null
     private var isShowing = false
 
-    fun show(message: String) {
+    fun show(message: String, stepLabel: String? = null) {
         mainHandler.post {
             if (isShowing) {
-                updateMessage(message)
+                updateMessage(message, stepLabel)
                 return@post
             }
 
@@ -48,7 +49,7 @@ class FloatingStatusView(private val context: Context) {
                     y = 100
                 }
 
-                floatingView?.findViewById<TextView>(R.id.tv_status)?.text = message
+                bindText(message, stepLabel)
                 windowManager.addView(floatingView, params)
                 isShowing = true
             } catch (_: Exception) {
@@ -58,9 +59,9 @@ class FloatingStatusView(private val context: Context) {
         }
     }
 
-    fun updateMessage(message: String) {
+    fun updateMessage(message: String, stepLabel: String? = null) {
         mainHandler.post {
-            floatingView?.findViewById<TextView>(R.id.tv_status)?.text = message
+            bindText(message, stepLabel)
         }
     }
 
@@ -75,6 +76,19 @@ class FloatingStatusView(private val context: Context) {
                 floatingView = null
                 isShowing = false
             }
+        }
+    }
+
+    private fun bindText(message: String, stepLabel: String?) {
+        val view = floatingView ?: return
+        view.findViewById<TextView>(R.id.tv_status)?.text = message
+        val stepView = view.findViewById<TextView>(R.id.tv_status_step)
+        if (stepLabel.isNullOrBlank()) {
+            stepView.visibility = View.GONE
+            stepView.text = ""
+        } else {
+            stepView.visibility = View.VISIBLE
+            stepView.text = stepLabel
         }
     }
 }
