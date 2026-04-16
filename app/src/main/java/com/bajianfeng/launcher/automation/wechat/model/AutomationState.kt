@@ -2,13 +2,15 @@ package com.bajianfeng.launcher.automation.wechat.model
 
 enum class AutomationState {
     IDLE,
-    CHECKING_PRECONDITIONS,
     LAUNCHING_WECHAT,
     WAITING_HOME,
-    OPENING_SEARCH,
-    SEARCHING_CONTACT,
-    OPENING_CHAT,
-    STARTING_VIDEO_CALL,
-    SUCCESS,
+    WAITING_LAUNCHER_UI,
+    WAITING_SEARCH,
+    WAITING_CONTACT_RESULT,
+    WAITING_CONTACT_DETAIL,
+    WAITING_VIDEO_OPTIONS,
+    RECOVERING,
+    COMPLETED,
     FAILED
 }
+

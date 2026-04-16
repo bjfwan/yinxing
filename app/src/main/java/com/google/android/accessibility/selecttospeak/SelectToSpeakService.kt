@@ -7,9 +7,12 @@ import android.util.Log
 import android.view.accessibility.AccessibilityEvent
 import android.view.accessibility.AccessibilityNodeInfo
 import android.view.accessibility.AccessibilityWindowInfo
+import com.bajianfeng.launcher.automation.wechat.manager.StateDetectionManager
 import com.bajianfeng.launcher.automation.wechat.manager.TimeoutManager
+import com.bajianfeng.launcher.automation.wechat.model.AutomationState
 import com.bajianfeng.launcher.automation.wechat.util.AccessibilityUtil
 import com.bajianfeng.launcher.common.ui.FloatingStatusView
+
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -149,8 +152,10 @@ class SelectToSpeakService : AccessibilityService() {
     private var totalTimeoutJob: Job? = null
     private var wechatWaitJob: Job? = null  // 专门用于轮询等待微信前台，与 processJob 独立
     private lateinit var timeoutManager: TimeoutManager
+    private val stateDetectionManager = StateDetectionManager()
     private var floatingView: FloatingStatusView? = null
     private var currentSession: VideoCallSession? = null
+
     private var lastMissingRootLogAt = 0L
     private var lastWeChatClassName: String? = null
 
