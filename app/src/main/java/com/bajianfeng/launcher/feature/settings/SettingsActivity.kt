@@ -21,8 +21,6 @@ class SettingsActivity : AppCompatActivity() {
     // 权限状态 TextView
     private lateinit var tvAccessibilityStatus: TextView
     private lateinit var tvAccessibilitySummary: TextView
-    private lateinit var tvNotificationStatus: TextView
-    private lateinit var tvNotificationSummary: TextView
     private lateinit var tvBatteryStatus: TextView
     private lateinit var tvBatterySummary: TextView
     private lateinit var tvAutostartStatus: TextView
@@ -51,8 +49,6 @@ class SettingsActivity : AppCompatActivity() {
         // 绑定权限状态 View
         tvAccessibilityStatus = findViewById(R.id.tv_accessibility_status)
         tvAccessibilitySummary = findViewById(R.id.tv_accessibility_summary)
-        tvNotificationStatus = findViewById(R.id.tv_notification_listener_status)
-        tvNotificationSummary = findViewById(R.id.tv_notification_listener_summary)
         tvBatteryStatus = findViewById(R.id.tv_battery_status)
         tvBatterySummary = findViewById(R.id.tv_battery_summary)
         tvAutostartStatus = findViewById(R.id.tv_autostart_status)
@@ -62,9 +58,6 @@ class SettingsActivity : AppCompatActivity() {
         // 权限入口点击
         findViewById<MaterialCardView>(R.id.btn_accessibility).setOnClickListener {
             PermissionUtil.openAccessibilitySettings(this)
-        }
-        findViewById<MaterialCardView>(R.id.btn_notification_listener).setOnClickListener {
-            PermissionUtil.openNotificationListenerSettings(this)
         }
         findViewById<MaterialCardView>(R.id.btn_battery).setOnClickListener {
             PermissionUtil.openBatteryOptimizationSettings(this)
@@ -105,14 +98,6 @@ class SettingsActivity : AppCompatActivity() {
         tvAccessibilitySummary.text = getString(
             if (accessibilityGranted) R.string.settings_accessibility_summary_on
             else R.string.settings_accessibility_summary_off
-        )
-
-        // 通知监听
-        val notificationGranted = PermissionUtil.isNotificationListenerEnabled(this)
-        setStatusBadge(tvNotificationStatus, notificationGranted)
-        tvNotificationSummary.text = getString(
-            if (notificationGranted) R.string.settings_notification_listener_summary_on
-            else R.string.settings_notification_listener_summary_off
         )
 
         // 电池优化豁免

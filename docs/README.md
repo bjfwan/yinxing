@@ -20,6 +20,7 @@
 - [构建说明](development/setup-and-build.md)
 - [Git 协作规范](development/git-workflow.md)
 - [测试策略](testing/test-strategy.md)
+- [老人桌面黑盒分析与长期测试规划](testing/ant-helper-blackbox-research-plan.md)
 - [项目路线图](roadmap/project-roadmap.md)
 - [微信视频规划](roadmap/wechat-video-call-plan.md)
 - [发布检查清单](release/release-checklist.md)

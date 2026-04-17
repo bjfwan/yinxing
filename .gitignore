@@ -17,3 +17,4 @@ out/
 *.jks
 *.keystore
 keystore.properties
+launcher_prefs*.xml

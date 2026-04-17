@@ -7,11 +7,11 @@ import android.util.Log
 import android.view.accessibility.AccessibilityEvent
 import android.view.accessibility.AccessibilityNodeInfo
 import android.view.accessibility.AccessibilityWindowInfo
-import com.bajianfeng.launcher.automation.wechat.manager.StateDetectionManager
 import com.bajianfeng.launcher.automation.wechat.manager.TimeoutManager
 import com.bajianfeng.launcher.automation.wechat.model.AutomationState
 import com.bajianfeng.launcher.automation.wechat.util.AccessibilityUtil
 import com.bajianfeng.launcher.common.ui.FloatingStatusView
+
 
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -48,8 +48,8 @@ class SelectToSpeakService : AccessibilityService() {
         private const val MAX_STEP_RECOVERY_ATTEMPTS = 5
         private const val HOME_ACTION_SETTLE_DELAY_MS = 500L
 
-
         // 微信已知 Activity className，来自 WeChatHelper 开源项目
+
         private const val CLASS_LAUNCHER_UI = "com.tencent.mm.ui.LauncherUI"       // 主页（消息/通讯录/发现/我）
         private const val CLASS_CHATTING_UI = "com.tencent.mm.ui.chatting.ChattingUI" // 聊天页
         private const val CLASS_CONTACT_INFO = "com.tencent.mm.plugin.profile.ui.ContactInfoUI" // 联系人详情
@@ -60,6 +60,7 @@ class SelectToSpeakService : AccessibilityService() {
             CLASS_CONTACT_INFO,
             CLASS_SEARCH_UI
         )
+
 
         private val requestCounter = AtomicLong(0)
         private val requestListeners = linkedMapOf<String, (VideoCallProgress) -> Unit>()
@@ -157,13 +158,14 @@ class SelectToSpeakService : AccessibilityService() {
     private var timeoutJob: Job? = null
     private var totalTimeoutJob: Job? = null
     private var wechatWaitJob: Job? = null  // 专门用于轮询等待微信前台，与 processJob 独立
+
     private lateinit var timeoutManager: TimeoutManager
-    private val stateDetectionManager = StateDetectionManager()
     private var floatingView: FloatingStatusView? = null
     private var currentSession: VideoCallSession? = null
 
     private var lastMissingRootLogAt = 0L
     private var lastWeChatClassName: String? = null
+
 
     /**
      * 由 onAccessibilityEvent 从 event.source 向上找到的微信 root 节点缓存。
@@ -180,7 +182,6 @@ class SelectToSpeakService : AccessibilityService() {
     }
 
     override fun onAccessibilityEvent(event: AccessibilityEvent?) {
-        val session = currentSession ?: return
         val pkg = event?.packageName?.toString()
         val className = event?.className?.toString()
 
@@ -193,8 +194,11 @@ class SelectToSpeakService : AccessibilityService() {
 
         updateCachedWeChatRoot(event.source)
 
+        val session = currentSession ?: return
+
         // 根据微信页面 className 精准触发，减少无效处理
         when (event.eventType) {
+
             AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED -> {
                 Log.d(TAG, "onEvent: STATE_CHANGED className=$className step=${session.step}")
                 when (className) {
@@ -227,6 +231,7 @@ class SelectToSpeakService : AccessibilityService() {
         cancelSession(false)
     }
 
+
     override fun onDestroy() {
         instance = null
         cancelSession(false)
@@ -235,6 +240,7 @@ class SelectToSpeakService : AccessibilityService() {
         serviceScope.cancel()
         super.onDestroy()
     }
+
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         if (intent?.action == ACTION_START_VIDEO_CALL) {
@@ -359,7 +365,7 @@ class SelectToSpeakService : AccessibilityService() {
     /**
 
      * 独立的微信等待循环：等待 onAccessibilityEvent 缓存到有效的微信 root。
-     * waitLoop 除了确认首页已就绪，也会在“已进微信但不在首页”时主动触发归一化处理。
+     * waitLoop 除了确认首页已就绪，也会在"已进微信但不在首页"时主动触发归一化处理。
      */
     private fun startWeChatWaitLoop(session: VideoCallSession) {
         wechatWaitJob?.cancel()
@@ -498,20 +504,28 @@ class SelectToSpeakService : AccessibilityService() {
     }
 
     private fun getWeChatRoot(): AccessibilityNodeInfo? {
-        val cached = cachedWeChatRoot
-        if (cached != null && isUsableWeChatRoot(cached)) {
-            Log.d(TAG, "getWeChatRoot: 使用缓存 class=${cached.className} childCount=${cached.childCount}")
-            return cached
-        }
-        replaceCachedWeChatRoot(null)
-        val root = findWeChatRootInWindows()
-        if (root != null) {
-            replaceCachedWeChatRoot(AccessibilityNodeInfo.obtain(root))
-            Log.d(TAG, "getWeChatRoot: 使用窗口 class=${root.className} childCount=${root.childCount}")
-            return root
+        // 遍历所有窗口，选节点数最多的微信 root（聊天页节点数远多于首页）
+        val allRoots = windows.orEmpty().mapNotNull { it.root }
+        val best = allRoots
+            .filter { isUsableWeChatRoot(it) }
+            .maxByOrNull { countNodes(it) }
+        allRoots.filter { it !== best }.forEach { AccessibilityUtil.safeRecycle(it) }
+        if (best != null) {
+            Log.d(TAG, "getWeChatRoot: 选窗口 class=${best.className} childCount=${best.childCount} nodes=${countNodes(best)}")
+            replaceCachedWeChatRoot(best)
+            return best
         }
         Log.d(TAG, "getWeChatRoot: 未找到有效微信窗口")
         return null
+    }
+
+    private fun countNodes(node: AccessibilityNodeInfo?, depth: Int = 0): Int {
+        if (node == null || depth > 35) return 0
+        var count = 1
+        for (i in 0 until node.childCount) {
+            count += countNodes(node.getChild(i), depth + 1)
+        }
+        return count
     }
 
     private fun isMeaningfulWeChatClassName(className: String?): Boolean {
@@ -586,18 +600,9 @@ class SelectToSpeakService : AccessibilityService() {
         currentClass: String?,
         session: VideoCallSession? = currentSession
     ): WeChatPage {
-        val detected = stateDetectionManager.detect(root, currentClass)?.toWeChatPage()
-        val page = detected ?: detectWeChatPageLegacy(root, currentClass)
+        val page = detectWeChatPageLegacy(root, currentClass)
         session?.lastDetectedPage = page
         return page
-    }
-
-    private fun StateDetectionManager.DetectedPage.toWeChatPage(): WeChatPage = when (this) {
-        StateDetectionManager.DetectedPage.HOME -> WeChatPage.HOME
-        StateDetectionManager.DetectedPage.SEARCH -> WeChatPage.SEARCH
-        StateDetectionManager.DetectedPage.CHAT -> WeChatPage.CHAT
-        StateDetectionManager.DetectedPage.CONTACT_DETAIL -> WeChatPage.CONTACT_DETAIL
-        StateDetectionManager.DetectedPage.UNKNOWN -> WeChatPage.UNKNOWN
     }
 
     private fun detectWeChatPageLegacy(root: AccessibilityNodeInfo, currentClass: String?): WeChatPage {
@@ -1469,6 +1474,7 @@ class SelectToSpeakService : AccessibilityService() {
         timeoutJob = null
         totalTimeoutJob = null
         wechatWaitJob = null
+
         lastMissingRootLogAt = 0L
         lastWeChatClassName = null
         cachedWeChatRoot?.recycle()
@@ -1800,7 +1806,6 @@ class SelectToSpeakService : AccessibilityService() {
         val stepHistory: ArrayDeque<Step> = ArrayDeque(),
         val stepFailCount: MutableMap<Step, Int> = mutableMapOf()
     )
-
 
 
     private enum class WeChatPage {
