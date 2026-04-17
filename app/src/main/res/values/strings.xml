@@ -170,13 +170,6 @@
     <string name="settings_accessibility_summary_on">已开启，自动拨打微信视频可正常使用</string>
     <string name="settings_accessibility_summary_off">未开启，点击前往系统设置授权</string>
 
-    <!-- 通知监听权限设置项 -->
-    <string name="settings_notification_listener_title">微信来电接收</string>
-    <string name="settings_notification_listener_summary_on">已开启，可接收微信视频来电提醒</string>
-    <string name="settings_notification_listener_summary_off">未开启，点击前往系统设置授权</string>
-    <string name="settings_notification_listener_status_on">已授权</string>
-    <string name="settings_notification_listener_status_off">未授权</string>
-
     <!-- 电池优化豁免 -->
     <string name="settings_battery_title">电池无限制</string>
     <string name="settings_battery_summary_on">已豁免，后台来电不会被系统中断</string>

@@ -31,7 +31,7 @@
         android:id="@+id/tv_incoming_caller"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_marginBottom="56dp"
+        android:layout_marginBottom="16dp"
         android:ellipsize="end"
         android:maxLines="2"
         android:gravity="center"
@@ -39,6 +39,16 @@
         android:textColor="@color/launcher_primary_dark"
         android:textSize="48sp"
         android:textStyle="bold" />
+
+    <!-- 倒计时提示 -->
+    <TextView
+        android:id="@+id/tv_incoming_countdown"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginBottom="40dp"
+        android:gravity="center"
+        android:textColor="@color/launcher_text_secondary"
+        android:textSize="22sp" />
 
     <!-- 按钮行 -->
     <LinearLayout

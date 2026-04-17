@@ -8,7 +8,6 @@ import android.content.pm.ResolveInfo
 import android.provider.Settings
 import android.widget.TextView
 import androidx.appcompat.widget.SwitchCompat
-import androidx.cardview.widget.CardView
 import androidx.test.core.app.ApplicationProvider
 import com.bajianfeng.launcher.R
 import com.bajianfeng.launcher.data.home.LauncherPreferences
@@ -33,28 +32,48 @@ class SettingsActivitySmokeTest {
         context = ApplicationProvider.getApplicationContext()
         resetLauncherPreferencesSingleton()
         context.getSharedPreferences("launcher_prefs", Context.MODE_PRIVATE).edit().clear().commit()
-        LauncherPreferences.getInstance(context).setLowPerformanceModeEnabled(false)
         registerSettingsActivity()
     }
 
     @Test
-    fun launchShowsPreferenceStateAndCanOpenSystemSettings() {
+    fun autoAnswerSwitchDefaultsToOnAndShowsCorrectSummary() {
         val activity = Robolectric.buildActivity(SettingsActivity::class.java).setup().get()
-        val switchView = activity.findViewById<SwitchCompat>(R.id.switch_low_performance)
-        val summaryView = activity.findViewById<TextView>(R.id.tv_low_performance_summary)
-
-        assertFalse(switchView.isChecked)
-        assertEquals(activity.getString(R.string.settings_low_performance_summary_off), summaryView.text.toString())
-
-        switchView.performClick()
+        val switchView = activity.findViewById<SwitchCompat>(R.id.switch_auto_answer)
+        val summaryView = activity.findViewById<TextView>(R.id.tv_auto_answer_summary)
 
         assertTrue(switchView.isChecked)
-        assertEquals(activity.getString(R.string.settings_low_performance_summary_on), summaryView.text.toString())
-        assertTrue(LauncherPreferences.getInstance(context).isLowPerformanceModeEnabled())
+        assertEquals(
+            activity.getString(R.string.settings_auto_answer_summary_on),
+            summaryView.text.toString()
+        )
+    }
 
-        activity.findViewById<CardView>(R.id.btn_system_settings).performClick()
+    @Test
+    fun autoAnswerSwitchToggleOffUpdatesSummaryAndPreference() {
+        val activity = Robolectric.buildActivity(SettingsActivity::class.java).setup().get()
+        val switchView = activity.findViewById<SwitchCompat>(R.id.switch_auto_answer)
+        val summaryView = activity.findViewById<TextView>(R.id.tv_auto_answer_summary)
 
-        assertEquals(Settings.ACTION_SETTINGS, shadowOf(activity).nextStartedActivity.action)
+        switchView.performClick()   // ON → OFF
+
+        assertFalse(switchView.isChecked)
+        assertEquals(
+            activity.getString(R.string.settings_auto_answer_summary_off),
+            summaryView.text.toString()
+        )
+        assertFalse(LauncherPreferences.getInstance(context).isAutoAnswerEnabled())
+    }
+
+    @Test
+    fun autoAnswerSwitchToggleOnOffOnRestoresState() {
+        val activity = Robolectric.buildActivity(SettingsActivity::class.java).setup().get()
+        val switchView = activity.findViewById<SwitchCompat>(R.id.switch_auto_answer)
+
+        switchView.performClick()   // ON → OFF
+        switchView.performClick()   // OFF → ON
+
+        assertTrue(switchView.isChecked)
+        assertTrue(LauncherPreferences.getInstance(context).isAutoAnswerEnabled())
     }
 
     @Suppress("DEPRECATION")

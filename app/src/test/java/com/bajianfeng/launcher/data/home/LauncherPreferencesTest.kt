@@ -43,12 +43,28 @@ class LauncherPreferencesTest {
         assertEquals(listOf("pkg.alpha", "pkg.gamma"), preferences.getAppOrder())
     }
 
+
     @Test
-    fun lowPerformanceModePersistsAcrossInstances() {
-        assertFalse(preferences.isLowPerformanceModeEnabled())
+    fun autoAnswerDefaultIsTrue() {
+        assertTrue(preferences.isAutoAnswerEnabled())
+    }
 
-        preferences.setLowPerformanceModeEnabled(true)
+    @Test
+    fun autoAnswerCanBeDisabled() {
+        preferences.setAutoAnswerEnabled(false)
+        assertFalse(preferences.isAutoAnswerEnabled())
+    }
 
-        assertTrue(LauncherPreferences(context).isLowPerformanceModeEnabled())
+    @Test
+    fun autoAnswerPersistsAcrossInstances() {
+        preferences.setAutoAnswerEnabled(false)
+        assertFalse(LauncherPreferences(context).isAutoAnswerEnabled())
+    }
+
+    @Test
+    fun autoAnswerCanBeReEnabled() {
+        preferences.setAutoAnswerEnabled(false)
+        preferences.setAutoAnswerEnabled(true)
+        assertTrue(preferences.isAutoAnswerEnabled())
     }
 }
