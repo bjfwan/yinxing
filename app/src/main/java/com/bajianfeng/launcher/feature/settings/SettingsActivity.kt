@@ -5,6 +5,7 @@ import android.content.Intent
 import android.content.pm.PackageManager
 import android.os.Bundle
 import android.provider.Settings
+import android.view.View
 import android.view.inputmethod.EditorInfo
 import android.view.inputmethod.InputMethodManager
 import android.widget.EditText
@@ -14,7 +15,6 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.widget.SwitchCompat
-import com.google.android.material.card.MaterialCardView
 import com.bajianfeng.launcher.R
 import com.bajianfeng.launcher.common.util.PermissionUtil
 import com.bajianfeng.launcher.data.home.LauncherPreferences
@@ -25,13 +25,18 @@ class SettingsActivity : AppCompatActivity() {
 
     private lateinit var launcherPreferences: LauncherPreferences
     private lateinit var weatherPreferences: WeatherPreferences
+
     private lateinit var lowPerformanceSwitch: SwitchCompat
     private lateinit var lowPerformanceSummary: TextView
     private lateinit var kioskModeSwitch: SwitchCompat
     private lateinit var kioskModeSummary: TextView
+    private lateinit var autoAnswerSwitch: SwitchCompat
+    private lateinit var autoAnswerSummary: TextView
+    private lateinit var autoAnswerDelaySummary: TextView
+    private lateinit var autoAnswerDelayMinus: View
+    private lateinit var autoAnswerDelayPlus: View
     private lateinit var tvWeatherCitySummary: TextView
 
-    // 权限状态 TextView
     private lateinit var tvAccessibilityStatus: TextView
     private lateinit var tvAccessibilitySummary: TextView
     private lateinit var tvBatteryStatus: TextView
@@ -50,9 +55,12 @@ class SettingsActivity : AppCompatActivity() {
     ) { results ->
         val granted = results.values.all { it }
         if (granted) {
-            Toast.makeText(this, getString(R.string.settings_phone_permission_granted_toast), Toast.LENGTH_SHORT).show()
+            Toast.makeText(
+                this,
+                getString(R.string.settings_phone_permission_granted_toast),
+                Toast.LENGTH_SHORT
+            ).show()
         } else {
-            // 用户拒绝了，引导去设置手动开
             PermissionUtil.openAppDetailSettings(this)
         }
         refreshAllPermissionUi()
@@ -69,7 +77,6 @@ class SettingsActivity : AppCompatActivity() {
         }
     }
 
-
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_settings)
@@ -77,10 +84,23 @@ class SettingsActivity : AppCompatActivity() {
         launcherPreferences = LauncherPreferences.getInstance(this)
         weatherPreferences = WeatherPreferences.getInstance(this)
 
-        // 返回
-        findViewById<MaterialCardView>(R.id.btn_back).setOnClickListener { finish() }
+        findViewById<View>(R.id.btn_back).setOnClickListener { finish() }
 
-        // 低性能模式
+        bindLauncherSection()
+        bindCallSection()
+        bindPermissionSection()
+        bindOtherSection()
+    }
+
+    override fun onResume() {
+        super.onResume()
+        refreshAllPermissionUi()
+        updateWeatherCitySummary()
+        refreshDefaultLauncherUi()
+        updateAutoAnswerDelaySummary(launcherPreferences.getAutoAnswerDelaySeconds())
+    }
+
+    private fun bindLauncherSection() {
         lowPerformanceSwitch = findViewById(R.id.switch_low_performance)
         lowPerformanceSummary = findViewById(R.id.tv_low_performance_summary)
         lowPerformanceSwitch.isChecked = launcherPreferences.isLowPerformanceModeEnabled()
@@ -90,64 +110,66 @@ class SettingsActivity : AppCompatActivity() {
             updateLowPerformanceSummary(isChecked)
         }
 
-        // 防退出模式
         kioskModeSwitch = findViewById(R.id.switch_kiosk_mode)
         kioskModeSummary = findViewById(R.id.tv_kiosk_mode_summary)
         kioskModeSwitch.isChecked = launcherPreferences.isKioskModeEnabled()
         updateKioskModeSummary(kioskModeSwitch.isChecked)
         kioskModeSwitch.setOnCheckedChangeListener { _, isChecked ->
             if (isChecked && !isDefaultLauncher()) {
-                // 未设为默认桌面，拦截开关，提示先去设置
                 kioskModeSwitch.isChecked = false
-                Toast.makeText(this, "请先将本应用设为默认桌面，再开启防退出模式", Toast.LENGTH_LONG).show()
+                Toast.makeText(
+                    this,
+                    getString(R.string.settings_kiosk_mode_requires_default_launcher),
+                    Toast.LENGTH_LONG
+                ).show()
                 return@setOnCheckedChangeListener
             }
             launcherPreferences.setKioskModeEnabled(isChecked)
             updateKioskModeSummary(isChecked)
         }
 
-        // 绑定权限状态 View
-        tvAccessibilityStatus = findViewById(R.id.tv_accessibility_status)
-        tvAccessibilitySummary = findViewById(R.id.tv_accessibility_summary)
-        tvBatteryStatus = findViewById(R.id.tv_battery_status)
-        tvBatterySummary = findViewById(R.id.tv_battery_summary)
-        tvAutostartStatus = findViewById(R.id.tv_autostart_status)
-        tvOverlayStatus = findViewById(R.id.tv_overlay_status)
-        tvOverlaySummary = findViewById(R.id.tv_overlay_summary)
-        tvPhonePermissionStatus = findViewById(R.id.tv_phone_permission_status)
-        tvPhonePermissionSummary = findViewById(R.id.tv_phone_permission_summary)
-        tvBgStartStatus = findViewById(R.id.tv_bg_start_status)
-
-        // 设为默认桌面
         tvDefaultLauncherStatus = findViewById(R.id.tv_default_launcher_status)
         tvDefaultLauncherSummary = findViewById(R.id.tv_default_launcher_summary)
-        findViewById<MaterialCardView>(R.id.btn_set_default_launcher).setOnClickListener {
+        findViewById<View>(R.id.btn_set_default_launcher).setOnClickListener {
             if (isDefaultLauncher()) {
                 Toast.makeText(this, getString(R.string.set_default_launcher_summary_on), Toast.LENGTH_SHORT).show()
             } else {
                 showSetDefaultLauncherDialog()
             }
         }
+    }
 
-        // 权限入口点击
-        findViewById<MaterialCardView>(R.id.btn_accessibility).setOnClickListener {
-            PermissionUtil.openAccessibilitySettings(this)
+    private fun bindCallSection() {
+        autoAnswerSwitch = findViewById(R.id.switch_auto_answer)
+        autoAnswerSummary = findViewById(R.id.tv_auto_answer_summary)
+        autoAnswerDelaySummary = findViewById(R.id.tv_auto_answer_delay_summary)
+        autoAnswerDelayMinus = findViewById(R.id.btn_auto_answer_delay_minus)
+        autoAnswerDelayPlus = findViewById(R.id.btn_auto_answer_delay_plus)
+
+        val autoAnswerEnabled = launcherPreferences.isAutoAnswerEnabled()
+        autoAnswerSwitch.isChecked = autoAnswerEnabled
+        updateAutoAnswerSummary(autoAnswerEnabled)
+        updateAutoAnswerDelaySummary(launcherPreferences.getAutoAnswerDelaySeconds())
+        updateAutoAnswerDelayControls(autoAnswerEnabled)
+
+        autoAnswerSwitch.setOnCheckedChangeListener { _, isChecked ->
+            launcherPreferences.setAutoAnswerEnabled(isChecked)
+            updateAutoAnswerSummary(isChecked)
+            updateAutoAnswerDelayControls(isChecked)
         }
-        findViewById<MaterialCardView>(R.id.btn_battery).setOnClickListener {
-            PermissionUtil.openBatteryOptimizationSettings(this)
-        }
-        findViewById<MaterialCardView>(R.id.btn_autostart).setOnClickListener {
-            PermissionUtil.openAutoStartSettings(this)
-        }
-        findViewById<MaterialCardView>(R.id.btn_bg_start).setOnClickListener {
-            PermissionUtil.openBackgroundStartSettings(this)
-        }
-        findViewById<MaterialCardView>(R.id.btn_overlay).setOnClickListener {
-            PermissionUtil.openOverlaySettings(this)
-        }
-        findViewById<MaterialCardView>(R.id.btn_phone_permission).setOnClickListener {
+
+        autoAnswerDelayMinus.setOnClickListener { adjustAutoAnswerDelay(-1) }
+        autoAnswerDelayPlus.setOnClickListener { adjustAutoAnswerDelay(1) }
+
+        tvPhonePermissionStatus = findViewById(R.id.tv_phone_permission_status)
+        tvPhonePermissionSummary = findViewById(R.id.tv_phone_permission_summary)
+        findViewById<View>(R.id.btn_phone_permission).setOnClickListener {
             if (PermissionUtil.hasPhonePermission(this)) {
-                Toast.makeText(this, getString(R.string.settings_phone_permission_granted_toast), Toast.LENGTH_SHORT).show()
+                Toast.makeText(
+                    this,
+                    getString(R.string.settings_phone_permission_granted_toast),
+                    Toast.LENGTH_SHORT
+                ).show()
             } else {
                 val perms = mutableListOf(
                     android.Manifest.permission.READ_PHONE_STATE,
@@ -160,28 +182,46 @@ class SettingsActivity : AppCompatActivity() {
                 phonePermissionLauncher.launch(perms.toTypedArray())
             }
         }
+    }
 
-        // 天气城市
+    private fun bindPermissionSection() {
+        tvAccessibilityStatus = findViewById(R.id.tv_accessibility_status)
+        tvAccessibilitySummary = findViewById(R.id.tv_accessibility_summary)
+        tvBatteryStatus = findViewById(R.id.tv_battery_status)
+        tvBatterySummary = findViewById(R.id.tv_battery_summary)
+        tvAutostartStatus = findViewById(R.id.tv_autostart_status)
+        tvOverlayStatus = findViewById(R.id.tv_overlay_status)
+        tvOverlaySummary = findViewById(R.id.tv_overlay_summary)
+        tvBgStartStatus = findViewById(R.id.tv_bg_start_status)
+
+        findViewById<View>(R.id.btn_accessibility).setOnClickListener {
+            PermissionUtil.openAccessibilitySettings(this)
+        }
+        findViewById<View>(R.id.btn_battery).setOnClickListener {
+            PermissionUtil.openBatteryOptimizationSettings(this)
+        }
+        findViewById<View>(R.id.btn_autostart).setOnClickListener {
+            PermissionUtil.openAutoStartSettings(this)
+        }
+        findViewById<View>(R.id.btn_bg_start).setOnClickListener {
+            PermissionUtil.openBackgroundStartSettings(this)
+        }
+        findViewById<View>(R.id.btn_overlay).setOnClickListener {
+            PermissionUtil.openOverlaySettings(this)
+        }
+    }
+
+    private fun bindOtherSection() {
         tvWeatherCitySummary = findViewById(R.id.tv_weather_city_summary)
         updateWeatherCitySummary()
-        findViewById<MaterialCardView>(R.id.btn_weather_city).setOnClickListener {
+        findViewById<View>(R.id.btn_weather_city).setOnClickListener {
             showSetCityDialog()
         }
 
-        // 系统设置
-        findViewById<MaterialCardView>(R.id.btn_system_settings).setOnClickListener {
+        findViewById<View>(R.id.btn_system_settings).setOnClickListener {
             openSystemSettings()
         }
     }
-
-    override fun onResume() {
-        super.onResume()
-        refreshAllPermissionUi()
-        updateWeatherCitySummary()
-        refreshDefaultLauncherUi()
-    }
-
-    // ── 低性能模式 ────────────────────────────────────────────────────────────
 
     private fun updateLowPerformanceSummary(enabled: Boolean) {
         lowPerformanceSummary.text = getString(
@@ -197,7 +237,31 @@ class SettingsActivity : AppCompatActivity() {
         )
     }
 
-    // ── 天气城市 ──────────────────────────────────────────────────────────────
+    private fun updateAutoAnswerSummary(enabled: Boolean) {
+        autoAnswerSummary.text = getString(
+            if (enabled) R.string.settings_auto_answer_summary_on
+            else R.string.settings_auto_answer_summary_off
+        )
+    }
+
+    private fun updateAutoAnswerDelaySummary(seconds: Int) {
+        autoAnswerDelaySummary.text = getString(R.string.settings_auto_answer_delay_summary, seconds)
+    }
+
+    private fun updateAutoAnswerDelayControls(enabled: Boolean) {
+        val alpha = if (enabled) 1f else 0.38f
+        listOf(autoAnswerDelayMinus, autoAnswerDelayPlus, autoAnswerDelaySummary).forEach { view ->
+            view.isEnabled = enabled
+            view.alpha = alpha
+        }
+    }
+
+    private fun adjustAutoAnswerDelay(delta: Int) {
+        if (!autoAnswerSwitch.isChecked) return
+        val updated = launcherPreferences.getAutoAnswerDelaySeconds() + delta
+        launcherPreferences.setAutoAnswerDelaySeconds(updated)
+        updateAutoAnswerDelaySummary(launcherPreferences.getAutoAnswerDelaySeconds())
+    }
 
     private fun updateWeatherCitySummary() {
         tvWeatherCitySummary.text = getString(
@@ -230,9 +294,13 @@ class SettingsActivity : AppCompatActivity() {
                 weatherPreferences.setCityName(city)
                 WeatherRepository.clearCache()
                 updateWeatherCitySummary()
-                Toast.makeText(this, "城市已更新为：$city", Toast.LENGTH_SHORT).show()
+                Toast.makeText(
+                    this,
+                    getString(R.string.settings_weather_city_updated, city),
+                    Toast.LENGTH_SHORT
+                ).show()
             } else {
-                Toast.makeText(this, "请输入城市名", Toast.LENGTH_SHORT).show()
+                Toast.makeText(this, getString(R.string.settings_weather_city_empty), Toast.LENGTH_SHORT).show()
             }
         }
 
@@ -240,7 +308,12 @@ class SettingsActivity : AppCompatActivity() {
             .setOnClickListener { confirm() }
 
         etCity.setOnEditorActionListener { _, actionId, _ ->
-            if (actionId == EditorInfo.IME_ACTION_DONE) { confirm(); true } else false
+            if (actionId == EditorInfo.IME_ACTION_DONE) {
+                confirm()
+                true
+            } else {
+                false
+            }
         }
 
         dialog.show()
@@ -250,8 +323,6 @@ class SettingsActivity : AppCompatActivity() {
             imm.showSoftInput(etCity, InputMethodManager.SHOW_IMPLICIT)
         }, 100)
     }
-
-    // ── 权限状态刷新 ──────────────────────────────────────────────────────────
 
     private fun refreshAllPermissionUi() {
         val accessibilityGranted = PermissionUtil.isAnyAccessibilityServiceEnabled(this)
@@ -285,7 +356,6 @@ class SettingsActivity : AppCompatActivity() {
             else R.string.settings_phone_permission_summary_off
         )
 
-        // 后台弹出界面：无法检测，始终显示"去设置"
         tvBgStartStatus.text = getString(R.string.settings_permission_go_set)
         tvBgStartStatus.setTextColor(getColor(R.color.launcher_action))
     }
@@ -303,8 +373,6 @@ class SettingsActivity : AppCompatActivity() {
         )
     }
 
-    // ── 系统设置 ──────────────────────────────────────────────────────────────
-
     private fun openSystemSettings() {
         try {
             startActivity(Intent(Settings.ACTION_SETTINGS))
@@ -312,8 +380,6 @@ class SettingsActivity : AppCompatActivity() {
             Toast.makeText(this, getString(R.string.open_settings_failed), Toast.LENGTH_SHORT).show()
         }
     }
-
-    // ── 默认桌面引导 ──────────────────────────────────────────────────────────
 
     private fun isDefaultLauncher(): Boolean {
         val intent = Intent(Intent.ACTION_MAIN).apply { addCategory(Intent.CATEGORY_HOME) }

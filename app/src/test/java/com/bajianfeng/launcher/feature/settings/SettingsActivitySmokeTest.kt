@@ -91,6 +91,28 @@ class SettingsActivitySmokeTest {
         assertTrue(LauncherPreferences.getInstance(context).isKioskModeEnabled())
     }
 
+    @Test
+    fun autoAnswerDefaultsToEnabledAndShowsDelaySummary() {
+        val activity = Robolectric.buildActivity(SettingsActivity::class.java).setup().get()
+        idle()
+        val switchView = activity.findViewById<SwitchCompat>(R.id.switch_auto_answer)
+        val summaryView = activity.findViewById<TextView>(R.id.tv_auto_answer_summary)
+        val delayView = activity.findViewById<TextView>(R.id.tv_auto_answer_delay_summary)
+
+        assertTrue(switchView.isChecked)
+        assertEquals(
+            activity.getString(R.string.settings_auto_answer_summary_on),
+            summaryView.text.toString()
+        )
+        assertEquals(
+            activity.getString(
+                R.string.settings_auto_answer_delay_summary,
+                LauncherPreferences.DEFAULT_AUTO_ANSWER_DELAY_SECONDS
+            ),
+            delayView.text.toString()
+        )
+    }
+
 
     @Suppress("DEPRECATION")
     private fun registerSettingsActivity() {

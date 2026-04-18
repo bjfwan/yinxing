@@ -151,10 +151,30 @@
     <string name="video_contact_search_hint">搜索联系人姓名或关键词</string>
     <string name="status_operating">正在操作…</string>
     <string name="settings_title">设置</string>
-    <string name="settings_subtitle">保持页面简洁、运行稳定、操作更省心</string>
+    <string name="settings_subtitle">把同类项目放在一起，配置一次就更省心</string>
+    <string name="settings_header_tip">建议先完成“桌面与运行”和“权限与后台保活”，再交给家人日常使用</string>
+    <string name="settings_section_device_title">桌面与运行</string>
+    <string name="settings_section_device_subtitle">默认桌面、防退出和性能模式统一放在这里，方便一次配置完成</string>
+    <string name="settings_section_calls_title">通话与来电</string>
+    <string name="settings_section_calls_subtitle">电话能力、自动接听和倒计时放在一起，来电设置更直观</string>
+    <string name="settings_section_support_title">权限与后台保活</string>
+    <string name="settings_section_support_subtitle">这些项目决定后台能不能稳定接来电、发起微信视频和把界面拉起来</string>
+    <string name="settings_section_system_title">天气与系统</string>
+    <string name="settings_section_system_subtitle">日常维护项集中在一起，方便家属统一调整</string>
     <string name="settings_low_performance_title">低性能模式</string>
     <string name="settings_low_performance_summary_on">已开启，减少动画和频繁刷新</string>
     <string name="settings_low_performance_summary_off">已关闭，保持完整动效和秒级刷新</string>
+    <string name="settings_kiosk_mode_title">防退出模式</string>
+    <string name="settings_kiosk_mode_summary_on">已开启，按 Home 键会自动返回本桌面</string>
+    <string name="settings_kiosk_mode_summary_off">已关闭，按 Home 键会回到系统桌面</string>
+    <string name="settings_kiosk_mode_requires_default_launcher">请先将本应用设为默认桌面，再开启防退出模式</string>
+    <string name="settings_auto_answer_title">来电自动接听</string>
+    <string name="settings_auto_answer_summary_on">已开启，命中的联系人会在倒计时结束后自动接通</string>
+    <string name="settings_auto_answer_summary_off">已关闭，所有来电都需要手动接听</string>
+    <string name="settings_auto_answer_delay_title">自动接听倒计时</string>
+    <string name="settings_auto_answer_delay_summary">%1$d 秒后自动接听</string>
+    <string name="settings_auto_answer_delay_decrease">减少 1 秒</string>
+    <string name="settings_auto_answer_delay_increase">增加 1 秒</string>
     <string name="settings_system_title">系统设置</string>
     <string name="settings_system_summary">打开安卓系统设置，调整网络、声音和显示等项目</string>
 
@@ -165,6 +185,8 @@
     <string name="settings_weather_city_summary">当前城市：%1$s</string>
     <string name="settings_weather_city_hint">输入城市名，如：北京、上海、重庆</string>
     <string name="settings_weather_city_action">修改</string>
+    <string name="settings_weather_city_updated">城市已更新为：%1$s</string>
+    <string name="settings_weather_city_empty">请输入城市名</string>
     <string name="settings_permission_status_granted">已授权</string>
     <string name="settings_permission_status_denied">未授权</string>
     <string name="settings_permission_go_set">去设置</string>
@@ -220,10 +242,6 @@
     <string name="action_deselect_all">取消全选</string>
     <string name="contacts_empty">通讯录中没有找到联系人</string>
     <string name="contacts_imported">已导入 %1$d 个联系人</string>
-
-    <string name="settings_kiosk_mode_title">防退出模式</string>
-    <string name="settings_kiosk_mode_summary_on">已开启，按 Home 键会自动返回本桌面</string>
-    <string name="settings_kiosk_mode_summary_off">已关闭，按 Home 键会回到系统桌面</string>
 
     <!-- 引导设为默认桌面 -->
     <string name="set_default_launcher_title">设为默认桌面</string>
