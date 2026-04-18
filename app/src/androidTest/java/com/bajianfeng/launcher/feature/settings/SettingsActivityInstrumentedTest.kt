@@ -42,4 +42,27 @@ class SettingsActivityInstrumentedTest {
             }
         }
     }
+
+    @Test
+    fun toggleAutoAnswerUpdatesSummaryAndPreference() {
+        ActivityScenario.launch(SettingsActivity::class.java).use { scenario ->
+            scenario.onActivity { activity ->
+                val switch = activity.findViewById<SwitchCompat>(R.id.switch_auto_answer)
+                val summary = activity.findViewById<android.widget.TextView>(R.id.tv_auto_answer_summary)
+                val preferences = LauncherPreferences.getInstance(activity)
+
+                org.junit.Assert.assertTrue(switch.isChecked)
+                org.junit.Assert.assertTrue(preferences.isAutoAnswerEnabled())
+
+                switch.performClick()
+
+                org.junit.Assert.assertFalse(switch.isChecked)
+                org.junit.Assert.assertFalse(preferences.isAutoAnswerEnabled())
+                org.junit.Assert.assertEquals(
+                    activity.getString(R.string.settings_auto_answer_summary_off),
+                    summary.text.toString()
+                )
+            }
+        }
+    }
 }
