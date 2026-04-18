@@ -6,9 +6,9 @@ import android.view.LayoutInflater
 import android.view.View
 import android.widget.FrameLayout
 import android.widget.TextView
-import androidx.cardview.widget.CardView
 import androidx.core.view.isVisible
 import com.bajianfeng.launcher.R
+import com.google.android.material.card.MaterialCardView
 
 class PageStateView @JvmOverloads constructor(
     context: Context,
@@ -17,7 +17,7 @@ class PageStateView @JvmOverloads constructor(
 ) : FrameLayout(context, attrs, defStyleAttr) {
     private val titleView: TextView
     private val messageView: TextView
-    private val actionButton: CardView
+    private val actionButton: MaterialCardView
     private val actionTextView: TextView
     private var contentView: View? = null
 

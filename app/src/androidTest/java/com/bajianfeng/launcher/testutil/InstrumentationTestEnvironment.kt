@@ -22,9 +22,12 @@ object InstrumentationTestEnvironment {
     fun resetAppState() {
         clearPreferences("launcher_prefs")
         clearPreferences("wechat_contacts")
+        clearPreferences("phone_contacts")
+        clearPreferences("incoming_call_diagnostics")
         resetSingleton("com.bajianfeng.launcher.data.home.LauncherPreferences", "instance")
         resetSingleton("com.bajianfeng.launcher.data.home.LauncherAppRepository", "instance")
         resetSingleton("com.bajianfeng.launcher.data.contact.ContactManager", "instance")
+        resetSingleton("com.bajianfeng.launcher.feature.phone.PhoneContactManager", "instance")
         LauncherPreferences.getInstance(appContext).setLowPerformanceModeEnabled(false)
         LauncherAppRepository.getInstance(appContext).invalidateInstalledApps()
         LauncherAppRepository.getInstance(appContext).invalidateSelections()

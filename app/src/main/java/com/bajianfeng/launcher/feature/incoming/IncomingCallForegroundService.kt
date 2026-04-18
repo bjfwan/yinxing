@@ -23,7 +23,6 @@ class IncomingCallForegroundService : Service() {
         internal const val EXTRA_CALLER_NAME = "extra_caller_name"
         internal const val EXTRA_AUTO_ANSWER = "extra_auto_answer"
 
-
         fun start(context: Context, callerName: String?, autoAnswer: Boolean) {
             val intent = Intent(context, IncomingCallForegroundService::class.java).apply {
                 action = ACTION_SHOW_INCOMING_CALL
@@ -80,6 +79,9 @@ class IncomingCallForegroundService : Service() {
 
     private fun showIncomingCall(callerName: String?, autoAnswer: Boolean) {
         ensureNotificationChannels(this)
+        IncomingCallDiagnostics.recordServiceStarted(this, callerName, autoAnswer)
+        val callerLabel = callerName?.trim()?.takeIf { it.isNotEmpty() }
+            ?: getString(R.string.incoming_call_unknown_caller)
 
         val openIntent = IncomingCallActivity.buildLaunchIntent(
             context = this,
@@ -102,10 +104,8 @@ class IncomingCallForegroundService : Service() {
         val notification = NotificationCompat.Builder(this, CHANNEL_ID)
             .setSmallIcon(android.R.drawable.sym_call_incoming)
             .setContentTitle(getString(R.string.incoming_call_notification_title))
-            .setContentText(
-                callerName?.trim()?.takeIf { it.isNotEmpty() }
-                    ?: getString(R.string.incoming_call_unknown_caller)
-            )
+            .setContentText(callerLabel)
+            .setSubText(IncomingCallDiagnostics.getNotificationStatusText(this))
             .setCategory(NotificationCompat.CATEGORY_CALL)
             .setPriority(NotificationCompat.PRIORITY_MAX)
             .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)

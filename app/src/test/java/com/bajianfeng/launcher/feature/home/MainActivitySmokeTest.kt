@@ -90,7 +90,7 @@ class MainActivitySmokeTest {
         registerWeatherBrowser()
 
         val activity = Robolectric.buildActivity(MainActivity::class.java).setup().get()
-        activity.findViewById<View>(R.id.layout_weather_entry).performClick()
+        activity.findViewById<View>(R.id.card_weather).performClick()
 
         val startedIntent = shadowOf(activity).nextStartedActivity
         assertNotNull(startedIntent)

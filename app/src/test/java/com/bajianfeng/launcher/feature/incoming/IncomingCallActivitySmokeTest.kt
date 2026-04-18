@@ -30,6 +30,7 @@ class IncomingCallActivitySmokeTest {
     fun setUp() {
         context = ApplicationProvider.getApplicationContext()
         context.getSharedPreferences("launcher_prefs", Context.MODE_PRIVATE).edit().clear().commit()
+        IncomingCallDiagnostics.clear(context)
         resetLauncherPreferencesSingleton()
     }
 

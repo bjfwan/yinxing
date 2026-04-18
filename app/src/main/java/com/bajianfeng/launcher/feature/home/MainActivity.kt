@@ -116,7 +116,7 @@ class MainActivity : AppCompatActivity() {
         tvWeatherTemp = findViewById(R.id.tv_weather_temp)
         tvWeatherHighLow = findViewById(R.id.tv_weather_high_low)
         tvWeatherUpdate = findViewById(R.id.tv_weather_update)
-        findViewById<android.view.View>(R.id.layout_weather_entry).setOnClickListener {
+        findViewById<android.view.View>(R.id.card_weather).setOnClickListener {
             openWeatherEntry()
         }
         findViewById<android.view.View>(R.id.btn_family_settings).setOnClickListener {
@@ -331,14 +331,29 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun showCaregiverEntryDialog() {
-        AlertDialog.Builder(this)
-            .setTitle(R.string.home_caregiver_dialog_title)
-            .setMessage(R.string.home_caregiver_dialog_message)
-            .setPositiveButton(R.string.home_caregiver_dialog_confirm) { _, _ ->
-                startActivity(Intent(this, SettingsActivity::class.java))
-            }
-            .setNegativeButton(R.string.home_caregiver_dialog_cancel, null)
-            .show()
+        val dialogView = layoutInflater.inflate(R.layout.dialog_accessibility_prompt, null)
+        dialogView.findViewById<TextView>(R.id.tv_dialog_title).text =
+            getString(R.string.home_caregiver_dialog_title)
+        dialogView.findViewById<TextView>(R.id.tv_dialog_message).text =
+            getString(R.string.home_caregiver_dialog_message)
+        dialogView.findViewById<TextView>(R.id.tv_cancel_label).text =
+            getString(R.string.home_caregiver_dialog_cancel)
+        dialogView.findViewById<TextView>(R.id.tv_primary_label).text =
+            getString(R.string.home_caregiver_dialog_confirm)
+
+        val dialog = AlertDialog.Builder(this)
+            .setView(dialogView)
+            .create()
+        dialog.window?.setBackgroundDrawableResource(android.R.color.transparent)
+
+        dialogView.findViewById<android.view.View>(R.id.btn_cancel).setOnClickListener {
+            dialog.dismiss()
+        }
+        dialogView.findViewById<android.view.View>(R.id.btn_open_settings).setOnClickListener {
+            dialog.dismiss()
+            startActivity(Intent(this, SettingsActivity::class.java))
+        }
+        dialog.show()
     }
 
     private fun handleAppClick(item: HomeAppItem) {

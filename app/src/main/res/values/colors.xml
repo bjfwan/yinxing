@@ -5,6 +5,7 @@
     <color name="launcher_surface">#FFFFFFFF</color>
     <color name="launcher_surface_muted">#F7FBFF</color>
     <color name="launcher_surface_soft">#EAF5FF</color>
+    <color name="launcher_surface_overlay">#D90C4A6E</color>
     <color name="launcher_primary">#0369A1</color>
     <color name="launcher_primary_dark">#0C4A6E</color>
     <color name="launcher_primary_soft">#D8EEF9</color>
@@ -13,6 +14,8 @@
     <color name="launcher_text_primary">#12324A</color>
     <color name="launcher_text_secondary">#5C7287</color>
     <color name="launcher_text_muted">#7C92A8</color>
+    <color name="launcher_on_overlay">#FFFFFFFF</color>
+    <color name="launcher_on_overlay_muted">#D9EAF4FF</color>
     <color name="launcher_outline">#D2E4F2</color>
     <color name="launcher_divider">#E3EEF7</color>
     <color name="launcher_warning">#F59E0B</color>

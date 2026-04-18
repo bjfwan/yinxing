@@ -4,6 +4,7 @@ import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
 import android.telephony.TelephonyManager
+import com.bajianfeng.launcher.common.util.CallAudioStrategy
 import com.bajianfeng.launcher.feature.phone.PhoneContactManager
 
 class PhoneCallReceiver : BroadcastReceiver() {
@@ -19,26 +20,25 @@ class PhoneCallReceiver : BroadcastReceiver() {
 
         @Suppress("DEPRECATION")
         val incomingNumber = intent.getStringExtra(TelephonyManager.EXTRA_INCOMING_NUMBER) ?: ""
+        val matchedContact = IncomingNumberMatcher.findBestMatch(
+            contacts = PhoneContactManager.getInstance(context).getContacts(),
+            incomingNumber = incomingNumber
+        )
+        val callerLabel = matchedContact?.name ?: incomingNumber.ifBlank { null }
+        val autoAnswer = matchedContact?.autoAnswer == true
+        CallAudioStrategy.maximizeIncomingRingVolume(context)
 
-        val manager = PhoneContactManager.getInstance(context)
-        val matchedContact = if (incomingNumber.isNotBlank()) {
-            manager.getContacts().firstOrNull { contact ->
-                val stored = contact.phoneNumber?.filter { it.isDigit() } ?: return@firstOrNull false
-                val incoming = incomingNumber.filter { it.isDigit() }
-                stored.isNotEmpty() && (
-                    stored == incoming ||
-                        stored.endsWith(incoming.takeLast(7.coerceAtMost(incoming.length))) ||
-                        incoming.endsWith(stored.takeLast(7.coerceAtMost(stored.length)))
-                    )
-            }
-        } else {
-            null
-        }
+        IncomingCallDiagnostics.recordBroadcastReceived(
+            context = context,
+            callerLabel = callerLabel,
+            incomingNumber = incomingNumber,
+            autoAnswer = autoAnswer
+        )
 
         IncomingCallForegroundService.start(
             context = context,
-            callerName = matchedContact?.name ?: incomingNumber.ifBlank { null },
-            autoAnswer = matchedContact?.autoAnswer ?: false
+            callerName = callerLabel,
+            autoAnswer = autoAnswer
         )
     }
 }
