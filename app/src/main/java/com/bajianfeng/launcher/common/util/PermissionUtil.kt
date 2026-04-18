@@ -174,7 +174,9 @@ object PermissionUtil {
     // ── 电话权限（READ_PHONE_STATE / READ_CALL_LOG）───────────────────────────
 
     fun hasPhonePermission(context: Context): Boolean {
-        return context.checkSelfPermission(Manifest.permission.READ_PHONE_STATE) ==
+        return context.checkSelfPermission(Manifest.permission.CALL_PHONE) ==
+            PackageManager.PERMISSION_GRANTED &&
+            context.checkSelfPermission(Manifest.permission.READ_PHONE_STATE) ==
             PackageManager.PERMISSION_GRANTED &&
             context.checkSelfPermission(Manifest.permission.READ_CALL_LOG) ==
             PackageManager.PERMISSION_GRANTED &&

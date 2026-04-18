@@ -374,7 +374,6 @@ class MainActivity : AppCompatActivity() {
             HomeAppItem.Type.WECHAT_VIDEO -> startActivity(
                 Intent(this, VideoCallActivity::class.java)
             )
-            HomeAppItem.Type.SETTINGS -> startActivity(Intent(this, SettingsActivity::class.java))
             HomeAppItem.Type.ADD -> startActivity(Intent(this, AppManageActivity::class.java))
         }
     }

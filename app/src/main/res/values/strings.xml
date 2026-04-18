@@ -11,11 +11,10 @@
     <string name="home_toast_already_here">已经是桌面了</string>
     <string name="home_item_phone">电话</string>
     <string name="home_item_wechat_video">微信视频</string>
-    <string name="home_item_settings">设置</string>
     <string name="home_item_add">添加</string>
-    <string name="home_caregiver_entry">帮老人设置</string>
-    <string name="home_caregiver_dialog_title">这是给家人帮助老人设置用的</string>
-    <string name="home_caregiver_dialog_message">这里可以帮老人设置联系人、首页应用和设备权限。老人平时不用进入这里。</string>
+    <string name="home_caregiver_entry">家属设置</string>
+    <string name="home_caregiver_dialog_title">家属设置</string>
+    <string name="home_caregiver_dialog_message">这里用于管理联系人、桌面入口、权限和系统行为，老人平时不需要进入。</string>
     <string name="home_caregiver_dialog_confirm">继续设置</string>
     <string name="home_caregiver_dialog_cancel">返回首页</string>
 
@@ -121,6 +120,7 @@
     <string name="contact_list_not_refreshed">未授予联系人读取权限，列表未刷新</string>
     <string name="contact_load_failed">联系人加载失败：%1$s</string>
     <string name="dial_failed">拨号失败：%1$s</string>
+    <string name="phone_call_permission_required">需要先授权电话权限，才能直接拨打</string>
     <string name="open_contacts_failed">未找到可打开的联系人应用</string>
     <string name="state_phone_permission_title">无法读取联系人</string>
 
@@ -177,52 +177,79 @@
     <string name="video_contact_unpinned">已取消置顶：%1$s</string>
     <string name="video_contact_search_hint">搜索联系人姓名或关键词</string>
     <string name="status_operating">正在操作…</string>
-    <string name="settings_title">帮老人设置</string>
-    <string name="settings_subtitle">把常用联系人、首页应用和设备能力一次配好</string>
-    <string name="settings_header_tip">建议先设置常用联系人和首页应用，再检查默认桌面、电话权限和后台保活。</string>
+    <string name="settings_title">家属设置</string>
+    <string name="settings_subtitle">把联系人、来电和桌面一步配好</string>
+    <string name="settings_header_tip">先配联系人，再检查权限</string>
 
-    <string name="settings_section_quick_setup_title">先帮老人准备好</string>
-    <string name="settings_section_quick_setup_subtitle">把电话联系人、微信视频联系人和首页应用放在一起，方便家属一次配好。</string>
+    <string name="settings_section_quick_setup_title">先设置联系人</string>
+    <string name="settings_section_quick_setup_subtitle">电话、视频和首页应用</string>
     <string name="settings_manage_phone_contacts_title">电话联系人</string>
-    <string name="settings_manage_phone_contacts_summary">添加、编辑常用电话联系人，老人之后点一下就能拨号</string>
+    <string name="settings_manage_phone_contacts_summary">添加或修改常用电话联系人</string>
     <string name="settings_manage_video_contacts_title">微信视频联系人</string>
-    <string name="settings_manage_video_contacts_summary">管理微信视频联系人和头像，让老人一键就能联系家人</string>
+    <string name="settings_manage_video_contacts_summary">添加或修改微信视频联系人</string>
     <string name="settings_manage_home_apps_title">首页应用</string>
-    <string name="settings_manage_home_apps_summary">选择哪些应用显示在桌面，避免老人看到太多入口</string>
-    <string name="settings_manage_action">去管理</string>
-    <string name="settings_section_incoming_guard_title">来电守护准备度</string>
-    <string name="settings_section_incoming_guard_subtitle">先把影响来电提醒、来电页和自动接听的关键项按顺序配好，缺哪一项就先补哪一项。</string>
-    <string name="settings_incoming_guard_status_ready">已就绪</string>
-    <string name="settings_incoming_guard_status_pending">未就绪</string>
-    <string name="settings_incoming_guard_progress">已完成 %1$d/6 项</string>
-    <string name="settings_incoming_guard_summary_ready">6 项都已就绪，来电提醒、来电页和自动接听链路已经准备好了。</string>
-    <string name="settings_incoming_guard_summary_blocked">当前拦截项：%1$s。先补上这一项，来电守护链路才能继续往下跑。</string>
-    <string name="settings_incoming_guard_action_fix">先处理%1$s</string>
-    <string name="settings_incoming_guard_action_ready">来电守护已完成</string>
+    <string name="settings_manage_home_apps_summary">调整首页要显示的应用</string>
+    <string name="settings_manage_action">进入 ›</string>
+    <string name="settings_section_incoming_guard_title">先看来电保障</string>
+    <string name="settings_section_incoming_guard_subtitle">缺哪一项，就先处理哪一项</string>
+    <string name="settings_incoming_guard_status_ready">已完成</string>
+    <string name="settings_incoming_guard_status_pending">待处理</string>
+    <string name="settings_incoming_guard_progress">6 项里已完成 %1$d 项</string>
+    <string name="settings_incoming_guard_summary_ready">来电提醒、来电页和自动接听已经可以稳定工作</string>
+    <string name="settings_incoming_guard_summary_blocked">当前最先处理：%1$s</string>
+    <string name="settings_incoming_guard_action_fix">立即处理 %1$s</string>
+    <string name="settings_incoming_guard_action_ready">来电保障已全部完成</string>
     <string name="settings_guard_status_done">已完成</string>
     <string name="settings_guard_status_confirmed">已确认</string>
     <string name="settings_guard_status_pending">待确认</string>
     <string name="settings_guard_status_blocking">先处理</string>
     <string name="settings_guard_blocker_prefix">当前拦截项：%1$s</string>
-    <string name="settings_section_device_title">桌面与运行</string>
+    <string name="settings_section_device_title">设置默认桌面与后台</string>
 
-    <string name="settings_section_device_subtitle">默认桌面、防退出和性能模式统一放在这里，方便一次配置完成</string>
-    <string name="settings_section_calls_title">通话与来电</string>
-    <string name="settings_section_calls_subtitle">电话能力、自动接听和倒计时放在一起，来电设置更直观</string>
-    <string name="settings_section_support_title">权限与后台保活</string>
-    <string name="settings_section_support_subtitle">这些项目决定后台能不能稳定接来电、发起微信视频和把界面拉起来</string>
-    <string name="settings_section_system_title">天气与系统</string>
-    <string name="settings_section_system_subtitle">日常维护项集中在一起，方便家属统一调整</string>
+    <string name="settings_section_device_subtitle">防退出、默认桌面和性能</string>
+    <string name="settings_section_calls_title">设置自动接听</string>
+    <string name="settings_section_calls_subtitle">自动接听、倒计时和最近来电</string>
+    <string name="settings_section_support_title">检查权限</string>
+    <string name="settings_section_support_subtitle">按用途补齐来电、后台和视频权限</string>
+    <string name="settings_section_system_title">系统与天气</string>
+    <string name="settings_section_system_subtitle">天气城市和系统入口</string>
+    <string name="settings_contacts_hub_summary">电话 %1$d 人 · 视频 %2$d 人 · 首页 %3$d 个</string>
+    <string name="settings_contacts_phone_count">已保存 %1$d 个电话联系人</string>
+    <string name="settings_contacts_video_count">已保存 %1$d 个视频联系人</string>
+    <string name="settings_home_apps_count">首页已显示 %1$d 个应用</string>
+    <string name="settings_permissions_hub_summary_ready">来电、后台和视频权限都已处理</string>
+    <string name="settings_permissions_hub_summary_pending">当前还差：%1$s</string>
+    <string name="settings_incoming_guard_action_open">查看详情</string>
+    <string name="settings_sheet_contacts_message">先把电话联系人、视频联系人和首页应用准备好。</string>
+    <string name="settings_sheet_auto_answer_title">设置自动接听</string>
+    <string name="settings_sheet_auto_answer_message">在这里调整自动接听开关、倒计时和最近来电状态。</string>
+    <string name="settings_sheet_permissions_message">按来电、后台和视频三类权限来检查。</string>
+    <string name="settings_sheet_device_message">这里处理默认桌面、后台表现和性能模式。</string>
+    <string name="settings_sheet_system_message">这里可以修改天气城市，或打开系统设置。</string>
+    <string name="settings_entry_view">查看 ›</string>
+    <string name="settings_entry_adjust">调整 ›</string>
+    <string name="settings_entry_check">检查 ›</string>
+    <string name="settings_entry_modify">修改 ›</string>
+    <string name="settings_entry_open_settings">打开 ›</string>
+    <string name="settings_device_hub_summary">%1$s · %2$s · %3$s</string>
+    <string name="settings_device_hub_default_ready">默认桌面已设好</string>
+    <string name="settings_device_hub_default_pending">还没设默认桌面</string>
+    <string name="settings_device_hub_kiosk_on">防退出已开</string>
+    <string name="settings_device_hub_kiosk_off">防退出已关</string>
+    <string name="settings_device_hub_low_performance_on">低性能已开</string>
+    <string name="settings_device_hub_low_performance_off">低性能已关</string>
+    <string name="settings_sheet_keep_alive_review_title">后台保活相关权限</string>
+    <string name="settings_sheet_keep_alive_review_summary">默认桌面、电池、自启动和后台弹出界面</string>
     <string name="settings_low_performance_title">低性能模式</string>
-    <string name="settings_low_performance_summary_on">已开启，减少动画和频繁刷新</string>
-    <string name="settings_low_performance_summary_off">已关闭，保持完整动效和秒级刷新</string>
+    <string name="settings_low_performance_summary_on">已开启，减少动画和刷新</string>
+    <string name="settings_low_performance_summary_off">已关闭，保持完整效果</string>
     <string name="settings_kiosk_mode_title">防退出模式</string>
-    <string name="settings_kiosk_mode_summary_on">已开启，按 Home 键会自动返回本桌面</string>
-    <string name="settings_kiosk_mode_summary_off">已关闭，按 Home 键会回到系统桌面</string>
+    <string name="settings_kiosk_mode_summary_on">已开启，按 Home 会回到本桌面</string>
+    <string name="settings_kiosk_mode_summary_off">已关闭，按 Home 会回到系统桌面</string>
     <string name="settings_kiosk_mode_requires_default_launcher">请先将本应用设为默认桌面，再开启防退出模式</string>
     <string name="settings_auto_answer_title">来电自动接听</string>
-    <string name="settings_auto_answer_summary_on">已开启，命中的联系人会在倒计时结束后自动接通</string>
-    <string name="settings_auto_answer_summary_off">已关闭，所有来电都需要手动接听</string>
+    <string name="settings_auto_answer_summary_on">已开启，命中联系人会自动接通</string>
+    <string name="settings_auto_answer_summary_off">已关闭，来电需手动接听</string>
     <string name="settings_auto_answer_delay_title">自动接听倒计时</string>
     <string name="settings_auto_answer_delay_summary">%1$d 秒后自动接听</string>
     <string name="settings_auto_answer_delay_decrease">减少 1 秒</string>
@@ -230,7 +257,7 @@
     <string name="settings_incoming_trace_title">最近来电状态</string>
     <string name="settings_incoming_trace_empty">还没有来电链路记录，来过一次电话后会显示广播、提醒、来电页和接听结果</string>
     <string name="settings_system_title">系统设置</string>
-    <string name="settings_system_summary">打开安卓系统设置，调整网络、声音和显示等项目</string>
+    <string name="settings_system_summary">打开系统设置调整网络、声音等</string>
 
     <!-- 权限管理通用 -->
     <string name="settings_section_permissions">权限管理</string>
@@ -247,57 +274,73 @@
 
     <!-- 无障碍服务 -->
     <string name="settings_accessibility_title">无障碍服务</string>
-    <string name="settings_accessibility_summary_on">已开启，自动拨打微信视频可正常使用</string>
-    <string name="settings_accessibility_summary_off">未开启，点击前往系统设置授权</string>
+    <string name="settings_accessibility_summary_on">已开启，微信视频自动操作可用</string>
+    <string name="settings_accessibility_summary_off">未开启，点击去系统设置</string>
 
     <string name="settings_notification_permission_title">通知权限</string>
-    <string name="settings_notification_permission_summary_on">已开启，来电通知和全屏来电页会更稳定</string>
-    <string name="settings_notification_permission_summary_off">未开启，Android 13 及以上可能无法弹出来电提醒</string>
+    <string name="settings_notification_permission_summary_on">已开启，来电通知更稳定</string>
+    <string name="settings_notification_permission_summary_off">未开启，可能收不到来电提醒</string>
     <string name="settings_notification_permission_granted_toast">通知权限已授权</string>
 
     <!-- 电池优化豁免 -->
     <string name="settings_battery_title">电池无限制</string>
-    <string name="settings_battery_summary_on">已豁免，后台来电不会被系统中断</string>
-    <string name="settings_battery_summary_off">未豁免，长时间后台可能被系统杀掉，点击授权</string>
+    <string name="settings_battery_summary_on">已豁免，后台更稳定</string>
+    <string name="settings_battery_summary_off">未豁免，后台可能被系统中断</string>
 
     <!-- 后台弹出界面 -->
     <string name="settings_bg_start_title">后台弹出界面</string>
     <string name="settings_bg_start_summary">需要开启，防退出模式才能在按 Home 键后把界面拉回来</string>
-    <string name="settings_bg_start_summary_on">已确认，被系统收回后台时更容易把来电页重新拉起</string>
-    <string name="settings_bg_start_summary_off">系统没有统一检测接口，请去系统设置开启后回来标记完成</string>
+    <string name="settings_bg_start_summary_on">已确认，可更容易拉起来电页</string>
+    <string name="settings_bg_start_summary_off">需去系统设置开启后回来确认</string>
 
     <!-- 自启动 -->
     <string name="settings_autostart_title">开机自启动</string>
     <string name="settings_autostart_summary">开机后自动启动，保证来电始终在线，点击前往系统设置开启</string>
-    <string name="settings_autostart_summary_on">已确认，设备重启后更容易继续守住来电链路</string>
-    <string name="settings_autostart_summary_off">系统没有统一检测接口，请去系统设置开启后回来标记完成</string>
+    <string name="settings_autostart_summary_on">已确认，重启后更容易继续在线</string>
+    <string name="settings_autostart_summary_off">需去系统设置开启后回来确认</string>
 
     <!-- 悬浮窗 -->
     <string name="settings_overlay_title">悬浮窗权限</string>
-    <string name="settings_overlay_summary_on">已开启，视频通话进度可显示在悬浮窗</string>
-    <string name="settings_overlay_summary_off">未开启，点击前往系统设置授权</string>
+    <string name="settings_overlay_summary_on">已开启，视频状态可悬浮显示</string>
+    <string name="settings_overlay_summary_off">未开启，点击去系统设置</string>
 
     <!-- 电话权限 -->
     <string name="settings_phone_permission_title">电话权限</string>
-    <string name="settings_phone_permission_summary_on">已授权，来电自动接听功能可正常使用</string>
-    <string name="settings_phone_permission_summary_off">未授权，点击授权后来电才能被识别和自动接听</string>
+    <string name="settings_phone_permission_summary_on">已授权，可识别来电并自动接听</string>
+    <string name="settings_phone_permission_summary_off">未授权，需先开启电话相关权限</string>
     <string name="settings_phone_permission_granted_toast">电话权限已授权</string>
-    <string name="settings_manual_check_message">%1$s 没有统一系统接口可直接检测。请先去系统设置开启，回来后再标记为已完成。</string>
+    <string name="settings_manual_check_message">请先去系统设置开启%1$s，回来后再标记完成。</string>
+    <string name="settings_permission_group_call_title">来电识别</string>
+    <string name="settings_permission_group_call_summary">电话权限、通知权限</string>
+    <string name="settings_permission_group_keep_alive_title">后台保活</string>
+    <string name="settings_permission_group_keep_alive_summary">默认桌面、电池、自启动</string>
+    <string name="settings_permission_group_video_title">视频通话</string>
+    <string name="settings_permission_group_video_summary">无障碍、悬浮窗</string>
+    <string name="settings_permission_group_call_dialog_message">电话权限和通知权限集中在这里处理。</string>
+    <string name="settings_permission_group_keep_alive_dialog_message">默认桌面和后台保活相关设置集中在这里处理。</string>
+    <string name="settings_permission_group_video_dialog_message">微信视频自动操作相关权限集中在这里处理。</string>
+    <string name="settings_permission_group_progress">%1$d/%2$d</string>
+    <string name="settings_permission_group_pending_summary">还差：%1$s</string>
+    <string name="settings_permission_dialog_close">关闭</string>
+    <string name="settings_section_expand">进入</string>
+    <string name="settings_section_collapse">收起</string>
     <string name="settings_manual_check_mark_done">我已完成</string>
     <string name="settings_manual_check_mark_pending">改为未完成</string>
     <string name="settings_manual_check_done_toast">%1$s 已标记完成</string>
     <string name="settings_manual_check_reset_toast">%1$s 已改为未完成</string>
 
-    <string name="incoming_call_subtitle">来电</string>
+    <string name="incoming_call_subtitle">电话来电</string>
     <string name="incoming_call_guard_title">来电守护</string>
-    <string name="incoming_call_unknown_caller">来电中</string>
+    <string name="incoming_call_unknown_caller">未知来电</string>
     <string name="incoming_call_accept">接听</string>
     <string name="incoming_call_decline">拒绝</string>
     <string name="incoming_call_icon_description">来电图标</string>
     <string name="incoming_call_notification_title">来电中</string>
     <string name="incoming_call_notification_channel_name">来电提醒</string>
     <string name="incoming_call_notification_channel_description">用于显示系统电话来电通知，并尽量以全屏方式唤起来电页</string>
-    <string name="incoming_call_auto_answer_countdown">%1$d 秒后自动接听，可点拒绝取消</string>
+    <string name="incoming_call_auto_answer_countdown">%1$d 秒后自动接听</string>
+    <string name="incoming_call_voice_announcement">来电人：%1$s</string>
+    <string name="incoming_call_voice_unknown">电话来了</string>
     <string name="incoming_call_status_answering">正在接听，请稍候</string>
     <string name="incoming_call_status_declining">正在拒绝来电</string>
     <string name="incoming_call_status_accept_sent">已发送接听指令</string>

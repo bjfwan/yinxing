@@ -67,6 +67,7 @@ class PhoneContactActivity : AppCompatActivity() {
     private var allContacts: List<Contact> = emptyList()
     private var dialogPhotoPreview: ImageView? = null
     private var selectedAvatarUri: String? = null
+    private var pendingCallContact: Contact? = null
 
     private val pickImageLauncher = registerForActivityResult(
         ActivityResultContracts.PickVisualMedia()
@@ -74,6 +75,19 @@ class PhoneContactActivity : AppCompatActivity() {
         if (uri != null) {
             selectedAvatarUri = uri.toString()
             renderDialogPhoto()
+        }
+    }
+
+    private val callPermissionLauncher = registerForActivityResult(
+        ActivityResultContracts.RequestPermission()
+    ) { granted ->
+        val contact = pendingCallContact
+        pendingCallContact = null
+        if (granted && contact != null) {
+            makeCall(contact)
+        } else {
+            Toast.makeText(this, getString(R.string.phone_call_permission_required), Toast.LENGTH_SHORT)
+                .show()
         }
     }
 
@@ -218,18 +232,21 @@ class PhoneContactActivity : AppCompatActivity() {
 
     private fun makeCall(contact: Contact) {
         val number = contact.phoneNumber?.takeIf { it.isNotBlank() } ?: return
-        val intent = if (
-            ActivityCompat.checkSelfPermission(this, Manifest.permission.CALL_PHONE) == PackageManager.PERMISSION_GRANTED
+        if (
+            ActivityCompat.checkSelfPermission(this, Manifest.permission.CALL_PHONE)
+            != PackageManager.PERMISSION_GRANTED
         ) {
-            Intent(Intent.ACTION_CALL, Uri.parse("tel:$number"))
-        } else {
-            Intent(Intent.ACTION_DIAL, Uri.parse("tel:$number"))
+            pendingCallContact = contact
+            callPermissionLauncher.launch(Manifest.permission.CALL_PHONE)
+            return
         }
+        val intent = Intent(Intent.ACTION_CALL, Uri.fromParts("tel", number, null))
         runCatching { startActivity(intent) }.onFailure {
             Toast.makeText(this, getString(R.string.dial_failed, it.message ?: ""), Toast.LENGTH_SHORT)
                 .show()
+        }.onSuccess {
+            manager.incrementCallCount(contact.id)
         }
-        manager.incrementCallCount(contact.id)
     }
 
     private fun showImportFromContacts() {

@@ -8,14 +8,16 @@ import android.content.Context
 import android.content.Intent
 import android.os.Build
 import android.os.IBinder
+import android.util.Log
 import androidx.core.app.NotificationCompat
 import androidx.core.content.ContextCompat
 import com.bajianfeng.launcher.R
-import com.bajianfeng.launcher.common.util.PermissionUtil
 
 class IncomingCallForegroundService : Service() {
 
     companion object {
+        private const val TAG = "IncomingCallService"
+
         internal const val ACTION_SHOW_INCOMING_CALL = "com.bajianfeng.launcher.action.SHOW_INCOMING_CALL"
         internal const val NOTIFICATION_ID = 41001
         internal const val CHANNEL_ID = "incoming_call_alerts"
@@ -33,6 +35,7 @@ class IncomingCallForegroundService : Service() {
         }
 
         fun stop(context: Context) {
+            context.getSystemService(NotificationManager::class.java)?.cancel(NOTIFICATION_ID)
             context.stopService(Intent(context, IncomingCallForegroundService::class.java))
         }
 
@@ -125,10 +128,26 @@ class IncomingCallForegroundService : Service() {
             )
             .build()
 
-        startForeground(NOTIFICATION_ID, notification)
+        val startedInForeground = runCatching {
+            startForeground(NOTIFICATION_ID, notification)
+            true
+        }.getOrElse { error ->
+            Log.e(TAG, "startForeground failed, fallback to regular notification", error)
+            getSystemService(NotificationManager::class.java)?.notify(NOTIFICATION_ID, notification)
+            false
+        }
 
-        if (!PermissionUtil.hasNotificationPermission(this)) {
-            runCatching { startActivity(openIntent) }
+        launchIncomingCallUi(openIntent)
+        if (!startedInForeground) {
+            stopSelf()
+        }
+    }
+
+    private fun launchIncomingCallUi(intent: Intent) {
+        runCatching {
+            startActivity(Intent(intent).addFlags(Intent.FLAG_ACTIVITY_NO_ANIMATION))
+        }.onFailure {
+            Log.w(TAG, "launchIncomingCallUi failed: ${it.message}")
         }
     }
 
