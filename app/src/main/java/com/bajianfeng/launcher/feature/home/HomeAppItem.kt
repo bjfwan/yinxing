@@ -10,6 +10,6 @@ data class HomeAppItem(
         get() = "${type.name}:$packageName".hashCode().toLong()
 
     enum class Type {
-        APP, SETTINGS, ADD, WEATHER, PHONE, WECHAT_VIDEO
+        APP, SETTINGS, ADD, PHONE, WECHAT_VIDEO
     }
 }

@@ -172,14 +172,7 @@ class LauncherAppRepository private constructor(context: Context) {
                 iconResId = android.R.drawable.ic_input_add
             )
         )
-        add(
-            HomeAppItem(
-                packageName = "weather",
-                appName = appContext.getString(R.string.home_item_weather),
-                type = HomeAppItem.Type.WEATHER,
-                iconResId = android.R.drawable.ic_dialog_info
-            )
-        )
+
     }
 
     private data class InstalledAppRecord(

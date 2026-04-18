@@ -1,8 +1,12 @@
 package com.google.android.accessibility.selecttospeak
 
 import android.accessibilityservice.AccessibilityService
+import android.app.ActivityOptions
+import android.app.PendingIntent
 import android.content.Intent
+import android.content.pm.PackageManager
 import android.graphics.Rect
+import android.os.Build
 import android.util.Log
 import android.view.accessibility.AccessibilityEvent
 import android.view.accessibility.AccessibilityNodeInfo
@@ -11,6 +15,8 @@ import com.bajianfeng.launcher.automation.wechat.manager.TimeoutManager
 import com.bajianfeng.launcher.automation.wechat.model.AutomationState
 import com.bajianfeng.launcher.automation.wechat.util.AccessibilityUtil
 import com.bajianfeng.launcher.common.ui.FloatingStatusView
+import com.bajianfeng.launcher.data.home.LauncherPreferences
+import com.bajianfeng.launcher.feature.home.MainActivity
 
 
 import kotlinx.coroutines.CoroutineScope
@@ -47,8 +53,12 @@ class SelectToSpeakService : AccessibilityService() {
         private const val MAX_VIDEO_OPTION_ATTEMPTS = 3
         private const val MAX_STEP_RECOVERY_ATTEMPTS = 5
         private const val HOME_ACTION_SETTLE_DELAY_MS = 500L
+        private const val LAUNCHER_STATE_SETTLE_DELAY_MS = 450L
+        private const val HIBOARD_OVERVIEW_SUPPRESS_WINDOW_MS = 1500L
 
         // 微信已知 Activity className，来自 WeChatHelper 开源项目
+
+
 
         private const val CLASS_LAUNCHER_UI = "com.tencent.mm.ui.LauncherUI"       // 主页（消息/通讯录/发现/我）
         private const val CLASS_CHATTING_UI = "com.tencent.mm.ui.chatting.ChattingUI" // 聊天页
@@ -162,6 +172,8 @@ class SelectToSpeakService : AccessibilityService() {
     private lateinit var timeoutManager: TimeoutManager
     private var floatingView: FloatingStatusView? = null
     private var currentSession: VideoCallSession? = null
+    private var launcherBringBackConfirmJob: Job? = null
+
 
     private var lastMissingRootLogAt = 0L
     private var lastWeChatClassName: String? = null
@@ -173,17 +185,38 @@ class SelectToSpeakService : AccessibilityService() {
      */
     private var cachedWeChatRoot: AccessibilityNodeInfo? = null
 
+    private var systemLauncherPackages: Set<String> = emptySet()
+    private var defaultLauncherPackage: String? = null
+    private var lastLauncherOverviewAt = 0L
+
+
+
     override fun onServiceConnected() {
         super.onServiceConnected()
         instance = this
         timeoutManager = TimeoutManager.getInstance(this)
         floatingView = FloatingStatusView(this)
+        // 缓存系统桌面包名与当前默认桌面，固定不变，只查询一次
+        systemLauncherPackages = resolveSystemLauncherPackages()
+        defaultLauncherPackage = resolveDefaultLauncherPackage()
         consumePendingRequest()
     }
 
     override fun onAccessibilityEvent(event: AccessibilityEvent?) {
         val pkg = event?.packageName?.toString()
         val className = event?.className?.toString()
+
+        // ── 防退出：检测到 launcher / hiboard 进入前台时，延迟确认后再决定是否拉回 ───
+        if (event?.eventType == AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED && pkg != null) {
+            if (shouldObserveLauncherForeground(pkg)) {
+                scheduleLauncherBringBackConfirmation(triggerPkg = pkg, triggerClassName = className)
+                return
+            }
+            launcherBringBackConfirmJob?.cancel()
+            launcherBringBackConfirmJob = null
+        }
+        // ────────────────────────────────────────────────────────────────────
+
 
         if (pkg != WECHAT_PACKAGE) {
             return
@@ -234,12 +267,15 @@ class SelectToSpeakService : AccessibilityService() {
 
     override fun onDestroy() {
         instance = null
+        launcherBringBackConfirmJob?.cancel()
+        launcherBringBackConfirmJob = null
         cancelSession(false)
         floatingView?.hide()
         floatingView = null
         serviceScope.cancel()
         super.onDestroy()
     }
+
 
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
@@ -249,6 +285,211 @@ class SelectToSpeakService : AccessibilityService() {
             }
         }
         return START_STICKY
+    }
+
+    /**
+     * 判断是否需要把 Launcher 拉回前台。
+     * 满足以下全部条件时返回 true：
+     * 1. 防退出开关已开启
+     * 2. 当前没有微信视频任务进行中
+     * 3. 进入前台的页面是真正的系统桌面，而不是系统设置/最近任务等正常系统页面
+     */
+    private fun shouldObserveLauncherForeground(pkg: String): Boolean {
+        if (!LauncherPreferences.getInstance(this).isKioskModeEnabled()) return false
+        if (hasActiveSession()) return false
+        val defaultHome = defaultLauncherPackage ?: resolveDefaultLauncherPackage().also {
+            defaultLauncherPackage = it
+        }
+        return pkg == defaultHome || (pkg == "com.vivo.hiboard" && defaultHome == "com.bbk.launcher2")
+    }
+
+    private fun scheduleLauncherBringBackConfirmation(triggerPkg: String, triggerClassName: String?) {
+        launcherBringBackConfirmJob?.cancel()
+        launcherBringBackConfirmJob = serviceScope.launch {
+            delay(LAUNCHER_STATE_SETTLE_DELAY_MS)
+            if (!LauncherPreferences.getInstance(this@SelectToSpeakService).isKioskModeEnabled()) return@launch
+            if (hasActiveSession()) return@launch
+
+            val activeRoot = rootInActiveWindow
+            val activePkg = activeRoot?.packageName?.toString() ?: triggerPkg
+            val activeClassName = activeRoot?.className?.toString()
+            AccessibilityUtil.safeRecycle(activeRoot)
+
+            val effectiveClassName = if (activePkg == triggerPkg) {
+                triggerClassName ?: activeClassName
+            } else {
+                activeClassName
+            }
+            if (shouldBringLauncherBack(activePkg, effectiveClassName)) {
+                bringLauncherToFront()
+            }
+        }
+    }
+
+    private fun shouldBringLauncherBack(pkg: String, className: String?): Boolean {
+        if (!LauncherPreferences.getInstance(this).isKioskModeEnabled()) return false
+        if (hasActiveSession()) return false
+
+        val defaultHome = defaultLauncherPackage ?: resolveDefaultLauncherPackage().also {
+            defaultLauncherPackage = it
+        }
+        val isLauncherOverview = isLauncherOverviewState(pkg, className)
+        val now = System.currentTimeMillis()
+        if (isLauncherOverview) {
+            lastLauncherOverviewAt = now
+        }
+        val suppressHiboardAfterOverview =
+            pkg == "com.vivo.hiboard" &&
+                defaultHome == "com.bbk.launcher2" &&
+                now - lastLauncherOverviewAt <= HIBOARD_OVERVIEW_SUPPRESS_WINDOW_MS
+        val result = when {
+            pkg == packageName -> false
+            pkg == defaultHome && !isLauncherOverview -> true
+            suppressHiboardAfterOverview -> false
+            pkg == "com.vivo.hiboard" && defaultHome == "com.bbk.launcher2" -> true
+            else -> false
+        }
+        Log.d(
+            TAG,
+            "shouldBringLauncherBack pkg=$pkg className=$className result=$result defaultHome=$defaultHome overview=$isLauncherOverview suppressHiboardAfterOverview=$suppressHiboardAfterOverview sinceOverview=${now - lastLauncherOverviewAt} launchers=$systemLauncherPackages"
+        )
+        return result
+    }
+
+
+
+
+    /**
+     * 查询系统中所有响应 HOME intent 的包名，仅用于日志与辅助判断。
+     */
+    private fun resolveSystemLauncherPackages(): Set<String> {
+        val intent = android.content.Intent(android.content.Intent.ACTION_MAIN).apply {
+            addCategory(android.content.Intent.CATEGORY_HOME)
+        }
+        return packageManager
+            .queryIntentActivities(intent, PackageManager.MATCH_ALL)
+            .map { it.activityInfo.packageName }
+            .toMutableSet()
+            .apply { remove(packageName) }
+    }
+
+    private fun resolveDefaultLauncherPackage(): String? {
+        val intent = Intent(Intent.ACTION_MAIN).apply {
+            addCategory(Intent.CATEGORY_HOME)
+        }
+        return packageManager
+            .resolveActivity(intent, PackageManager.MATCH_DEFAULT_ONLY)
+            ?.activityInfo
+            ?.packageName
+            ?.takeUnless { it == packageName }
+    }
+
+    private fun isLauncherOverviewState(pkg: String, className: String?): Boolean {
+        if (pkg != "com.bbk.launcher2") return false
+        if (className?.contains("Recents", ignoreCase = true) == true) return true
+        if (className?.contains("Overview", ignoreCase = true) == true) return true
+        return isLauncherOverviewActive(pkg)
+    }
+
+    /**
+     * vivo 的最近任务页挂在 launcher 包名下，不能按"桌面"处理。
+     * 这里通过 recents 专属 viewId / 文案来识别 overview 页面。
+     */
+    private fun isLauncherOverviewActive(pkg: String): Boolean {
+
+        if (pkg != "com.bbk.launcher2") return false
+        val root = rootInActiveWindow ?: return false
+        return try {
+            val overviewNodes = AccessibilityUtil.findAllById(root, "com.vivo.recents:id/overview_panel2")
+            val clearAllNodes = AccessibilityUtil.findAllByText(root, "清除全部")
+            val result = overviewNodes.isNotEmpty() || clearAllNodes.isNotEmpty()
+            overviewNodes.forEach { AccessibilityUtil.safeRecycle(it) }
+            clearAllNodes.forEach { AccessibilityUtil.safeRecycle(it) }
+            result
+        } finally {
+            AccessibilityUtil.safeRecycle(root)
+        }
+    }
+
+    private fun bringLauncherToFront() {
+
+        val intent = Intent(this, MainActivity::class.java).apply {
+            addFlags(
+                Intent.FLAG_ACTIVITY_NEW_TASK or
+                Intent.FLAG_ACTIVITY_REORDER_TO_FRONT or
+                Intent.FLAG_ACTIVITY_RESET_TASK_IF_NEEDED
+            )
+        }
+
+        // 方案1：AccessibilityService 本身属于系统绑定服务，优先直接 startActivity。
+        // 在部分厂商 ROM 上，直接拉起比 PendingIntent 更容易命中系统例外路径。
+        val startSent = tryStartLauncherActivity(intent, source = "directStart")
+
+        // 方案2：Android 14+ 再叠加 PendingIntent 显式授权，兼容官方 BAL 新规则。
+        val pendingIntentSent = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
+            trySendLauncherPendingIntent(intent)
+        } else {
+            false
+        }
+
+        // 方案3：延迟再补一次，避开 vivo Home/负一屏切换瞬间对后台拉起的吞掉问题。
+        if (startSent || pendingIntentSent) {
+            serviceScope.launch {
+                delay(350)
+                val activePackage = rootInActiveWindow?.packageName?.toString()
+                if (activePackage != null && activePackage in systemLauncherPackages) {
+                    Log.d(TAG, "bringLauncherToFront: retry after settle, activePackage=$activePackage")
+                    tryStartLauncherActivity(intent, source = "retryStart")
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
+                        trySendLauncherPendingIntent(intent, source = "retryPendingIntent")
+                    }
+                }
+            }
+            return
+        }
+
+        // 最终降级：执行系统 Home 键（app 必须是默认桌面才会回到本应用）
+        val homeOk = performGlobalAction(GLOBAL_ACTION_HOME)
+        Log.d(TAG, "bringLauncherToFront: fallback globalHome=$homeOk")
+    }
+
+    private fun tryStartLauncherActivity(intent: Intent, source: String): Boolean {
+        return try {
+            startActivity(intent)
+            Log.d(TAG, "bringLauncherToFront: startActivity sent source=$source")
+            true
+        } catch (e: Exception) {
+            Log.w(TAG, "bringLauncherToFront: startActivity failed source=$source error=${e.message}")
+            false
+        }
+    }
+
+    private fun trySendLauncherPendingIntent(intent: Intent, source: String = "pendingIntent"): Boolean {
+        return try {
+            val creatorOptions = ActivityOptions.makeBasic().apply {
+                setPendingIntentCreatorBackgroundActivityStartMode(
+                    ActivityOptions.MODE_BACKGROUND_ACTIVITY_START_ALLOWED
+                )
+            }
+            val pendingIntent = PendingIntent.getActivity(
+                this,
+                0,
+                intent,
+                PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
+                creatorOptions.toBundle()
+            )
+            val sendOptions = ActivityOptions.makeBasic().apply {
+                setPendingIntentBackgroundActivityStartMode(
+                    ActivityOptions.MODE_BACKGROUND_ACTIVITY_START_ALLOWED
+                )
+            }
+            pendingIntent.send(this, 0, null, null, null, null, sendOptions.toBundle())
+            Log.d(TAG, "bringLauncherToFront: PendingIntent sent source=$source")
+            true
+        } catch (e: Exception) {
+            Log.w(TAG, "bringLauncherToFront: PendingIntent failed source=$source error=${e.message}")
+            false
+        }
     }
 
     private fun notifyState(
@@ -504,12 +745,9 @@ class SelectToSpeakService : AccessibilityService() {
     }
 
     private fun getWeChatRoot(): AccessibilityNodeInfo? {
-        // 遍历所有窗口，选节点数最多的微信 root（聊天页节点数远多于首页）
-        val allRoots = windows.orEmpty().mapNotNull { it.root }
-        val best = allRoots
-            .filter { isUsableWeChatRoot(it) }
-            .maxByOrNull { countNodes(it) }
-        allRoots.filter { it !== best }.forEach { AccessibilityUtil.safeRecycle(it) }
+        // 优先用 findWeChatRootInWindows：先试 rootInActiveWindow，再遍历 windows
+        // 避免微信刚启动尚未发出 accessibility event 时 windows 列表为空的问题
+        val best = findWeChatRootInWindows()
         if (best != null) {
             Log.d(TAG, "getWeChatRoot: 选窗口 class=${best.className} childCount=${best.childCount} nodes=${countNodes(best)}")
             replaceCachedWeChatRoot(best)
@@ -1470,10 +1708,13 @@ class SelectToSpeakService : AccessibilityService() {
         timeoutJob?.cancel()
         totalTimeoutJob?.cancel()
         wechatWaitJob?.cancel()
+        launcherBringBackConfirmJob?.cancel()
         processJob = null
         timeoutJob = null
         totalTimeoutJob = null
         wechatWaitJob = null
+        launcherBringBackConfirmJob = null
+
 
         lastMissingRootLogAt = 0L
         lastWeChatClassName = null

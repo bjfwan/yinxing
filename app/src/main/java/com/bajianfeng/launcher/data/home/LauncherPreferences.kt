@@ -12,6 +12,10 @@ class LauncherPreferences(context: Context) {
         private const val PREFS_NAME = "launcher_prefs"
         private const val KEY_APP_ORDER = "app_order"
         private const val KEY_LOW_PERFORMANCE_MODE = "low_performance_mode"
+        private const val KEY_AUTO_ANSWER_ENABLED = "auto_answer_enabled"
+        private const val KEY_AUTO_ANSWER_DELAY_SECONDS = "auto_answer_delay_seconds"
+        const val DEFAULT_AUTO_ANSWER_DELAY_SECONDS = 5
+        private const val KEY_KIOSK_MODE_ENABLED = "kiosk_mode_enabled"
 
         @Volatile
         private var instance: LauncherPreferences? = null
@@ -89,6 +93,30 @@ class LauncherPreferences(context: Context) {
         }
     }
 
+    fun isAutoAnswerEnabled(): Boolean {
+        return prefs.getBoolean(KEY_AUTO_ANSWER_ENABLED, true)
+    }
+
+    fun setAutoAnswerEnabled(enabled: Boolean) {
+        prefs.edit { putBoolean(KEY_AUTO_ANSWER_ENABLED, enabled) }
+    }
+
+    fun getAutoAnswerDelaySeconds(): Int {
+        return prefs.getInt(KEY_AUTO_ANSWER_DELAY_SECONDS, DEFAULT_AUTO_ANSWER_DELAY_SECONDS)
+    }
+
+    fun setAutoAnswerDelaySeconds(seconds: Int) {
+        prefs.edit { putInt(KEY_AUTO_ANSWER_DELAY_SECONDS, seconds.coerceIn(1, 30)) }
+    }
+
+    fun isKioskModeEnabled(): Boolean {
+        return prefs.getBoolean(KEY_KIOSK_MODE_ENABLED, false)
+    }
+
+    fun setKioskModeEnabled(enabled: Boolean) {
+        prefs.edit { putBoolean(KEY_KIOSK_MODE_ENABLED, enabled) }
+    }
+
     fun registerListener(listener: SharedPreferences.OnSharedPreferenceChangeListener) {
         prefs.registerOnSharedPreferenceChangeListener(listener)
     }
@@ -104,7 +132,10 @@ class LauncherPreferences(context: Context) {
     fun isSelectionKey(key: String?): Boolean {
         return !key.isNullOrBlank() &&
             key != KEY_APP_ORDER &&
-            key != KEY_LOW_PERFORMANCE_MODE
+            key != KEY_LOW_PERFORMANCE_MODE &&
+            key != KEY_AUTO_ANSWER_ENABLED &&
+            key != KEY_AUTO_ANSWER_DELAY_SECONDS &&
+            key != KEY_KIOSK_MODE_ENABLED
     }
 
     fun isHomeAppConfigKey(key: String?): Boolean {

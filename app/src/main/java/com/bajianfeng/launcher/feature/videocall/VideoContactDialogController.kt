@@ -3,7 +3,6 @@ package com.bajianfeng.launcher.feature.videocall
 import android.net.Uri
 import android.widget.EditText
 import android.widget.ImageView
-import android.widget.RadioGroup
 import android.widget.TextView
 import android.widget.Toast
 import androidx.appcompat.app.AlertDialog
@@ -15,7 +14,7 @@ import com.bajianfeng.launcher.data.contact.Contact
 class VideoContactDialogController(
     private val activity: AppCompatActivity,
     private val onPickPhoto: () -> Unit,
-    private val onSaveContact: (Contact?, String, String, String, Contact.PreferredAction, String?) -> Unit,
+    private val onSaveContact: (Contact?, String, String, String?) -> Unit,
     private val onDeleteContact: (Contact) -> Unit,
     private val onOpenAccessibilitySettings: () -> Unit,
     private val onOpenOverlaySettings: () -> Unit,
@@ -38,15 +37,21 @@ class VideoContactDialogController(
     }
 
     fun showDeleteDialog(contact: Contact) {
-        AlertDialog.Builder(activity)
-            .setTitle(R.string.delete_contact_title)
-            .setMessage(activity.getString(R.string.video_contact_delete_message, contact.displayName))
-
-            .setPositiveButton(R.string.action_delete) { _, _ ->
+        val dialogView = activity.layoutInflater.inflate(R.layout.dialog_delete_contact, null)
+        val dialog = AlertDialog.Builder(activity)
+            .setView(dialogView)
+            .create()
+        dialog.window?.setBackgroundDrawableResource(android.R.color.transparent)
+        dialogView.findViewById<TextView>(R.id.tv_delete_message).text =
+            activity.getString(R.string.video_contact_delete_message, contact.displayName)
+        dialogView.findViewById<com.google.android.material.card.MaterialCardView>(R.id.btn_cancel)
+            .setOnClickListener { dialog.dismiss() }
+        dialogView.findViewById<com.google.android.material.card.MaterialCardView>(R.id.btn_delete)
+            .setOnClickListener {
                 onDeleteContact(contact)
+                dialog.dismiss()
             }
-            .setNegativeButton(R.string.action_cancel, null)
-            .show()
+        dialog.show()
     }
 
     fun showAccessibilityDialog() {
@@ -67,17 +72,24 @@ class VideoContactDialogController(
     }
 
     fun showOverlayPermissionDialog(contact: Contact) {
-        AlertDialog.Builder(activity)
-            .setTitle(R.string.overlay_permission_title)
-            .setMessage(R.string.overlay_permission_message)
-            .setPositiveButton(R.string.action_go_to_settings) { _, _ ->
+        val dialogView = activity.layoutInflater.inflate(R.layout.dialog_overlay_permission, null)
+        val dialog = AlertDialog.Builder(activity)
+            .setView(dialogView)
+            .create()
+        dialog.window?.setBackgroundDrawableResource(android.R.color.transparent)
+        dialogView.findViewById<com.google.android.material.card.MaterialCardView>(R.id.btn_go_to_settings)
+            .setOnClickListener {
                 onOpenOverlaySettings()
+                dialog.dismiss()
             }
-            .setNegativeButton(R.string.action_continue) { _, _ ->
+        dialogView.findViewById<com.google.android.material.card.MaterialCardView>(R.id.btn_continue)
+            .setOnClickListener {
                 onContinueWithoutOverlayPermission(contact)
+                dialog.dismiss()
             }
-            .setNeutralButton(R.string.action_cancel, null)
-            .show()
+        dialogView.findViewById<com.google.android.material.card.MaterialCardView>(R.id.btn_cancel)
+            .setOnClickListener { dialog.dismiss() }
+        dialog.show()
     }
 
     private fun showEditorDialog(initialContact: Contact?) {
@@ -93,22 +105,11 @@ class VideoContactDialogController(
 
         val nameField = dialogView.findViewById<EditText>(R.id.et_contact_name)
         val wechatField = dialogView.findViewById<EditText>(R.id.et_wechat_name)
-        val phoneField = dialogView.findViewById<EditText>(R.id.et_phone)
-        val actionGroup = dialogView.findViewById<RadioGroup>(R.id.rg_action)
         photoPreview = dialogView.findViewById(R.id.iv_photo_preview)
         selectedAvatarUri = initialContact?.avatarUri
 
         nameField.setText(initialContact?.displayName.orEmpty())
         wechatField.setText(initialContact?.wechatSearchName.orEmpty())
-
-        phoneField.setText(initialContact?.phoneNumber.orEmpty())
-        actionGroup.check(
-            if ((initialContact?.preferredAction ?: Contact.PreferredAction.PHONE) == Contact.PreferredAction.WECHAT_VIDEO) {
-                R.id.rb_action_wechat
-            } else {
-                R.id.rb_action_phone
-            }
-        )
         renderSelectedPhoto()
 
         dialogView.findViewById<CardView>(R.id.btn_select_photo).setOnClickListener {
@@ -120,26 +121,15 @@ class VideoContactDialogController(
         dialogView.findViewById<CardView>(R.id.btn_confirm).setOnClickListener {
             val name = nameField.text.toString().trim()
             val wechatName = wechatField.text.toString().trim()
-            val phone = phoneField.text.toString().trim()
-            val preferredAction = if (actionGroup.checkedRadioButtonId == R.id.rb_action_wechat) {
-                Contact.PreferredAction.WECHAT_VIDEO
-            } else {
-                Contact.PreferredAction.PHONE
-            }
             if (name.isEmpty()) {
                 Toast.makeText(activity, activity.getString(R.string.input_contact_name), Toast.LENGTH_SHORT).show()
                 return@setOnClickListener
             }
-            if (preferredAction == Contact.PreferredAction.PHONE && phone.isEmpty()) {
-                Toast.makeText(activity, activity.getString(R.string.contact_phone_required), Toast.LENGTH_SHORT).show()
-                return@setOnClickListener
-            }
-            if (preferredAction == Contact.PreferredAction.WECHAT_VIDEO && wechatName.isEmpty()) {
+            if (wechatName.isEmpty()) {
                 Toast.makeText(activity, activity.getString(R.string.contact_wechat_search_name_required), Toast.LENGTH_SHORT).show()
                 return@setOnClickListener
             }
-            onSaveContact(initialContact, name, phone, wechatName, preferredAction, selectedAvatarUri)
-
+            onSaveContact(initialContact, name, wechatName, selectedAvatarUri)
             dialog.dismiss()
         }
 

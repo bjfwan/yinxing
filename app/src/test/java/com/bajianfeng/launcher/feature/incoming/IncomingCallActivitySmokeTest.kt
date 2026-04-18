@@ -10,7 +10,6 @@ import androidx.test.core.app.ApplicationProvider
 import com.bajianfeng.launcher.R
 import com.bajianfeng.launcher.data.home.LauncherPreferences
 import org.junit.Assert.assertEquals
-import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertTrue
 import org.junit.Before
@@ -152,47 +151,42 @@ class IncomingCallActivitySmokeTest {
     }
 
     // ═══════════════════════════════════════════════════════════════════════
-    // 自动接听开关 — 倒计时 UI
+    // 自动接听 — 倒计时 UI
     // ═══════════════════════════════════════════════════════════════════════
 
     @Test
     fun autoAnswerOnShowsCountdownText() {
-        prefs().setAutoAnswerEnabled(true)
-        val activity = buildActivity("用户A")
+        val activity = buildActivity("用户A", autoAnswer = true)
         idle()
         assertTrue("倒计时文字应非空", activity.tv_countdown.text.isNotEmpty())
     }
 
     @Test
     fun autoAnswerOnShowsAutoAnswerWording() {
-        prefs().setAutoAnswerEnabled(true)
-        val activity = buildActivity("用户B")
+        val activity = buildActivity("用户B", autoAnswer = true)
         idle()
         assertTrue("应含'自动接听'", activity.tv_countdown.text.contains("自动接听"))
     }
 
     @Test
     fun autoAnswerOnCountdownTextContainsSeconds() {
-        prefs().setAutoAnswerEnabled(true)
-        val activity = buildActivity("用户C")
+        val activity = buildActivity("用户C", autoAnswer = true)
         idle()
-        assertTrue("应含秒数数字", activity.tv_countdown.text.contains("秒"))
+        assertTrue("应含秒数", activity.tv_countdown.text.contains("秒"))
     }
 
     @Test
     fun autoAnswerOffShowsEmptyCountdownText() {
-        prefs().setAutoAnswerEnabled(false)
-        val activity = buildActivity("用户D")
+        val activity = buildActivity("用户D", autoAnswer = false)
         idle()
         assertTrue("关闭自动接听时倒计时应为空", activity.tv_countdown.text.isEmpty())
     }
 
     @Test
-    fun autoAnswerDefaultIsOnAndShowsCountdown() {
-        // 默认值为 true
-        val activity = buildActivity("用户E")
+    fun autoAnswerDefaultOffShowsEmptyCountdown() {
+        val activity = buildActivityRaw(callerName = "用户E")
         idle()
-        assertTrue("默认开启时应显示倒计时", activity.tv_countdown.text.isNotEmpty())
+        assertTrue("默认不传 autoAnswer 应不显示倒计时", activity.tv_countdown.text.isEmpty())
     }
 
     // ═══════════════════════════════════════════════════════════════════════
@@ -201,8 +195,7 @@ class IncomingCallActivitySmokeTest {
 
     @Test
     fun clickAcceptFinishesActivity() {
-        prefs().setAutoAnswerEnabled(false)
-        val activity = buildActivity("赵六")
+        val activity = buildActivity("赵六", autoAnswer = false)
         idle()
         activity.btn_accept.performClick()
         idle()
@@ -211,18 +204,7 @@ class IncomingCallActivitySmokeTest {
 
     @Test
     fun clickAcceptFinishesActivityWhenAutoAnswerOn() {
-        prefs().setAutoAnswerEnabled(true)
-        val activity = buildActivity("孙七")
-        idle()
-        activity.btn_accept.performClick()
-        idle()
-        assertTrue(activity.isFinishing)
-    }
-
-    @Test
-    fun clickAcceptWithNegativeActionIndexStillFinishes() {
-        prefs().setAutoAnswerEnabled(false)
-        val activity = buildActivityRaw(callerName = "张X", acceptIndex = -1, declineIndex = -1)
+        val activity = buildActivity("孙七", autoAnswer = true)
         idle()
         activity.btn_accept.performClick()
         idle()
@@ -235,8 +217,7 @@ class IncomingCallActivitySmokeTest {
 
     @Test
     fun clickDeclineFinishesActivity() {
-        prefs().setAutoAnswerEnabled(false)
-        val activity = buildActivity("王五")
+        val activity = buildActivity("王五", autoAnswer = false)
         idle()
         activity.btn_decline.performClick()
         idle()
@@ -245,18 +226,7 @@ class IncomingCallActivitySmokeTest {
 
     @Test
     fun clickDeclineFinishesActivityWhenAutoAnswerOn() {
-        prefs().setAutoAnswerEnabled(true)
-        val activity = buildActivity("王五B")
-        idle()
-        activity.btn_decline.performClick()
-        idle()
-        assertTrue(activity.isFinishing)
-    }
-
-    @Test
-    fun clickDeclineWithNegativeActionIndexStillFinishes() {
-        prefs().setAutoAnswerEnabled(false)
-        val activity = buildActivityRaw(callerName = "李X", acceptIndex = -1, declineIndex = -1)
+        val activity = buildActivity("王五B", autoAnswer = true)
         idle()
         activity.btn_decline.performClick()
         idle()
@@ -269,12 +239,10 @@ class IncomingCallActivitySmokeTest {
 
     @Test
     fun doubleClickAcceptDoesNotCrash() {
-        prefs().setAutoAnswerEnabled(false)
-        val activity = buildActivity("用户F")
+        val activity = buildActivity("用户F", autoAnswer = false)
         idle()
         activity.btn_accept.performClick()
         idle()
-        // 第二次点击 finishing 状态不 crash
         runCatching { activity.btn_accept.performClick() }
         idle()
         assertTrue(activity.isFinishing)
@@ -282,8 +250,7 @@ class IncomingCallActivitySmokeTest {
 
     @Test
     fun doubleClickDeclineDoesNotCrash() {
-        prefs().setAutoAnswerEnabled(false)
-        val activity = buildActivity("用户G")
+        val activity = buildActivity("用户G", autoAnswer = false)
         idle()
         activity.btn_decline.performClick()
         idle()
@@ -298,11 +265,10 @@ class IncomingCallActivitySmokeTest {
 
     @Test
     fun onNewIntentUpdatesCallerName() {
-        prefs().setAutoAnswerEnabled(false)
-        val controller = buildController("旧来电人")
+        val controller = buildController("旧来电人", autoAnswer = false)
         idle()
 
-        controller.newIntent(buildIntent("新来电人", "key_new"))
+        controller.newIntent(buildIntent("新来电人", autoAnswer = false))
         idle()
 
         assertEquals("新来电人", controller.get().tv_caller.text.toString())
@@ -310,11 +276,10 @@ class IncomingCallActivitySmokeTest {
 
     @Test
     fun onNewIntentUpdatesToNullCallerShowsUnknown() {
-        prefs().setAutoAnswerEnabled(false)
-        val controller = buildController("旧来电人")
+        val controller = buildController("旧来电人", autoAnswer = false)
         idle()
 
-        controller.newIntent(buildIntent(null, "key_null"))
+        controller.newIntent(buildIntent(null, autoAnswer = false))
         idle()
 
         assertEquals(
@@ -325,11 +290,10 @@ class IncomingCallActivitySmokeTest {
 
     @Test
     fun onNewIntentUpdatesToBlankCallerShowsUnknown() {
-        prefs().setAutoAnswerEnabled(false)
-        val controller = buildController("旧来电人")
+        val controller = buildController("旧来电人", autoAnswer = false)
         idle()
 
-        controller.newIntent(buildIntent("   ", "key_blank"))
+        controller.newIntent(buildIntent("   ", autoAnswer = false))
         idle()
 
         assertEquals(
@@ -340,13 +304,12 @@ class IncomingCallActivitySmokeTest {
 
     @Test
     fun onNewIntentMultipleTimesShowsLastCaller() {
-        prefs().setAutoAnswerEnabled(false)
-        val controller = buildController("第一人")
+        val controller = buildController("第一人", autoAnswer = false)
         idle()
 
-        controller.newIntent(buildIntent("第二人", "key_2"))
+        controller.newIntent(buildIntent("第二人", autoAnswer = false))
         idle()
-        controller.newIntent(buildIntent("第三人", "key_3"))
+        controller.newIntent(buildIntent("第三人", autoAnswer = false))
         idle()
 
         assertEquals("第三人", controller.get().tv_caller.text.toString())
@@ -354,24 +317,21 @@ class IncomingCallActivitySmokeTest {
 
     @Test
     fun onNewIntentAutoAnswerOnResetsCountdown() {
-        prefs().setAutoAnswerEnabled(true)
-        val controller = buildController("某人")
+        val controller = buildController("某人", autoAnswer = true)
         idle()
 
-        controller.newIntent(buildIntent("新来电人", "key_new2"))
+        controller.newIntent(buildIntent("新来电人", autoAnswer = true))
         idle()
 
-        // 重置倒计时后应仍显示倒计时文字
         assertTrue(controller.get().tv_countdown.text.isNotEmpty())
     }
 
     @Test
     fun onNewIntentAutoAnswerOffShowsEmptyCountdown() {
-        prefs().setAutoAnswerEnabled(false)
-        val controller = buildController("某人2")
+        val controller = buildController("某人2", autoAnswer = false)
         idle()
 
-        controller.newIntent(buildIntent("新人2", "key_new3"))
+        controller.newIntent(buildIntent("新人2", autoAnswer = false))
         idle()
 
         assertTrue(controller.get().tv_countdown.text.isEmpty())
@@ -386,7 +346,6 @@ class IncomingCallActivitySmokeTest {
         val controller = buildController("生命周期测试")
         idle()
         runCatching { controller.pause() }
-        // 不抛异常即通过
     }
 
     @Test
@@ -411,14 +370,10 @@ class IncomingCallActivitySmokeTest {
         val intent = IncomingCallActivity.buildLaunchIntent(
             context = context,
             callerName = "测试",
-            notificationKey = "key_test",
-            acceptActionIndex = 2,
-            declineActionIndex = 3
+            autoAnswer = true
         )
         assertEquals("测试", intent.getStringExtra(IncomingCallActivity.EXTRA_CALLER_NAME))
-        assertEquals("key_test", intent.getStringExtra(IncomingCallActivity.EXTRA_NOTIFICATION_KEY))
-        assertEquals(2, intent.getIntExtra(IncomingCallActivity.EXTRA_ACCEPT_ACTION_INDEX, -1))
-        assertEquals(3, intent.getIntExtra(IncomingCallActivity.EXTRA_DECLINE_ACTION_INDEX, -1))
+        assertEquals(true, intent.getBooleanExtra(IncomingCallActivity.EXTRA_AUTO_ANSWER, false))
     }
 
     @Test
@@ -426,11 +381,8 @@ class IncomingCallActivitySmokeTest {
         val intent = IncomingCallActivity.buildLaunchIntent(
             context = context,
             callerName = null,
-            notificationKey = "k",
-            acceptActionIndex = -1,
-            declineActionIndex = -1
+            autoAnswer = false
         )
-        // null extra 读回也是 null
         assertEquals(null, intent.getStringExtra(IncomingCallActivity.EXTRA_CALLER_NAME))
     }
 
@@ -440,15 +392,41 @@ class IncomingCallActivitySmokeTest {
 
     @Test
     fun launch30DifferentCallersNoException() {
-        prefs().setAutoAnswerEnabled(false)
         repeat(30) { i ->
-            val activity = buildActivity("来电人_$i")
+            val activity = buildActivity("来电人_$i", autoAnswer = false)
             idle()
             assertEquals("来电人_$i", activity.tv_caller.text.toString())
-            // 主动销毁，避免资源积压
             activity.finish()
             idle()
         }
+    }
+
+    // ═══════════════════════════════════════════════════════════════════════
+    // 全局自动接听开关与 per-contact autoAnswer 协同
+    // ═══════════════════════════════════════════════════════════════════════
+
+    @Test
+    fun globalAutoAnswerDisabledSuppressesCountdown() {
+        prefs().setAutoAnswerEnabled(false)
+        val activity = buildActivity("用户H", autoAnswer = true)
+        idle()
+        assertTrue("全局关闭时即使联系人开启也不显示倒计时", activity.tv_countdown.text.isEmpty())
+    }
+
+    @Test
+    fun globalAutoAnswerEnabledWithContactAutoAnswerShowsCountdown() {
+        prefs().setAutoAnswerEnabled(true)
+        val activity = buildActivity("用户I", autoAnswer = true)
+        idle()
+        assertTrue("全局开启且联系人开启时应显示倒计时", activity.tv_countdown.text.isNotEmpty())
+    }
+
+    @Test
+    fun globalAutoAnswerEnabledButContactAutoAnswerOffNoCountdown() {
+        prefs().setAutoAnswerEnabled(true)
+        val activity = buildActivity("用户J", autoAnswer = false)
+        idle()
+        assertTrue("全局开启但联系人未开启时不显示倒计时", activity.tv_countdown.text.isEmpty())
     }
 
     // ═══════════════════════════════════════════════════════════════════════
@@ -459,48 +437,30 @@ class IncomingCallActivitySmokeTest {
 
     private fun prefs() = LauncherPreferences.getInstance(context)
 
-    private fun buildIntent(
-        callerName: String?,
-        notificationKey: String,
-        acceptIndex: Int = 0,
-        declineIndex: Int = 1
-    ): Intent = IncomingCallActivity.buildLaunchIntent(
-        context = context,
-        callerName = callerName,
-        notificationKey = notificationKey,
-        acceptActionIndex = acceptIndex,
-        declineActionIndex = declineIndex
-    )
+    private fun buildIntent(callerName: String?, autoAnswer: Boolean = false): Intent =
+        IncomingCallActivity.buildLaunchIntent(
+            context = context,
+            callerName = callerName,
+            autoAnswer = autoAnswer
+        )
 
-    private fun buildActivity(
-        callerName: String,
-        key: String = "key_smoke",
-        acceptIndex: Int = 0,
-        declineIndex: Int = 1
-    ) = Robolectric.buildActivity(
-        IncomingCallActivity::class.java,
-        buildIntent(callerName, key, acceptIndex, declineIndex)
-    ).setup().get()
+    private fun buildActivity(callerName: String, autoAnswer: Boolean = false) =
+        Robolectric.buildActivity(
+            IncomingCallActivity::class.java,
+            buildIntent(callerName, autoAnswer)
+        ).setup().get()
 
-    private fun buildActivityRaw(
-        callerName: String?,
-        key: String = "key_smoke",
-        acceptIndex: Int = 0,
-        declineIndex: Int = 1
-    ) = Robolectric.buildActivity(
-        IncomingCallActivity::class.java,
-        buildIntent(callerName, key, acceptIndex, declineIndex)
-    ).setup().get()
+    private fun buildActivityRaw(callerName: String?, autoAnswer: Boolean = false) =
+        Robolectric.buildActivity(
+            IncomingCallActivity::class.java,
+            buildIntent(callerName, autoAnswer)
+        ).setup().get()
 
-    private fun buildController(
-        callerName: String,
-        key: String = "key_ctrl",
-        acceptIndex: Int = -1,
-        declineIndex: Int = -1
-    ) = Robolectric.buildActivity(
-        IncomingCallActivity::class.java,
-        buildIntent(callerName, key, acceptIndex, declineIndex)
-    ).setup()
+    private fun buildController(callerName: String, autoAnswer: Boolean = false) =
+        Robolectric.buildActivity(
+            IncomingCallActivity::class.java,
+            buildIntent(callerName, autoAnswer)
+        ).setup()
 
     private fun resetLauncherPreferencesSingleton() {
         val field = Class.forName("com.bajianfeng.launcher.data.home.LauncherPreferences")
@@ -509,7 +469,6 @@ class IncomingCallActivitySmokeTest {
         field.set(null, null)
     }
 
-    // 便捷属性
     private val android.app.Activity.tv_caller
         get() = findViewById<TextView>(R.id.tv_incoming_caller)
     private val android.app.Activity.tv_countdown

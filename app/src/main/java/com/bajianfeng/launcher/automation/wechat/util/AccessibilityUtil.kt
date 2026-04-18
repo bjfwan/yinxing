@@ -234,12 +234,12 @@ object AccessibilityUtil {
         nodes.forEach { safeRecycle(it) }
     }
 
-    fun findScrollableNode(root: AccessibilityNodeInfo?): AccessibilityNodeInfo? {
-        if (root == null) return null
+    fun findScrollableNode(root: AccessibilityNodeInfo?, depth: Int = 0): AccessibilityNodeInfo? {
+        if (root == null || depth > MAX_TRAVERSE_DEPTH) return null
         if (root.isScrollable) return root
         for (i in 0 until root.childCount) {
             val child = root.getChild(i) ?: continue
-            val scrollable = findScrollableNode(child)
+            val scrollable = findScrollableNode(child, depth + 1)
             if (scrollable != null) return scrollable
         }
         return null

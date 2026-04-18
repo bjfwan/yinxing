@@ -11,7 +11,7 @@
     <string name="home_item_wechat_video">微信视频</string>
     <string name="home_item_settings">设置</string>
     <string name="home_item_add">添加</string>
-    <string name="home_item_weather">天气</string>
+
     <string name="open_app_failed">无法打开%1$s</string>
     <string name="open_settings_failed">无法打开设置</string>
     <string name="weather_fallback_notice">已改为浏览器查看天气</string>
@@ -161,6 +161,10 @@
     <!-- 权限管理通用 -->
     <string name="settings_section_permissions">权限管理</string>
     <string name="settings_section_other">其他</string>
+    <string name="settings_weather_city_title">天气城市</string>
+    <string name="settings_weather_city_summary">当前城市：%1$s</string>
+    <string name="settings_weather_city_hint">输入城市名，如：北京、上海、重庆</string>
+    <string name="settings_weather_city_action">修改</string>
     <string name="settings_permission_status_granted">已授权</string>
     <string name="settings_permission_status_denied">未授权</string>
     <string name="settings_permission_go_set">去设置</string>
@@ -175,6 +179,10 @@
     <string name="settings_battery_summary_on">已豁免，后台来电不会被系统中断</string>
     <string name="settings_battery_summary_off">未豁免，长时间后台可能被系统杀掉，点击授权</string>
 
+    <!-- 后台弹出界面 -->
+    <string name="settings_bg_start_title">后台弹出界面</string>
+    <string name="settings_bg_start_summary">需要开启，防退出模式才能在按 Home 键后把界面拉回来</string>
+
     <!-- 自启动 -->
     <string name="settings_autostart_title">开机自启动</string>
     <string name="settings_autostart_summary">开机后自动启动，保证来电始终在线，点击前往系统设置开启</string>
@@ -184,11 +192,45 @@
     <string name="settings_overlay_summary_on">已开启，视频通话进度可显示在悬浮窗</string>
     <string name="settings_overlay_summary_off">未开启，点击前往系统设置授权</string>
 
-    <!-- 微信来电页 -->
-    <string name="incoming_call_subtitle">微信视频来电</string>
+    <!-- 电话权限 -->
+    <string name="settings_phone_permission_title">电话权限</string>
+    <string name="settings_phone_permission_summary_on">已授权，来电自动接听功能可正常使用</string>
+    <string name="settings_phone_permission_summary_off">未授权，点击授权后来电才能被识别和自动接听</string>
+    <string name="settings_phone_permission_granted_toast">电话权限已授权</string>
+
+    <string name="incoming_call_subtitle">来电</string>
     <string name="incoming_call_unknown_caller">来电中</string>
     <string name="incoming_call_accept">接听</string>
     <string name="incoming_call_decline">拒绝</string>
     <string name="incoming_call_icon_description">来电图标</string>
     <string name="incoming_call_notification_service_description">用于接收微信视频来电通知并显示来电页</string>
+    <string name="incoming_call_auto_answer_countdown">%1$d 秒后自动接听</string>
+    <string name="action_pick_contact">从通讯录选择</string>
+    <string name="phone_contact_title">电话联系人</string>
+    <string name="phone_contact_call_summary">点一下直接打电话</string>
+    <string name="phone_contact_manage_summary">新增、编辑和删除联系人</string>
+    <string name="state_phone_manage_empty_message">先添加一个联系人，设置好手机号后就能直接拨打</string>
+    <string name="contact_phone_required_simple">请填写手机号</string>
+    <string name="contact_auto_answer_label">来电自动接听</string>
+    <string name="contact_auto_answer_tip">开启后，该联系人来电将在倒计时结束后自动接通</string>
+
+    <string name="action_import_from_contacts">从通讯录导入</string>
+    <string name="action_import">导入</string>
+    <string name="action_select_all">全选</string>
+    <string name="action_deselect_all">取消全选</string>
+    <string name="contacts_empty">通讯录中没有找到联系人</string>
+    <string name="contacts_imported">已导入 %1$d 个联系人</string>
+
+    <string name="settings_kiosk_mode_title">防退出模式</string>
+    <string name="settings_kiosk_mode_summary_on">已开启，按 Home 键会自动返回本桌面</string>
+    <string name="settings_kiosk_mode_summary_off">已关闭，按 Home 键会回到系统桌面</string>
+
+    <!-- 引导设为默认桌面 -->
+    <string name="set_default_launcher_title">设为默认桌面</string>
+    <string name="set_default_launcher_message">点击"立即设置"后，系统会优先弹出默认桌面选择窗口，请选择"老人桌面"。如果系统没有弹出选择窗口，再进入系统设置手动选择。\n\n设置成功后，按 Home 键会优先回到本应用。</string>
+    <string name="set_default_launcher_action">立即设置</string>
+    <string name="set_default_launcher_later">稍后再说</string>
+    <string name="set_default_launcher_summary_on">已设置，按 Home 键会回到本桌面</string>
+    <string name="set_default_launcher_summary_off">未设置，点击引导开启</string>
+
 </resources>
