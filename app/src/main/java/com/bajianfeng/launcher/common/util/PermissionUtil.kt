@@ -139,6 +139,57 @@ object PermissionUtil {
         }
     }
 
+    // ── 电话权限（READ_PHONE_STATE / READ_CALL_LOG）───────────────────────────
+
+    fun hasPhonePermission(context: Context): Boolean {
+        return context.checkSelfPermission(android.Manifest.permission.READ_PHONE_STATE) ==
+            android.content.pm.PackageManager.PERMISSION_GRANTED &&
+            context.checkSelfPermission(android.Manifest.permission.READ_CALL_LOG) ==
+            android.content.pm.PackageManager.PERMISSION_GRANTED &&
+            (Build.VERSION.SDK_INT < Build.VERSION_CODES.O ||
+                context.checkSelfPermission(android.Manifest.permission.ANSWER_PHONE_CALLS) ==
+                android.content.pm.PackageManager.PERMISSION_GRANTED)
+    }
+
+    // ── 后台弹出界面（厂商专属，无标准 API）──────────────────────────────────
+
+    /**
+     * 无标准 API 可检测，保守返回 false（不可判断）。
+     * UI 层始终显示"去设置"入口，让用户手动确认。
+     */
+    fun canStartBackgroundActivity(): Boolean = false
+
+    /**
+     * 跳转到厂商"后台弹出界面"设置页。
+     * 覆盖：MIUI、EMUI/HarmonyOS、ColorOS（OPPO）、OriginOS/FuntouchOS（VIVO）
+     * 找不到则降级到本应用系统详情页。
+     */
+    fun openBackgroundStartSettings(context: Context) {
+        val candidates = listOf(
+            // OriginOS / FuntouchOS（VIVO）—— 带包名直接定位到本 app 条目
+            Intent().setComponent(ComponentName("com.vivo.permissionmanager",
+                "com.vivo.permissionmanager.activity.BgStartUpManagerActivity"))
+                .putExtra("packagename", context.packageName),
+            // MIUI（小米/红米）—— 与自启动在同一个页面
+            Intent().setComponent(ComponentName("com.miui.securitycenter",
+                "com.miui.permcenter.autostart.AutoStartManagementActivity")),
+            // EMUI / HarmonyOS（华为/荣耀）
+            Intent().setComponent(ComponentName("com.huawei.systemmanager",
+                "com.huawei.systemmanager.startupmgr.ui.StartupNormalAppListActivity")),
+            // ColorOS（OPPO/Realme）
+            Intent().setComponent(ComponentName("com.coloros.safecenter",
+                "com.coloros.privacypermissionsentry.PermissionTopActivity")),
+        )
+        for (intent in candidates) {
+            intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+            runCatching {
+                context.startActivity(intent)
+                return
+            }
+        }
+        openAppDetailSettings(context)
+    }
+
     // ── 自启动（厂商专属，无标准 API）────────────────────────────────────────
 
     /**

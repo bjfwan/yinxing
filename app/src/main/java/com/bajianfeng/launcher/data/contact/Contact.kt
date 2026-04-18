@@ -10,7 +10,8 @@ data class Contact(
     val isPinned: Boolean = false,
     val callCount: Int = 0,
     val lastCallTime: Long = 0,
-    val searchKeywords: List<String> = emptyList()
+    val searchKeywords: List<String> = emptyList(),
+    val autoAnswer: Boolean = false
 ) {
     val displayName: String
         get() = name
@@ -58,7 +59,8 @@ data class Contact(
                 normalizedPhoneNumber,
                 normalizedWechatId,
                 searchKeywords
-            )
+            ),
+            autoAnswer = autoAnswer
         )
     }
 

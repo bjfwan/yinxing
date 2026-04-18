@@ -5,8 +5,10 @@ import android.content.Intent
 import android.content.pm.ActivityInfo
 import android.content.pm.ApplicationInfo
 import android.content.pm.ResolveInfo
+import android.os.Looper
 import android.provider.Settings
 import android.widget.TextView
+
 import androidx.appcompat.widget.SwitchCompat
 import androidx.test.core.app.ApplicationProvider
 import com.bajianfeng.launcher.R
@@ -33,48 +35,62 @@ class SettingsActivitySmokeTest {
         resetLauncherPreferencesSingleton()
         context.getSharedPreferences("launcher_prefs", Context.MODE_PRIVATE).edit().clear().commit()
         registerSettingsActivity()
+        registerHomeActivity(packageName = "com.android.launcher3")
     }
 
-    @Test
-    fun autoAnswerSwitchDefaultsToOnAndShowsCorrectSummary() {
-        val activity = Robolectric.buildActivity(SettingsActivity::class.java).setup().get()
-        val switchView = activity.findViewById<SwitchCompat>(R.id.switch_auto_answer)
-        val summaryView = activity.findViewById<TextView>(R.id.tv_auto_answer_summary)
-
-        assertTrue(switchView.isChecked)
-        assertEquals(
-            activity.getString(R.string.settings_auto_answer_summary_on),
-            summaryView.text.toString()
-        )
-    }
 
     @Test
-    fun autoAnswerSwitchToggleOffUpdatesSummaryAndPreference() {
+    fun kioskModeSwitchDefaultsToOffAndShowsCorrectSummary() {
         val activity = Robolectric.buildActivity(SettingsActivity::class.java).setup().get()
-        val switchView = activity.findViewById<SwitchCompat>(R.id.switch_auto_answer)
-        val summaryView = activity.findViewById<TextView>(R.id.tv_auto_answer_summary)
-
-        switchView.performClick()   // ON → OFF
+        idle()
+        val switchView = activity.findViewById<SwitchCompat>(R.id.switch_kiosk_mode)
+        val summaryView = activity.findViewById<TextView>(R.id.tv_kiosk_mode_summary)
 
         assertFalse(switchView.isChecked)
+
         assertEquals(
-            activity.getString(R.string.settings_auto_answer_summary_off),
+            activity.getString(R.string.settings_kiosk_mode_summary_off),
             summaryView.text.toString()
         )
-        assertFalse(LauncherPreferences.getInstance(context).isAutoAnswerEnabled())
     }
 
     @Test
-    fun autoAnswerSwitchToggleOnOffOnRestoresState() {
+    fun kioskModeSwitchToggleOnRequiresDefaultLauncher() {
         val activity = Robolectric.buildActivity(SettingsActivity::class.java).setup().get()
-        val switchView = activity.findViewById<SwitchCompat>(R.id.switch_auto_answer)
+        idle()
+        val switchView = activity.findViewById<SwitchCompat>(R.id.switch_kiosk_mode)
+        val summaryView = activity.findViewById<TextView>(R.id.tv_kiosk_mode_summary)
 
-        switchView.performClick()   // ON → OFF
-        switchView.performClick()   // OFF → ON
+        switchView.performClick()
+        idle()
+
+        assertFalse(switchView.isChecked)
+
+        assertEquals(
+            activity.getString(R.string.settings_kiosk_mode_summary_off),
+            summaryView.text.toString()
+        )
+        assertFalse(LauncherPreferences.getInstance(context).isKioskModeEnabled())
+    }
+
+    @Test
+    fun kioskModeSwitchReflectsSavedEnabledState() {
+        LauncherPreferences.getInstance(context).setKioskModeEnabled(true)
+
+        val activity = Robolectric.buildActivity(SettingsActivity::class.java).setup().get()
+        idle()
+        val switchView = activity.findViewById<SwitchCompat>(R.id.switch_kiosk_mode)
+        val summaryView = activity.findViewById<TextView>(R.id.tv_kiosk_mode_summary)
 
         assertTrue(switchView.isChecked)
-        assertTrue(LauncherPreferences.getInstance(context).isAutoAnswerEnabled())
+
+        assertEquals(
+            activity.getString(R.string.settings_kiosk_mode_summary_on),
+            summaryView.text.toString()
+        )
+        assertTrue(LauncherPreferences.getInstance(context).isKioskModeEnabled())
     }
+
 
     @Suppress("DEPRECATION")
     private fun registerSettingsActivity() {
@@ -94,9 +110,33 @@ class SettingsActivitySmokeTest {
         shadowOf(context.packageManager).addResolveInfoForIntent(intent, resolveInfo)
     }
 
+    @Suppress("DEPRECATION")
+    private fun registerHomeActivity(packageName: String) {
+        val intent = Intent(Intent.ACTION_MAIN).apply {
+            addCategory(Intent.CATEGORY_HOME)
+        }
+        val applicationInfo = ApplicationInfo().apply {
+            this.packageName = packageName
+            nonLocalizedLabel = "OldLauncher"
+        }
+        val activityInfo = ActivityInfo().apply {
+            this.packageName = packageName
+            name = "$packageName.feature.home.MainActivity"
+            this.applicationInfo = applicationInfo
+        }
+        val resolveInfo = ResolveInfo().apply {
+            this.activityInfo = activityInfo
+        }
+        shadowOf(context.packageManager).addResolveInfoForIntent(intent, resolveInfo)
+    }
+
+    private fun idle() = shadowOf(Looper.getMainLooper()).idle()
+
     private fun resetLauncherPreferencesSingleton() {
         val field = Class.forName("com.bajianfeng.launcher.data.home.LauncherPreferences").getDeclaredField("instance")
         field.isAccessible = true
         field.set(null, null)
     }
 }
+
+

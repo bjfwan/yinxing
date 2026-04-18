@@ -24,40 +24,122 @@
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:gravity="center"
-            android:orientation="vertical"
-            android:padding="28dp">
+            android:orientation="vertical">
 
-            <TextView
-                style="@style/TextAppearance.OldLauncher.Eyebrow"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="@string/home_title" />
-
-            <TextView
-                android:id="@+id/tv_time"
-                style="@style/TextAppearance.OldLauncher.DisplayTime"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="10dp"
-                android:text="@string/home_time_placeholder" />
-
-            <TextView
-                android:id="@+id/tv_date"
-                style="@style/TextAppearance.OldLauncher.Date"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="8dp"
-                android:text="@string/home_date_placeholder" />
-
-            <TextView
-                style="@style/TextAppearance.OldLauncher.PageSubtitle"
+            <!-- 时间日期区域 -->
+            <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="18dp"
                 android:gravity="center"
-                android:text="@string/home_subtitle" />
+                android:orientation="vertical"
+                android:paddingStart="24dp"
+                android:paddingTop="20dp"
+                android:paddingEnd="24dp"
+                android:paddingBottom="12dp">
 
+                <TextView
+                    android:id="@+id/tv_time"
+                    style="@style/TextAppearance.OldLauncher.DisplayTime"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="4dp"
+                    android:textSize="56sp"
+                    android:text="@string/home_time_placeholder" />
+
+                <TextView
+                    android:id="@+id/tv_date"
+                    style="@style/TextAppearance.OldLauncher.Date"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="2dp"
+                    android:textSize="17sp"
+                    android:text="@string/home_date_placeholder" />
+
+                <TextView
+                    android:id="@+id/tv_lunar"
+                    style="@style/TextAppearance.OldLauncher.Eyebrow"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="2dp"
+                    android:textSize="14sp"
+                    android:text="" />
+
+            </LinearLayout>
+
+            <!-- 分割线 -->
+            <View
+                android:layout_width="match_parent"
+                android:layout_height="1dp"
+                android:layout_marginStart="24dp"
+                android:layout_marginEnd="24dp"
+                android:background="@color/launcher_outline" />
+
+            <!-- 天气信息行 -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:gravity="center_vertical"
+                android:paddingStart="24dp"
+                android:paddingEnd="24dp"
+                android:paddingTop="10dp"
+                android:paddingBottom="14dp">
+
+                <!-- 左：城市 + 天气描述 + 高低温 -->
+                <LinearLayout
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:orientation="vertical">
+
+                    <TextView
+                        android:id="@+id/tv_weather_city"
+                        style="@style/TextAppearance.OldLauncher.Eyebrow"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:textSize="14sp"
+                        android:text="北京" />
+
+                    <TextView
+                        android:id="@+id/tv_weather_desc"
+                        style="@style/TextAppearance.OldLauncher.Date"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="1dp"
+                        android:textSize="17sp"
+                        android:text="晴  北风 1-2级" />
+
+                    <TextView
+                        android:id="@+id/tv_weather_high_low"
+                        style="@style/TextAppearance.OldLauncher.Eyebrow"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="1dp"
+                        android:textSize="14sp"
+                        android:text="最高 20°  最低 8°" />
+
+                    <TextView
+                        android:id="@+id/tv_weather_update"
+                        style="@style/TextAppearance.OldLauncher.Eyebrow"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="2dp"
+                        android:textSize="12sp"
+                        android:alpha="0.6"
+                        android:text="" />
+
+                </LinearLayout>
+
+                <!-- 右：当前温度 -->
+                <TextView
+                    android:id="@+id/tv_weather_temp"
+                    style="@style/TextAppearance.OldLauncher.DisplayTime"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:textSize="48sp"
+                    android:text="13°" />
+
+            </LinearLayout>
 
         </LinearLayout>
     </com.google.android.material.card.MaterialCardView>

@@ -9,7 +9,6 @@ import com.bajianfeng.launcher.common.util.NetworkUtil
 import com.bajianfeng.launcher.common.util.PermissionUtil
 import com.bajianfeng.launcher.data.contact.Contact
 import com.bajianfeng.launcher.data.contact.ContactManager
-import com.google.android.accessibility.selecttospeak.SelectToSpeakService
 
 class VideoCallCoordinator(
     private val activity: AppCompatActivity,
@@ -28,7 +27,7 @@ class VideoCallCoordinator(
             return
         }
 
-        val serviceName = "${activity.packageName}/${SelectToSpeakService::class.java.name}"
+        val serviceName = PermissionUtil.SELECT_TO_SPEAK_SERVICE
         if (!PermissionUtil.isAccessibilityServiceEnabled(activity, serviceName)) {
             speakAndToast(R.string.accessibility_required, R.string.accessibility_required)
             onNeedAccessibilityPermission()

@@ -1,8 +1,6 @@
 package com.bajianfeng.launcher.feature.videocall
 
-import android.Manifest
 import android.content.Intent
-import android.content.pm.PackageManager
 import android.net.Uri
 import android.os.Bundle
 import android.widget.EditText
@@ -12,7 +10,7 @@ import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
 import androidx.cardview.widget.CardView
-import androidx.core.app.ActivityCompat
+
 import androidx.core.view.isVisible
 import androidx.core.widget.doAfterTextChanged
 import androidx.recyclerview.widget.DefaultItemAnimator
@@ -89,7 +87,7 @@ class VideoCallActivity : AppCompatActivity() {
         adapter = VideoCallContactAdapter(
             scope = scope,
             lowPerformanceMode = launcherPreferences.isLowPerformanceModeEnabled(),
-            onContactClick = { contact -> performPrimaryAction(contact) },
+            onContactClick = { contact -> coordinator.start(contact) },
             onWechatVideoClick = { contact -> coordinator.start(contact) }
         )
 
@@ -112,8 +110,8 @@ class VideoCallActivity : AppCompatActivity() {
         dialogController = VideoContactDialogController(
             activity = this,
             onPickPhoto = { openImagePicker() },
-            onSaveContact = { original, name, phone, wechatId, preferredAction, avatarUri ->
-                saveContact(original, name, phone, wechatId, preferredAction, avatarUri)
+            onSaveContact = { original, name, wechatId, avatarUri ->
+                saveContact(original, name, wechatId, avatarUri)
             },
             onDeleteContact = { contact -> deleteContact(contact) },
             onOpenAccessibilitySettings = { PermissionUtil.openAccessibilitySettings(this) },
@@ -217,22 +215,17 @@ class VideoCallActivity : AppCompatActivity() {
     private fun saveContact(
         original: Contact?,
         name: String,
-        phone: String,
         wechatId: String,
-        preferredAction: Contact.PreferredAction,
         avatarUri: String?
     ) {
         val contactId = original?.id ?: UUID.randomUUID().toString()
         val resolvedAvatarUri = resolveAvatarUri(contactId, original?.avatarUri, avatarUri)
-        val normalizedWechatId = wechatId.trim()
         val contact = Contact(
-
             id = contactId,
             name = name,
-            phoneNumber = phone.takeIf { it.isNotBlank() },
-            wechatId = normalizedWechatId.takeIf { it.isNotBlank() },
+            wechatId = wechatId.trim().takeIf { it.isNotBlank() },
             avatarUri = resolvedAvatarUri,
-            preferredAction = preferredAction,
+            preferredAction = Contact.PreferredAction.WECHAT_VIDEO,
             isPinned = original?.isPinned ?: false,
             callCount = original?.callCount ?: 0,
             lastCallTime = original?.lastCallTime ?: 0,
@@ -268,41 +261,6 @@ class VideoCallActivity : AppCompatActivity() {
         contactManager.removeContact(contact.id)
         loadContacts()
         showToast(getString(R.string.contact_deleted))
-    }
-
-    private fun performPrimaryAction(contact: Contact) {
-        when (contact.preferredAction) {
-            Contact.PreferredAction.PHONE -> makePhoneCall(contact)
-            Contact.PreferredAction.WECHAT_VIDEO -> coordinator.start(contact)
-        }
-    }
-
-    private fun makePhoneCall(contact: Contact) {
-        val phoneNumber = contact.phoneNumber?.takeIf { it.isNotBlank() }
-        if (phoneNumber == null) {
-            showToast(getString(R.string.contact_phone_missing))
-            return
-        }
-        val callIntent = if (hasPermission(Manifest.permission.CALL_PHONE)) {
-            Intent(Intent.ACTION_CALL).apply {
-                data = Uri.parse("tel:$phoneNumber")
-            }
-        } else {
-            Intent(Intent.ACTION_DIAL).apply {
-                data = Uri.parse("tel:$phoneNumber")
-            }
-        }
-        runCatching {
-            startActivity(callIntent)
-            contactManager.incrementCallCount(contact.id)
-            loadContacts()
-        }.onFailure { error ->
-            showToast(getString(R.string.dial_failed, error.message ?: ""))
-        }
-    }
-
-    private fun hasPermission(permission: String): Boolean {
-        return ActivityCompat.checkSelfPermission(this, permission) == PackageManager.PERMISSION_GRANTED
     }
 
     private fun loadContacts() {

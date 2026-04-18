@@ -23,17 +23,17 @@ class HomeAppAdapter(
     private val onItemClick: (HomeAppItem) -> Unit,
     private val onItemLongClick: (HomeAppItem) -> Boolean,
     private val onOrderChanged: (List<HomeAppItem>) -> Unit
-) : ListAdapter<HomeAppItem, HomeAppAdapter.ViewHolder>(DiffCallback), ItemTouchHelperAdapter {
+) : ListAdapter<HomeAppItem, RecyclerView.ViewHolder>(DiffCallback), ItemTouchHelperAdapter {
 
     companion object {
-        private val DiffCallback = object : DiffUtil.ItemCallback<HomeAppItem>() {
-            override fun areItemsTheSame(oldItem: HomeAppItem, newItem: HomeAppItem): Boolean {
-                return oldItem.stableId == newItem.stableId
-            }
+        const val VIEW_TYPE_APP = 0
 
-            override fun areContentsTheSame(oldItem: HomeAppItem, newItem: HomeAppItem): Boolean {
-                return oldItem == newItem
-            }
+        private val DiffCallback = object : DiffUtil.ItemCallback<HomeAppItem>() {
+            override fun areItemsTheSame(oldItem: HomeAppItem, newItem: HomeAppItem) =
+                oldItem.stableId == newItem.stableId
+
+            override fun areContentsTheSame(oldItem: HomeAppItem, newItem: HomeAppItem) =
+                oldItem == newItem
         }
     }
 
@@ -48,63 +48,44 @@ class HomeAppAdapter(
     }
 
     fun setLowPerformanceMode(enabled: Boolean) {
-        if (lowPerformanceMode == enabled) {
-            return
-        }
+        if (lowPerformanceMode == enabled) return
         lowPerformanceMode = enabled
         notifyItemRangeChanged(0, itemCount)
     }
 
-    class ViewHolder(view: View) : RecyclerView.ViewHolder(view) {
+    // ── ViewHolder 定义 ──────────────────────────
+
+    class AppViewHolder(view: View) : RecyclerView.ViewHolder(view) {
         val card: CardView = view.findViewById(R.id.card_item)
         val icon: ImageView = view.findViewById(R.id.icon)
         val name: TextView = view.findViewById(R.id.name)
         var iconJob: Job? = null
     }
 
+    // ── ListAdapter 接口 ─────────────────────────
+
+    override fun getItemViewType(position: Int): Int = VIEW_TYPE_APP
+
     override fun getItemId(position: Int): Long = getItem(position).stableId
 
-    override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder {
-        val view = LayoutInflater.from(parent.context)
-            .inflate(R.layout.item_home_app, parent, false)
-        return ViewHolder(view)
+    override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): RecyclerView.ViewHolder {
+        val inflater = LayoutInflater.from(parent.context)
+        return AppViewHolder(inflater.inflate(R.layout.item_home_app, parent, false))
     }
 
-    override fun onBindViewHolder(holder: ViewHolder, position: Int) {
-        bind(holder, getItem(position))
+    override fun onBindViewHolder(holder: RecyclerView.ViewHolder, position: Int) {
+        val item = getItem(position)
+        if (holder is AppViewHolder) bindApp(holder, item)
     }
 
-    override fun onViewRecycled(holder: ViewHolder) {
-        holder.iconJob?.cancel()
+    override fun onViewRecycled(holder: RecyclerView.ViewHolder) {
+        if (holder is AppViewHolder) holder.iconJob?.cancel()
         super.onViewRecycled(holder)
     }
 
-    override fun canMoveItem(position: Int): Boolean {
-        return getItem(position).type == HomeAppItem.Type.APP
-    }
+    // ── 绑定普通卡片 ─────────────────────────────
 
-    override fun onItemMove(fromPosition: Int, toPosition: Int): Boolean {
-        if (!canMoveItem(fromPosition) || !canMoveItem(toPosition)) {
-            return false
-        }
-
-        val reordered = currentList.toMutableList()
-        if (fromPosition < toPosition) {
-            for (index in fromPosition until toPosition) {
-                Collections.swap(reordered, index, index + 1)
-            }
-        } else {
-            for (index in fromPosition downTo toPosition + 1) {
-                Collections.swap(reordered, index, index - 1)
-            }
-        }
-
-        submitList(reordered)
-        onOrderChanged(reordered)
-        return true
-    }
-
-    private fun bind(holder: ViewHolder, item: HomeAppItem) {
+    private fun bindApp(holder: AppViewHolder, item: HomeAppItem) {
         val context = holder.itemView.context
         holder.card.cardElevation = context.dpToPx(if (lowPerformanceMode) 2 else 6).toFloat()
         holder.name.text = item.appName
@@ -127,9 +108,7 @@ class HomeAppAdapter(
             holder.icon.setImageResource(android.R.drawable.sym_def_app_icon)
             holder.iconJob = scope.launch {
                 val bitmap = MediaThumbnailLoader.loadAppIcon(context, item.packageName, iconSize)
-                if (holder.bindingAdapterPosition == RecyclerView.NO_POSITION) {
-                    return@launch
-                }
+                if (holder.bindingAdapterPosition == RecyclerView.NO_POSITION) return@launch
                 val currentItem = currentList.getOrNull(holder.bindingAdapterPosition)
                 if (currentItem?.stableId == item.stableId && bitmap != null) {
                     holder.icon.setImageBitmap(bitmap)
@@ -155,7 +134,24 @@ class HomeAppAdapter(
         }
     }
 
-    private fun android.content.Context.dpToPx(dp: Int): Int {
-        return (dp * resources.displayMetrics.density).toInt()
+    // ── ItemTouchHelper（拖拽，内置卡片不参与）──
+
+    override fun canMoveItem(position: Int): Boolean =
+        getItem(position).type == HomeAppItem.Type.APP
+
+    override fun onItemMove(fromPosition: Int, toPosition: Int): Boolean {
+        if (!canMoveItem(fromPosition) || !canMoveItem(toPosition)) return false
+        val reordered = currentList.toMutableList()
+        if (fromPosition < toPosition) {
+            for (index in fromPosition until toPosition) Collections.swap(reordered, index, index + 1)
+        } else {
+            for (index in fromPosition downTo toPosition + 1) Collections.swap(reordered, index, index - 1)
+        }
+        submitList(reordered)
+        onOrderChanged(reordered)
+        return true
     }
+
+    private fun android.content.Context.dpToPx(dp: Int): Int =
+        (dp * resources.displayMetrics.density).toInt()
 }

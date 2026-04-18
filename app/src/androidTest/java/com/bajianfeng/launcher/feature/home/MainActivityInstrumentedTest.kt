@@ -5,10 +5,13 @@ import android.content.Intent
 import android.view.View
 import android.view.ViewGroup
 import androidx.recyclerview.widget.RecyclerView
+import androidx.test.core.app.ActivityScenario
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
+
 import com.bajianfeng.launcher.R
-import com.bajianfeng.launcher.feature.phone.PhoneActivity
+import com.bajianfeng.launcher.feature.phone.PhoneContactActivity
+
 import com.bajianfeng.launcher.feature.videocall.VideoCallActivity
 import com.bajianfeng.launcher.testutil.InstrumentationTestEnvironment
 import org.junit.Assert.assertEquals
@@ -28,33 +31,32 @@ class MainActivityInstrumentedTest {
 
     @Test
     fun launchShowsBuiltInHomeItemsAndClock() {
-        val activity = launchMainActivity()
-        try {
-            waitUntil(activity, message = "主页未加载出内置入口") {
-                it.findViewById<RecyclerView>(R.id.recycler_home).adapter?.itemCount == 5
+        launchMainActivityScenario().use { scenario ->
+            InstrumentationTestEnvironment.waitUntil(scenario, message = "主页未加载出内置入口") {
+                it.findViewById<RecyclerView>(R.id.recycler_home).adapter?.itemCount == 4
             }
 
-            runOnMainSync {
+            scenario.onActivity { activity ->
                 val recyclerView = activity.findViewById<RecyclerView>(R.id.recycler_home)
                 val timeText = activity.findViewById<android.widget.TextView>(R.id.tv_time).text
                 val dateText = activity.findViewById<android.widget.TextView>(R.id.tv_date).text
-                assertEquals(5, recyclerView.adapter?.itemCount)
+                assertEquals(4, recyclerView.adapter?.itemCount)
                 assertTrue(timeText.isNotBlank())
                 assertTrue(dateText.isNotBlank())
             }
-        } finally {
-            finishActivity(activity)
         }
     }
 
+
     @Test
-    fun clickPhoneEntryOpensSystemContactRedirectActivity() {
+    fun clickPhoneEntryOpensPhoneContactActivity() {
         launchAndOpenHomeEntry(
             labelResId = R.string.home_item_phone,
-            expectedActivity = PhoneActivity::class.java,
-            failureMessage = "点击电话簿入口后未进入系统联系人跳转页"
+            expectedActivity = PhoneContactActivity::class.java,
+            failureMessage = "点击电话簿入口后未进入电话联系人页"
         )
     }
+
 
     @Test
     fun clickWechatVideoEntryOpensUnifiedContactActivity() {
@@ -70,14 +72,13 @@ class MainActivityInstrumentedTest {
         expectedActivity: Class<out Activity>,
         failureMessage: String
     ) {
-        val activity = launchMainActivity()
-        try {
-            waitUntil(activity, message = "主页入口未准备完成") {
-                it.findViewById<RecyclerView>(R.id.recycler_home).adapter?.itemCount == 5
+        launchMainActivityScenario().use { scenario ->
+            InstrumentationTestEnvironment.waitUntil(scenario, message = "主页入口未准备完成") {
+                it.findViewById<RecyclerView>(R.id.recycler_home).adapter?.itemCount == 4
             }
 
             val label = InstrumentationRegistry.getInstrumentation().targetContext.getString(labelResId)
-            runOnMainSync {
+            scenario.onActivity { activity ->
                 val recyclerView = activity.findViewById<RecyclerView>(R.id.recycler_home)
                 val clickableView = findViewWithContentDescription(recyclerView, label)
                 assertNotNull("未找到首页入口：$label", clickableView)
@@ -87,51 +88,18 @@ class MainActivityInstrumentedTest {
                 expectedActivity = expectedActivity,
                 message = failureMessage
             )
-        } finally {
-            finishActivity(activity)
         }
     }
 
-    private fun launchMainActivity(): MainActivity {
+
+    private fun launchMainActivityScenario(): ActivityScenario<MainActivity> {
         val context = InstrumentationRegistry.getInstrumentation().targetContext
         val intent = Intent(context, MainActivity::class.java).apply {
             addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK)
         }
-        return InstrumentationRegistry.getInstrumentation().startActivitySync(intent) as MainActivity
+        return ActivityScenario.launch(intent)
     }
 
-    private fun waitUntil(
-        activity: MainActivity,
-        message: String,
-        timeoutMs: Long = 3_000,
-        condition: (MainActivity) -> Boolean
-    ) {
-        val deadline = android.os.SystemClock.elapsedRealtime() + timeoutMs
-        var matched = false
-        while (!matched && android.os.SystemClock.elapsedRealtime() < deadline) {
-            InstrumentationRegistry.getInstrumentation().waitForIdleSync()
-            runOnMainSync {
-                matched = condition(activity)
-            }
-            if (!matched) {
-                android.os.SystemClock.sleep(50)
-            }
-        }
-        assertTrue(message, matched)
-    }
-
-    private fun runOnMainSync(block: () -> Unit) {
-        InstrumentationRegistry.getInstrumentation().runOnMainSync(block)
-    }
-
-    private fun finishActivity(activity: Activity) {
-        runOnMainSync {
-            if (!activity.isFinishing && !activity.isDestroyed) {
-                activity.finish()
-            }
-        }
-        InstrumentationRegistry.getInstrumentation().waitForIdleSync()
-    }
 
     private fun findViewWithContentDescription(root: View, description: String): View? {
         if (root.contentDescription?.toString() == description) {

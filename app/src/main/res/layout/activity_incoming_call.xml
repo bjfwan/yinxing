@@ -14,7 +14,7 @@
         android:layout_height="120dp"
         android:layout_marginBottom="24dp"
         android:contentDescription="@string/incoming_call_icon_description"
-        android:src="@android:drawable/ic_menu_camera"
+        android:src="@android:drawable/ic_menu_call"
         app:tint="@color/launcher_primary" />
 
     <!-- 来电提示文字 -->

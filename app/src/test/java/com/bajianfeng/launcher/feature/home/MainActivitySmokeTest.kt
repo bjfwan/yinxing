@@ -45,7 +45,8 @@ class MainActivitySmokeTest {
             Thread.sleep(50)
         }
 
-        assertEquals(5, recyclerView.adapter?.itemCount)
+        assertEquals(4, recyclerView.adapter?.itemCount)
+
         assertTrue(timeView.text.isNotBlank())
     }
 

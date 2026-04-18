@@ -31,7 +31,8 @@ object ContactStorage {
                         isPinned = obj.optBoolean("isPinned", false),
                         callCount = obj.optInt("callCount", 0),
                         lastCallTime = obj.optLong("lastCallTime", 0),
-                        searchKeywords = obj.optStringList("searchKeywords")
+                        searchKeywords = obj.optStringList("searchKeywords"),
+                        autoAnswer = obj.optBoolean("autoAnswer", false)
                     ).normalized()
                 )
             }
@@ -59,6 +60,7 @@ object ContactStorage {
                     put("callCount", contact.callCount)
                     put("lastCallTime", contact.lastCallTime)
                     put("searchKeywords", keywordArray)
+                    put("autoAnswer", contact.autoAnswer)
                 }
             )
         }

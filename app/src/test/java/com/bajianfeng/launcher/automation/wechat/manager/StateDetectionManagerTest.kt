@@ -1,12 +1,12 @@
 package com.bajianfeng.launcher.automation.wechat.manager
 
 import com.google.android.accessibility.selecttospeak.WeChatUiSnapshot
-import org.junit.Assert.assertEquals
+import com.google.android.accessibility.selecttospeak.WeChatUiSnapshotAnalyzer
+import org.junit.Assert.assertFalse
+import org.junit.Assert.assertTrue
 import org.junit.Test
 
 class StateDetectionManagerTest {
-    private val manager = StateDetectionManager()
-
     @Test
     fun detectPrefersSnapshotForLauncherAndSearchPages() {
         val launcherSnapshot = node(
@@ -24,14 +24,8 @@ class StateDetectionManagerTest {
             )
         )
 
-        assertEquals(
-            StateDetectionManager.DetectedPage.HOME,
-            manager.detect(launcherSnapshot, "com.tencent.mm.ui.LauncherUI")
-        )
-        assertEquals(
-            StateDetectionManager.DetectedPage.SEARCH,
-            manager.detect(searchSnapshot, "com.tencent.mm.plugin.fts.ui.FTSMainUI")
-        )
+        assertTrue(WeChatUiSnapshotAnalyzer.isLauncherReady(launcherSnapshot))
+        assertTrue(WeChatUiSnapshotAnalyzer.isSearchPage(searchSnapshot))
     }
 
     @Test
@@ -50,14 +44,9 @@ class StateDetectionManagerTest {
             )
         )
 
-        assertEquals(
-            StateDetectionManager.DetectedPage.CHAT,
-            manager.detect(chatSnapshot, "com.tencent.mm.ui.chatting.ChattingUI")
-        )
-        assertEquals(
-            StateDetectionManager.DetectedPage.CONTACT_DETAIL,
-            manager.detect(contactSnapshot, "com.tencent.mm.plugin.profile.ui.ContactInfoUI")
-        )
+        assertTrue(WeChatUiSnapshotAnalyzer.isChatPageLike(chatSnapshot))
+        assertTrue(WeChatUiSnapshotAnalyzer.isContactInfoPage(contactSnapshot))
+        assertFalse(WeChatUiSnapshotAnalyzer.isLauncherReady(chatSnapshot))
     }
 
     private fun node(
@@ -76,3 +65,4 @@ class StateDetectionManagerTest {
         )
     }
 }
+
