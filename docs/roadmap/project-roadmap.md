@@ -11,13 +11,12 @@
 
 ## 2. 下一阶段
 
-### 系统电话自动接听
+### 系统电话自动接听收尾
 
-- 使用 `TelecomManager.acceptRingingCall()` 官方 API，声明 `ANSWER_PHONE_CALLS` 权限
-- 来电时监听 `TelephonyCallback`，匹配来电号码与联系人
-- 匹配成功时延迟 3–5 秒后自动接听，期间展示来电方姓名和倒计时提示
-- 接通后自动切换扬声器（`AudioManager`）
-- 监听逻辑放在前台服务中保活
+- 保留现有 `PHONE_STATE` 广播、来电页与 `TelecomManager.acceptRingingCall()` 主流程
+- 继续补不同 ROM / Android 版本的真机兼容性验证
+- 评估是否改用 `TelephonyCallback` 或前台服务来增强后台存活与稳定性
+- 继续打磨接通后扬声器、倒计时与联系人匹配体验
 
 ## 3. 暂缓事项
 

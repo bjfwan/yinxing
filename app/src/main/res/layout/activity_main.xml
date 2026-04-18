@@ -76,13 +76,16 @@
 
             <!-- 天气信息行 -->
             <LinearLayout
+                android:id="@+id/layout_weather_entry"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:orientation="horizontal"
+                android:clickable="true"
+                android:focusable="true"
                 android:gravity="center_vertical"
+                android:orientation="horizontal"
                 android:paddingStart="24dp"
-                android:paddingEnd="24dp"
                 android:paddingTop="10dp"
+                android:paddingEnd="24dp"
                 android:paddingBottom="14dp">
 
                 <!-- 左：城市 + 天气描述 + 高低温 -->

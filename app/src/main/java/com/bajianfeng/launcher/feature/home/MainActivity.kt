@@ -4,6 +4,7 @@ import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
+import android.net.Uri
 import android.os.Build
 import android.os.Bundle
 import android.os.Handler
@@ -112,6 +113,9 @@ class MainActivity : AppCompatActivity() {
         tvWeatherTemp = findViewById(R.id.tv_weather_temp)
         tvWeatherHighLow = findViewById(R.id.tv_weather_high_low)
         tvWeatherUpdate = findViewById(R.id.tv_weather_update)
+        findViewById<android.view.View>(R.id.layout_weather_entry).setOnClickListener {
+            openWeatherEntry()
+        }
 
         recyclerView = findViewById(R.id.recycler_home)
 
@@ -284,6 +288,32 @@ class MainActivity : AppCompatActivity() {
             tvWeatherTemp.text = "--°"
             tvWeatherHighLow.text = ""
             tvWeatherUpdate.text = ""
+        }
+    }
+
+    private fun openWeatherEntry() {
+        val vendorWeatherPackages = listOf(
+            "com.miui.weather2",
+            "com.huawei.android.totemweather",
+            "com.oppo.weather",
+            "com.vivo.weather"
+        )
+        val vendorIntent = vendorWeatherPackages
+            .asSequence()
+            .mapNotNull { packageManager.getLaunchIntentForPackage(it) }
+            .firstOrNull()
+        if (vendorIntent != null) {
+            startActivity(vendorIntent)
+            return
+        }
+
+        val browserIntent = Intent(Intent.ACTION_VIEW, Uri.parse(getString(R.string.weather_fallback_url)))
+        runCatching {
+            startActivity(browserIntent)
+        }.onSuccess {
+            Toast.makeText(this, getString(R.string.weather_fallback_notice), Toast.LENGTH_SHORT).show()
+        }.onFailure {
+            Toast.makeText(this, getString(R.string.weather_not_available), Toast.LENGTH_SHORT).show()
         }
     }
 
