@@ -83,8 +83,9 @@ class VideoCallContactAdapter(
         val isWechat = contact.preferredAction == Contact.PreferredAction.WECHAT_VIDEO
         holder.action.text = context.getString(
             if (isWechat) R.string.contact_card_action_wechat_compact
-            else R.string.contact_card_action_phone
+            else R.string.contact_card_action_phone_compact
         )
+
         holder.action.contentDescription = context.getString(
             if (isWechat) R.string.video_contact_wechat_action_description
             else R.string.video_contact_phone_action_description,

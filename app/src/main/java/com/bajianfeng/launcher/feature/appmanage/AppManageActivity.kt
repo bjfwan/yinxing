@@ -6,7 +6,9 @@ import android.content.Intent
 import android.content.IntentFilter
 import android.os.Build
 import android.os.Bundle
+import android.view.View
 import android.widget.TextView
+
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.isVisible
 import androidx.recyclerview.widget.DefaultItemAnimator
@@ -43,8 +45,10 @@ class AppManageActivity : AppCompatActivity() {
 
         launcherPreferences = LauncherPreferences.getInstance(this)
 
+        findViewById<View>(R.id.btn_back).setOnClickListener { finish() }
         recyclerView = findViewById(R.id.recycler_view)
         emptyView = findViewById(R.id.tv_empty_apps)
+
         recyclerView.layoutManager = LinearLayoutManager(this)
         recyclerView.setHasFixedSize(true)
 

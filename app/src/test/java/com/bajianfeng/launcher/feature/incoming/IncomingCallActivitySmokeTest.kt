@@ -386,9 +386,32 @@ class IncomingCallActivitySmokeTest {
         assertEquals(null, intent.getStringExtra(IncomingCallActivity.EXTRA_CALLER_NAME))
     }
 
+    @Test
+    fun launchWithAcceptTriggerFinishesActivity() {
+        val activity = buildActivityRaw(
+            callerName = "通知接听",
+            autoAnswer = false,
+            triggerAction = IncomingCallActivity.TRIGGER_ACTION_ACCEPT
+        )
+        idle()
+        assertTrue("通知接听动作应直接处理并关闭页面", activity.isFinishing)
+    }
+
+    @Test
+    fun launchWithDeclineTriggerFinishesActivity() {
+        val activity = buildActivityRaw(
+            callerName = "通知拒绝",
+            autoAnswer = false,
+            triggerAction = IncomingCallActivity.TRIGGER_ACTION_DECLINE
+        )
+        idle()
+        assertTrue("通知拒绝动作应直接处理并关闭页面", activity.isFinishing)
+    }
+
     // ═══════════════════════════════════════════════════════════════════════
     // 多个不同来电人快速启动（压力）
     // ═══════════════════════════════════════════════════════════════════════
+
 
     @Test
     fun launch30DifferentCallersNoException() {
@@ -437,11 +460,16 @@ class IncomingCallActivitySmokeTest {
 
     private fun prefs() = LauncherPreferences.getInstance(context)
 
-    private fun buildIntent(callerName: String?, autoAnswer: Boolean = false): Intent =
+    private fun buildIntent(
+        callerName: String?,
+        autoAnswer: Boolean = false,
+        triggerAction: String? = null
+    ): Intent =
         IncomingCallActivity.buildLaunchIntent(
             context = context,
             callerName = callerName,
-            autoAnswer = autoAnswer
+            autoAnswer = autoAnswer,
+            triggerAction = triggerAction
         )
 
     private fun buildActivity(callerName: String, autoAnswer: Boolean = false) =
@@ -450,10 +478,14 @@ class IncomingCallActivitySmokeTest {
             buildIntent(callerName, autoAnswer)
         ).setup().get()
 
-    private fun buildActivityRaw(callerName: String?, autoAnswer: Boolean = false) =
+    private fun buildActivityRaw(
+        callerName: String?,
+        autoAnswer: Boolean = false,
+        triggerAction: String? = null
+    ) =
         Robolectric.buildActivity(
             IncomingCallActivity::class.java,
-            buildIntent(callerName, autoAnswer)
+            buildIntent(callerName, autoAnswer, triggerAction)
         ).setup().get()
 
     private fun buildController(callerName: String, autoAnswer: Boolean = false) =
@@ -461,6 +493,7 @@ class IncomingCallActivitySmokeTest {
             IncomingCallActivity::class.java,
             buildIntent(callerName, autoAnswer)
         ).setup()
+
 
     private fun resetLauncherPreferencesSingleton() {
         val field = Class.forName("com.bajianfeng.launcher.data.home.LauncherPreferences")

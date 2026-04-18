@@ -1,9 +1,12 @@
 package com.bajianfeng.launcher.feature.incoming
 
+import android.Manifest
 import android.content.Context
 import android.content.Intent
+import android.content.pm.PackageManager
 import android.media.AudioManager
 import android.os.Build
+
 import android.os.Bundle
 import android.os.CountDownTimer
 import android.telecom.TelecomManager
@@ -11,6 +14,8 @@ import android.util.Log
 import android.view.KeyEvent
 import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.view.isVisible
+
 import androidx.cardview.widget.CardView
 import com.bajianfeng.launcher.R
 import com.bajianfeng.launcher.data.home.LauncherPreferences
@@ -30,6 +35,10 @@ class IncomingCallActivity : AppCompatActivity() {
 
         const val EXTRA_CALLER_NAME = "extra_caller_name"
         const val EXTRA_AUTO_ANSWER = "extra_auto_answer"
+        const val EXTRA_TRIGGER_ACTION = "extra_trigger_action"
+
+        const val TRIGGER_ACTION_ACCEPT = "trigger_accept"
+        const val TRIGGER_ACTION_DECLINE = "trigger_decline"
 
         @Deprecated("Use buildLaunchIntent(context, callerName, autoAnswer)")
         const val EXTRA_NOTIFICATION_KEY = "extra_notification_key"
@@ -44,14 +53,20 @@ class IncomingCallActivity : AppCompatActivity() {
             autoAnswer: Boolean = false,
             notificationKey: String? = null,
             acceptActionIndex: Int = -1,
-            declineActionIndex: Int = -1
+            declineActionIndex: Int = -1,
+            triggerAction: String? = null
         ): Intent = Intent(context, IncomingCallActivity::class.java).apply {
             callerName?.let { putExtra(EXTRA_CALLER_NAME, it) }
             putExtra(EXTRA_AUTO_ANSWER, autoAnswer)
             notificationKey?.let { putExtra(EXTRA_NOTIFICATION_KEY, it) }
             putExtra(EXTRA_ACCEPT_ACTION_INDEX, acceptActionIndex)
             putExtra(EXTRA_DECLINE_ACTION_INDEX, declineActionIndex)
-            addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_SINGLE_TOP)
+            triggerAction?.let { putExtra(EXTRA_TRIGGER_ACTION, it) }
+            addFlags(
+                Intent.FLAG_ACTIVITY_NEW_TASK or
+                    Intent.FLAG_ACTIVITY_SINGLE_TOP or
+                    Intent.FLAG_ACTIVITY_CLEAR_TOP
+            )
         }
     }
 
@@ -89,6 +104,17 @@ class IncomingCallActivity : AppCompatActivity() {
             ?: getString(R.string.incoming_call_unknown_caller)
         tvCaller.text = callerName
 
+        when (intent.getStringExtra(EXTRA_TRIGGER_ACTION)) {
+            TRIGGER_ACTION_ACCEPT -> {
+                acceptCall()
+                return
+            }
+            TRIGGER_ACTION_DECLINE -> {
+                declineCall()
+                return
+            }
+        }
+
         val prefs = LauncherPreferences.getInstance(this)
         val autoAnswer = intent.getBooleanExtra(EXTRA_AUTO_ANSWER, false) && prefs.isAutoAnswerEnabled()
 
@@ -101,8 +127,10 @@ class IncomingCallActivity : AppCompatActivity() {
     }
 
     private fun startCountdown(seconds: Int) {
+        tvCountdown.isVisible = true
         tvCountdown.text = getString(R.string.incoming_call_auto_answer_countdown, seconds)
         countDownTimer = object : CountDownTimer(seconds * 1000L, 1000L) {
+
             override fun onTick(millisUntilFinished: Long) {
                 val remaining = ((millisUntilFinished + 999) / 1000).toInt()
                 tvCountdown.text = getString(R.string.incoming_call_auto_answer_countdown, remaining)
@@ -110,8 +138,10 @@ class IncomingCallActivity : AppCompatActivity() {
 
             override fun onFinish() {
                 tvCountdown.text = ""
+                tvCountdown.isVisible = false
                 acceptCall()
             }
+
         }.start()
     }
 
@@ -120,6 +150,7 @@ class IncomingCallActivity : AppCompatActivity() {
         handled = true
         countDownTimer?.cancel()
         answerRingingCall()
+        IncomingCallForegroundService.stop(this)
         finish()
     }
 
@@ -128,12 +159,17 @@ class IncomingCallActivity : AppCompatActivity() {
         handled = true
         countDownTimer?.cancel()
         endRingingCall()
+        IncomingCallForegroundService.stop(this)
         finish()
     }
 
     private fun answerRingingCall() {
         runCatching {
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                if (checkSelfPermission(Manifest.permission.ANSWER_PHONE_CALLS) != PackageManager.PERMISSION_GRANTED) {
+                    Log.w(TAG, "answerRingingCall: ANSWER_PHONE_CALLS permission missing")
+                    return@runCatching
+                }
                 val telecomManager = getSystemService(Context.TELECOM_SERVICE) as TelecomManager
                 telecomManager.acceptRingingCall()
                 Log.i(TAG, "answerRingingCall: acceptRingingCall() called (API ${Build.VERSION.SDK_INT})")
@@ -157,6 +193,10 @@ class IncomingCallActivity : AppCompatActivity() {
     private fun endRingingCall() {
         runCatching {
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+                if (checkSelfPermission(Manifest.permission.ANSWER_PHONE_CALLS) != PackageManager.PERMISSION_GRANTED) {
+                    Log.w(TAG, "endRingingCall: ANSWER_PHONE_CALLS permission missing")
+                    return@runCatching
+                }
                 val telecomManager = getSystemService(Context.TELECOM_SERVICE) as TelecomManager
                 telecomManager.endCall()
             } else {
@@ -166,4 +206,5 @@ class IncomingCallActivity : AppCompatActivity() {
             }
         }
     }
+
 }

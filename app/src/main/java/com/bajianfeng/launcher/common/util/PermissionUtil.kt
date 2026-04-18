@@ -1,15 +1,18 @@
 package com.bajianfeng.launcher.common.util
 
+import android.Manifest
 import android.annotation.SuppressLint
 import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
+import android.content.pm.PackageManager
 import android.net.Uri
 import android.os.Build
 import android.os.Environment
 import android.os.PowerManager
 import android.provider.Settings
 import android.util.Log
+
 object PermissionUtil {
 
     private const val TAG = "PermissionUtil"
@@ -62,6 +65,36 @@ object PermissionUtil {
         context.startActivity(intent)
     }
 
+    // ── 通知权限（Android 13+）────────────────────────────────────────────────
+
+    fun hasNotificationPermission(context: Context): Boolean {
+        return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            context.checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS) ==
+                PackageManager.PERMISSION_GRANTED
+        } else {
+            true
+        }
+    }
+
+    fun openNotificationSettings(context: Context) {
+        runCatching {
+            val intent = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                Intent(Settings.ACTION_APP_NOTIFICATION_SETTINGS).apply {
+                    putExtra(Settings.EXTRA_APP_PACKAGE, context.packageName)
+                }
+            } else {
+                Intent(
+                    Settings.ACTION_APPLICATION_DETAILS_SETTINGS,
+                    Uri.parse("package:${context.packageName}")
+                )
+            }
+            intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK
+            context.startActivity(intent)
+        }.onFailure {
+            openAppDetailSettings(context)
+        }
+    }
+
     // ── 悬浮窗 ────────────────────────────────────────────────────────────────
 
     fun canDrawOverlays(context: Context): Boolean {
@@ -99,7 +132,6 @@ object PermissionUtil {
             intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK
             context.startActivity(intent)
         }.onFailure {
-            // 部分设备不支持直接请求，跳转到全部应用的电池优化列表
             runCatching {
                 val fallback = Intent(Settings.ACTION_IGNORE_BATTERY_OPTIMIZATION_SETTINGS)
                 fallback.flags = Intent.FLAG_ACTIVITY_NEW_TASK
@@ -116,7 +148,7 @@ object PermissionUtil {
         return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
             Environment.isExternalStorageManager()
         } else {
-            true // Android 10 及以下无需此权限
+            true
         }
     }
 
@@ -142,43 +174,45 @@ object PermissionUtil {
     // ── 电话权限（READ_PHONE_STATE / READ_CALL_LOG）───────────────────────────
 
     fun hasPhonePermission(context: Context): Boolean {
-        return context.checkSelfPermission(android.Manifest.permission.READ_PHONE_STATE) ==
-            android.content.pm.PackageManager.PERMISSION_GRANTED &&
-            context.checkSelfPermission(android.Manifest.permission.READ_CALL_LOG) ==
-            android.content.pm.PackageManager.PERMISSION_GRANTED &&
+        return context.checkSelfPermission(Manifest.permission.READ_PHONE_STATE) ==
+            PackageManager.PERMISSION_GRANTED &&
+            context.checkSelfPermission(Manifest.permission.READ_CALL_LOG) ==
+            PackageManager.PERMISSION_GRANTED &&
             (Build.VERSION.SDK_INT < Build.VERSION_CODES.O ||
-                context.checkSelfPermission(android.Manifest.permission.ANSWER_PHONE_CALLS) ==
-                android.content.pm.PackageManager.PERMISSION_GRANTED)
+                context.checkSelfPermission(Manifest.permission.ANSWER_PHONE_CALLS) ==
+                PackageManager.PERMISSION_GRANTED)
     }
 
     // ── 后台弹出界面（厂商专属，无标准 API）──────────────────────────────────
 
-    /**
-     * 无标准 API 可检测，保守返回 false（不可判断）。
-     * UI 层始终显示"去设置"入口，让用户手动确认。
-     */
     fun canStartBackgroundActivity(): Boolean = false
 
-    /**
-     * 跳转到厂商"后台弹出界面"设置页。
-     * 覆盖：MIUI、EMUI/HarmonyOS、ColorOS（OPPO）、OriginOS/FuntouchOS（VIVO）
-     * 找不到则降级到本应用系统详情页。
-     */
     fun openBackgroundStartSettings(context: Context) {
         val candidates = listOf(
-            // OriginOS / FuntouchOS（VIVO）—— 带包名直接定位到本 app 条目
-            Intent().setComponent(ComponentName("com.vivo.permissionmanager",
-                "com.vivo.permissionmanager.activity.BgStartUpManagerActivity"))
-                .putExtra("packagename", context.packageName),
-            // MIUI（小米/红米）—— 与自启动在同一个页面
-            Intent().setComponent(ComponentName("com.miui.securitycenter",
-                "com.miui.permcenter.autostart.AutoStartManagementActivity")),
-            // EMUI / HarmonyOS（华为/荣耀）
-            Intent().setComponent(ComponentName("com.huawei.systemmanager",
-                "com.huawei.systemmanager.startupmgr.ui.StartupNormalAppListActivity")),
-            // ColorOS（OPPO/Realme）
-            Intent().setComponent(ComponentName("com.coloros.safecenter",
-                "com.coloros.privacypermissionsentry.PermissionTopActivity")),
+            Intent().setComponent(
+                ComponentName(
+                    "com.vivo.permissionmanager",
+                    "com.vivo.permissionmanager.activity.BgStartUpManagerActivity"
+                )
+            ).putExtra("packagename", context.packageName),
+            Intent().setComponent(
+                ComponentName(
+                    "com.miui.securitycenter",
+                    "com.miui.permcenter.autostart.AutoStartManagementActivity"
+                )
+            ),
+            Intent().setComponent(
+                ComponentName(
+                    "com.huawei.systemmanager",
+                    "com.huawei.systemmanager.startupmgr.ui.StartupNormalAppListActivity"
+                )
+            ),
+            Intent().setComponent(
+                ComponentName(
+                    "com.coloros.safecenter",
+                    "com.coloros.privacypermissionsentry.PermissionTopActivity"
+                )
+            )
         )
         for (intent in candidates) {
             intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
@@ -192,38 +226,52 @@ object PermissionUtil {
 
     // ── 自启动（厂商专属，无标准 API）────────────────────────────────────────
 
-    /**
-     * 自启动无标准 Android API，保守返回 false（不可判断）。
-     * UI 层应始终显示"去设置"入口，让用户手动确认。
-     */
     fun isAutoStartEnabled(): Boolean = false
 
-    /**
-     * 跳转到厂商自启动管理页。
-     * 覆盖：MIUI、EMUI/HarmonyOS、ColorOS（OPPO/Realme）、OriginOS/FuntouchOS（VIVO）、Samsung
-     * 如果找不到则跳转到本应用的系统详情页。
-     */
     fun openAutoStartSettings(context: Context) {
         val candidates = listOf(
-            // MIUI（小米/红米）
-            Intent().setComponent(ComponentName("com.miui.securitycenter",
-                "com.miui.permcenter.autostart.AutoStartManagementActivity")),
-            // EMUI / HarmonyOS（华为/荣耀）
-            Intent().setComponent(ComponentName("com.huawei.systemmanager",
-                "com.huawei.systemmanager.startupmgr.ui.StartupNormalAppListActivity")),
-            Intent().setComponent(ComponentName("com.huawei.systemmanager",
-                "com.huawei.systemmanager.optimize.bootstart.BootStartActivity")),
-            // ColorOS（OPPO/Realme）
-            Intent().setComponent(ComponentName("com.coloros.safecenter",
-                "com.coloros.privacypermissionsentry.PermissionTopActivity")),
-            Intent().setComponent(ComponentName("com.oppo.safe",
-                "com.oppo.safe.permission.startup.StartupAppListActivity")),
-            // OriginOS / FuntouchOS（VIVO）
-            Intent().setComponent(ComponentName("com.vivo.permissionmanager",
-                "com.vivo.permissionmanager.activity.BgStartUpManagerActivity")),
-            // Samsung
-            Intent().setComponent(ComponentName("com.samsung.android.lool",
-                "com.samsung.android.sm.ui.battery.BatteryActivity"))
+            Intent().setComponent(
+                ComponentName(
+                    "com.miui.securitycenter",
+                    "com.miui.permcenter.autostart.AutoStartManagementActivity"
+                )
+            ),
+            Intent().setComponent(
+                ComponentName(
+                    "com.huawei.systemmanager",
+                    "com.huawei.systemmanager.startupmgr.ui.StartupNormalAppListActivity"
+                )
+            ),
+            Intent().setComponent(
+                ComponentName(
+                    "com.huawei.systemmanager",
+                    "com.huawei.systemmanager.optimize.bootstart.BootStartActivity"
+                )
+            ),
+            Intent().setComponent(
+                ComponentName(
+                    "com.coloros.safecenter",
+                    "com.coloros.privacypermissionsentry.PermissionTopActivity"
+                )
+            ),
+            Intent().setComponent(
+                ComponentName(
+                    "com.oppo.safe",
+                    "com.oppo.safe.permission.startup.StartupAppListActivity"
+                )
+            ),
+            Intent().setComponent(
+                ComponentName(
+                    "com.vivo.permissionmanager",
+                    "com.vivo.permissionmanager.activity.BgStartUpManagerActivity"
+                )
+            ),
+            Intent().setComponent(
+                ComponentName(
+                    "com.samsung.android.lool",
+                    "com.samsung.android.sm.ui.battery.BatteryActivity"
+                )
+            )
         )
         for (intent in candidates) {
             intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
@@ -232,11 +280,9 @@ object PermissionUtil {
                 return
             }
         }
-        // 所有厂商页均不可用，退回到系统应用详情页
         openAppDetailSettings(context)
     }
 
-    /** 跳转到本应用系统详情页 */
     fun openAppDetailSettings(context: Context) {
         runCatching {
             val intent = Intent(

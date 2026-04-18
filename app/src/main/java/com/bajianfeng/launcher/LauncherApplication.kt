@@ -7,6 +7,7 @@ import com.bajianfeng.launcher.common.media.MediaThumbnailLoader
 import com.bajianfeng.launcher.data.contact.ContactManager
 import com.bajianfeng.launcher.data.home.LauncherAppRepository
 import com.bajianfeng.launcher.data.home.LauncherPreferences
+import com.bajianfeng.launcher.feature.incoming.IncomingCallForegroundService
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -19,9 +20,12 @@ class LauncherApplication : Application() {
     override fun onCreate() {
         super.onCreate()
 
+        IncomingCallForegroundService.ensureNotificationChannels(this)
+
         // 在后台线程预热 SharedPreferences 和应用列表，
         // 避免首次打开 MainActivity 时在主线程同步读取
         appScope.launch {
+
             // 预热 LauncherPreferences（触发 SP 文件首次 mmap 加载）
             LauncherPreferences.getInstance(this@LauncherApplication)
             // 预热应用仓库（PackageManager 查询耗时，提前缓存）

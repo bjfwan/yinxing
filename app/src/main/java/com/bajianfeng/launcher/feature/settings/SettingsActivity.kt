@@ -1,8 +1,10 @@
 package com.bajianfeng.launcher.feature.settings
 
+import android.Manifest
 import android.app.role.RoleManager
 import android.content.Intent
 import android.content.pm.PackageManager
+import android.os.Build
 import android.os.Bundle
 import android.provider.Settings
 import android.view.View
@@ -20,6 +22,10 @@ import com.bajianfeng.launcher.common.util.PermissionUtil
 import com.bajianfeng.launcher.data.home.LauncherPreferences
 import com.bajianfeng.launcher.data.weather.WeatherPreferences
 import com.bajianfeng.launcher.data.weather.WeatherRepository
+import com.bajianfeng.launcher.feature.appmanage.AppManageActivity
+import com.bajianfeng.launcher.feature.phone.PhoneContactActivity
+import com.bajianfeng.launcher.feature.videocall.VideoCallActivity
+
 
 class SettingsActivity : AppCompatActivity() {
 
@@ -39,6 +45,8 @@ class SettingsActivity : AppCompatActivity() {
 
     private lateinit var tvAccessibilityStatus: TextView
     private lateinit var tvAccessibilitySummary: TextView
+    private lateinit var tvNotificationPermissionStatus: TextView
+    private lateinit var tvNotificationPermissionSummary: TextView
     private lateinit var tvBatteryStatus: TextView
     private lateinit var tvBatterySummary: TextView
     private lateinit var tvAutostartStatus: TextView
@@ -66,6 +74,21 @@ class SettingsActivity : AppCompatActivity() {
         refreshAllPermissionUi()
     }
 
+    private val notificationPermissionLauncher = registerForActivityResult(
+        ActivityResultContracts.RequestPermission()
+    ) { granted ->
+        if (granted) {
+            Toast.makeText(
+                this,
+                getString(R.string.settings_notification_permission_granted_toast),
+                Toast.LENGTH_SHORT
+            ).show()
+        } else {
+            PermissionUtil.openNotificationSettings(this)
+        }
+        refreshAllPermissionUi()
+    }
+
     private val defaultLauncherRoleLauncher = registerForActivityResult(
         ActivityResultContracts.StartActivityForResult()
     ) {
@@ -86,10 +109,12 @@ class SettingsActivity : AppCompatActivity() {
 
         findViewById<View>(R.id.btn_back).setOnClickListener { finish() }
 
+        bindQuickSetupSection()
         bindLauncherSection()
         bindCallSection()
         bindPermissionSection()
         bindOtherSection()
+
     }
 
     override fun onResume() {
@@ -100,8 +125,21 @@ class SettingsActivity : AppCompatActivity() {
         updateAutoAnswerDelaySummary(launcherPreferences.getAutoAnswerDelaySeconds())
     }
 
+    private fun bindQuickSetupSection() {
+        findViewById<View>(R.id.btn_manage_phone_contacts).setOnClickListener {
+            startActivity(Intent(this, PhoneContactActivity::class.java))
+        }
+        findViewById<View>(R.id.btn_manage_video_contacts).setOnClickListener {
+            startActivity(Intent(this, VideoCallActivity::class.java))
+        }
+        findViewById<View>(R.id.btn_manage_home_apps).setOnClickListener {
+            startActivity(Intent(this, AppManageActivity::class.java))
+        }
+    }
+
     private fun bindLauncherSection() {
         lowPerformanceSwitch = findViewById(R.id.switch_low_performance)
+
         lowPerformanceSummary = findViewById(R.id.tv_low_performance_summary)
         lowPerformanceSwitch.isChecked = launcherPreferences.isLowPerformanceModeEnabled()
         updateLowPerformanceSummary(lowPerformanceSwitch.isChecked)
@@ -172,11 +210,11 @@ class SettingsActivity : AppCompatActivity() {
                 ).show()
             } else {
                 val perms = mutableListOf(
-                    android.Manifest.permission.READ_PHONE_STATE,
-                    android.Manifest.permission.READ_CALL_LOG
+                    Manifest.permission.READ_PHONE_STATE,
+                    Manifest.permission.READ_CALL_LOG
                 ).apply {
-                    if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
-                        add(android.Manifest.permission.ANSWER_PHONE_CALLS)
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                        add(Manifest.permission.ANSWER_PHONE_CALLS)
                     }
                 }
                 phonePermissionLauncher.launch(perms.toTypedArray())
@@ -187,6 +225,8 @@ class SettingsActivity : AppCompatActivity() {
     private fun bindPermissionSection() {
         tvAccessibilityStatus = findViewById(R.id.tv_accessibility_status)
         tvAccessibilitySummary = findViewById(R.id.tv_accessibility_summary)
+        tvNotificationPermissionStatus = findViewById(R.id.tv_notification_permission_status)
+        tvNotificationPermissionSummary = findViewById(R.id.tv_notification_permission_summary)
         tvBatteryStatus = findViewById(R.id.tv_battery_status)
         tvBatterySummary = findViewById(R.id.tv_battery_summary)
         tvAutostartStatus = findViewById(R.id.tv_autostart_status)
@@ -196,6 +236,15 @@ class SettingsActivity : AppCompatActivity() {
 
         findViewById<View>(R.id.btn_accessibility).setOnClickListener {
             PermissionUtil.openAccessibilitySettings(this)
+        }
+        findViewById<View>(R.id.btn_notification_permission).setOnClickListener {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU &&
+                !PermissionUtil.hasNotificationPermission(this)
+            ) {
+                notificationPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
+            } else {
+                PermissionUtil.openNotificationSettings(this)
+            }
         }
         findViewById<View>(R.id.btn_battery).setOnClickListener {
             PermissionUtil.openBatteryOptimizationSettings(this)
@@ -332,6 +381,13 @@ class SettingsActivity : AppCompatActivity() {
             else R.string.settings_accessibility_summary_off
         )
 
+        val notificationGranted = PermissionUtil.hasNotificationPermission(this)
+        setStatusBadge(tvNotificationPermissionStatus, notificationGranted)
+        tvNotificationPermissionSummary.text = getString(
+            if (notificationGranted) R.string.settings_notification_permission_summary_on
+            else R.string.settings_notification_permission_summary_off
+        )
+
         val batteryGranted = PermissionUtil.isIgnoringBatteryOptimizations(this)
         setStatusBadge(tvBatteryStatus, batteryGranted)
         tvBatterySummary.text = getString(
@@ -339,8 +395,8 @@ class SettingsActivity : AppCompatActivity() {
             else R.string.settings_battery_summary_off
         )
 
-        tvAutostartStatus.text = getString(R.string.settings_permission_go_set)
-        tvAutostartStatus.setTextColor(getColor(R.color.launcher_action))
+        setActionBadge(tvAutostartStatus, R.string.settings_permission_go_set)
+
 
         val overlayGranted = PermissionUtil.canDrawOverlays(this)
         setStatusBadge(tvOverlayStatus, overlayGranted)
@@ -356,8 +412,8 @@ class SettingsActivity : AppCompatActivity() {
             else R.string.settings_phone_permission_summary_off
         )
 
-        tvBgStartStatus.text = getString(R.string.settings_permission_go_set)
-        tvBgStartStatus.setTextColor(getColor(R.color.launcher_action))
+        setActionBadge(tvBgStartStatus, R.string.settings_permission_go_set)
+
     }
 
     private fun setStatusBadge(tv: TextView, granted: Boolean) {
@@ -371,7 +427,16 @@ class SettingsActivity : AppCompatActivity() {
                 else R.color.launcher_danger
             )
         )
+        tv.setBackgroundResource(R.drawable.edit_text_background)
     }
+
+    private fun setActionBadge(tv: TextView, textResId: Int) {
+        tv.text = getString(textResId)
+        tv.setTextColor(getColor(R.color.launcher_action))
+        tv.setBackgroundResource(R.drawable.edit_text_background)
+    }
+
+
 
     private fun openSystemSettings() {
         try {
@@ -397,30 +462,50 @@ class SettingsActivity : AppCompatActivity() {
     }
 
     private fun showSetDefaultLauncherDialog() {
-        AlertDialog.Builder(this)
-            .setTitle(getString(R.string.set_default_launcher_title))
-            .setMessage(getString(R.string.set_default_launcher_message))
-            .setPositiveButton(getString(R.string.set_default_launcher_action)) { _, _ ->
-                requestDefaultLauncherRole()
-            }
-            .setNegativeButton(getString(R.string.set_default_launcher_later), null)
-            .show()
+        val dialogView = layoutInflater.inflate(R.layout.dialog_accessibility_prompt, null)
+        dialogView.findViewById<TextView>(R.id.tv_dialog_title).text = getString(R.string.set_default_launcher_title)
+        dialogView.findViewById<TextView>(R.id.tv_dialog_message).text = getString(R.string.set_default_launcher_message)
+        dialogView.findViewById<TextView>(R.id.tv_cancel_label).text = getString(R.string.set_default_launcher_later)
+        dialogView.findViewById<TextView>(R.id.tv_primary_label).text = getString(R.string.set_default_launcher_action)
+
+        val dialog = AlertDialog.Builder(this)
+            .setView(dialogView)
+            .create()
+        dialog.window?.setBackgroundDrawableResource(android.R.color.transparent)
+
+        dialogView.findViewById<View>(R.id.btn_cancel).setOnClickListener {
+            dialog.dismiss()
+        }
+        dialogView.findViewById<View>(R.id.btn_open_settings).setOnClickListener {
+            dialog.dismiss()
+            requestDefaultLauncherRole()
+        }
+        dialog.show()
     }
 
+
     private fun requestDefaultLauncherRole() {
-        val roleManager = getSystemService(RoleManager::class.java)
-        if (roleManager != null && roleManager.isRoleAvailable(RoleManager.ROLE_HOME)) {
-            if (roleManager.isRoleHeld(RoleManager.ROLE_HOME)) {
-                refreshDefaultLauncherUi()
-                Toast.makeText(this, getString(R.string.set_default_launcher_summary_on), Toast.LENGTH_SHORT).show()
-                return
-            }
-            runCatching {
-                defaultLauncherRoleLauncher.launch(roleManager.createRequestRoleIntent(RoleManager.ROLE_HOME))
-                return
-            }
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q && requestDefaultLauncherRoleByRoleManager()) {
+            return
         }
         openDefaultLauncherSettings()
+    }
+
+    @androidx.annotation.RequiresApi(Build.VERSION_CODES.Q)
+    private fun requestDefaultLauncherRoleByRoleManager(): Boolean {
+        val roleManager = getSystemService(RoleManager::class.java) ?: return false
+        if (!roleManager.isRoleAvailable(RoleManager.ROLE_HOME)) {
+            return false
+        }
+        if (roleManager.isRoleHeld(RoleManager.ROLE_HOME)) {
+            refreshDefaultLauncherUi()
+            Toast.makeText(this, getString(R.string.set_default_launcher_summary_on), Toast.LENGTH_SHORT).show()
+            return true
+        }
+        return runCatching {
+            defaultLauncherRoleLauncher.launch(roleManager.createRequestRoleIntent(RoleManager.ROLE_HOME))
+            true
+        }.getOrDefault(false)
     }
 
     private fun openDefaultLauncherSettings() {

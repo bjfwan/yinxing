@@ -13,7 +13,9 @@ import androidx.recyclerview.widget.RecyclerView
 import androidx.test.core.app.ApplicationProvider
 import com.bajianfeng.launcher.R
 import com.bajianfeng.launcher.data.home.LauncherAppRepository
+import com.bajianfeng.launcher.data.home.LauncherPreferences
 import org.junit.Assert.assertEquals
+
 import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertTrue
 import org.junit.Before
@@ -57,6 +59,33 @@ class MainActivitySmokeTest {
     }
 
     @Test
+    fun selectedAppsStillAppearAfterFixedPhoneAndWechatEntries() {
+        registerLauncherApp(packageName = "pkg.camera", appLabel = "Camera")
+        registerLauncherApp(packageName = "pkg.browser", appLabel = "Browser")
+
+        val preferences = LauncherPreferences(context)
+        preferences.setPackageSelected("pkg.camera", true)
+        preferences.setPackageSelected("pkg.browser", true)
+        preferences.saveAppOrder(listOf("pkg.browser", "pkg.camera"))
+
+        val activity = Robolectric.buildActivity(MainActivity::class.java).setup().get()
+        val recyclerView = activity.findViewById<RecyclerView>(R.id.recycler_home)
+        repeat(20) {
+            shadowOf(Looper.getMainLooper()).idle()
+            if ((recyclerView.adapter?.itemCount ?: 0) >= 6) {
+                return@repeat
+            }
+            Thread.sleep(50)
+        }
+
+        val adapter = recyclerView.adapter as HomeAppAdapter
+        assertEquals(
+            listOf("phone", "wechat_video", "pkg.browser", "pkg.camera", "settings", "add"),
+            adapter.currentList.map { it.packageName }
+        )
+    }
+
+    @Test
     fun clickingWeatherCardFallsBackToBrowserWhenNoVendorWeatherApp() {
         registerWeatherBrowser()
 
@@ -68,6 +97,7 @@ class MainActivitySmokeTest {
         assertEquals(Intent.ACTION_VIEW, startedIntent.action)
         assertEquals(activity.getString(R.string.weather_fallback_url), startedIntent.dataString)
     }
+
 
     @Suppress("DEPRECATION")
     private fun registerWeatherBrowser() {
@@ -86,6 +116,25 @@ class MainActivitySmokeTest {
         }
         shadowOf(context.packageManager).addResolveInfoForIntent(intent, resolveInfo)
     }
+
+    @Suppress("DEPRECATION")
+    private fun registerLauncherApp(packageName: String, appLabel: String) {
+        val launcherIntent = Intent(Intent.ACTION_MAIN).addCategory(Intent.CATEGORY_LAUNCHER)
+        val applicationInfo = ApplicationInfo().apply {
+            this.packageName = packageName
+            nonLocalizedLabel = appLabel
+        }
+        val activityInfo = ActivityInfo().apply {
+            this.packageName = packageName
+            name = "$packageName.MainActivity"
+            this.applicationInfo = applicationInfo
+        }
+        val resolveInfo = ResolveInfo().apply {
+            this.activityInfo = activityInfo
+        }
+        shadowOf(context.packageManager).addResolveInfoForIntent(launcherIntent, resolveInfo)
+    }
+
 
     private fun resetLauncherPreferencesSingleton() {
         val field = Class.forName("com.bajianfeng.launcher.data.home.LauncherPreferences").getDeclaredField("instance")

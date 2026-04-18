@@ -47,7 +47,8 @@
                 android:focusable="true"
                 android:foreground="?android:attr/selectableItemBackground"
                 android:visibility="gone"
-                app:cardBackgroundColor="@color/launcher_action"
+                app:cardBackgroundColor="@color/launcher_primary"
+
                 app:cardCornerRadius="18dp"
                 app:cardElevation="0dp">
 

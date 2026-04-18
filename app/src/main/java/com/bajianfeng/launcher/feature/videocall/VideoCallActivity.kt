@@ -1,6 +1,8 @@
 package com.bajianfeng.launcher.feature.videocall
 
+import android.content.Context
 import android.content.Intent
+
 import android.net.Uri
 import android.os.Bundle
 import android.widget.EditText
@@ -33,12 +35,24 @@ import kotlinx.coroutines.cancel
 import java.util.UUID
 
 class VideoCallActivity : AppCompatActivity() {
+    companion object {
+        private const val EXTRA_START_IN_MANAGE_MODE = "extra_start_in_manage_mode"
+
+        fun createIntent(context: Context, startInManageMode: Boolean = false): Intent {
+            return Intent(context, VideoCallActivity::class.java)
+                .putExtra(EXTRA_START_IN_MANAGE_MODE, startInManageMode)
+        }
+    }
+
     private lateinit var recyclerView: RecyclerView
+
     private lateinit var adapter: VideoCallContactAdapter
     private lateinit var manageAdapter: ContactManageAdapter
+    private lateinit var pageTitleText: TextView
     private lateinit var modeActionButton: CardView
     private lateinit var modeActionText: TextView
     private lateinit var modeSummaryText: TextView
+
     private lateinit var searchLayout: CardView
     private lateinit var searchInput: EditText
     private lateinit var clearSearchButton: TextView
@@ -75,9 +89,11 @@ class VideoCallActivity : AppCompatActivity() {
         recyclerView.setHasFixedSize(false)
 
 
+        pageTitleText = findViewById(R.id.tv_page_title)
         modeActionButton = findViewById(R.id.btn_mode_action)
         modeActionText = findViewById(R.id.tv_mode_action)
         modeSummaryText = findViewById(R.id.tv_mode_summary)
+
         searchLayout = findViewById(R.id.layout_manage_search)
         searchInput = findViewById(R.id.et_contact_search)
         clearSearchButton = findViewById(R.id.btn_clear_search)
@@ -145,8 +161,13 @@ class VideoCallActivity : AppCompatActivity() {
             }
         }
 
-        updateModeUi()
+        if (intent.getBooleanExtra(EXTRA_START_IN_MANAGE_MODE, false)) {
+            switchToManageMode()
+        } else {
+            updateModeUi()
+        }
         loadContacts()
+
     }
 
     override fun onResume() {
@@ -193,9 +214,13 @@ class VideoCallActivity : AppCompatActivity() {
 
 
     private fun updateModeUi() {
-        val actionText = getString(if (isManageMode) R.string.action_add else R.string.action_manage)
+        pageTitleText.text = getString(
+            if (isManageMode) R.string.video_manage_title else R.string.video_title
+        )
+        val actionText = getString(R.string.action_add)
         modeActionText.text = actionText
         modeActionButton.contentDescription = actionText
+        modeActionButton.isVisible = isManageMode
         modeSummaryText.text = getString(
             if (isManageMode) R.string.video_mode_manage_summary
             else R.string.video_mode_call_summary
@@ -203,6 +228,7 @@ class VideoCallActivity : AppCompatActivity() {
         searchLayout.isVisible = isManageMode
         updateSearchUi()
     }
+
 
     private fun updateSearchUi() {
         clearSearchButton.isVisible = isManageMode && searchQuery.isNotBlank()
@@ -305,16 +331,17 @@ class VideoCallActivity : AppCompatActivity() {
                 if (isManageMode) {
                     R.string.state_video_empty_action_add
                 } else {
-                    R.string.state_video_empty_action_manage
+                    R.string.action_back_home
                 }
             )
         ) {
             if (isManageMode) {
                 dialogController.showAddContactDialog()
             } else {
-                switchToManageMode()
+                finish()
             }
         }
+
     }
 
     private fun showToast(message: String) {

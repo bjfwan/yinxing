@@ -67,10 +67,12 @@
                     android:orientation="vertical">
 
                     <TextView
+                        android:id="@+id/tv_page_title"
                         style="@style/TextAppearance.OldLauncher.PageTitle"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:text="@string/phone_contact_title" />
+
 
                     <TextView
                         android:id="@+id/tv_mode_summary"
@@ -89,7 +91,8 @@
                     android:clickable="true"
                     android:focusable="true"
                     android:foreground="?android:attr/selectableItemBackground"
-                    app:cardBackgroundColor="@color/launcher_action"
+                    app:cardBackgroundColor="@color/launcher_primary"
+
                     app:cardCornerRadius="20dp"
                     app:cardElevation="2dp">
 

@@ -1,7 +1,9 @@
 package com.bajianfeng.launcher.feature.phone
 
 import android.Manifest
+import android.content.Context
 import android.content.Intent
+
 import android.content.pm.PackageManager
 import android.net.Uri
 import android.os.Bundle
@@ -34,19 +36,33 @@ import java.util.UUID
 
 class PhoneContactActivity : AppCompatActivity() {
 
+    companion object {
+        private const val EXTRA_START_IN_MANAGE_MODE = "extra_start_in_manage_mode"
+
+        fun createIntent(context: Context, startInManageMode: Boolean = false): Intent {
+            return Intent(context, PhoneContactActivity::class.java)
+                .putExtra(EXTRA_START_IN_MANAGE_MODE, startInManageMode)
+        }
+    }
+
     private lateinit var recyclerView: RecyclerView
+
     private lateinit var adapter: PhoneContactAdapter
     private lateinit var stateView: PageStateView
     private lateinit var manager: PhoneContactManager
+    private lateinit var pageTitleText: TextView
     private lateinit var modeActionButton: CardView
     private lateinit var modeActionText: TextView
     private lateinit var modeSummaryText: TextView
+
     private lateinit var searchLayout: CardView
     private lateinit var searchInput: EditText
     private lateinit var clearSearchButton: TextView
 
+    private var launchedFromManageEntry = false
     private var isManageMode = false
     private var searchQuery = ""
+
     private var allContacts: List<Contact> = emptyList()
 
     private var dialogPhotoPreview: ImageView? = null
@@ -72,9 +88,11 @@ class PhoneContactActivity : AppCompatActivity() {
         stateView = findViewById(R.id.view_page_state)
         stateView.attachContent(recyclerView)
 
+        pageTitleText = findViewById(R.id.tv_page_title)
         modeActionButton = findViewById(R.id.btn_mode_action)
         modeActionText = findViewById(R.id.tv_mode_action)
         modeSummaryText = findViewById(R.id.tv_mode_summary)
+
         searchLayout = findViewById(R.id.layout_manage_search)
         searchInput = findViewById(R.id.et_contact_search)
         clearSearchButton = findViewById(R.id.btn_clear_search)
@@ -86,11 +104,12 @@ class PhoneContactActivity : AppCompatActivity() {
         recyclerView.adapter = adapter
 
         findViewById<CardView>(R.id.btn_back).setOnClickListener {
-            if (isManageMode) switchToCallMode() else finish()
+            if (isManageMode && !launchedFromManageEntry) switchToCallMode() else finish()
         }
         modeActionButton.setOnClickListener {
-            if (isManageMode) showContactDialog(null) else switchToManageMode()
+            if (isManageMode) showContactDialog(null)
         }
+
         searchInput.doAfterTextChanged { editable ->
             searchQuery = editable?.toString().orEmpty()
             clearSearchButton.isVisible = searchQuery.isNotBlank()
@@ -122,12 +141,18 @@ class PhoneContactActivity : AppCompatActivity() {
     }
 
     private fun updateModeUi() {
-        modeActionText.text = getString(if (isManageMode) R.string.action_add else R.string.action_manage)
+        pageTitleText.text = getString(
+            if (isManageMode) R.string.phone_contact_manage_title else R.string.phone_contact_title
+        )
+        modeActionButton.isVisible = isManageMode
+        modeActionText.text = getString(R.string.action_add)
         modeSummaryText.text = getString(
             if (isManageMode) R.string.phone_contact_manage_summary else R.string.phone_contact_call_summary
         )
         searchLayout.isVisible = isManageMode
     }
+
+
 
     private fun loadContacts() {
         allContacts = manager.getContacts()
@@ -157,8 +182,11 @@ class PhoneContactActivity : AppCompatActivity() {
         stateView.show(
             title = getString(R.string.state_phone_empty_title),
             message = getString(if (isManageMode) R.string.state_phone_manage_empty_message else R.string.state_phone_empty_message),
-            actionText = getString(if (isManageMode) R.string.state_phone_empty_action else R.string.action_manage)
-        ) { if (isManageMode) showContactDialog(null) else switchToManageMode() }
+            actionText = getString(if (isManageMode) R.string.state_phone_empty_action else R.string.action_back_home)
+        ) {
+            if (isManageMode) showContactDialog(null) else finish()
+        }
+
     }
 
     private fun makeCall(contact: Contact) {

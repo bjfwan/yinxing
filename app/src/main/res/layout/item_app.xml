@@ -1,35 +1,62 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<com.google.android.material.card.MaterialCardView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    style="@style/Widget.OldLauncher.ListItemCard"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
+    android:layout_marginStart="6dp"
+    android:layout_marginTop="8dp"
+    android:layout_marginEnd="6dp"
+    android:layout_marginBottom="8dp"
     android:clickable="true"
     android:focusable="true"
-    android:foreground="?android:attr/selectableItemBackground"
-    android:gravity="center_vertical"
-    android:orientation="horizontal"
-    android:padding="20dp">
+    android:foreground="?android:attr/selectableItemBackground">
 
-    <ImageView
-        android:id="@+id/app_icon"
-        android:layout_width="56dp"
-        android:layout_height="56dp"
-        android:contentDescription="@null"
-        android:scaleType="fitCenter"/>
-
-    <TextView
-        android:id="@+id/app_name"
-        android:layout_width="0dp"
+    <LinearLayout
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_weight="1"
-        android:layout_marginStart="20dp"
-        android:textSize="22sp"
-        android:textColor="#2C3E50"/>
+        android:gravity="center_vertical"
+        android:minHeight="104dp"
+        android:orientation="horizontal"
+        android:paddingStart="18dp"
+        android:paddingTop="16dp"
+        android:paddingEnd="18dp"
+        android:paddingBottom="16dp">
 
-    <CheckBox
-        android:id="@+id/app_checkbox"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:scaleX="1.8"
-        android:scaleY="1.8"/>
+        <FrameLayout
+            android:layout_width="72dp"
+            android:layout_height="72dp"
+            android:background="@drawable/edit_text_background"
+            android:padding="12dp">
 
-</LinearLayout>
+            <ImageView
+                android:id="@+id/app_icon"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:contentDescription="@null"
+                android:scaleType="fitCenter" />
+        </FrameLayout>
+
+        <TextView
+            android:id="@+id/app_name"
+            style="@style/TextAppearance.OldLauncher.ListTitle"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="18dp"
+            android:layout_marginEnd="16dp"
+            android:layout_weight="1"
+            android:ellipsize="end"
+            android:maxLines="2" />
+
+        <CheckBox
+            android:id="@+id/app_checkbox"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:buttonTint="@color/launcher_primary"
+            android:minHeight="48dp"
+            android:scaleX="1.45"
+            android:scaleY="1.45" />
+
+    </LinearLayout>
+</com.google.android.material.card.MaterialCardView>
+
