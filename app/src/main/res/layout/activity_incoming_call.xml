@@ -1,112 +1,125 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:background="@drawable/bg_gradient"
-    android:gravity="center"
-    android:orientation="vertical"
-    android:padding="32dp">
+    android:padding="20dp">
 
-    <!-- 来电图标 -->
-    <ImageView
-        android:layout_width="120dp"
-        android:layout_height="120dp"
-        android:layout_marginBottom="24dp"
-        android:contentDescription="@string/incoming_call_icon_description"
-        android:src="@android:drawable/ic_menu_call"
-        app:tint="@color/launcher_primary" />
-
-    <!-- 来电提示文字 -->
-    <TextView
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_marginBottom="12dp"
-        android:text="@string/incoming_call_subtitle"
-        android:textColor="@color/launcher_text_secondary"
-        android:textSize="22sp" />
-
-    <!-- 来电方姓名（大字） -->
-    <TextView
-        android:id="@+id/tv_incoming_caller"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_marginBottom="16dp"
-        android:ellipsize="end"
-        android:maxLines="2"
-        android:gravity="center"
-        android:text="@string/incoming_call_unknown_caller"
-        android:textColor="@color/launcher_primary_dark"
-        android:textSize="48sp"
-        android:textStyle="bold" />
-
-    <!-- 倒计时提示 -->
-    <TextView
-        android:id="@+id/tv_incoming_countdown"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_marginBottom="40dp"
-        android:gravity="center"
-        android:textColor="@color/launcher_text_secondary"
-        android:textSize="22sp" />
-
-    <!-- 按钮行 -->
-    <LinearLayout
+    <com.google.android.material.card.MaterialCardView
+        style="@style/Widget.OldLauncher.PageHeroCard"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:gravity="center"
-        android:orientation="horizontal">
+        android:layout_gravity="center">
 
-        <!-- 拒绝按钮 -->
-        <androidx.cardview.widget.CardView
-            android:id="@+id/btn_incoming_decline"
-            android:layout_width="0dp"
+        <LinearLayout
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginEnd="12dp"
-            android:layout_weight="1"
-            android:clickable="true"
-            android:focusable="true"
-            android:contentDescription="@string/incoming_call_decline"
-            app:cardBackgroundColor="@color/launcher_danger"
-            app:cardCornerRadius="24dp"
-            app:cardElevation="4dp">
+            android:gravity="center_horizontal"
+            android:orientation="vertical"
+            android:padding="28dp">
+
+            <FrameLayout
+                android:layout_width="124dp"
+                android:layout_height="124dp"
+                android:background="@drawable/icon_background"
+                android:padding="30dp">
+
+                <ImageView
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:contentDescription="@string/incoming_call_icon_description"
+                    android:src="@android:drawable/ic_menu_call"
+                    app:tint="@color/launcher_primary" />
+            </FrameLayout>
 
             <TextView
-                android:layout_width="match_parent"
+                style="@style/TextAppearance.OldLauncher.HeroSubtitle"
+                android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
+                android:layout_marginTop="24dp"
                 android:gravity="center"
-                android:padding="20dp"
-                android:text="@string/incoming_call_decline"
-                android:textColor="#FFFFFF"
-                android:textSize="28sp"
-                android:textStyle="bold" />
-        </androidx.cardview.widget.CardView>
-
-        <!-- 接听按钮 -->
-        <androidx.cardview.widget.CardView
-            android:id="@+id/btn_incoming_accept"
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_marginStart="12dp"
-            android:layout_weight="1"
-            android:clickable="true"
-            android:focusable="true"
-            android:contentDescription="@string/incoming_call_accept"
-            app:cardBackgroundColor="@color/launcher_action"
-            app:cardCornerRadius="24dp"
-            app:cardElevation="4dp">
+                android:text="@string/incoming_call_subtitle" />
 
             <TextView
+                android:id="@+id/tv_incoming_caller"
+                style="@style/TextAppearance.OldLauncher.HeroTitle"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
+                android:layout_marginTop="14dp"
+                android:ellipsize="end"
                 android:gravity="center"
-                android:padding="20dp"
-                android:text="@string/incoming_call_accept"
-                android:textColor="#FFFFFF"
-                android:textSize="28sp"
-                android:textStyle="bold" />
-        </androidx.cardview.widget.CardView>
+                android:maxLines="2"
+                android:text="@string/incoming_call_unknown_caller" />
 
-    </LinearLayout>
+            <TextView
+                android:id="@+id/tv_incoming_countdown"
+                style="@style/TextAppearance.OldLauncher.Badge"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="18dp"
+                android:background="@drawable/edit_text_background"
+                android:gravity="center"
+                android:paddingStart="18dp"
+                android:paddingTop="12dp"
+                android:paddingEnd="18dp"
+                android:paddingBottom="12dp"
+                android:visibility="gone" />
 
-</LinearLayout>
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="28dp"
+                android:orientation="horizontal">
+
+                <com.google.android.material.card.MaterialCardView
+                    android:id="@+id/btn_incoming_decline"
+                    style="@style/Widget.OldLauncher.DialogButtonDanger"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_marginEnd="8dp"
+                    android:layout_weight="1"
+                    android:contentDescription="@string/incoming_call_decline">
+
+                    <TextView
+                        style="@style/TextAppearance.OldLauncher.ButtonPrimary"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:gravity="center"
+                        android:minHeight="64dp"
+                        android:paddingStart="16dp"
+                        android:paddingTop="16dp"
+                        android:paddingEnd="16dp"
+                        android:paddingBottom="16dp"
+                        android:text="@string/incoming_call_decline" />
+                </com.google.android.material.card.MaterialCardView>
+
+                <com.google.android.material.card.MaterialCardView
+                    android:id="@+id/btn_incoming_accept"
+                    style="@style/Widget.OldLauncher.DialogButtonSuccess"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="8dp"
+                    android:layout_weight="1"
+                    android:contentDescription="@string/incoming_call_accept">
+
+                    <TextView
+                        style="@style/TextAppearance.OldLauncher.ButtonPrimary"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:gravity="center"
+                        android:minHeight="64dp"
+                        android:paddingStart="16dp"
+                        android:paddingTop="16dp"
+                        android:paddingEnd="16dp"
+                        android:paddingBottom="16dp"
+                        android:text="@string/incoming_call_accept" />
+                </com.google.android.material.card.MaterialCardView>
+
+            </LinearLayout>
+
+        </LinearLayout>
+    </com.google.android.material.card.MaterialCardView>
+
+</FrameLayout>
+

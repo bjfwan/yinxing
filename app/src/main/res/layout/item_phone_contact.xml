@@ -77,7 +77,8 @@
                 android:paddingTop="8dp"
                 android:paddingEnd="14dp"
                 android:paddingBottom="8dp"
-                android:text="@string/action_edit"
+                android:text="@string/contact_card_action_phone_compact"
+
                 android:textColor="@color/launcher_primary"
                 android:textSize="14sp"
                 android:visibility="gone" />

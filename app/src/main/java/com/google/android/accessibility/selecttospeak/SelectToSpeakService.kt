@@ -7,7 +7,9 @@ import android.content.Intent
 import android.content.pm.PackageManager
 import android.graphics.Rect
 import android.os.Build
+import android.os.Bundle
 import android.util.Log
+import androidx.annotation.RequiresApi
 import android.view.accessibility.AccessibilityEvent
 import android.view.accessibility.AccessibilityNodeInfo
 import android.view.accessibility.AccessibilityWindowInfo
@@ -466,30 +468,48 @@ class SelectToSpeakService : AccessibilityService() {
 
     private fun trySendLauncherPendingIntent(intent: Intent, source: String = "pendingIntent"): Boolean {
         return try {
-            val creatorOptions = ActivityOptions.makeBasic().apply {
-                setPendingIntentCreatorBackgroundActivityStartMode(
-                    ActivityOptions.MODE_BACKGROUND_ACTIVITY_START_ALLOWED
-                )
+            val creatorOptions = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
+                createPendingIntentCreatorOptions()
+            } else {
+                null
             }
             val pendingIntent = PendingIntent.getActivity(
                 this,
                 0,
                 intent,
                 PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
-                creatorOptions.toBundle()
+                creatorOptions
             )
-            val sendOptions = ActivityOptions.makeBasic().apply {
-                setPendingIntentBackgroundActivityStartMode(
-                    ActivityOptions.MODE_BACKGROUND_ACTIVITY_START_ALLOWED
-                )
+            val sendOptions = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
+                createPendingIntentSendOptions()
+            } else {
+                null
             }
-            pendingIntent.send(this, 0, null, null, null, null, sendOptions.toBundle())
+            pendingIntent.send(this, 0, null, null, null, null, sendOptions)
             Log.d(TAG, "bringLauncherToFront: PendingIntent sent source=$source")
             true
         } catch (e: Exception) {
             Log.w(TAG, "bringLauncherToFront: PendingIntent failed source=$source error=${e.message}")
             false
         }
+    }
+
+    @RequiresApi(Build.VERSION_CODES.UPSIDE_DOWN_CAKE)
+    private fun createPendingIntentCreatorOptions(): Bundle {
+        return ActivityOptions.makeBasic().apply {
+            setPendingIntentCreatorBackgroundActivityStartMode(
+                ActivityOptions.MODE_BACKGROUND_ACTIVITY_START_ALLOWED
+            )
+        }.toBundle()
+    }
+
+    @RequiresApi(Build.VERSION_CODES.UPSIDE_DOWN_CAKE)
+    private fun createPendingIntentSendOptions(): Bundle {
+        return ActivityOptions.makeBasic().apply {
+            setPendingIntentBackgroundActivityStartMode(
+                ActivityOptions.MODE_BACKGROUND_ACTIVITY_START_ALLOWED
+            )
+        }.toBundle()
     }
 
     private fun notifyState(

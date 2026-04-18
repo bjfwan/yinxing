@@ -3,12 +3,16 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:layout_margin="8dp"
+    android:layout_marginStart="6dp"
+    android:layout_marginTop="8dp"
+    android:layout_marginEnd="6dp"
+    android:layout_marginBottom="8dp"
     app:cardBackgroundColor="@color/launcher_surface"
-    app:cardCornerRadius="24dp"
-    app:cardElevation="4dp"
+    app:cardCornerRadius="28dp"
+    app:cardElevation="5dp"
     app:strokeColor="@color/launcher_outline"
     app:strokeWidth="1dp">
+
 
     <LinearLayout
         android:layout_width="match_parent"
@@ -78,7 +82,8 @@
                 android:focusable="true"
                 android:foreground="?android:attr/selectableItemBackground"
                 app:cardBackgroundColor="@color/launcher_danger_soft"
-                app:cardCornerRadius="18dp"
+                app:cardCornerRadius="20dp"
+
                 app:cardElevation="0dp">
 
                 <TextView

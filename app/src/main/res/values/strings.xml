@@ -4,13 +4,21 @@
     <string name="select_to_speak_service_description">微信视频通话辅助朗读服务（需与主服务同时开启）</string>
     <string name="home_title">老人桌面</string>
     <string name="home_subtitle">常用功能都在这里，轻点一下就能进入</string>
+
     <string name="home_time_placeholder">12:00</string>
+
     <string name="home_date_placeholder">2024年1月1日 星期一</string>
     <string name="home_toast_already_here">已经是桌面了</string>
     <string name="home_item_phone">电话</string>
     <string name="home_item_wechat_video">微信视频</string>
     <string name="home_item_settings">设置</string>
     <string name="home_item_add">添加</string>
+    <string name="home_caregiver_entry">帮老人设置</string>
+    <string name="home_caregiver_dialog_title">这是给家人帮助老人设置用的</string>
+    <string name="home_caregiver_dialog_message">这里可以帮老人设置联系人、首页应用和设备权限。老人平时不用进入这里。</string>
+    <string name="home_caregiver_dialog_confirm">继续设置</string>
+    <string name="home_caregiver_dialog_cancel">返回首页</string>
+
 
     <string name="open_app_failed">无法打开%1$s</string>
     <string name="open_settings_failed">无法打开设置</string>
@@ -26,9 +34,12 @@
     <string name="phone_title">电话簿</string>
     <string name="phone_subtitle">点一下直接打开系统联系人页面</string>
 
-    <string name="video_title">联系人</string>
-    <string name="video_mode_call_summary">点击联系人，按设置好的方式直接联系</string>
-    <string name="video_mode_manage_summary">新增、搜索和编辑联系人，保持电话和微信视频都更省心</string>
+    <string name="video_title">视频通话</string>
+    <string name="video_manage_title">管理视频联系人</string>
+    <string name="video_mode_call_summary">轻点联系人，就能直接发起视频或电话联系</string>
+
+    <string name="video_mode_manage_summary">新增、搜索和整理视频联系人，帮老人把常用家人放在前面</string>
+
     <string name="action_add">新增</string>
     <string name="action_back">返回</string>
     <string name="action_cancel">取消</string>
@@ -66,8 +77,11 @@
     <string name="contact_action_phone">电话</string>
     <string name="contact_action_wechat">微信视频</string>
     <string name="contact_card_action_phone">点击后拨打电话</string>
+    <string name="contact_card_action_phone_compact">一键拨号</string>
     <string name="contact_card_action_wechat">点击后发起微信视频</string>
-    <string name="contact_card_action_wechat_compact">微信视频</string>
+    <string name="contact_card_action_wechat_compact">一键视频</string>
+    <string name="contact_manage_hint_edit">编辑资料</string>
+
     <string name="video_contact_wechat_action_description">给 %1$s 发起微信视频</string>
     <string name="video_contact_phone_action_description">给 %1$s 拨打电话</string>
     <string name="contact_manage_default_phone">默认：电话</string>
@@ -103,8 +117,10 @@
     <string name="state_phone_permission_message">需要开启联系人读取权限后才能显示通讯录</string>
     <string name="state_phone_permission_action">重新授权</string>
     <string name="state_phone_empty_title">暂无联系人</string>
-    <string name="state_phone_empty_message">可以先添加常用联系人，后续在这里直接拨号</string>
+    <string name="state_phone_empty_message">还没有常用联系人，请让家人先帮您设置</string>
     <string name="state_phone_empty_action">新增联系人</string>
+    <string name="action_back_home">返回首页</string>
+
     <string name="state_phone_error_title">联系人加载失败</string>
     <string name="state_phone_error_action">重新加载</string>
     <string name="contact_name_placeholder">联系人</string>
@@ -131,7 +147,8 @@
     <string name="accessibility_dialog_title">需要开启无障碍权限</string>
     <string name="accessibility_dialog_message">自动拨打微信视频需要无障碍服务权限，请在设置中开启</string>
     <string name="state_video_empty_title">还没有联系人</string>
-    <string name="state_video_empty_message">先去管理页新增联系人，之后点一下就能直接联系</string>
+    <string name="state_video_empty_message">还没有视频联系人，请让家人先帮您设置</string>
+
     <string name="state_video_manage_empty_message">先添加一个联系人，再设置电话或微信视频</string>
     <string name="state_video_empty_action_manage">去管理</string>
     <string name="state_video_empty_action_add">新增联系人</string>
@@ -150,10 +167,21 @@
     <string name="video_contact_unpinned">已取消置顶：%1$s</string>
     <string name="video_contact_search_hint">搜索联系人姓名或关键词</string>
     <string name="status_operating">正在操作…</string>
-    <string name="settings_title">设置</string>
-    <string name="settings_subtitle">把同类项目放在一起，配置一次就更省心</string>
-    <string name="settings_header_tip">建议先完成“桌面与运行”和“权限与后台保活”，再交给家人日常使用</string>
+    <string name="settings_title">帮老人设置</string>
+    <string name="settings_subtitle">把常用联系人、首页应用和设备能力一次配好</string>
+    <string name="settings_header_tip">建议先设置常用联系人和首页应用，再检查默认桌面、电话权限和后台保活。</string>
+
+    <string name="settings_section_quick_setup_title">先帮老人准备好</string>
+    <string name="settings_section_quick_setup_subtitle">把电话联系人、微信视频联系人和首页应用放在一起，方便家属一次配好。</string>
+    <string name="settings_manage_phone_contacts_title">电话联系人</string>
+    <string name="settings_manage_phone_contacts_summary">添加、编辑常用电话联系人，老人之后点一下就能拨号</string>
+    <string name="settings_manage_video_contacts_title">微信视频联系人</string>
+    <string name="settings_manage_video_contacts_summary">管理微信视频联系人和头像，让老人一键就能联系家人</string>
+    <string name="settings_manage_home_apps_title">首页应用</string>
+    <string name="settings_manage_home_apps_summary">选择哪些应用显示在桌面，避免老人看到太多入口</string>
+    <string name="settings_manage_action">去管理</string>
     <string name="settings_section_device_title">桌面与运行</string>
+
     <string name="settings_section_device_subtitle">默认桌面、防退出和性能模式统一放在这里，方便一次配置完成</string>
     <string name="settings_section_calls_title">通话与来电</string>
     <string name="settings_section_calls_subtitle">电话能力、自动接听和倒计时放在一起，来电设置更直观</string>
@@ -196,6 +224,11 @@
     <string name="settings_accessibility_summary_on">已开启，自动拨打微信视频可正常使用</string>
     <string name="settings_accessibility_summary_off">未开启，点击前往系统设置授权</string>
 
+    <string name="settings_notification_permission_title">通知权限</string>
+    <string name="settings_notification_permission_summary_on">已开启，来电通知和全屏来电页会更稳定</string>
+    <string name="settings_notification_permission_summary_off">未开启，Android 13 及以上可能无法弹出来电提醒</string>
+    <string name="settings_notification_permission_granted_toast">通知权限已授权</string>
+
     <!-- 电池优化豁免 -->
     <string name="settings_battery_title">电池无限制</string>
     <string name="settings_battery_summary_on">已豁免，后台来电不会被系统中断</string>
@@ -225,12 +258,18 @@
     <string name="incoming_call_accept">接听</string>
     <string name="incoming_call_decline">拒绝</string>
     <string name="incoming_call_icon_description">来电图标</string>
-    <string name="incoming_call_notification_service_description">用于接收微信视频来电通知并显示来电页</string>
+    <string name="incoming_call_notification_title">来电中</string>
+    <string name="incoming_call_notification_channel_name">来电提醒</string>
+    <string name="incoming_call_notification_channel_description">用于显示系统电话来电通知，并尽量以全屏方式唤起来电页</string>
+    <string name="incoming_call_notification_service_description">用于显示系统电话来电通知并唤起来电页</string>
     <string name="incoming_call_auto_answer_countdown">%1$d 秒后自动接听</string>
     <string name="action_pick_contact">从通讯录选择</string>
-    <string name="phone_contact_title">电话联系人</string>
-    <string name="phone_contact_call_summary">点一下直接打电话</string>
-    <string name="phone_contact_manage_summary">新增、编辑和删除联系人</string>
+    <string name="phone_contact_title">打电话</string>
+    <string name="phone_contact_manage_title">管理电话联系人</string>
+
+    <string name="phone_contact_call_summary">轻点联系人，就能直接打电话</string>
+    <string name="phone_contact_manage_summary">新增、修改和删除常用电话联系人</string>
+
     <string name="state_phone_manage_empty_message">先添加一个联系人，设置好手机号后就能直接拨打</string>
     <string name="contact_phone_required_simple">请填写手机号</string>
     <string name="contact_auto_answer_label">来电自动接听</string>

@@ -39,10 +39,15 @@ class PhoneContactAdapter(
 
     override fun onBindViewHolder(holder: ViewHolder, position: Int) {
         val contact = getItem(position)
+        val context = holder.itemView.context
         holder.name.text = contact.name
-        holder.manageHint.isVisible = isManageMode
+        holder.manageHint.isVisible = true
+        holder.manageHint.text = context.getString(
+            if (isManageMode) R.string.contact_manage_hint_edit else R.string.contact_card_action_phone_compact
+        )
 
         val uri = contact.avatarUri?.takeIf { it.isNotBlank() }
+
         if (uri != null) {
             holder.avatar.setPadding(0, 0, 0, 0)
             holder.avatar.setImageURI(null)

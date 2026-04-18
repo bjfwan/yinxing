@@ -27,7 +27,10 @@ import com.bajianfeng.launcher.data.weather.WeatherState
 import com.bajianfeng.launcher.feature.appmanage.AppManageActivity
 import com.bajianfeng.launcher.feature.phone.PhoneContactActivity
 import com.bajianfeng.launcher.feature.settings.SettingsActivity
+
 import com.bajianfeng.launcher.feature.videocall.VideoCallActivity
+
+
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -116,8 +119,12 @@ class MainActivity : AppCompatActivity() {
         findViewById<android.view.View>(R.id.layout_weather_entry).setOnClickListener {
             openWeatherEntry()
         }
+        findViewById<android.view.View>(R.id.btn_family_settings).setOnClickListener {
+            showCaregiverEntryDialog()
+        }
 
         recyclerView = findViewById(R.id.recycler_home)
+
 
         val gridLayout = GridLayoutManager(this, 2)
         recyclerView.layoutManager = gridLayout
@@ -323,6 +330,17 @@ class MainActivity : AppCompatActivity() {
         )
     }
 
+    private fun showCaregiverEntryDialog() {
+        AlertDialog.Builder(this)
+            .setTitle(R.string.home_caregiver_dialog_title)
+            .setMessage(R.string.home_caregiver_dialog_message)
+            .setPositiveButton(R.string.home_caregiver_dialog_confirm) { _, _ ->
+                startActivity(Intent(this, SettingsActivity::class.java))
+            }
+            .setNegativeButton(R.string.home_caregiver_dialog_cancel, null)
+            .show()
+    }
+
     private fun handleAppClick(item: HomeAppItem) {
         when (item.type) {
             HomeAppItem.Type.APP -> {
@@ -345,6 +363,11 @@ class MainActivity : AppCompatActivity() {
             HomeAppItem.Type.ADD -> startActivity(Intent(this, AppManageActivity::class.java))
         }
     }
+
+
+
+
+
 
     private fun handleAppLongClick(item: HomeAppItem): Boolean {
         if (item.type == HomeAppItem.Type.APP) {

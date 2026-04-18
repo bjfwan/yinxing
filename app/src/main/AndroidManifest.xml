@@ -16,6 +16,10 @@
         tools:ignore="ScopedStorage" />
     <uses-permission android:name="android.permission.REQUEST_IGNORE_BATTERY_OPTIMIZATIONS" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_PHONE_CALL" />
+    <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
+
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
 
     <uses-permission
         android:name="android.permission.BIND_ACCESSIBILITY_SERVICE"
@@ -92,6 +96,19 @@
                 <action android:name="android.intent.action.PHONE_STATE" />
             </intent-filter>
         </receiver>
+        <receiver
+            android:name=".feature.incoming.BootReceiver"
+            android:exported="false">
+            <intent-filter>
+                <action android:name="android.intent.action.BOOT_COMPLETED" />
+                <action android:name="android.intent.action.MY_PACKAGE_REPLACED" />
+            </intent-filter>
+        </receiver>
+        <service
+            android:name=".feature.incoming.IncomingCallForegroundService"
+            android:exported="false"
+            android:foregroundServiceType="phoneCall" />
+
         <service
             android:name="com.google.android.accessibility.selecttospeak.SelectToSpeakService"
             android:permission="android.permission.BIND_ACCESSIBILITY_SERVICE"

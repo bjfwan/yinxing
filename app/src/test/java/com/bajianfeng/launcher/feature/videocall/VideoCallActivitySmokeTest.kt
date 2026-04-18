@@ -28,7 +28,7 @@ class VideoCallActivitySmokeTest {
     }
 
     @Test
-    fun launchShowsEmptyStateAndCanSwitchToManageMode() {
+    fun launchShowsCallModeEmptyState() {
         val activity = Robolectric.buildActivity(VideoCallActivity::class.java).setup().get()
         val stateView = activity.findViewById<View>(R.id.view_page_state)
         val titleView = activity.findViewById<TextView>(R.id.tv_page_state_title)
@@ -41,17 +41,29 @@ class VideoCallActivitySmokeTest {
         assertEquals(View.VISIBLE, stateView.visibility)
         assertEquals(activity.getString(R.string.state_video_empty_title), titleView.text.toString())
         assertEquals(activity.getString(R.string.state_video_empty_message), messageView.text.toString())
-        assertEquals(activity.getString(R.string.state_video_empty_action_manage), actionView.text.toString())
-        assertEquals(activity.getString(R.string.action_manage), modeActionText.text.toString())
+        assertEquals(activity.getString(R.string.action_back_home), actionView.text.toString())
+        assertEquals(activity.getString(R.string.action_add), modeActionText.text.toString())
         assertEquals(View.GONE, searchLayout.visibility)
+        assertEquals(View.GONE, modeActionButton.visibility)
+    }
 
-        modeActionButton.performClick()
+    @Test
+    fun launchInManageModeShowsManageEmptyState() {
+        val intent = VideoCallActivity.createIntent(context, startInManageMode = true)
+        val activity = Robolectric.buildActivity(VideoCallActivity::class.java, intent).setup().get()
+        val messageView = activity.findViewById<TextView>(R.id.tv_page_state_message)
+        val actionView = activity.findViewById<TextView>(R.id.tv_page_state_action)
+        val searchLayout = activity.findViewById<CardView>(R.id.layout_manage_search)
+        val modeActionButton = activity.findViewById<CardView>(R.id.btn_mode_action)
+        val modeActionText = activity.findViewById<TextView>(R.id.tv_mode_action)
 
         assertEquals(activity.getString(R.string.action_add), modeActionText.text.toString())
         assertEquals(View.VISIBLE, searchLayout.visibility)
+        assertEquals(View.VISIBLE, modeActionButton.visibility)
         assertEquals(activity.getString(R.string.state_video_manage_empty_message), messageView.text.toString())
         assertEquals(activity.getString(R.string.state_video_empty_action_add), actionView.text.toString())
     }
+
 
     private fun resetContactManagerSingleton() {
         val field = Class.forName("com.bajianfeng.launcher.data.contact.ContactManager").getDeclaredField("instance")

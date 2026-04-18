@@ -65,11 +65,13 @@ class LauncherAppRepository private constructor(context: Context) {
         )
 
         val items = buildList {
+            addPrimaryBuiltInItems()
             orderedApps.forEach { app ->
                 selectedAppsByPackage[app.packageName]?.let(::add)
             }
-            addBuiltInItems()
+            addSecondaryBuiltInItems()
         }
+
 
         preferences.syncAppOrder(orderedApps.map { it.packageName })
 
@@ -139,7 +141,7 @@ class LauncherAppRepository private constructor(context: Context) {
         packageManager.queryIntentActivities(launcherIntent, 0)
     }
 
-    private fun MutableList<HomeAppItem>.addBuiltInItems() {
+    private fun MutableList<HomeAppItem>.addPrimaryBuiltInItems() {
         add(
             HomeAppItem(
                 packageName = "phone",
@@ -156,6 +158,9 @@ class LauncherAppRepository private constructor(context: Context) {
                 iconResId = android.R.drawable.ic_menu_call
             )
         )
+    }
+
+    private fun MutableList<HomeAppItem>.addSecondaryBuiltInItems() {
         add(
             HomeAppItem(
                 packageName = "settings",
@@ -172,8 +177,12 @@ class LauncherAppRepository private constructor(context: Context) {
                 iconResId = android.R.drawable.ic_input_add
             )
         )
-
     }
+
+
+
+
+
 
     private data class InstalledAppRecord(
         val packageName: String,

@@ -1,14 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
 <com.google.android.material.card.MaterialCardView xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
+    style="@style/Widget.OldLauncher.DialogSurfaceCard"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:layout_margin="24dp"
-    app:cardBackgroundColor="@color/launcher_surface"
-    app:cardCornerRadius="28dp"
-    app:cardElevation="8dp"
-    app:strokeColor="@color/launcher_outline"
-    app:strokeWidth="1dp">
+    android:layout_margin="24dp">
 
     <ScrollView
         android:layout_width="match_parent"
@@ -24,20 +20,18 @@
 
             <TextView
                 android:id="@+id/tv_dialog_title"
-                style="@style/TextAppearance.OldLauncher.PageTitle"
+                style="@style/TextAppearance.OldLauncher.DialogTitle"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:gravity="center"
                 android:text="@string/contact_dialog_add_title" />
 
             <TextView
+                style="@style/TextAppearance.OldLauncher.DialogSectionTitle"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="24dp"
-                android:text="@string/label_photo"
-                android:textColor="@color/launcher_text_primary"
-                android:textSize="20sp"
-                android:textStyle="bold" />
+                android:text="@string/label_photo" />
 
             <TextView
                 style="@style/TextAppearance.OldLauncher.Meta"
@@ -60,15 +54,10 @@
 
             <com.google.android.material.card.MaterialCardView
                 android:id="@+id/btn_select_photo"
+                style="@style/Widget.OldLauncher.DialogButtonPrimary"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="16dp"
-                android:clickable="true"
-                android:focusable="true"
-                android:foreground="?android:attr/selectableItemBackground"
-                app:cardBackgroundColor="@color/launcher_primary"
-                app:cardCornerRadius="18dp"
-                app:cardElevation="0dp">
+                android:layout_marginTop="16dp">
 
                 <TextView
                     style="@style/TextAppearance.OldLauncher.ButtonPrimary"
@@ -81,18 +70,15 @@
                     android:paddingEnd="16dp"
                     android:paddingBottom="14dp"
                     android:text="@string/action_select_photo" />
-
             </com.google.android.material.card.MaterialCardView>
 
             <TextView
+                style="@style/TextAppearance.OldLauncher.DialogSectionTitle"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="24dp"
                 android:layout_marginBottom="10dp"
-                android:text="@string/label_contact_name"
-                android:textColor="@color/launcher_text_primary"
-                android:textSize="20sp"
-                android:textStyle="bold" />
+                android:text="@string/label_contact_name" />
 
             <EditText
                 android:id="@+id/et_contact_name"
@@ -115,14 +101,12 @@
                 android:text="@string/contact_display_name_tip" />
 
             <TextView
+                style="@style/TextAppearance.OldLauncher.DialogSectionTitle"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="24dp"
                 android:layout_marginBottom="10dp"
-                android:text="@string/label_wechat_search_name"
-                android:textColor="@color/launcher_text_primary"
-                android:textSize="20sp"
-                android:textStyle="bold" />
+                android:text="@string/label_wechat_search_name" />
 
             <EditText
                 android:id="@+id/et_wechat_name"
@@ -152,18 +136,11 @@
 
                 <com.google.android.material.card.MaterialCardView
                     android:id="@+id/btn_cancel"
+                    style="@style/Widget.OldLauncher.DialogButtonSecondary"
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
                     android:layout_marginEnd="8dp"
-                    android:layout_weight="1"
-                    android:clickable="true"
-                    android:focusable="true"
-                    android:foreground="?android:attr/selectableItemBackground"
-                    app:cardBackgroundColor="@color/launcher_surface_muted"
-                    app:cardCornerRadius="18dp"
-                    app:cardElevation="0dp"
-                    app:strokeColor="@color/launcher_outline"
-                    app:strokeWidth="1dp">
+                    android:layout_weight="1">
 
                     <TextView
                         style="@style/TextAppearance.OldLauncher.ButtonSecondary"
@@ -176,21 +153,15 @@
                         android:paddingEnd="16dp"
                         android:paddingBottom="14dp"
                         android:text="@string/action_cancel" />
-
                 </com.google.android.material.card.MaterialCardView>
 
                 <com.google.android.material.card.MaterialCardView
                     android:id="@+id/btn_confirm"
+                    style="@style/Widget.OldLauncher.DialogButtonPrimary"
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
                     android:layout_marginStart="8dp"
-                    android:layout_weight="1"
-                    android:clickable="true"
-                    android:focusable="true"
-                    android:foreground="?android:attr/selectableItemBackground"
-                    app:cardBackgroundColor="@color/launcher_action"
-                    app:cardCornerRadius="18dp"
-                    app:cardElevation="0dp">
+                    android:layout_weight="1">
 
                     <TextView
                         style="@style/TextAppearance.OldLauncher.ButtonPrimary"
@@ -203,12 +174,8 @@
                         android:paddingEnd="16dp"
                         android:paddingBottom="14dp"
                         android:text="@string/action_confirm" />
-
                 </com.google.android.material.card.MaterialCardView>
-
             </LinearLayout>
-
         </LinearLayout>
     </ScrollView>
-
 </com.google.android.material.card.MaterialCardView>

@@ -8,37 +8,65 @@
     android:paddingStart="20dp"
     android:paddingTop="24dp"
     android:paddingEnd="20dp"
-    android:paddingBottom="0dp">
+    android:paddingBottom="12dp">
 
     <com.google.android.material.card.MaterialCardView
+        style="@style/Widget.OldLauncher.PageHeroCard"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        app:cardBackgroundColor="@color/launcher_surface"
-        app:cardCornerRadius="28dp"
-        app:cardElevation="6dp"
-        app:strokeColor="@color/launcher_outline"
-        app:strokeWidth="1dp">
+        android:layout_height="wrap_content">
 
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="vertical"
-            android:padding="24dp">
+            android:padding="20dp">
 
-            <TextView
-                style="@style/TextAppearance.OldLauncher.PageTitle"
+            <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:text="@string/app_manage_title" />
+                android:gravity="center_vertical"
+                android:orientation="horizontal">
 
-            <TextView
-                style="@style/TextAppearance.OldLauncher.PageSubtitle"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="8dp"
-                android:text="@string/app_manage_subtitle" />
+                <com.google.android.material.card.MaterialCardView
+                    android:id="@+id/btn_back"
+                    style="@style/Widget.OldLauncher.PageToolbarButton"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content">
 
+                    <TextView
+                        style="@style/TextAppearance.OldLauncher.ButtonSecondary"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:gravity="center"
+                        android:minHeight="56dp"
+                        android:paddingStart="22dp"
+                        android:paddingTop="16dp"
+                        android:paddingEnd="22dp"
+                        android:paddingBottom="16dp"
+                        android:text="@string/action_back" />
+                </com.google.android.material.card.MaterialCardView>
 
+                <LinearLayout
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="14dp"
+                    android:layout_weight="1"
+                    android:orientation="vertical">
+
+                    <TextView
+                        style="@style/TextAppearance.OldLauncher.PageTitle"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:text="@string/app_manage_title" />
+
+                    <TextView
+                        style="@style/TextAppearance.OldLauncher.PageSubtitle"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:layout_marginTop="8dp"
+                        android:text="@string/app_manage_subtitle" />
+                </LinearLayout>
+            </LinearLayout>
         </LinearLayout>
     </com.google.android.material.card.MaterialCardView>
 
@@ -54,10 +82,11 @@
             android:layout_height="match_parent"
             android:clipToPadding="false"
             android:overScrollMode="never"
-            android:paddingBottom="20dp" />
+            android:paddingBottom="24dp" />
 
         <TextView
             android:id="@+id/tv_empty_apps"
+            style="@style/TextAppearance.OldLauncher.SectionSubtitle"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_gravity="center"
@@ -65,10 +94,9 @@
             android:gravity="center"
             android:padding="28dp"
             android:text="@string/app_manage_empty_message"
-            android:textColor="@color/launcher_text_secondary"
-            android:textSize="20sp"
             android:visibility="gone" />
 
     </FrameLayout>
 
 </LinearLayout>
+
