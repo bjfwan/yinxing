@@ -27,6 +27,7 @@ class IncomingCallForegroundServiceTest {
     @Before
     fun setUp() {
         application = ApplicationProvider.getApplicationContext()
+        IncomingCallDiagnostics.clear(application)
     }
 
     @Test
@@ -70,6 +71,10 @@ class IncomingCallForegroundServiceTest {
         assertEquals(
             application.getString(R.string.incoming_call_decline),
             notification.actions[1].title.toString()
+        )
+        assertEquals(
+            application.getString(R.string.incoming_call_trace_service),
+            notification.extras.getString(Notification.EXTRA_SUB_TEXT)
         )
         assertTrue(notification.flags and Notification.FLAG_ONGOING_EVENT != 0)
     }

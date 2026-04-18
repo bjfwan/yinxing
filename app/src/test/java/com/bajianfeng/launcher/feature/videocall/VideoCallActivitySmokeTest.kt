@@ -42,9 +42,9 @@ class VideoCallActivitySmokeTest {
         assertEquals(activity.getString(R.string.state_video_empty_title), titleView.text.toString())
         assertEquals(activity.getString(R.string.state_video_empty_message), messageView.text.toString())
         assertEquals(activity.getString(R.string.action_back_home), actionView.text.toString())
-        assertEquals(activity.getString(R.string.action_add), modeActionText.text.toString())
+        assertEquals(activity.getString(R.string.action_manage), modeActionText.text.toString())
         assertEquals(View.GONE, searchLayout.visibility)
-        assertEquals(View.GONE, modeActionButton.visibility)
+        assertEquals(View.VISIBLE, modeActionButton.visibility)
     }
 
     @Test

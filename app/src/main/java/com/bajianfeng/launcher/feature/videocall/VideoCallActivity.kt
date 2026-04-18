@@ -2,7 +2,6 @@ package com.bajianfeng.launcher.feature.videocall
 
 import android.content.Context
 import android.content.Intent
-
 import android.net.Uri
 import android.os.Bundle
 import android.widget.EditText
@@ -11,14 +10,11 @@ import android.widget.Toast
 import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
-import androidx.cardview.widget.CardView
-
 import androidx.core.view.isVisible
 import androidx.core.widget.doAfterTextChanged
 import androidx.recyclerview.widget.DefaultItemAnimator
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
-
 import com.bajianfeng.launcher.R
 import com.bajianfeng.launcher.common.service.TTSService
 import com.bajianfeng.launcher.common.ui.PageStateView
@@ -28,6 +24,7 @@ import com.bajianfeng.launcher.data.contact.ContactAvatarStore
 import com.bajianfeng.launcher.data.contact.ContactManager
 import com.bajianfeng.launcher.data.contact.ContactStorage
 import com.bajianfeng.launcher.data.home.LauncherPreferences
+import com.google.android.material.card.MaterialCardView
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -45,17 +42,15 @@ class VideoCallActivity : AppCompatActivity() {
     }
 
     private lateinit var recyclerView: RecyclerView
-
     private lateinit var adapter: VideoCallContactAdapter
     private lateinit var manageAdapter: ContactManageAdapter
     private lateinit var pageTitleText: TextView
-    private lateinit var modeActionButton: CardView
+    private lateinit var modeActionButton: MaterialCardView
     private lateinit var modeActionText: TextView
     private lateinit var modeSummaryText: TextView
-
-    private lateinit var searchLayout: CardView
+    private lateinit var searchLayout: MaterialCardView
     private lateinit var searchInput: EditText
-    private lateinit var clearSearchButton: TextView
+    private lateinit var clearSearchButton: MaterialCardView
     private lateinit var stateView: PageStateView
     private lateinit var ttsService: TTSService
     private lateinit var contactManager: ContactManager
@@ -64,6 +59,7 @@ class VideoCallActivity : AppCompatActivity() {
     private lateinit var coordinator: VideoCallCoordinator
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate)
     private var isManageMode = false
+    private var launchedFromManageEntry = false
     private var searchQuery = ""
     private var allContacts: List<Contact> = emptyList()
 
@@ -87,7 +83,6 @@ class VideoCallActivity : AppCompatActivity() {
         recyclerView = findViewById(R.id.recycler_video_contacts)
         recyclerView.layoutManager = LinearLayoutManager(this)
         recyclerView.setHasFixedSize(false)
-
 
         pageTitleText = findViewById(R.id.tv_page_title)
         modeActionButton = findViewById(R.id.btn_mode_action)
@@ -138,6 +133,8 @@ class VideoCallActivity : AppCompatActivity() {
         recyclerView.adapter = adapter
         applyPerformanceMode()
 
+        launchedFromManageEntry = intent.getBooleanExtra(EXTRA_START_IN_MANAGE_MODE, false)
+
         searchInput.doAfterTextChanged { editable ->
             searchQuery = editable?.toString().orEmpty()
             updateSearchUi()
@@ -146,8 +143,8 @@ class VideoCallActivity : AppCompatActivity() {
         clearSearchButton.setOnClickListener {
             searchInput.text?.clear()
         }
-        findViewById<CardView>(R.id.btn_back).setOnClickListener {
-            if (isManageMode) {
+        findViewById<MaterialCardView>(R.id.btn_back).setOnClickListener {
+            if (isManageMode && !launchedFromManageEntry) {
                 switchToCallMode()
             } else {
                 finish()
@@ -161,13 +158,12 @@ class VideoCallActivity : AppCompatActivity() {
             }
         }
 
-        if (intent.getBooleanExtra(EXTRA_START_IN_MANAGE_MODE, false)) {
+        if (launchedFromManageEntry) {
             switchToManageMode()
         } else {
             updateModeUi()
         }
         loadContacts()
-
     }
 
     override fun onResume() {
@@ -187,7 +183,6 @@ class VideoCallActivity : AppCompatActivity() {
         val lowPerformanceMode = launcherPreferences.isLowPerformanceModeEnabled()
         recyclerView.setItemViewCacheSize(if (lowPerformanceMode) 3 else 8)
         recyclerView.itemAnimator = if (lowPerformanceMode) null else DefaultItemAnimator()
-        searchLayout.cardElevation = resources.displayMetrics.density * if (lowPerformanceMode) 2 else 4
         adapter.setLowPerformanceMode(lowPerformanceMode)
         manageAdapter.setLowPerformanceMode(lowPerformanceMode)
     }
@@ -212,23 +207,20 @@ class VideoCallActivity : AppCompatActivity() {
         }
     }
 
-
     private fun updateModeUi() {
         pageTitleText.text = getString(
             if (isManageMode) R.string.video_manage_title else R.string.video_title
         )
-        val actionText = getString(R.string.action_add)
+        val actionText = getString(if (isManageMode) R.string.action_add else R.string.action_manage)
         modeActionText.text = actionText
         modeActionButton.contentDescription = actionText
-        modeActionButton.isVisible = isManageMode
+        modeActionButton.isVisible = true
         modeSummaryText.text = getString(
-            if (isManageMode) R.string.video_mode_manage_summary
-            else R.string.video_mode_call_summary
+            if (isManageMode) R.string.video_mode_manage_summary else R.string.video_mode_call_summary
         )
         searchLayout.isVisible = isManageMode
         updateSearchUi()
     }
-
 
     private fun updateSearchUi() {
         clearSearchButton.isVisible = isManageMode && searchQuery.isNotBlank()
@@ -267,7 +259,11 @@ class VideoCallActivity : AppCompatActivity() {
         loadContacts()
     }
 
-    private fun resolveAvatarUri(contactId: String, previousAvatarUri: String?, selectedAvatarUri: String?): String? {
+    private fun resolveAvatarUri(
+        contactId: String,
+        previousAvatarUri: String?,
+        selectedAvatarUri: String?
+    ): String? {
         if (selectedAvatarUri.isNullOrBlank()) {
             return previousAvatarUri
         }
@@ -341,7 +337,6 @@ class VideoCallActivity : AppCompatActivity() {
                 finish()
             }
         }
-
     }
 
     private fun showToast(message: String) {

@@ -16,6 +16,7 @@ import android.view.accessibility.AccessibilityWindowInfo
 import com.bajianfeng.launcher.automation.wechat.manager.TimeoutManager
 import com.bajianfeng.launcher.automation.wechat.model.AutomationState
 import com.bajianfeng.launcher.automation.wechat.util.AccessibilityUtil
+import com.bajianfeng.launcher.common.util.CallAudioStrategy
 import com.bajianfeng.launcher.common.ui.FloatingStatusView
 import com.bajianfeng.launcher.data.home.LauncherPreferences
 import com.bajianfeng.launcher.feature.home.MainActivity
@@ -1657,6 +1658,7 @@ class SelectToSpeakService : AccessibilityService() {
     private fun finishVideoCallStarted(session: VideoCallSession) {
         recordStepSuccess(session.step, System.currentTimeMillis() - session.stepStartedAt)
         session.moreButtonClickedAt = 0L
+        applyWeChatCallAudioStrategy()
         floatingView?.updateMessage("视频通话已发起")
         notifyState(session, "视频通话已发起", success = true, terminal = true)
         currentSession = null
@@ -1668,6 +1670,56 @@ class SelectToSpeakService : AccessibilityService() {
             delay(1200)
             floatingView?.hide()
         }
+    }
+
+    private fun applyWeChatCallAudioStrategy() {
+        val result = CallAudioStrategy.prepareVoipCall(this)
+        if (result.keptPrivateOutput) {
+            return
+        }
+        serviceScope.launch {
+            clickWeChatSpeakerButtonIfNeeded(delayMillis = 400L)
+            clickWeChatSpeakerButtonIfNeeded(delayMillis = 1200L)
+        }
+    }
+
+    private suspend fun clickWeChatSpeakerButtonIfNeeded(delayMillis: Long) {
+        delay(delayMillis)
+        val root = obtainSpeakerTargetRoot() ?: return
+        try {
+            if (hasContainingText(root, "扬声器已开") || hasContainingText(root, "免提已开")) {
+                return
+            }
+            val toggleNode = findSpeakerToggleNode(root) ?: return
+            val clicked = AccessibilityUtil.performClick(this, toggleNode)
+            Log.d(TAG, "clickWeChatSpeakerButtonIfNeeded: click=$clicked")
+            AccessibilityUtil.safeRecycle(toggleNode)
+        } finally {
+            AccessibilityUtil.safeRecycle(root)
+        }
+    }
+
+    private fun obtainSpeakerTargetRoot(): AccessibilityNodeInfo? {
+        rootInActiveWindow?.let { return AccessibilityNodeInfo.obtain(it) }
+        cachedWeChatRoot?.let { return AccessibilityNodeInfo.obtain(it) }
+        return null
+    }
+
+    private fun findSpeakerToggleNode(root: AccessibilityNodeInfo): AccessibilityNodeInfo? {
+        val texts = listOf("扬声器已关", "免提已关", "扬声器已关闭", "免提已关闭")
+        texts.forEach { text ->
+            val node = AccessibilityUtil.findBestTextNode(
+                root,
+                text,
+                exactMatch = false,
+                preferBottom = true,
+                excludeEditable = false
+            )
+            if (node != null) {
+                return node
+            }
+        }
+        return null
     }
 
 
@@ -2034,6 +2086,21 @@ class SelectToSpeakService : AccessibilityService() {
             root,
             text,
             exactMatch = true,
+            preferBottom = false,
+            excludeEditable = false
+        )
+        if (node != null) {
+            AccessibilityUtil.safeRecycle(node)
+            return true
+        }
+        return false
+    }
+
+    private fun hasContainingText(root: AccessibilityNodeInfo?, text: String): Boolean {
+        val node = AccessibilityUtil.findBestTextNode(
+            root,
+            text,
+            exactMatch = false,
             preferBottom = false,
             excludeEditable = false
         )

@@ -77,7 +77,6 @@ class VideoCallContactAdapter(
 
     private fun bind(holder: ViewHolder, contact: Contact) {
         val context = holder.itemView.context
-        holder.card.cardElevation = context.dpToPx(if (lowPerformanceMode) 2 else 4).toFloat()
         holder.name.text = contact.displayName
 
         val isWechat = contact.preferredAction == Contact.PreferredAction.WECHAT_VIDEO

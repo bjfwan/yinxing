@@ -1,17 +1,12 @@
 <?xml version="1.0" encoding="utf-8"?>
-<merge xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:app="http://schemas.android.com/apk/res-auto">
+<merge xmlns:android="http://schemas.android.com/apk/res/android">
 
     <com.google.android.material.card.MaterialCardView
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_gravity="center"
         android:layout_margin="24dp"
-        app:cardBackgroundColor="@color/launcher_surface"
-        app:cardCornerRadius="28dp"
-        app:cardElevation="4dp"
-        app:strokeColor="@color/launcher_outline"
-        app:strokeWidth="1dp">
+        style="@style/Widget.OldLauncher.PageHeroCard">
 
         <LinearLayout
             android:layout_width="match_parent"
@@ -37,20 +32,13 @@
                 android:gravity="center"
                 android:maxWidth="360dp" />
 
-
             <com.google.android.material.card.MaterialCardView
                 android:id="@+id/btn_page_state_action"
+                style="@style/Widget.OldLauncher.DialogButtonPrimary"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="24dp"
-                android:clickable="true"
-                android:focusable="true"
-                android:foreground="?android:attr/selectableItemBackground"
-                android:visibility="gone"
-                app:cardBackgroundColor="@color/launcher_primary"
-
-                app:cardCornerRadius="18dp"
-                app:cardElevation="0dp">
+                android:visibility="gone">
 
                 <TextView
                     android:id="@+id/tv_page_state_action"
@@ -61,7 +49,6 @@
                     android:paddingTop="14dp"
                     android:paddingEnd="28dp"
                     android:paddingBottom="14dp" />
-
 
             </com.google.android.material.card.MaterialCardView>
 

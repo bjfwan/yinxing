@@ -1,18 +1,12 @@
 <?xml version="1.0" encoding="utf-8"?>
 <com.google.android.material.card.MaterialCardView xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:app="http://schemas.android.com/apk/res-auto"
+    style="@style/Widget.OldLauncher.ListItemCard"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
     android:layout_marginStart="6dp"
     android:layout_marginTop="8dp"
     android:layout_marginEnd="6dp"
-    android:layout_marginBottom="8dp"
-    app:cardBackgroundColor="@color/launcher_surface"
-    app:cardCornerRadius="28dp"
-    app:cardElevation="5dp"
-    app:strokeColor="@color/launcher_outline"
-    app:strokeWidth="1dp">
-
+    android:layout_marginBottom="8dp">
 
     <LinearLayout
         android:layout_width="match_parent"
@@ -22,7 +16,7 @@
 
         <TextView
             android:id="@+id/tv_contact_name"
-            style="@style/TextAppearance.OldLauncher.CardTitleLarge"
+            style="@style/TextAppearance.OldLauncher.SectionTitle"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:ellipsize="end"
@@ -47,15 +41,10 @@
 
             <com.google.android.material.card.MaterialCardView
                 android:id="@+id/btn_edit"
+                style="@style/Widget.OldLauncher.DialogButtonPrimary"
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:clickable="true"
-                android:focusable="true"
-                android:foreground="?android:attr/selectableItemBackground"
-                app:cardBackgroundColor="@color/launcher_primary"
-                app:cardCornerRadius="18dp"
-                app:cardElevation="0dp">
+                android:layout_weight="1">
 
                 <TextView
                     android:id="@+id/tv_edit_action"
@@ -74,20 +63,14 @@
 
             <com.google.android.material.card.MaterialCardView
                 android:id="@+id/btn_delete"
+                style="@style/Widget.OldLauncher.DialogButtonDanger"
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_marginStart="12dp"
-                android:layout_weight="1"
-                android:clickable="true"
-                android:focusable="true"
-                android:foreground="?android:attr/selectableItemBackground"
-                app:cardBackgroundColor="@color/launcher_danger_soft"
-                app:cardCornerRadius="20dp"
-
-                app:cardElevation="0dp">
+                android:layout_weight="1">
 
                 <TextView
-                    style="@style/TextAppearance.OldLauncher.ButtonDanger"
+                    style="@style/TextAppearance.OldLauncher.ButtonPrimary"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:gravity="center"

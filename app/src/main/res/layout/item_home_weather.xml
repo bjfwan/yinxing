@@ -2,278 +2,81 @@
 <com.google.android.material.card.MaterialCardView xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:id="@+id/card_weather"
+    style="@style/Widget.OldLauncher.WeatherCard"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:layout_margin="8dp"
     android:clickable="true"
     android:focusable="true"
-    android:foreground="?android:attr/selectableItemBackground"
-    app:cardBackgroundColor="@color/launcher_primary_soft"
-    app:cardCornerRadius="28dp"
-    app:cardElevation="6dp"
-    app:strokeColor="@color/launcher_outline"
-    app:strokeWidth="1dp">
+    android:foreground="?android:attr/selectableItemBackground">
 
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="vertical"
-        android:paddingStart="22dp"
-        android:paddingTop="20dp"
-        android:paddingEnd="22dp"
-        android:paddingBottom="20dp">
+        android:padding="24dp">
 
-        <!-- 顶部：城市名 + 更新时间 -->
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:orientation="horizontal"
-            android:gravity="center_vertical">
-
-            <TextView
-                android:id="@+id/tv_city"
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:fontFamily="sans-serif-medium"
-                android:textSize="18sp"
-                android:textStyle="bold"
-                android:textColor="@color/launcher_primary_dark"
-                android:text="北京" />
-
-            <TextView
-                android:id="@+id/tv_update_time"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:fontFamily="sans-serif"
-                android:textSize="13sp"
-                android:textColor="@color/launcher_text_muted"
-                android:text="更新于 04:00" />
-
-        </LinearLayout>
-
-        <!-- 核心：天气描述 + 大温度 -->
-        <LinearLayout
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:orientation="horizontal"
             android:gravity="center_vertical"
-            android:layout_marginTop="10dp">
-
-            <TextView
-                android:id="@+id/tv_temperature"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:fontFamily="sans-serif-medium"
-                android:textSize="60sp"
-                android:textStyle="bold"
-                android:textColor="@color/launcher_primary_dark"
-                android:includeFontPadding="false"
-                android:text="13°" />
-
-            <LinearLayout
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:orientation="vertical"
-                android:paddingStart="14dp">
-
-                <TextView
-                    android:id="@+id/tv_weather_text"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:fontFamily="sans-serif-medium"
-                    android:textSize="22sp"
-                    android:textStyle="bold"
-                    android:textColor="@color/launcher_primary_dark"
-                    android:text="晴" />
-
-                <TextView
-                    android:id="@+id/tv_wind"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="4dp"
-                    android:fontFamily="sans-serif"
-                    android:textSize="15sp"
-                    android:textColor="@color/launcher_text_secondary"
-                    android:text="北风 1-2级" />
-
-                <TextView
-                    android:id="@+id/tv_humidity"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="2dp"
-                    android:fontFamily="sans-serif"
-                    android:textSize="15sp"
-                    android:textColor="@color/launcher_text_secondary"
-                    android:text="湿度 84%" />
-
-            </LinearLayout>
-
-        </LinearLayout>
-
-        <!-- 分割线 -->
-        <View
-            android:layout_width="match_parent"
-            android:layout_height="1dp"
-            android:layout_marginTop="14dp"
-            android:layout_marginBottom="12dp"
-            android:background="@color/launcher_outline" />
-
-        <!-- 三天预报 -->
-        <LinearLayout
-            android:id="@+id/ll_forecast"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
             android:orientation="horizontal">
 
-            <!-- 今天 -->
-            <LinearLayout
+            <TextView
+                android:id="@+id/tv_weather_city"
+                style="@style/TextAppearance.OldLauncher.Eyebrow"
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
-                android:orientation="vertical"
-                android:gravity="center_horizontal">
+                android:text="@string/home_weather_placeholder_city" />
 
-                <TextView
-                    android:id="@+id/tv_day0_label"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:fontFamily="sans-serif-medium"
-                    android:textSize="14sp"
-                    android:textColor="@color/launcher_text_secondary"
-                    android:text="今天" />
+            <TextView
+                android:id="@+id/tv_weather_update"
+                style="@style/TextAppearance.OldLauncher.Caption"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="" />
 
-                <TextView
-                    android:id="@+id/tv_day0_weather"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="4dp"
-                    android:fontFamily="sans-serif"
-                    android:textSize="14sp"
-                    android:textColor="@color/launcher_text_primary"
-                    android:text="晴" />
+        </LinearLayout>
 
-                <TextView
-                    android:id="@+id/tv_day0_temp"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="2dp"
-                    android:fontFamily="sans-serif-medium"
-                    android:textSize="15sp"
-                    android:textStyle="bold"
-                    android:textColor="@color/launcher_primary_dark"
-                    android:text="26°/12°" />
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="14dp"
+            android:gravity="center_vertical"
+            android:orientation="horizontal">
 
-            </LinearLayout>
+            <TextView
+                android:id="@+id/tv_weather_temp"
+                style="@style/TextAppearance.OldLauncher.WeatherTemperature"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/home_weather_placeholder_temp" />
 
-            <!-- 明天 -->
             <LinearLayout
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
+                android:layout_marginStart="18dp"
                 android:layout_weight="1"
-                android:orientation="vertical"
-                android:gravity="center_horizontal">
+                android:orientation="vertical">
 
                 <TextView
-                    android:id="@+id/tv_day1_label"
-                    android:layout_width="wrap_content"
+                    android:id="@+id/tv_weather_desc"
+                    style="@style/TextAppearance.OldLauncher.WeatherHeadline"
+                    android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:fontFamily="sans-serif-medium"
-                    android:textSize="14sp"
-                    android:textColor="@color/launcher_text_secondary"
-                    android:text="明天" />
+                    android:text="@string/home_weather_placeholder_desc" />
 
                 <TextView
-                    android:id="@+id/tv_day1_weather"
-                    android:layout_width="wrap_content"
+                    android:id="@+id/tv_weather_high_low"
+                    style="@style/TextAppearance.OldLauncher.Meta"
+                    android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:layout_marginTop="4dp"
-                    android:fontFamily="sans-serif"
-                    android:textSize="14sp"
-                    android:textColor="@color/launcher_text_primary"
-                    android:text="小雨" />
-
-                <TextView
-                    android:id="@+id/tv_day1_temp"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="2dp"
-                    android:fontFamily="sans-serif-medium"
-                    android:textSize="15sp"
-                    android:textStyle="bold"
-                    android:textColor="@color/launcher_primary_dark"
-                    android:text="25°/10°" />
-
-            </LinearLayout>
-
-            <!-- 后天 -->
-            <LinearLayout
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:orientation="vertical"
-                android:gravity="center_horizontal">
-
-                <TextView
-                    android:id="@+id/tv_day2_label"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:fontFamily="sans-serif-medium"
-                    android:textSize="14sp"
-                    android:textColor="@color/launcher_text_secondary"
-                    android:text="后天" />
-
-                <TextView
-                    android:id="@+id/tv_day2_weather"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="4dp"
-                    android:fontFamily="sans-serif"
-                    android:textSize="14sp"
-                    android:textColor="@color/launcher_text_primary"
-                    android:text="晴" />
-
-                <TextView
-                    android:id="@+id/tv_day2_temp"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_marginTop="2dp"
-                    android:fontFamily="sans-serif-medium"
-                    android:textSize="15sp"
-                    android:textStyle="bold"
-                    android:textColor="@color/launcher_primary_dark"
-                    android:text="22°/10°" />
+                    android:layout_marginTop="8dp"
+                    android:text="" />
 
             </LinearLayout>
 
         </LinearLayout>
-
-        <!-- 加载中/错误状态 -->
-        <TextView
-            android:id="@+id/tv_weather_status"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="8dp"
-            android:fontFamily="sans-serif"
-            android:textSize="15sp"
-            android:textColor="@color/launcher_text_muted"
-            android:gravity="center"
-            android:visibility="gone"
-            android:text="正在加载天气…" />
-
-        <!-- 点击设置城市提示（初次使用） -->
-        <TextView
-            android:id="@+id/tv_set_city_hint"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="6dp"
-            android:fontFamily="sans-serif"
-            android:textSize="14sp"
-            android:textColor="@color/launcher_text_muted"
-            android:gravity="center"
-            android:visibility="gone"
-            android:text="点击卡片设置城市" />
 
     </LinearLayout>
 

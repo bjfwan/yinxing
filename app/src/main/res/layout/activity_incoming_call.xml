@@ -53,6 +53,16 @@
                 android:text="@string/incoming_call_unknown_caller" />
 
             <TextView
+                android:id="@+id/tv_incoming_status"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="12dp"
+                android:gravity="center"
+                android:maxLines="4"
+                android:textColor="@color/launcher_text_secondary"
+                android:textSize="17sp" />
+
+            <TextView
                 android:id="@+id/tv_incoming_countdown"
                 style="@style/TextAppearance.OldLauncher.Badge"
                 android:layout_width="wrap_content"

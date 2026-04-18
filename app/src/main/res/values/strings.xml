@@ -25,6 +25,16 @@
     <string name="weather_fallback_notice">已改为浏览器查看天气</string>
     <string name="weather_not_available">未找到天气应用或浏览器</string>
     <string name="weather_fallback_url" translatable="false">https://weather.cma.cn</string>
+    <string name="home_weather_placeholder_city">天气</string>
+    <string name="home_weather_placeholder_desc">轻点卡片即可查看天气</string>
+    <string name="home_weather_placeholder_temp">--°</string>
+    <string name="weather_temp_value">%1$d°</string>
+    <string name="weather_summary_with_today">%1$s（今日%2$s）</string>
+    <string name="weather_desc_with_wind">%1$s · %2$s %3$s</string>
+    <string name="weather_high_low_format">最高 %1$d° · 最低 %2$d°</string>
+    <string name="weather_update_at">更新于 %1$s</string>
+    <string name="weather_loading_short">正在更新天气…</string>
+    <string name="weather_load_failed_short">天气暂时不可用</string>
     <string name="remove_app_title">移除应用</string>
     <string name="remove_app_message">确定要从桌面移除 %1$s 吗？</string>
     <string name="remove_success">已移除</string>
@@ -203,6 +213,8 @@
     <string name="settings_auto_answer_delay_summary">%1$d 秒后自动接听</string>
     <string name="settings_auto_answer_delay_decrease">减少 1 秒</string>
     <string name="settings_auto_answer_delay_increase">增加 1 秒</string>
+    <string name="settings_incoming_trace_title">最近来电状态</string>
+    <string name="settings_incoming_trace_empty">还没有来电链路记录，来过一次电话后会显示广播、提醒、来电页和接听结果</string>
     <string name="settings_system_title">系统设置</string>
     <string name="settings_system_summary">打开安卓系统设置，调整网络、声音和显示等项目</string>
 
@@ -261,8 +273,28 @@
     <string name="incoming_call_notification_title">来电中</string>
     <string name="incoming_call_notification_channel_name">来电提醒</string>
     <string name="incoming_call_notification_channel_description">用于显示系统电话来电通知，并尽量以全屏方式唤起来电页</string>
-    <string name="incoming_call_notification_service_description">用于显示系统电话来电通知并唤起来电页</string>
-    <string name="incoming_call_auto_answer_countdown">%1$d 秒后自动接听</string>
+    <string name="incoming_call_auto_answer_countdown">%1$d 秒后自动接听，可点拒绝取消</string>
+    <string name="incoming_call_status_answering">正在接听，请稍候</string>
+    <string name="incoming_call_status_declining">正在拒绝来电</string>
+    <string name="incoming_call_status_accept_sent">已发送接听指令</string>
+    <string name="incoming_call_status_decline_sent">已发送拒接指令</string>
+    <string name="incoming_call_status_decline_unsupported">当前系统版本不支持自动拒接</string>
+    <string name="incoming_call_status_permission_missing">缺少电话权限，请先去设置里授权</string>
+    <string name="incoming_call_status_unknown_error">未知原因</string>
+    <string name="incoming_call_status_action_failed">%1$s失败：%2$s</string>
+    <string name="incoming_call_status_speaker_on">已切到扬声器</string>
+    <string name="incoming_call_status_speaker_kept_private">已保持耳机或蓝牙输出</string>
+    <string name="incoming_call_trace_detail_auto_answer">命中自动接听</string>
+    <string name="incoming_call_trace_detail_manual_answer">等待手动接听</string>
+    <string name="incoming_call_trace_broadcast">广播已收到</string>
+    <string name="incoming_call_trace_service">来电提醒已启动</string>
+    <string name="incoming_call_trace_activity">来电页已打开</string>
+    <string name="incoming_call_trace_accept_success">接听成功</string>
+    <string name="incoming_call_trace_accept_failed">接听失败</string>
+    <string name="incoming_call_trace_decline_success">拒接成功</string>
+    <string name="incoming_call_trace_decline_failed">拒接失败</string>
+    <string name="incoming_call_trace_speaker_on">扬声器已打开</string>
+    <string name="incoming_call_trace_speaker_kept_private">保持当前输出</string>
     <string name="action_pick_contact">从通讯录选择</string>
     <string name="phone_contact_title">打电话</string>
     <string name="phone_contact_manage_title">管理电话联系人</string>
@@ -281,6 +313,10 @@
     <string name="action_deselect_all">取消全选</string>
     <string name="contacts_empty">通讯录中没有找到联系人</string>
     <string name="contacts_imported">已导入 %1$d 个联系人</string>
+    <string name="contacts_all_imported">通讯录联系人都已导入</string>
+    <string name="contacts_imported_badge">已导入</string>
+    <string name="contacts_import_subtitle">从系统通讯录中勾选联系人，导入后老人就能一键拨号</string>
+    <string name="contacts_import_hint">已经导入过的联系人会自动跳过</string>
 
     <!-- 引导设为默认桌面 -->
     <string name="set_default_launcher_title">设为默认桌面</string>

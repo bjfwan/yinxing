@@ -4,12 +4,12 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.TextView
-import androidx.cardview.widget.CardView
 import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
 import com.bajianfeng.launcher.R
 import com.bajianfeng.launcher.data.contact.Contact
+import com.google.android.material.card.MaterialCardView
 
 class ContactManageAdapter(
     private var lowPerformanceMode: Boolean,
@@ -34,11 +34,11 @@ class ContactManageAdapter(
     }
 
     class ViewHolder(view: View) : RecyclerView.ViewHolder(view) {
-        val card: CardView = view as CardView
+        val card: MaterialCardView = view as MaterialCardView
         val tvName: TextView = view.findViewById(R.id.tv_contact_name)
         val tvMeta: TextView = view.findViewById(R.id.tv_contact_meta)
-        val btnEdit: CardView = view.findViewById(R.id.btn_edit)
-        val btnDelete: CardView = view.findViewById(R.id.btn_delete)
+        val btnEdit: MaterialCardView = view.findViewById(R.id.btn_edit)
+        val btnDelete: MaterialCardView = view.findViewById(R.id.btn_delete)
     }
 
     override fun getItemId(position: Int): Long = getItem(position).id.hashCode().toLong()
@@ -52,9 +52,9 @@ class ContactManageAdapter(
     override fun onBindViewHolder(holder: ViewHolder, position: Int) {
         val contact = getItem(position)
         val context = holder.itemView.context
-        holder.card.cardElevation = context.dpToPx(if (lowPerformanceMode) 2 else 4).toFloat()
         holder.tvName.text = contact.displayName
         holder.tvMeta.text = buildMetaText(context, contact)
+        holder.tvMeta.maxLines = if (lowPerformanceMode) 2 else 3
         holder.btnEdit.contentDescription = context.getString(R.string.action_edit) + contact.displayName
         holder.btnDelete.contentDescription = context.getString(R.string.video_contact_delete_description, contact.displayName)
 
@@ -98,7 +98,4 @@ class ContactManageAdapter(
         return summary.joinToString(" · ")
     }
 
-    private fun android.content.Context.dpToPx(dp: Int): Int {
-        return (dp * resources.displayMetrics.density).toInt()
-    }
 }

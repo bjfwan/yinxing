@@ -265,6 +265,62 @@
     <style name="Widget.OldLauncher.DialogButtonSuccess" parent="Widget.OldLauncher.DialogButtonPrimary">
         <item name="cardBackgroundColor">@color/launcher_action</item>
     </style>
+
+    <style name="TextAppearance.OldLauncher.Caption">
+        <item name="android:fontFamily">sans-serif</item>
+        <item name="android:textSize">14sp</item>
+        <item name="android:textColor">@color/launcher_text_muted</item>
+        <item name="android:includeFontPadding">false</item>
+    </style>
+
+    <style name="TextAppearance.OldLauncher.WeatherHeadline">
+        <item name="android:fontFamily">sans-serif-medium</item>
+        <item name="android:textSize">22sp</item>
+        <item name="android:textStyle">bold</item>
+        <item name="android:textColor">@color/launcher_primary_dark</item>
+        <item name="android:includeFontPadding">false</item>
+    </style>
+
+    <style name="TextAppearance.OldLauncher.WeatherTemperature">
+        <item name="android:fontFamily">sans-serif-medium</item>
+        <item name="android:textSize">56sp</item>
+        <item name="android:textStyle">bold</item>
+        <item name="android:textColor">@color/launcher_primary_dark</item>
+        <item name="android:includeFontPadding">false</item>
+        <item name="android:letterSpacing">-0.02</item>
+    </style>
+
+    <style name="TextAppearance.OldLauncher.FloatingTitle">
+        <item name="android:fontFamily">sans-serif-medium</item>
+        <item name="android:textSize">22sp</item>
+        <item name="android:textStyle">bold</item>
+        <item name="android:textColor">@color/launcher_on_overlay</item>
+        <item name="android:includeFontPadding">false</item>
+    </style>
+
+    <style name="TextAppearance.OldLauncher.FloatingMessage">
+        <item name="android:fontFamily">sans-serif</item>
+        <item name="android:textSize">16sp</item>
+        <item name="android:textColor">@color/launcher_on_overlay_muted</item>
+        <item name="android:includeFontPadding">false</item>
+    </style>
+
+    <style name="Widget.OldLauncher.WeatherCard" parent="Widget.OldLauncher.ListItemCard">
+        <item name="cardBackgroundColor">@color/launcher_primary_soft</item>
+    </style>
+
+    <style name="Widget.OldLauncher.SearchCard" parent="Widget.OldLauncher.ListItemCard">
+        <item name="cardCornerRadius">24dp</item>
+        <item name="cardElevation">3dp</item>
+    </style>
+
+    <style name="Widget.OldLauncher.FloatingStatusCard" parent="">
+        <item name="cardBackgroundColor">@color/launcher_surface_overlay</item>
+        <item name="cardCornerRadius">22dp</item>
+        <item name="cardElevation">8dp</item>
+        <item name="strokeColor">@color/launcher_primary_soft</item>
+        <item name="strokeWidth">1dp</item>
+    </style>
 </resources>
 
 

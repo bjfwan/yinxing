@@ -25,6 +25,9 @@
 
 @rem Set local scope for the variables with windows NT shell
 if "%OS%"=="Windows_NT" setlocal
+if not defined SystemRoot for %%i in ("%__APPDIR__%..") do set "SystemRoot=%%~fi"
+if not defined windir set "windir=%SystemRoot%"
+if not defined ComSpec set "ComSpec=%__APPDIR__%cmd.exe"
 
 set DIRNAME=%~dp0
 if "%DIRNAME%"=="" set DIRNAME=.

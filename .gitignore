@@ -18,3 +18,5 @@ out/
 *.keystore
 keystore.properties
 launcher_prefs*.xml
+%SystemDrive%/
+.codex-backup/

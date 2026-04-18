@@ -2,6 +2,7 @@
 <com.google.android.material.card.MaterialCardView xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:id="@+id/card_video_contact"
+    style="@style/Widget.OldLauncher.ListItemCard"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
     android:layout_marginStart="6dp"
@@ -10,12 +11,7 @@
     android:layout_marginBottom="8dp"
     android:clickable="true"
     android:focusable="true"
-    android:foreground="?android:attr/selectableItemBackground"
-    app:cardBackgroundColor="@color/launcher_surface"
-    app:cardCornerRadius="28dp"
-    app:cardElevation="5dp"
-    app:strokeColor="@color/launcher_outline"
-    app:strokeWidth="1dp">
+    android:foreground="?android:attr/selectableItemBackground">
 
     <LinearLayout
         android:layout_width="match_parent"
@@ -23,21 +19,21 @@
         android:gravity="center_vertical"
         android:minHeight="188dp"
         android:orientation="horizontal"
-        android:paddingStart="18dp"
-        android:paddingTop="14dp"
-        android:paddingEnd="18dp"
-        android:paddingBottom="14dp">
+        android:paddingStart="20dp"
+        android:paddingTop="16dp"
+        android:paddingEnd="20dp"
+        android:paddingBottom="16dp">
 
         <FrameLayout
             android:layout_width="0dp"
             android:layout_height="wrap_content"
-            android:layout_weight="1.2"
-            android:paddingEnd="6dp">
+            android:layout_weight="1.1"
+            android:paddingEnd="8dp">
 
             <ImageView
                 android:id="@+id/iv_video_contact_photo"
-                android:layout_width="160dp"
-                android:layout_height="160dp"
+                android:layout_width="152dp"
+                android:layout_height="152dp"
                 android:layout_gravity="center"
                 android:background="@drawable/icon_background"
                 android:contentDescription="@string/contact_photo_preview"
@@ -48,27 +44,23 @@
         <LinearLayout
             android:layout_width="0dp"
             android:layout_height="wrap_content"
-            android:layout_weight="0.8"
+            android:layout_weight="0.9"
             android:gravity="center_vertical"
             android:orientation="vertical"
             android:paddingStart="12dp">
 
-
-
-
             <TextView
                 android:id="@+id/tv_video_contact_name"
-                style="@style/TextAppearance.OldLauncher.CardTitleLarge"
+                style="@style/TextAppearance.OldLauncher.SectionTitle"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:ellipsize="end"
                 android:maxLines="2"
-                android:text="@string/video_contact_placeholder"
-                android:textSize="30sp" />
+                android:text="@string/video_contact_placeholder" />
 
             <TextView
                 android:id="@+id/tv_video_contact_action"
-                style="@style/TextAppearance.OldLauncher.HintStrong"
+                style="@style/TextAppearance.OldLauncher.Badge"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="14dp"
@@ -81,12 +73,9 @@
                 android:paddingEnd="14dp"
                 android:paddingBottom="8dp"
                 android:text="@string/contact_card_action_wechat_compact"
-                android:textColor="@color/launcher_primary"
-                android:textSize="14sp" />
+                android:textColor="@color/launcher_primary" />
 
         </LinearLayout>
 
     </LinearLayout>
 </com.google.android.material.card.MaterialCardView>
-
-

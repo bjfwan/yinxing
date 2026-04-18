@@ -13,6 +13,7 @@ import androidx.appcompat.widget.SwitchCompat
 import androidx.test.core.app.ApplicationProvider
 import com.bajianfeng.launcher.R
 import com.bajianfeng.launcher.data.home.LauncherPreferences
+import com.bajianfeng.launcher.feature.incoming.IncomingCallDiagnostics
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
@@ -34,6 +35,7 @@ class SettingsActivitySmokeTest {
         context = ApplicationProvider.getApplicationContext()
         resetLauncherPreferencesSingleton()
         context.getSharedPreferences("launcher_prefs", Context.MODE_PRIVATE).edit().clear().commit()
+        IncomingCallDiagnostics.clear(context)
         registerSettingsActivity()
         registerHomeActivity(packageName = "com.android.launcher3")
     }
@@ -111,6 +113,29 @@ class SettingsActivitySmokeTest {
             ),
             delayView.text.toString()
         )
+    }
+
+    @Test
+    fun incomingTraceSummaryShowsLatestCallChain() {
+        IncomingCallDiagnostics.recordBroadcastReceived(
+            context = context,
+            callerLabel = "张阿姨",
+            incomingNumber = "13812345678",
+            autoAnswer = true
+        )
+        IncomingCallDiagnostics.recordServiceStarted(context, "张阿姨", autoAnswer = true)
+        IncomingCallDiagnostics.recordActivityShown(context, "张阿姨")
+        IncomingCallDiagnostics.recordAcceptSuccess(
+            context,
+            context.getString(R.string.incoming_call_status_accept_sent)
+        )
+
+        val activity = Robolectric.buildActivity(SettingsActivity::class.java).setup().get()
+        idle()
+        val summaryView = activity.findViewById<TextView>(R.id.tv_incoming_trace_summary)
+
+        assertTrue(summaryView.text.contains(activity.getString(R.string.incoming_call_trace_accept_success)))
+        assertTrue(summaryView.text.contains("张阿姨"))
     }
 
 

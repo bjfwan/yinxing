@@ -22,6 +22,7 @@ import com.bajianfeng.launcher.common.util.PermissionUtil
 import com.bajianfeng.launcher.data.home.LauncherPreferences
 import com.bajianfeng.launcher.data.weather.WeatherPreferences
 import com.bajianfeng.launcher.data.weather.WeatherRepository
+import com.bajianfeng.launcher.feature.incoming.IncomingCallDiagnostics
 import com.bajianfeng.launcher.feature.appmanage.AppManageActivity
 import com.bajianfeng.launcher.feature.phone.PhoneContactActivity
 import com.bajianfeng.launcher.feature.videocall.VideoCallActivity
@@ -41,6 +42,7 @@ class SettingsActivity : AppCompatActivity() {
     private lateinit var autoAnswerDelaySummary: TextView
     private lateinit var autoAnswerDelayMinus: View
     private lateinit var autoAnswerDelayPlus: View
+    private lateinit var tvIncomingTraceSummary: TextView
     private lateinit var tvWeatherCitySummary: TextView
 
     private lateinit var tvAccessibilityStatus: TextView
@@ -123,14 +125,15 @@ class SettingsActivity : AppCompatActivity() {
         updateWeatherCitySummary()
         refreshDefaultLauncherUi()
         updateAutoAnswerDelaySummary(launcherPreferences.getAutoAnswerDelaySeconds())
+        updateIncomingTraceSummary()
     }
 
     private fun bindQuickSetupSection() {
         findViewById<View>(R.id.btn_manage_phone_contacts).setOnClickListener {
-            startActivity(Intent(this, PhoneContactActivity::class.java))
+            startActivity(PhoneContactActivity.createIntent(this, startInManageMode = true))
         }
         findViewById<View>(R.id.btn_manage_video_contacts).setOnClickListener {
-            startActivity(Intent(this, VideoCallActivity::class.java))
+            startActivity(VideoCallActivity.createIntent(this, startInManageMode = true))
         }
         findViewById<View>(R.id.btn_manage_home_apps).setOnClickListener {
             startActivity(Intent(this, AppManageActivity::class.java))
@@ -183,12 +186,14 @@ class SettingsActivity : AppCompatActivity() {
         autoAnswerDelaySummary = findViewById(R.id.tv_auto_answer_delay_summary)
         autoAnswerDelayMinus = findViewById(R.id.btn_auto_answer_delay_minus)
         autoAnswerDelayPlus = findViewById(R.id.btn_auto_answer_delay_plus)
+        tvIncomingTraceSummary = findViewById(R.id.tv_incoming_trace_summary)
 
         val autoAnswerEnabled = launcherPreferences.isAutoAnswerEnabled()
         autoAnswerSwitch.isChecked = autoAnswerEnabled
         updateAutoAnswerSummary(autoAnswerEnabled)
         updateAutoAnswerDelaySummary(launcherPreferences.getAutoAnswerDelaySeconds())
         updateAutoAnswerDelayControls(autoAnswerEnabled)
+        updateIncomingTraceSummary()
 
         autoAnswerSwitch.setOnCheckedChangeListener { _, isChecked ->
             launcherPreferences.setAutoAnswerEnabled(isChecked)
@@ -317,6 +322,10 @@ class SettingsActivity : AppCompatActivity() {
             R.string.settings_weather_city_summary,
             weatherPreferences.getCityName()
         )
+    }
+
+    private fun updateIncomingTraceSummary() {
+        tvIncomingTraceSummary.text = IncomingCallDiagnostics.getDisplayText(this)
     }
 
     private fun showSetCityDialog() {
