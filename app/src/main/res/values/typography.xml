@@ -241,7 +241,7 @@
 
     <style name="TextAppearance.OldLauncher.HeroTitle">
         <item name="android:fontFamily">sans-serif-medium</item>
-        <item name="android:textSize">48sp</item>
+        <item name="android:textSize">46sp</item>
         <item name="android:textStyle">bold</item>
         <item name="android:textColor">@color/launcher_primary_dark</item>
         <item name="android:includeFontPadding">false</item>
@@ -283,7 +283,7 @@
 
     <style name="TextAppearance.OldLauncher.WeatherTemperature">
         <item name="android:fontFamily">sans-serif-medium</item>
-        <item name="android:textSize">56sp</item>
+        <item name="android:textSize">52sp</item>
         <item name="android:textStyle">bold</item>
         <item name="android:textColor">@color/launcher_primary_dark</item>
         <item name="android:includeFontPadding">false</item>

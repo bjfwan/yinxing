@@ -107,8 +107,7 @@
         </receiver>
         <service
             android:name=".feature.incoming.IncomingCallForegroundService"
-            android:exported="false"
-            android:foregroundServiceType="phoneCall" />
+            android:exported="false" />
 
         <service
             android:name="com.google.android.accessibility.selecttospeak.SelectToSpeakService"

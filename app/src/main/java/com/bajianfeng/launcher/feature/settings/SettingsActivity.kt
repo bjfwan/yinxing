@@ -2,16 +2,18 @@ package com.bajianfeng.launcher.feature.settings
 
 import android.Manifest
 import android.app.role.RoleManager
-import android.content.res.ColorStateList
 import android.content.Intent
 import android.content.pm.PackageManager
+import android.content.res.ColorStateList
 import android.os.Build
 import android.os.Bundle
 import android.provider.Settings
+import android.util.Log
 import android.view.View
 import android.view.inputmethod.EditorInfo
 import android.view.inputmethod.InputMethodManager
 import android.widget.EditText
+import android.widget.LinearLayout
 import android.widget.TextView
 import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
@@ -20,17 +22,19 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.widget.SwitchCompat
 import com.bajianfeng.launcher.R
 import com.bajianfeng.launcher.common.util.PermissionUtil
+import com.bajianfeng.launcher.data.contact.ContactManager
 import com.bajianfeng.launcher.data.home.LauncherPreferences
 import com.bajianfeng.launcher.data.weather.WeatherPreferences
 import com.bajianfeng.launcher.data.weather.WeatherRepository
 import com.bajianfeng.launcher.feature.appmanage.AppManageActivity
 import com.bajianfeng.launcher.feature.incoming.IncomingCallDiagnostics
 import com.bajianfeng.launcher.feature.incoming.IncomingGuardItem
-import com.bajianfeng.launcher.feature.incoming.IncomingGuardItemState
 import com.bajianfeng.launcher.feature.incoming.IncomingGuardReadiness
 import com.bajianfeng.launcher.feature.incoming.IncomingGuardReadinessEvaluator
 import com.bajianfeng.launcher.feature.phone.PhoneContactActivity
+import com.bajianfeng.launcher.feature.phone.PhoneContactManager
 import com.bajianfeng.launcher.feature.videocall.VideoCallActivity
+import com.google.android.material.bottomsheet.BottomSheetDialog
 
 class SettingsActivity : AppCompatActivity() {
 
@@ -43,36 +47,91 @@ class SettingsActivity : AppCompatActivity() {
     private lateinit var tvIncomingGuardAction: TextView
     private lateinit var btnIncomingGuardAction: View
 
-    private lateinit var lowPerformanceSwitch: SwitchCompat
-    private lateinit var lowPerformanceSummary: TextView
-    private lateinit var kioskModeSwitch: SwitchCompat
-    private lateinit var kioskModeSummary: TextView
-    private lateinit var autoAnswerSwitch: SwitchCompat
-    private lateinit var autoAnswerSummary: TextView
-    private lateinit var autoAnswerDelaySummary: TextView
-    private lateinit var autoAnswerDelayMinus: View
-    private lateinit var autoAnswerDelayPlus: View
-    private lateinit var tvIncomingTraceSummary: TextView
-    private lateinit var tvWeatherCitySummary: TextView
-
-    private lateinit var tvAccessibilityStatus: TextView
-    private lateinit var tvAccessibilitySummary: TextView
-    private lateinit var tvNotificationPermissionStatus: TextView
-    private lateinit var tvNotificationPermissionSummary: TextView
-    private lateinit var tvBatteryStatus: TextView
-    private lateinit var tvBatterySummary: TextView
-    private lateinit var tvAutostartStatus: TextView
-    private lateinit var tvAutostartSummary: TextView
-    private lateinit var tvOverlayStatus: TextView
-    private lateinit var tvOverlaySummary: TextView
-    private lateinit var tvPhonePermissionStatus: TextView
-    private lateinit var tvPhonePermissionSummary: TextView
-    private lateinit var tvDefaultLauncherStatus: TextView
-    private lateinit var tvDefaultLauncherSummary: TextView
-    private lateinit var tvBgStartStatus: TextView
-    private lateinit var tvBgStartSummary: TextView
+    private lateinit var tvContactsHubSummary: TextView
+    private lateinit var tvAutoAnswerHubStatus: TextView
+    private lateinit var tvAutoAnswerHubSummary: TextView
+    private lateinit var tvPermissionHubStatus: TextView
+    private lateinit var tvPermissionHubSummary: TextView
+    private lateinit var tvDeviceHubStatus: TextView
+    private lateinit var tvDeviceHubSummary: TextView
+    private lateinit var tvSystemHubSummary: TextView
 
     private var incomingGuardReadiness = IncomingGuardReadiness(emptyList())
+    private var permissionEntryStates = emptyMap<PermissionEntry, PermissionEntryState>()
+
+    private enum class PermissionGroup(
+        val titleRes: Int,
+        val readySummaryRes: Int,
+        val dialogMessageRes: Int
+    ) {
+        Call(
+            R.string.settings_permission_group_call_title,
+            R.string.settings_permission_group_call_summary,
+            R.string.settings_permission_group_call_dialog_message
+        ),
+        KeepAlive(
+            R.string.settings_permission_group_keep_alive_title,
+            R.string.settings_permission_group_keep_alive_summary,
+            R.string.settings_permission_group_keep_alive_dialog_message
+        ),
+        Video(
+            R.string.settings_permission_group_video_title,
+            R.string.settings_permission_group_video_summary,
+            R.string.settings_permission_group_video_dialog_message
+        );
+
+        val entries: List<PermissionEntry>
+            get() = when (this) {
+                Call -> listOf(
+                    PermissionEntry.PhonePermission,
+                    PermissionEntry.NotificationPermission
+                )
+                KeepAlive -> listOf(
+                    PermissionEntry.DefaultLauncher,
+                    PermissionEntry.BatteryOptimization,
+                    PermissionEntry.AutoStart,
+                    PermissionEntry.BackgroundStart
+                )
+                Video -> listOf(
+                    PermissionEntry.Accessibility,
+                    PermissionEntry.Overlay
+                )
+            }
+    }
+
+    private enum class PermissionEntry {
+        PhonePermission,
+        NotificationPermission,
+        DefaultLauncher,
+        BatteryOptimization,
+        AutoStart,
+        BackgroundStart,
+        Accessibility,
+        Overlay
+    }
+
+    private data class PermissionEntryState(
+        val entry: PermissionEntry,
+        val isReady: Boolean,
+        val requiresManualConfirmation: Boolean = false
+    )
+
+    private data class BadgeStyle(
+        val text: String,
+        val textColorResId: Int,
+        val backgroundColorResId: Int
+    )
+
+    private data class ListSheetContext(
+        val dialog: BottomSheetDialog,
+        val contentView: View,
+        val container: LinearLayout
+    )
+
+    private data class GroupRenderState(
+        val summary: String,
+        val badge: BadgeStyle
+    )
 
     private val phonePermissionLauncher = registerForActivityResult(
         ActivityResultContracts.RequestMultiplePermissions()
@@ -87,7 +146,7 @@ class SettingsActivity : AppCompatActivity() {
         } else {
             PermissionUtil.openAppDetailSettings(this)
         }
-        refreshAllPermissionUi()
+        refreshOverviewUi()
     }
 
     private val notificationPermissionLauncher = registerForActivityResult(
@@ -102,13 +161,13 @@ class SettingsActivity : AppCompatActivity() {
         } else {
             PermissionUtil.openNotificationSettings(this)
         }
-        refreshAllPermissionUi()
+        refreshOverviewUi()
     }
 
     private val defaultLauncherRoleLauncher = registerForActivityResult(
         ActivityResultContracts.StartActivityForResult()
     ) {
-        refreshAllPermissionUi()
+        refreshOverviewUi()
         if (isDefaultLauncher()) {
             Toast.makeText(this, getString(R.string.set_default_launcher_summary_on), Toast.LENGTH_SHORT).show()
         } else {
@@ -123,283 +182,103 @@ class SettingsActivity : AppCompatActivity() {
         launcherPreferences = LauncherPreferences.getInstance(this)
         weatherPreferences = WeatherPreferences.getInstance(this)
 
-        findViewById<View>(R.id.btn_back).setOnClickListener { finish() }
-
-        bindQuickSetupSection()
-        bindIncomingGuardSection()
-        bindLauncherSection()
-        bindCallSection()
-        bindSupportSection()
-        bindOtherSection()
+        bindOverviewViews()
+        bindOverviewActions()
     }
 
     override fun onResume() {
         super.onResume()
-        refreshAllPermissionUi()
-        updateWeatherCitySummary()
-        updateAutoAnswerDelaySummary(launcherPreferences.getAutoAnswerDelaySeconds())
-        updateIncomingTraceSummary()
+        refreshOverviewUi()
     }
 
-    private fun bindQuickSetupSection() {
-        findViewById<View>(R.id.btn_manage_phone_contacts).setOnClickListener {
-            startActivity(PhoneContactActivity.createIntent(this, startInManageMode = true))
-        }
-        findViewById<View>(R.id.btn_manage_video_contacts).setOnClickListener {
-            startActivity(VideoCallActivity.createIntent(this, startInManageMode = true))
-        }
-        findViewById<View>(R.id.btn_manage_home_apps).setOnClickListener {
-            startActivity(Intent(this, AppManageActivity::class.java))
-        }
-    }
-
-    private fun bindIncomingGuardSection() {
+    private fun bindOverviewViews() {
         tvIncomingGuardStatus = findViewById(R.id.tv_incoming_guard_status)
         tvIncomingGuardProgress = findViewById(R.id.tv_incoming_guard_progress)
         tvIncomingGuardSummary = findViewById(R.id.tv_incoming_guard_summary)
         tvIncomingGuardAction = findViewById(R.id.tv_incoming_guard_action)
         btnIncomingGuardAction = findViewById(R.id.btn_incoming_guard_action)
-        btnIncomingGuardAction.setOnClickListener {
-            incomingGuardReadiness.blocker?.item?.let(::openIncomingGuardItem)
-        }
 
-        tvPhonePermissionStatus = findViewById(R.id.tv_phone_permission_status)
-        tvPhonePermissionSummary = findViewById(R.id.tv_phone_permission_summary)
-        findViewById<View>(R.id.btn_phone_permission).setOnClickListener {
-            openIncomingGuardItem(IncomingGuardItem.PhonePermission)
-        }
-
-        tvNotificationPermissionStatus = findViewById(R.id.tv_notification_permission_status)
-        tvNotificationPermissionSummary = findViewById(R.id.tv_notification_permission_summary)
-        findViewById<View>(R.id.btn_notification_permission).setOnClickListener {
-            openIncomingGuardItem(IncomingGuardItem.NotificationPermission)
-        }
-
-        tvDefaultLauncherStatus = findViewById(R.id.tv_default_launcher_status)
-        tvDefaultLauncherSummary = findViewById(R.id.tv_default_launcher_summary)
-        findViewById<View>(R.id.btn_set_default_launcher).setOnClickListener {
-            openIncomingGuardItem(IncomingGuardItem.DefaultLauncher)
-        }
-
-        tvBatteryStatus = findViewById(R.id.tv_battery_status)
-        tvBatterySummary = findViewById(R.id.tv_battery_summary)
-        findViewById<View>(R.id.btn_battery).setOnClickListener {
-            openIncomingGuardItem(IncomingGuardItem.BatteryOptimization)
-        }
-
-        tvAutostartStatus = findViewById(R.id.tv_autostart_status)
-        tvAutostartSummary = findViewById(R.id.tv_autostart_summary)
-        findViewById<View>(R.id.btn_autostart).setOnClickListener {
-            openIncomingGuardItem(IncomingGuardItem.AutoStart)
-        }
-
-        tvBgStartStatus = findViewById(R.id.tv_bg_start_status)
-        tvBgStartSummary = findViewById(R.id.tv_bg_start_summary)
-        findViewById<View>(R.id.btn_bg_start).setOnClickListener {
-            openIncomingGuardItem(IncomingGuardItem.BackgroundStart)
-        }
+        tvContactsHubSummary = findViewById(R.id.tv_contacts_hub_summary)
+        tvAutoAnswerHubStatus = findViewById(R.id.tv_auto_answer_hub_status)
+        tvAutoAnswerHubSummary = findViewById(R.id.tv_auto_answer_hub_summary)
+        tvPermissionHubStatus = findViewById(R.id.tv_permission_hub_status)
+        tvPermissionHubSummary = findViewById(R.id.tv_permission_hub_summary)
+        tvDeviceHubStatus = findViewById(R.id.tv_device_hub_status)
+        tvDeviceHubSummary = findViewById(R.id.tv_device_hub_summary)
+        tvSystemHubSummary = findViewById(R.id.tv_system_hub_summary)
     }
 
-    private fun bindLauncherSection() {
-        lowPerformanceSwitch = findViewById(R.id.switch_low_performance)
-        lowPerformanceSummary = findViewById(R.id.tv_low_performance_summary)
-        lowPerformanceSwitch.isChecked = launcherPreferences.isLowPerformanceModeEnabled()
-        updateLowPerformanceSummary(lowPerformanceSwitch.isChecked)
-        lowPerformanceSwitch.setOnCheckedChangeListener { _, isChecked ->
-            launcherPreferences.setLowPerformanceModeEnabled(isChecked)
-            updateLowPerformanceSummary(isChecked)
-        }
-
-        kioskModeSwitch = findViewById(R.id.switch_kiosk_mode)
-        kioskModeSummary = findViewById(R.id.tv_kiosk_mode_summary)
-        kioskModeSwitch.isChecked = launcherPreferences.isKioskModeEnabled()
-        updateKioskModeSummary(kioskModeSwitch.isChecked)
-        kioskModeSwitch.setOnCheckedChangeListener { _, isChecked ->
-            if (isChecked && !isDefaultLauncher()) {
-                kioskModeSwitch.isChecked = false
-                Toast.makeText(
-                    this,
-                    getString(R.string.settings_kiosk_mode_requires_default_launcher),
-                    Toast.LENGTH_LONG
-                ).show()
-                return@setOnCheckedChangeListener
-            }
-            launcherPreferences.setKioskModeEnabled(isChecked)
-            updateKioskModeSummary(isChecked)
-        }
+    private fun bindOverviewActions() {
+        findViewById<View>(R.id.btn_back).setOnClickListener { finish() }
+        findViewById<View>(R.id.btn_card_incoming_guard).setOnClickListener { showIncomingGuardSheet() }
+        btnIncomingGuardAction.setOnClickListener { showIncomingGuardSheet() }
+        findViewById<View>(R.id.btn_card_contacts).setOnClickListener { showContactsSheet() }
+        findViewById<View>(R.id.btn_card_auto_answer).setOnClickListener { showAutoAnswerSheet() }
+        findViewById<View>(R.id.btn_card_permissions).setOnClickListener { showPermissionGroupsSheet() }
+        findViewById<View>(R.id.btn_card_device).setOnClickListener { showDeviceSettingsSheet() }
+        findViewById<View>(R.id.btn_card_system).setOnClickListener { showSystemSheet() }
     }
 
-    private fun bindCallSection() {
-        autoAnswerSwitch = findViewById(R.id.switch_auto_answer)
-        autoAnswerSummary = findViewById(R.id.tv_auto_answer_summary)
-        autoAnswerDelaySummary = findViewById(R.id.tv_auto_answer_delay_summary)
-        autoAnswerDelayMinus = findViewById(R.id.btn_auto_answer_delay_minus)
-        autoAnswerDelayPlus = findViewById(R.id.btn_auto_answer_delay_plus)
-        tvIncomingTraceSummary = findViewById(R.id.tv_incoming_trace_summary)
-
-        val autoAnswerEnabled = launcherPreferences.isAutoAnswerEnabled()
-        autoAnswerSwitch.isChecked = autoAnswerEnabled
-        updateAutoAnswerSummary(autoAnswerEnabled)
-        updateAutoAnswerDelaySummary(launcherPreferences.getAutoAnswerDelaySeconds())
-        updateAutoAnswerDelayControls(autoAnswerEnabled)
-        updateIncomingTraceSummary()
-
-        autoAnswerSwitch.setOnCheckedChangeListener { _, isChecked ->
-            launcherPreferences.setAutoAnswerEnabled(isChecked)
-            updateAutoAnswerSummary(isChecked)
-            updateAutoAnswerDelayControls(isChecked)
-        }
-
-        autoAnswerDelayMinus.setOnClickListener { adjustAutoAnswerDelay(-1) }
-        autoAnswerDelayPlus.setOnClickListener { adjustAutoAnswerDelay(1) }
+    private fun refreshOverviewUi() {
+        updateContactsHubSummary()
+        updateAutoAnswerHubCard()
+        updateSystemHubCard()
+        refreshAllPermissionUi()
     }
 
-    private fun bindSupportSection() {
-        tvAccessibilityStatus = findViewById(R.id.tv_accessibility_status)
-        tvAccessibilitySummary = findViewById(R.id.tv_accessibility_summary)
-        tvOverlayStatus = findViewById(R.id.tv_overlay_status)
-        tvOverlaySummary = findViewById(R.id.tv_overlay_summary)
-
-        findViewById<View>(R.id.btn_accessibility).setOnClickListener {
-            PermissionUtil.openAccessibilitySettings(this)
-        }
-        findViewById<View>(R.id.btn_overlay).setOnClickListener {
-            PermissionUtil.openOverlaySettings(this)
-        }
-    }
-
-    private fun bindOtherSection() {
-        tvWeatherCitySummary = findViewById(R.id.tv_weather_city_summary)
-        updateWeatherCitySummary()
-        findViewById<View>(R.id.btn_weather_city).setOnClickListener {
-            showSetCityDialog()
-        }
-        findViewById<View>(R.id.btn_system_settings).setOnClickListener {
-            openSystemSettings()
-        }
-    }
-
-    private fun updateLowPerformanceSummary(enabled: Boolean) {
-        lowPerformanceSummary.text = getString(
-            if (enabled) R.string.settings_low_performance_summary_on
-            else R.string.settings_low_performance_summary_off
+    private fun updateContactsHubSummary() {
+        val phoneCount = PhoneContactManager.getInstance(this).getContacts().size
+        val videoCount = ContactManager.getInstance(this).getContacts().size
+        val homeAppCount = launcherPreferences.getSelectedPackages().size
+        tvContactsHubSummary.text = getString(
+            R.string.settings_contacts_hub_summary,
+            phoneCount,
+            videoCount,
+            homeAppCount
         )
     }
 
-    private fun updateKioskModeSummary(enabled: Boolean) {
-        kioskModeSummary.text = getString(
-            if (enabled) R.string.settings_kiosk_mode_summary_on
-            else R.string.settings_kiosk_mode_summary_off
-        )
-    }
-
-    private fun updateAutoAnswerSummary(enabled: Boolean) {
-        autoAnswerSummary.text = getString(
-            if (enabled) R.string.settings_auto_answer_summary_on
-            else R.string.settings_auto_answer_summary_off
-        )
-    }
-
-    private fun updateAutoAnswerDelaySummary(seconds: Int) {
-        autoAnswerDelaySummary.text = getString(R.string.settings_auto_answer_delay_summary, seconds)
-    }
-
-    private fun updateAutoAnswerDelayControls(enabled: Boolean) {
-        val alpha = if (enabled) 1f else 0.38f
-        listOf(autoAnswerDelayMinus, autoAnswerDelayPlus, autoAnswerDelaySummary).forEach { view ->
-            view.isEnabled = enabled
-            view.alpha = alpha
+    private fun updateAutoAnswerHubCard() {
+        val enabled = launcherPreferences.isAutoAnswerEnabled()
+        if (enabled) {
+            applyInfoBadge(
+                tv = tvAutoAnswerHubStatus,
+                text = getString(R.string.settings_guard_status_done),
+                textColorResId = R.color.launcher_action_dark,
+                backgroundColorResId = R.color.launcher_primary_soft
+            )
+            tvAutoAnswerHubSummary.text = getString(
+                R.string.settings_auto_answer_delay_summary,
+                launcherPreferences.getAutoAnswerDelaySeconds()
+            )
+        } else {
+            applyInfoBadge(
+                tv = tvAutoAnswerHubStatus,
+                text = getString(R.string.settings_guard_status_pending),
+                textColorResId = R.color.launcher_warning,
+                backgroundColorResId = R.color.launcher_warning_soft
+            )
+            tvAutoAnswerHubSummary.text = getString(R.string.settings_auto_answer_summary_off)
         }
     }
 
-    private fun adjustAutoAnswerDelay(delta: Int) {
-        if (!autoAnswerSwitch.isChecked) return
-        val updated = launcherPreferences.getAutoAnswerDelaySeconds() + delta
-        launcherPreferences.setAutoAnswerDelaySeconds(updated)
-        updateAutoAnswerDelaySummary(launcherPreferences.getAutoAnswerDelaySeconds())
-    }
-
-    private fun updateWeatherCitySummary() {
-        tvWeatherCitySummary.text = getString(
+    private fun updateSystemHubCard() {
+        tvSystemHubSummary.text = getString(
             R.string.settings_weather_city_summary,
             weatherPreferences.getCityName()
         )
     }
 
-    private fun updateIncomingTraceSummary() {
-        tvIncomingTraceSummary.text = IncomingCallDiagnostics.getDisplayText(this)
-    }
-
-    private fun showSetCityDialog() {
-        val currentCity = weatherPreferences.getCityName()
-        val dialogView = layoutInflater.inflate(R.layout.dialog_set_city, null)
-        val etCity = dialogView.findViewById<EditText>(R.id.et_city)
-        etCity.setText(currentCity)
-        etCity.setSelection(currentCity.length)
-
-        val dialog = AlertDialog.Builder(this)
-            .setView(dialogView)
-            .create()
-        dialog.window?.setBackgroundDrawableResource(android.R.color.transparent)
-
-        dialogView.findViewById<androidx.cardview.widget.CardView>(R.id.btn_cancel)
-            .setOnClickListener { dialog.dismiss() }
-
-        val confirm = {
-            val city = etCity.text.toString().trim()
-            if (city.isNotEmpty()) {
-                dialog.dismiss()
-                val imm = getSystemService(INPUT_METHOD_SERVICE) as InputMethodManager
-                imm.hideSoftInputFromWindow(etCity.windowToken, 0)
-                weatherPreferences.setCityName(city)
-                WeatherRepository.clearCache()
-                updateWeatherCitySummary()
-                Toast.makeText(
-                    this,
-                    getString(R.string.settings_weather_city_updated, city),
-                    Toast.LENGTH_SHORT
-                ).show()
-            } else {
-                Toast.makeText(this, getString(R.string.settings_weather_city_empty), Toast.LENGTH_SHORT).show()
-            }
-        }
-
-        dialogView.findViewById<androidx.cardview.widget.CardView>(R.id.btn_confirm)
-            .setOnClickListener { confirm() }
-
-        etCity.setOnEditorActionListener { _, actionId, _ ->
-            if (actionId == EditorInfo.IME_ACTION_DONE) {
-                confirm()
-                true
-            } else {
-                false
-            }
-        }
-
-        dialog.show()
-        etCity.postDelayed({
-            etCity.requestFocus()
-            val imm = getSystemService(INPUT_METHOD_SERVICE) as InputMethodManager
-            imm.showSoftInput(etCity, InputMethodManager.SHOW_IMPLICIT)
-        }, 100)
-    }
-
     private fun refreshAllPermissionUi() {
         val accessibilityGranted = PermissionUtil.isAnyAccessibilityServiceEnabled(this)
-        setStatusBadge(tvAccessibilityStatus, accessibilityGranted)
-        tvAccessibilitySummary.text = getString(
-            if (accessibilityGranted) R.string.settings_accessibility_summary_on
-            else R.string.settings_accessibility_summary_off
-        )
-
         val overlayGranted = PermissionUtil.canDrawOverlays(this)
-        setStatusBadge(tvOverlayStatus, overlayGranted)
-        tvOverlaySummary.text = getString(
-            if (overlayGranted) R.string.settings_overlay_summary_on
-            else R.string.settings_overlay_summary_off
-        )
-
         refreshIncomingGuardUi()
+        permissionEntryStates = buildPermissionEntryStates(
+            accessibilityGranted = accessibilityGranted,
+            overlayGranted = overlayGranted
+        )
+        refreshPermissionHubCard()
+        refreshDeviceHubCard()
     }
 
     private fun refreshIncomingGuardUi() {
@@ -426,9 +305,7 @@ class SettingsActivity : AppCompatActivity() {
                 backgroundColorResId = R.color.launcher_primary_soft
             )
             tvIncomingGuardSummary.text = getString(R.string.settings_incoming_guard_summary_ready)
-            tvIncomingGuardAction.text = getString(R.string.settings_incoming_guard_action_ready)
-            btnIncomingGuardAction.isEnabled = false
-            btnIncomingGuardAction.alpha = 0.56f
+            tvIncomingGuardAction.text = getString(R.string.settings_incoming_guard_action_open)
         } else {
             val blockerTitle = blocker?.let(::guardTitle).orEmpty()
             applyInfoBadge(
@@ -445,149 +322,543 @@ class SettingsActivity : AppCompatActivity() {
                 R.string.settings_incoming_guard_action_fix,
                 blockerTitle
             )
-            btnIncomingGuardAction.isEnabled = true
-            btnIncomingGuardAction.alpha = 1f
-        }
-
-        incomingGuardReadiness.items.forEach { itemState ->
-            val isBlocker = blocker == itemState.item
-            when (itemState.item) {
-                IncomingGuardItem.PhonePermission -> renderGuardItem(
-                    itemState,
-                    tvPhonePermissionSummary,
-                    tvPhonePermissionStatus,
-                    isBlocker
-                )
-                IncomingGuardItem.NotificationPermission -> renderGuardItem(
-                    itemState,
-                    tvNotificationPermissionSummary,
-                    tvNotificationPermissionStatus,
-                    isBlocker
-                )
-                IncomingGuardItem.DefaultLauncher -> renderGuardItem(
-                    itemState,
-                    tvDefaultLauncherSummary,
-                    tvDefaultLauncherStatus,
-                    isBlocker
-                )
-                IncomingGuardItem.BatteryOptimization -> renderGuardItem(
-                    itemState,
-                    tvBatterySummary,
-                    tvBatteryStatus,
-                    isBlocker
-                )
-                IncomingGuardItem.AutoStart -> renderGuardItem(
-                    itemState,
-                    tvAutostartSummary,
-                    tvAutostartStatus,
-                    isBlocker
-                )
-                IncomingGuardItem.BackgroundStart -> renderGuardItem(
-                    itemState,
-                    tvBgStartSummary,
-                    tvBgStartStatus,
-                    isBlocker
-                )
-            }
         }
     }
 
-    private fun renderGuardItem(
-        itemState: IncomingGuardItemState,
-        summaryView: TextView,
-        statusView: TextView,
-        isBlocker: Boolean
-    ) {
-        val baseSummary = guardSummary(itemState)
-        summaryView.text = if (isBlocker) {
-            getString(R.string.settings_guard_blocker_prefix, baseSummary)
-        } else {
-            baseSummary
+    private fun buildPermissionEntryStates(
+        accessibilityGranted: Boolean,
+        overlayGranted: Boolean
+    ): Map<PermissionEntry, PermissionEntryState> {
+        val states = linkedMapOf<PermissionEntry, PermissionEntryState>()
+        incomingGuardReadiness.items.forEach { itemState ->
+            val entry = itemState.item.toPermissionEntry()
+            states[entry] = PermissionEntryState(
+                entry = entry,
+                isReady = itemState.isReady,
+                requiresManualConfirmation = itemState.requiresManualConfirmation
+            )
         }
-        when {
-            itemState.isReady && itemState.requiresManualConfirmation -> {
-                applyInfoBadge(
-                    tv = statusView,
+        states[PermissionEntry.Accessibility] = PermissionEntryState(
+            entry = PermissionEntry.Accessibility,
+            isReady = accessibilityGranted
+        )
+        states[PermissionEntry.Overlay] = PermissionEntryState(
+            entry = PermissionEntry.Overlay,
+            isReady = overlayGranted
+        )
+        return states
+    }
+
+    private fun refreshPermissionHubCard() {
+        val states = permissionEntryStates.values.toList()
+        val blocker = states.firstOrNull { !it.isReady }
+        val completedCount = states.count { it.isReady }
+        tvPermissionHubSummary.text = if (blocker == null) {
+            getString(R.string.settings_permissions_hub_summary_ready)
+        } else {
+            getString(
+                R.string.settings_permissions_hub_summary_pending,
+                permissionEntryTitle(blocker.entry)
+            )
+        }
+        applyInfoBadge(
+            tv = tvPermissionHubStatus,
+            text = getString(R.string.settings_permission_group_progress, completedCount, states.size),
+            textColorResId = if (blocker == null) R.color.launcher_action_dark else R.color.launcher_warning,
+            backgroundColorResId = if (blocker == null) R.color.launcher_primary_soft else R.color.launcher_warning_soft
+        )
+    }
+
+    private fun refreshDeviceHubCard() {
+        val defaultSummary = if (isDefaultLauncher()) {
+            getString(R.string.settings_device_hub_default_ready)
+        } else {
+            getString(R.string.settings_device_hub_default_pending)
+        }
+        val kioskSummary = if (launcherPreferences.isKioskModeEnabled()) {
+            getString(R.string.settings_device_hub_kiosk_on)
+        } else {
+            getString(R.string.settings_device_hub_kiosk_off)
+        }
+        val performanceSummary = if (launcherPreferences.isLowPerformanceModeEnabled()) {
+            getString(R.string.settings_device_hub_low_performance_on)
+        } else {
+            getString(R.string.settings_device_hub_low_performance_off)
+        }
+        tvDeviceHubSummary.text = getString(
+            R.string.settings_device_hub_summary,
+            defaultSummary,
+            kioskSummary,
+            performanceSummary
+        )
+        applyInfoBadge(
+            tv = tvDeviceHubStatus,
+            text = if (isDefaultLauncher()) {
+                getString(R.string.settings_guard_status_done)
+            } else {
+                getString(R.string.settings_guard_status_pending)
+            },
+            textColorResId = if (isDefaultLauncher()) R.color.launcher_action_dark else R.color.launcher_warning,
+            backgroundColorResId = if (isDefaultLauncher()) R.color.launcher_primary_soft else R.color.launcher_warning_soft
+        )
+    }
+
+    private fun showIncomingGuardSheet() {
+        val blocker = incomingGuardReadiness.blocker?.item
+        val message = if (incomingGuardReadiness.isReady) {
+            getString(R.string.settings_incoming_guard_summary_ready)
+        } else {
+            getString(
+                R.string.settings_incoming_guard_summary_blocked,
+                blocker?.let(::guardTitle).orEmpty()
+            )
+        }
+        val sheet = createListSheet(
+            title = getString(R.string.settings_section_incoming_guard_title),
+            message = message
+        )
+
+        incomingGuardReadiness.items.forEach { itemState ->
+            val entry = itemState.item.toPermissionEntry()
+            val state = permissionEntryStates[entry] ?: return@forEach
+            val badge = when {
+                itemState.isReady && itemState.requiresManualConfirmation -> BadgeStyle(
                     text = getString(R.string.settings_guard_status_confirmed),
                     textColorResId = R.color.launcher_action_dark,
                     backgroundColorResId = R.color.launcher_primary_soft
                 )
-            }
-            itemState.isReady -> {
-                applyInfoBadge(
-                    tv = statusView,
+                itemState.isReady -> BadgeStyle(
                     text = getString(R.string.settings_guard_status_done),
                     textColorResId = R.color.launcher_action_dark,
                     backgroundColorResId = R.color.launcher_primary_soft
                 )
-            }
-            isBlocker -> {
-                applyInfoBadge(
-                    tv = statusView,
+                incomingGuardReadiness.blocker?.item == itemState.item -> BadgeStyle(
                     text = getString(R.string.settings_guard_status_blocking),
                     textColorResId = R.color.launcher_warning,
                     backgroundColorResId = R.color.launcher_warning_soft
                 )
+                else -> permissionEntryBadge(state)
             }
-            itemState.requiresManualConfirmation -> {
-                applyInfoBadge(
-                    tv = statusView,
-                    text = getString(R.string.settings_guard_status_pending),
-                    textColorResId = R.color.launcher_warning,
-                    backgroundColorResId = R.color.launcher_warning_soft
-                )
+            addSheetEntry(
+                context = sheet,
+                title = guardTitle(itemState.item),
+                summary = permissionEntrySummary(state),
+                badge = badge
+            ) {
+                sheet.dialog.dismiss()
+                openIncomingGuardItem(itemState.item)
             }
-            else -> {
-                applyInfoBadge(
-                    tv = statusView,
-                    text = getString(R.string.settings_permission_go_set),
-                    textColorResId = R.color.launcher_action,
-                    backgroundColorResId = R.color.launcher_surface_muted
-                )
+        }
+        sheet.dialog.show()
+    }
+
+    private fun showContactsSheet() {
+        val sheet = createListSheet(
+            title = getString(R.string.settings_section_quick_setup_title),
+            message = getString(R.string.settings_sheet_contacts_message)
+        )
+        val phoneCount = PhoneContactManager.getInstance(this).getContacts().size
+        val videoCount = ContactManager.getInstance(this).getContacts().size
+        val homeAppCount = launcherPreferences.getSelectedPackages().size
+
+        addSheetEntry(
+            context = sheet,
+            title = getString(R.string.settings_manage_phone_contacts_title),
+            summary = getString(R.string.settings_contacts_phone_count, phoneCount),
+            badge = actionBadge(getString(R.string.settings_manage_action))
+        ) {
+            sheet.dialog.dismiss()
+            startActivity(PhoneContactActivity.createIntent(this, startInManageMode = true))
+        }
+        addSheetEntry(
+            context = sheet,
+            title = getString(R.string.settings_manage_video_contacts_title),
+            summary = getString(R.string.settings_contacts_video_count, videoCount),
+            badge = actionBadge(getString(R.string.settings_manage_action))
+        ) {
+            sheet.dialog.dismiss()
+            startActivity(VideoCallActivity.createIntent(this, startInManageMode = true))
+        }
+        addSheetEntry(
+            context = sheet,
+            title = getString(R.string.settings_manage_home_apps_title),
+            summary = getString(R.string.settings_home_apps_count, homeAppCount),
+            badge = actionBadge(getString(R.string.settings_manage_action))
+        ) {
+            sheet.dialog.dismiss()
+            startActivity(Intent(this, AppManageActivity::class.java))
+        }
+        sheet.dialog.show()
+    }
+
+    private fun showAutoAnswerSheet() {
+        val dialog = BottomSheetDialog(this)
+        val view = layoutInflater.inflate(R.layout.sheet_settings_auto_answer, null)
+        dialog.setContentView(view)
+
+        val autoAnswerSwitch = view.findViewById<SwitchCompat>(R.id.switch_auto_answer_sheet)
+        val autoAnswerSummary = view.findViewById<TextView>(R.id.tv_auto_answer_sheet_summary)
+        val autoAnswerDelaySummary = view.findViewById<TextView>(R.id.tv_auto_answer_delay_sheet_summary)
+        val autoAnswerDelayMinus = view.findViewById<View>(R.id.btn_auto_answer_delay_sheet_minus)
+        val autoAnswerDelayPlus = view.findViewById<View>(R.id.btn_auto_answer_delay_sheet_plus)
+        val incomingTraceSummary = view.findViewById<TextView>(R.id.tv_incoming_trace_sheet_summary)
+
+        fun updateDelayControls(enabled: Boolean) {
+            val alpha = if (enabled) 1f else 0.38f
+            listOf(autoAnswerDelayMinus, autoAnswerDelayPlus, autoAnswerDelaySummary).forEach { target ->
+                target.isEnabled = enabled
+                target.alpha = alpha
             }
+        }
+
+        fun updateSheetSummary() {
+            val enabled = launcherPreferences.isAutoAnswerEnabled()
+            autoAnswerSwitch.isChecked = enabled
+            autoAnswerSummary.text = getString(
+                if (enabled) R.string.settings_auto_answer_summary_on
+                else R.string.settings_auto_answer_summary_off
+            )
+            autoAnswerDelaySummary.text = getString(
+                R.string.settings_auto_answer_delay_summary,
+                launcherPreferences.getAutoAnswerDelaySeconds()
+            )
+            incomingTraceSummary.text = IncomingCallDiagnostics.getDisplayText(this)
+            updateDelayControls(enabled)
+        }
+
+        updateSheetSummary()
+
+        autoAnswerSwitch.setOnCheckedChangeListener { _, isChecked ->
+            launcherPreferences.setAutoAnswerEnabled(isChecked)
+            updateSheetSummary()
+            updateAutoAnswerHubCard()
+        }
+        autoAnswerDelayMinus.setOnClickListener {
+            if (!launcherPreferences.isAutoAnswerEnabled()) return@setOnClickListener
+            val updated = launcherPreferences.getAutoAnswerDelaySeconds() - 1
+            launcherPreferences.setAutoAnswerDelaySeconds(updated)
+            updateSheetSummary()
+            updateAutoAnswerHubCard()
+        }
+        autoAnswerDelayPlus.setOnClickListener {
+            if (!launcherPreferences.isAutoAnswerEnabled()) return@setOnClickListener
+            val updated = launcherPreferences.getAutoAnswerDelaySeconds() + 1
+            launcherPreferences.setAutoAnswerDelaySeconds(updated)
+            updateSheetSummary()
+            updateAutoAnswerHubCard()
+        }
+        view.findViewById<View>(R.id.btn_close_auto_answer_sheet).setOnClickListener {
+            dialog.dismiss()
+        }
+        dialog.show()
+    }
+
+    private fun showPermissionGroupsSheet() {
+        val sheet = createListSheet(
+            title = getString(R.string.settings_section_support_title),
+            message = getString(R.string.settings_sheet_permissions_message)
+        )
+        PermissionGroup.entries.forEach { group ->
+            val renderState = permissionGroupRenderState(group)
+            addSheetEntry(
+                context = sheet,
+                title = getString(group.titleRes),
+                summary = renderState.summary,
+                badge = renderState.badge
+            ) {
+                sheet.dialog.dismiss()
+                showPermissionGroupDialog(group)
+            }
+        }
+        sheet.dialog.show()
+    }
+
+    private fun showDeviceSettingsSheet() {
+        val dialog = BottomSheetDialog(this)
+        val view = layoutInflater.inflate(R.layout.sheet_settings_device, null)
+        dialog.setContentView(view)
+
+        val defaultLauncherSummary = view.findViewById<TextView>(R.id.tv_default_launcher_sheet_summary)
+        val kioskModeSwitch = view.findViewById<SwitchCompat>(R.id.switch_kiosk_mode_sheet)
+        val kioskModeSummary = view.findViewById<TextView>(R.id.tv_kiosk_mode_sheet_summary)
+        val lowPerformanceSwitch = view.findViewById<SwitchCompat>(R.id.switch_low_performance_sheet)
+        val lowPerformanceSummary = view.findViewById<TextView>(R.id.tv_low_performance_sheet_summary)
+
+        fun updateSheetState() {
+            defaultLauncherSummary.text = getString(
+                if (isDefaultLauncher()) R.string.set_default_launcher_summary_on
+                else R.string.set_default_launcher_summary_off
+            )
+            kioskModeSwitch.isChecked = launcherPreferences.isKioskModeEnabled()
+            kioskModeSummary.text = getString(
+                if (launcherPreferences.isKioskModeEnabled()) R.string.settings_kiosk_mode_summary_on
+                else R.string.settings_kiosk_mode_summary_off
+            )
+            lowPerformanceSwitch.isChecked = launcherPreferences.isLowPerformanceModeEnabled()
+            lowPerformanceSummary.text = getString(
+                if (launcherPreferences.isLowPerformanceModeEnabled()) R.string.settings_low_performance_summary_on
+                else R.string.settings_low_performance_summary_off
+            )
+        }
+
+        updateSheetState()
+
+        view.findViewById<View>(R.id.btn_set_default_launcher_sheet).setOnClickListener {
+            dialog.dismiss()
+            if (isDefaultLauncher()) {
+                Toast.makeText(this, getString(R.string.set_default_launcher_summary_on), Toast.LENGTH_SHORT).show()
+            } else {
+                showSetDefaultLauncherDialog()
+            }
+        }
+
+        kioskModeSwitch.setOnCheckedChangeListener { _, isChecked ->
+            if (isChecked && !isDefaultLauncher()) {
+                kioskModeSwitch.isChecked = false
+                Toast.makeText(
+                    this,
+                    getString(R.string.settings_kiosk_mode_requires_default_launcher),
+                    Toast.LENGTH_LONG
+                ).show()
+                return@setOnCheckedChangeListener
+            }
+            launcherPreferences.setKioskModeEnabled(isChecked)
+            updateSheetState()
+            refreshDeviceHubCard()
+        }
+        lowPerformanceSwitch.setOnCheckedChangeListener { _, isChecked ->
+            launcherPreferences.setLowPerformanceModeEnabled(isChecked)
+            updateSheetState()
+            refreshDeviceHubCard()
+        }
+        view.findViewById<View>(R.id.btn_keep_alive_review_sheet).setOnClickListener {
+            dialog.dismiss()
+            showPermissionGroupDialog(PermissionGroup.KeepAlive)
+        }
+        view.findViewById<View>(R.id.btn_close_device_sheet).setOnClickListener {
+            dialog.dismiss()
+        }
+        dialog.show()
+    }
+
+    private fun showSystemSheet() {
+        val sheet = createListSheet(
+            title = getString(R.string.settings_section_system_title),
+            message = getString(R.string.settings_sheet_system_message)
+        )
+        addSheetEntry(
+            context = sheet,
+            title = getString(R.string.settings_weather_city_title),
+            summary = getString(R.string.settings_weather_city_summary, weatherPreferences.getCityName()),
+            badge = actionBadge(getString(R.string.settings_entry_modify))
+        ) {
+            sheet.dialog.dismiss()
+            showSetCityDialog()
+        }
+        addSheetEntry(
+            context = sheet,
+            title = getString(R.string.settings_system_title),
+            summary = getString(R.string.settings_system_summary),
+            badge = actionBadge(getString(R.string.settings_entry_open_settings))
+        ) {
+            sheet.dialog.dismiss()
+            openSystemSettings()
+        }
+        sheet.dialog.show()
+    }
+
+    private fun createListSheet(title: String, message: String): ListSheetContext {
+        val dialog = BottomSheetDialog(this)
+        val contentView = layoutInflater.inflate(R.layout.dialog_permission_group, null)
+        contentView.findViewById<TextView>(R.id.tv_dialog_title).text = title
+        contentView.findViewById<TextView>(R.id.tv_dialog_message).text = message
+        contentView.findViewById<View>(R.id.btn_close).setOnClickListener { dialog.dismiss() }
+        dialog.setContentView(contentView)
+        return ListSheetContext(
+            dialog = dialog,
+            contentView = contentView,
+            container = contentView.findViewById(R.id.layout_permission_items)
+        )
+    }
+
+    private fun addSheetEntry(
+        context: ListSheetContext,
+        title: String,
+        summary: String,
+        badge: BadgeStyle,
+        onClick: () -> Unit
+    ) {
+        val itemView = layoutInflater.inflate(R.layout.item_settings_permission_entry, context.container, false)
+        itemView.findViewById<TextView>(R.id.tv_permission_item_title).text = title
+        itemView.findViewById<TextView>(R.id.tv_permission_item_summary).text = summary
+        applyInfoBadge(
+            tv = itemView.findViewById(R.id.tv_permission_item_status),
+            text = badge.text,
+            textColorResId = badge.textColorResId,
+            backgroundColorResId = badge.backgroundColorResId
+        )
+        itemView.setOnClickListener { onClick() }
+        context.container.addView(itemView)
+    }
+
+    private fun actionBadge(text: String): BadgeStyle {
+        return BadgeStyle(
+            text = text,
+            textColorResId = R.color.launcher_action,
+            backgroundColorResId = R.color.launcher_surface_muted
+        )
+    }
+
+    private fun permissionGroupRenderState(group: PermissionGroup): GroupRenderState {
+        val states = group.entries.mapNotNull(permissionEntryStates::get)
+        val blocker = states.firstOrNull { !it.isReady }
+        val completedCount = states.count { it.isReady }
+        val summary = if (blocker == null) {
+            getString(group.readySummaryRes)
+        } else {
+            getString(
+                R.string.settings_permission_group_pending_summary,
+                permissionEntryTitle(blocker.entry)
+            )
+        }
+        val badge = if (blocker == null) {
+            BadgeStyle(
+                text = getString(R.string.settings_guard_status_done),
+                textColorResId = R.color.launcher_action_dark,
+                backgroundColorResId = R.color.launcher_primary_soft
+            )
+        } else {
+            BadgeStyle(
+                text = getString(R.string.settings_permission_group_progress, completedCount, states.size),
+                textColorResId = R.color.launcher_warning,
+                backgroundColorResId = R.color.launcher_warning_soft
+            )
+        }
+        return GroupRenderState(summary = summary, badge = badge)
+    }
+
+    private fun showPermissionGroupDialog(group: PermissionGroup) {
+        val sheet = createListSheet(
+            title = getString(group.titleRes),
+            message = getString(group.dialogMessageRes)
+        )
+        group.entries.mapNotNull(permissionEntryStates::get).forEach { state ->
+            addSheetEntry(
+                context = sheet,
+                title = permissionEntryTitle(state.entry),
+                summary = permissionEntrySummary(state),
+                badge = permissionEntryBadge(state)
+            ) {
+                sheet.dialog.dismiss()
+                openPermissionEntry(state.entry)
+            }
+        }
+        sheet.dialog.show()
+    }
+
+    private fun permissionEntrySummary(state: PermissionEntryState): String {
+        return when (state.entry) {
+            PermissionEntry.PhonePermission -> getString(
+                if (state.isReady) R.string.settings_phone_permission_summary_on
+                else R.string.settings_phone_permission_summary_off
+            )
+            PermissionEntry.NotificationPermission -> getString(
+                if (state.isReady) R.string.settings_notification_permission_summary_on
+                else R.string.settings_notification_permission_summary_off
+            )
+            PermissionEntry.DefaultLauncher -> getString(
+                if (state.isReady) R.string.set_default_launcher_summary_on
+                else R.string.set_default_launcher_summary_off
+            )
+            PermissionEntry.BatteryOptimization -> getString(
+                if (state.isReady) R.string.settings_battery_summary_on
+                else R.string.settings_battery_summary_off
+            )
+            PermissionEntry.AutoStart -> getString(
+                if (state.isReady) R.string.settings_autostart_summary_on
+                else R.string.settings_autostart_summary_off
+            )
+            PermissionEntry.BackgroundStart -> getString(
+                if (state.isReady) R.string.settings_bg_start_summary_on
+                else R.string.settings_bg_start_summary_off
+            )
+            PermissionEntry.Accessibility -> getString(
+                if (state.isReady) R.string.settings_accessibility_summary_on
+                else R.string.settings_accessibility_summary_off
+            )
+            PermissionEntry.Overlay -> getString(
+                if (state.isReady) R.string.settings_overlay_summary_on
+                else R.string.settings_overlay_summary_off
+            )
         }
     }
 
-    private fun guardSummary(itemState: IncomingGuardItemState): String {
-        return when (itemState.item) {
-            IncomingGuardItem.PhonePermission -> getString(
-                if (itemState.isReady) R.string.settings_phone_permission_summary_on
-                else R.string.settings_phone_permission_summary_off
+    private fun permissionEntryTitle(entry: PermissionEntry): String {
+        return getString(
+            when (entry) {
+                PermissionEntry.PhonePermission -> R.string.settings_phone_permission_title
+                PermissionEntry.NotificationPermission -> R.string.settings_notification_permission_title
+                PermissionEntry.DefaultLauncher -> R.string.set_default_launcher_title
+                PermissionEntry.BatteryOptimization -> R.string.settings_battery_title
+                PermissionEntry.AutoStart -> R.string.settings_autostart_title
+                PermissionEntry.BackgroundStart -> R.string.settings_bg_start_title
+                PermissionEntry.Accessibility -> R.string.settings_accessibility_title
+                PermissionEntry.Overlay -> R.string.settings_overlay_title
+            }
+        )
+    }
+
+    private fun permissionEntryBadge(state: PermissionEntryState): BadgeStyle {
+        return when {
+            state.isReady && state.requiresManualConfirmation -> BadgeStyle(
+                text = getString(R.string.settings_guard_status_confirmed),
+                textColorResId = R.color.launcher_action_dark,
+                backgroundColorResId = R.color.launcher_primary_soft
             )
-            IncomingGuardItem.NotificationPermission -> getString(
-                if (itemState.isReady) R.string.settings_notification_permission_summary_on
-                else R.string.settings_notification_permission_summary_off
+            state.isReady -> BadgeStyle(
+                text = getString(R.string.settings_guard_status_done),
+                textColorResId = R.color.launcher_action_dark,
+                backgroundColorResId = R.color.launcher_primary_soft
             )
-            IncomingGuardItem.DefaultLauncher -> getString(
-                if (itemState.isReady) R.string.set_default_launcher_summary_on
-                else R.string.set_default_launcher_summary_off
+            state.requiresManualConfirmation -> BadgeStyle(
+                text = getString(R.string.settings_guard_status_pending),
+                textColorResId = R.color.launcher_warning,
+                backgroundColorResId = R.color.launcher_warning_soft
             )
-            IncomingGuardItem.BatteryOptimization -> getString(
-                if (itemState.isReady) R.string.settings_battery_summary_on
-                else R.string.settings_battery_summary_off
+            else -> BadgeStyle(
+                text = getString(R.string.settings_permission_go_set),
+                textColorResId = R.color.launcher_action,
+                backgroundColorResId = R.color.launcher_surface_muted
             )
-            IncomingGuardItem.AutoStart -> getString(
-                if (itemState.isReady) R.string.settings_autostart_summary_on
-                else R.string.settings_autostart_summary_off
-            )
-            IncomingGuardItem.BackgroundStart -> getString(
-                if (itemState.isReady) R.string.settings_bg_start_summary_on
-                else R.string.settings_bg_start_summary_off
-            )
+        }
+    }
+
+    private fun openPermissionEntry(entry: PermissionEntry) {
+        when (entry) {
+            PermissionEntry.PhonePermission -> requestPhonePermissions()
+            PermissionEntry.NotificationPermission -> requestNotificationPermission()
+            PermissionEntry.DefaultLauncher -> openIncomingGuardItem(IncomingGuardItem.DefaultLauncher)
+            PermissionEntry.BatteryOptimization -> openIncomingGuardItem(IncomingGuardItem.BatteryOptimization)
+            PermissionEntry.AutoStart -> openIncomingGuardItem(IncomingGuardItem.AutoStart)
+            PermissionEntry.BackgroundStart -> openIncomingGuardItem(IncomingGuardItem.BackgroundStart)
+            PermissionEntry.Accessibility -> PermissionUtil.openAccessibilitySettings(this)
+            PermissionEntry.Overlay -> PermissionUtil.openOverlaySettings(this)
         }
     }
 
     private fun guardTitle(item: IncomingGuardItem): String {
-        return getString(
-            when (item) {
-                IncomingGuardItem.PhonePermission -> R.string.settings_phone_permission_title
-                IncomingGuardItem.NotificationPermission -> R.string.settings_notification_permission_title
-                IncomingGuardItem.DefaultLauncher -> R.string.set_default_launcher_title
-                IncomingGuardItem.BatteryOptimization -> R.string.settings_battery_title
-                IncomingGuardItem.AutoStart -> R.string.settings_autostart_title
-                IncomingGuardItem.BackgroundStart -> R.string.settings_bg_start_title
-            }
-        )
+        return permissionEntryTitle(item.toPermissionEntry())
+    }
+
+    private fun IncomingGuardItem.toPermissionEntry(): PermissionEntry {
+        return when (this) {
+            IncomingGuardItem.PhonePermission -> PermissionEntry.PhonePermission
+            IncomingGuardItem.NotificationPermission -> PermissionEntry.NotificationPermission
+            IncomingGuardItem.DefaultLauncher -> PermissionEntry.DefaultLauncher
+            IncomingGuardItem.BatteryOptimization -> PermissionEntry.BatteryOptimization
+            IncomingGuardItem.AutoStart -> PermissionEntry.AutoStart
+            IncomingGuardItem.BackgroundStart -> PermissionEntry.BackgroundStart
+        }
     }
 
     private fun openIncomingGuardItem(item: IncomingGuardItem) {
@@ -617,6 +888,7 @@ class SettingsActivity : AppCompatActivity() {
             return
         }
         val permissions = mutableListOf(
+            Manifest.permission.CALL_PHONE,
             Manifest.permission.READ_PHONE_STATE,
             Manifest.permission.READ_CALL_LOG
         ).apply {
@@ -690,7 +962,7 @@ class SettingsActivity : AppCompatActivity() {
             ),
             Toast.LENGTH_SHORT
         ).show()
-        refreshAllPermissionUi()
+        refreshOverviewUi()
     }
 
     private fun applyInfoBadge(
@@ -705,16 +977,58 @@ class SettingsActivity : AppCompatActivity() {
         tv.backgroundTintList = ColorStateList.valueOf(getColor(backgroundColorResId))
     }
 
-    private fun setStatusBadge(tv: TextView, granted: Boolean) {
-        applyInfoBadge(
-            tv = tv,
-            text = getString(
-                if (granted) R.string.settings_permission_status_granted
-                else R.string.settings_permission_status_denied
-            ),
-            textColorResId = if (granted) R.color.launcher_action_dark else R.color.launcher_danger,
-            backgroundColorResId = if (granted) R.color.launcher_primary_soft else R.color.launcher_danger_soft
-        )
+    private fun showSetCityDialog() {
+        val currentCity = weatherPreferences.getCityName()
+        val dialogView = layoutInflater.inflate(R.layout.dialog_set_city, null)
+        val etCity = dialogView.findViewById<EditText>(R.id.et_city)
+        etCity.setText(currentCity)
+        etCity.setSelection(currentCity.length)
+
+        val dialog = AlertDialog.Builder(this)
+            .setView(dialogView)
+            .create()
+        dialog.window?.setBackgroundDrawableResource(android.R.color.transparent)
+
+        dialogView.findViewById<androidx.cardview.widget.CardView>(R.id.btn_cancel)
+            .setOnClickListener { dialog.dismiss() }
+
+        val confirm = {
+            val city = etCity.text.toString().trim()
+            if (city.isNotEmpty()) {
+                dialog.dismiss()
+                val imm = getSystemService(INPUT_METHOD_SERVICE) as InputMethodManager
+                imm.hideSoftInputFromWindow(etCity.windowToken, 0)
+                weatherPreferences.setCityName(city)
+                WeatherRepository.clearCache()
+                updateSystemHubCard()
+                Toast.makeText(
+                    this,
+                    getString(R.string.settings_weather_city_updated, city),
+                    Toast.LENGTH_SHORT
+                ).show()
+            } else {
+                Toast.makeText(this, getString(R.string.settings_weather_city_empty), Toast.LENGTH_SHORT).show()
+            }
+        }
+
+        dialogView.findViewById<androidx.cardview.widget.CardView>(R.id.btn_confirm)
+            .setOnClickListener { confirm() }
+
+        etCity.setOnEditorActionListener { _, actionId, _ ->
+            if (actionId == EditorInfo.IME_ACTION_DONE) {
+                confirm()
+                true
+            } else {
+                false
+            }
+        }
+
+        dialog.show()
+        etCity.postDelayed({
+            etCity.requestFocus()
+            val imm = getSystemService(INPUT_METHOD_SERVICE) as InputMethodManager
+            imm.showSoftInput(etCity, InputMethodManager.SHOW_IMPLICIT)
+        }, 100)
     }
 
     private fun openSystemSettings() {
@@ -767,7 +1081,7 @@ class SettingsActivity : AppCompatActivity() {
             return false
         }
         if (roleManager.isRoleHeld(RoleManager.ROLE_HOME)) {
-            refreshAllPermissionUi()
+            refreshOverviewUi()
             Toast.makeText(this, getString(R.string.set_default_launcher_summary_on), Toast.LENGTH_SHORT).show()
             return true
         }
@@ -788,6 +1102,7 @@ class SettingsActivity : AppCompatActivity() {
                 startActivity(intent)
                 return
             } catch (_: Exception) {
+                Log.w("SettingsActivity", "openDefaultLauncherSettings failed for ${intent.action}")
             }
         }
         Toast.makeText(this, getString(R.string.open_settings_failed), Toast.LENGTH_SHORT).show()

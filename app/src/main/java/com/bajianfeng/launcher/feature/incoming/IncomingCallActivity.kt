@@ -1,36 +1,42 @@
 package com.bajianfeng.launcher.feature.incoming
 
 import android.Manifest
-import android.content.res.ColorStateList
+import android.app.KeyguardManager
 import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
+import android.media.AudioManager
 import android.os.Build
 import android.os.Bundle
 import android.os.CountDownTimer
+import android.speech.tts.TextToSpeech
 import android.telecom.TelecomManager
 import android.util.Log
 import android.view.KeyEvent
+import android.view.WindowManager
 import android.widget.TextView
+import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.cardview.widget.CardView
 import androidx.core.view.isVisible
 import com.bajianfeng.launcher.R
 import com.bajianfeng.launcher.common.util.CallAudioStrategy
 import com.bajianfeng.launcher.data.home.LauncherPreferences
+import java.util.Locale
 
-class IncomingCallActivity : AppCompatActivity() {
+class IncomingCallActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
 
     private lateinit var tvCaller: TextView
-    private lateinit var tvMode: TextView
-    private lateinit var tvGuidance: TextView
-    private lateinit var tvStatus: TextView
     private lateinit var tvCountdown: TextView
     private lateinit var btnAccept: CardView
     private lateinit var btnDecline: CardView
 
     private var countDownTimer: CountDownTimer? = null
     private var actionInProgress = false
+    private var textToSpeech: TextToSpeech? = null
+    private var ttsReady = false
+    private var pendingAnnouncement: String? = null
+    private var lastAnnouncedCaller: String? = null
 
     companion object {
         private const val TAG = "IncomingCallActivity"
@@ -61,12 +67,11 @@ class IncomingCallActivity : AppCompatActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        configureWindowForIncomingCall()
         setContentView(R.layout.activity_incoming_call)
+        initializeVoiceAnnouncement()
 
         tvCaller = findViewById(R.id.tv_incoming_caller)
-        tvMode = findViewById(R.id.tv_incoming_mode)
-        tvGuidance = findViewById(R.id.tv_incoming_guidance)
-        tvStatus = findViewById(R.id.tv_incoming_status)
         tvCountdown = findViewById(R.id.tv_incoming_countdown)
         btnAccept = findViewById(R.id.btn_incoming_accept)
         btnDecline = findViewById(R.id.btn_incoming_decline)
@@ -86,20 +91,46 @@ class IncomingCallActivity : AppCompatActivity() {
 
     override fun onDestroy() {
         hideCountdown()
+        releaseVoiceAnnouncement()
         super.onDestroy()
+    }
+
+    override fun onInit(status: Int) {
+        val engine = textToSpeech ?: return
+        if (status != TextToSpeech.SUCCESS) {
+            ttsReady = false
+            pendingAnnouncement = null
+            return
+        }
+        val localeResult = engine.setLanguage(Locale.SIMPLIFIED_CHINESE)
+        ttsReady = localeResult != TextToSpeech.LANG_MISSING_DATA &&
+            localeResult != TextToSpeech.LANG_NOT_SUPPORTED
+        if (!ttsReady) {
+            val fallbackResult = engine.setLanguage(Locale.CHINESE)
+            ttsReady = fallbackResult != TextToSpeech.LANG_MISSING_DATA &&
+                fallbackResult != TextToSpeech.LANG_NOT_SUPPORTED
+        }
+        if (!ttsReady) {
+            pendingAnnouncement = null
+            return
+        }
+        engine.setSpeechRate(0.92f)
+        engine.setPitch(1.0f)
+        speakPendingAnnouncement()
     }
 
     private fun applyIntent(intent: Intent) {
         val callerName = resolveCallerName(intent.getStringExtra(EXTRA_CALLER_NAME))
         val preferences = LauncherPreferences.getInstance(this)
+        val triggerAction = intent.getStringExtra(EXTRA_TRIGGER_ACTION)
         val autoAnswer =
             intent.getBooleanExtra(EXTRA_AUTO_ANSWER, false) && preferences.isAutoAnswerEnabled()
-        tvCaller.text = callerName
-        renderMode(autoAnswer)
-        IncomingCallDiagnostics.recordActivityShown(this, callerName)
-        renderStatus()
 
-        when (intent.getStringExtra(EXTRA_TRIGGER_ACTION)) {
+        tvCaller.text = callerName
+        IncomingCallDiagnostics.recordActivityShown(this, callerName)
+        announceCallerIfNeeded(callerName, triggerAction)
+
+        when (triggerAction) {
             TRIGGER_ACTION_ACCEPT -> {
                 acceptCall()
                 return
@@ -121,24 +152,6 @@ class IncomingCallActivity : AppCompatActivity() {
         actionInProgress = false
         setActionButtonsEnabled(true)
         hideCountdown()
-    }
-
-    private fun renderStatus() {
-        tvStatus.text = IncomingCallDiagnostics.getDisplayText(this)
-    }
-
-    private fun renderMode(autoAnswer: Boolean) {
-        if (autoAnswer) {
-            tvMode.text = getString(R.string.incoming_call_mode_auto)
-            tvMode.setTextColor(getColor(R.color.launcher_action_dark))
-            tvMode.backgroundTintList = ColorStateList.valueOf(getColor(R.color.launcher_primary_soft))
-            tvGuidance.text = getString(R.string.incoming_call_guidance_auto)
-        } else {
-            tvMode.text = getString(R.string.incoming_call_mode_manual)
-            tvMode.setTextColor(getColor(R.color.launcher_primary_dark))
-            tvMode.backgroundTintList = ColorStateList.valueOf(getColor(R.color.launcher_surface_muted))
-            tvGuidance.text = getString(R.string.incoming_call_guidance_manual)
-        }
     }
 
     private fun startCountdown(seconds: Int) {
@@ -170,18 +183,21 @@ class IncomingCallActivity : AppCompatActivity() {
         actionInProgress = true
         setActionButtonsEnabled(false)
         hideCountdown()
-        tvStatus.text = getString(R.string.incoming_call_status_answering)
+        stopVoiceAnnouncement()
 
         val result = answerRingingCall()
         if (result.success) {
             IncomingCallDiagnostics.recordAcceptSuccess(this, result.detail)
             applyAnsweredCallAudioStrategy()
             IncomingCallForegroundService.stop(this)
-        } else {
-            IncomingCallDiagnostics.recordAcceptFailure(this, result.detail)
+            finish()
+            return
         }
-        renderStatus()
-        finish()
+
+        IncomingCallDiagnostics.recordAcceptFailure(this, result.detail)
+        Toast.makeText(this, result.detail, Toast.LENGTH_SHORT).show()
+        actionInProgress = false
+        setActionButtonsEnabled(true)
     }
 
     private fun declineCall() {
@@ -189,19 +205,39 @@ class IncomingCallActivity : AppCompatActivity() {
         actionInProgress = true
         setActionButtonsEnabled(false)
         hideCountdown()
-        tvStatus.text = getString(R.string.incoming_call_status_declining)
+        stopVoiceAnnouncement()
 
         val result = endRingingCall()
         if (result.success) {
             IncomingCallDiagnostics.recordDeclineSuccess(this, result.detail)
             IncomingCallForegroundService.stop(this)
-        } else {
-            IncomingCallDiagnostics.recordDeclineFailure(this, result.detail)
+            finish()
+            return
         }
-        renderStatus()
-        finish()
+
+        IncomingCallDiagnostics.recordDeclineFailure(this, result.detail)
+        Toast.makeText(this, result.detail, Toast.LENGTH_SHORT).show()
+        actionInProgress = false
+        setActionButtonsEnabled(true)
     }
 
+    private fun configureWindowForIncomingCall() {
+        window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O_MR1) {
+            setShowWhenLocked(true)
+            setTurnScreenOn(true)
+            getSystemService(KeyguardManager::class.java)?.requestDismissKeyguard(this, null)
+        } else {
+            @Suppress("DEPRECATION")
+            window.addFlags(
+                WindowManager.LayoutParams.FLAG_SHOW_WHEN_LOCKED or
+                    WindowManager.LayoutParams.FLAG_TURN_SCREEN_ON or
+                    WindowManager.LayoutParams.FLAG_DISMISS_KEYGUARD
+            )
+        }
+    }
+
+    @Suppress("DEPRECATION")
     private fun answerRingingCall(): CallActionResult {
         return try {
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
@@ -216,6 +252,7 @@ class IncomingCallActivity : AppCompatActivity() {
                 telecomManager.acceptRingingCall()
                 Log.i(TAG, "answerRingingCall: acceptRingingCall() called")
             } else {
+
                 sendHookBroadcast()
                 Log.i(TAG, "answerRingingCall: HEADSETHOOK broadcast sent")
             }
@@ -239,6 +276,7 @@ class IncomingCallActivity : AppCompatActivity() {
         }
     }
 
+    @Suppress("DEPRECATION")
     private fun endRingingCall(): CallActionResult {
         return try {
             if (Build.VERSION.SDK_INT < Build.VERSION_CODES.P) {
@@ -305,6 +343,53 @@ class IncomingCallActivity : AppCompatActivity() {
         btnDecline.isEnabled = enabled
         btnAccept.alpha = if (enabled) 1f else 0.72f
         btnDecline.alpha = if (enabled) 1f else 0.72f
+    }
+
+    private fun initializeVoiceAnnouncement() {
+        if (textToSpeech != null) return
+        textToSpeech = TextToSpeech(this, this)
+    }
+
+    private fun announceCallerIfNeeded(callerName: String, triggerAction: String?) {
+        if (triggerAction != null || callerName == lastAnnouncedCaller) {
+            return
+        }
+        lastAnnouncedCaller = callerName
+        pendingAnnouncement = if (callerName == getString(R.string.incoming_call_unknown_caller)) {
+            getString(R.string.incoming_call_voice_unknown)
+        } else {
+            getString(R.string.incoming_call_voice_announcement, callerName)
+        }
+        speakPendingAnnouncement()
+    }
+
+    private fun speakPendingAnnouncement() {
+        if (!ttsReady) return
+        val announcement = pendingAnnouncement ?: return
+        val engine = textToSpeech ?: return
+        pendingAnnouncement = null
+        engine.stop()
+        engine.speak(
+            announcement,
+            TextToSpeech.QUEUE_FLUSH,
+            Bundle().apply {
+                putInt(TextToSpeech.Engine.KEY_PARAM_STREAM, AudioManager.STREAM_RING)
+            },
+            "incoming_call_announcement"
+        )
+    }
+
+    private fun stopVoiceAnnouncement() {
+        pendingAnnouncement = null
+        textToSpeech?.stop()
+    }
+
+    private fun releaseVoiceAnnouncement() {
+        pendingAnnouncement = null
+        ttsReady = false
+        textToSpeech?.stop()
+        textToSpeech?.shutdown()
+        textToSpeech = null
     }
 
     private fun resolveCallerName(rawCallerName: String?): String {

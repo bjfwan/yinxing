@@ -163,14 +163,6 @@ class LauncherAppRepository private constructor(context: Context) {
     private fun MutableList<HomeAppItem>.addSecondaryBuiltInItems() {
         add(
             HomeAppItem(
-                packageName = "settings",
-                appName = appContext.getString(R.string.home_item_settings),
-                type = HomeAppItem.Type.SETTINGS,
-                iconResId = android.R.drawable.ic_menu_preferences
-            )
-        )
-        add(
-            HomeAppItem(
                 packageName = "add",
                 appName = appContext.getString(R.string.home_item_add),
                 type = HomeAppItem.Type.ADD,

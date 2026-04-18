@@ -13,7 +13,6 @@ data class HomeAppItem(
         APP,
         PHONE,
         WECHAT_VIDEO,
-        SETTINGS,
         ADD
     }
 }
