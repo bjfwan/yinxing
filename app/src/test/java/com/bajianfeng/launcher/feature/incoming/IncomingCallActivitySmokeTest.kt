@@ -163,6 +163,16 @@ class IncomingCallActivitySmokeTest {
     }
 
     @Test
+    fun autoAnswerOnShowsAutoModeBadge() {
+        val activity = buildActivity("用户A", autoAnswer = true)
+        idle()
+        assertEquals(
+            context.getString(R.string.incoming_call_mode_auto),
+            activity.tv_mode.text.toString()
+        )
+    }
+
+    @Test
     fun autoAnswerOnShowsAutoAnswerWording() {
         val activity = buildActivity("用户B", autoAnswer = true)
         idle()
@@ -181,6 +191,16 @@ class IncomingCallActivitySmokeTest {
         val activity = buildActivity("用户D", autoAnswer = false)
         idle()
         assertTrue("关闭自动接听时倒计时应为空", activity.tv_countdown.text.isEmpty())
+    }
+
+    @Test
+    fun autoAnswerOffShowsManualGuidance() {
+        val activity = buildActivity("用户D", autoAnswer = false)
+        idle()
+        assertEquals(
+            context.getString(R.string.incoming_call_guidance_manual),
+            activity.tv_guidance.text.toString()
+        )
     }
 
     @Test
@@ -505,6 +525,10 @@ class IncomingCallActivitySmokeTest {
 
     private val android.app.Activity.tv_caller
         get() = findViewById<TextView>(R.id.tv_incoming_caller)
+    private val android.app.Activity.tv_mode
+        get() = findViewById<TextView>(R.id.tv_incoming_mode)
+    private val android.app.Activity.tv_guidance
+        get() = findViewById<TextView>(R.id.tv_incoming_guidance)
     private val android.app.Activity.tv_countdown
         get() = findViewById<TextView>(R.id.tv_incoming_countdown)
     private val android.app.Activity.btn_accept

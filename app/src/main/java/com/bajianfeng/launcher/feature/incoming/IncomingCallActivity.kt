@@ -1,6 +1,7 @@
 package com.bajianfeng.launcher.feature.incoming
 
 import android.Manifest
+import android.content.res.ColorStateList
 import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
@@ -21,6 +22,8 @@ import com.bajianfeng.launcher.data.home.LauncherPreferences
 class IncomingCallActivity : AppCompatActivity() {
 
     private lateinit var tvCaller: TextView
+    private lateinit var tvMode: TextView
+    private lateinit var tvGuidance: TextView
     private lateinit var tvStatus: TextView
     private lateinit var tvCountdown: TextView
     private lateinit var btnAccept: CardView
@@ -61,6 +64,8 @@ class IncomingCallActivity : AppCompatActivity() {
         setContentView(R.layout.activity_incoming_call)
 
         tvCaller = findViewById(R.id.tv_incoming_caller)
+        tvMode = findViewById(R.id.tv_incoming_mode)
+        tvGuidance = findViewById(R.id.tv_incoming_guidance)
         tvStatus = findViewById(R.id.tv_incoming_status)
         tvCountdown = findViewById(R.id.tv_incoming_countdown)
         btnAccept = findViewById(R.id.btn_incoming_accept)
@@ -86,7 +91,11 @@ class IncomingCallActivity : AppCompatActivity() {
 
     private fun applyIntent(intent: Intent) {
         val callerName = resolveCallerName(intent.getStringExtra(EXTRA_CALLER_NAME))
+        val preferences = LauncherPreferences.getInstance(this)
+        val autoAnswer =
+            intent.getBooleanExtra(EXTRA_AUTO_ANSWER, false) && preferences.isAutoAnswerEnabled()
         tvCaller.text = callerName
+        renderMode(autoAnswer)
         IncomingCallDiagnostics.recordActivityShown(this, callerName)
         renderStatus()
 
@@ -100,10 +109,6 @@ class IncomingCallActivity : AppCompatActivity() {
                 return
             }
         }
-
-        val preferences = LauncherPreferences.getInstance(this)
-        val autoAnswer =
-            intent.getBooleanExtra(EXTRA_AUTO_ANSWER, false) && preferences.isAutoAnswerEnabled()
 
         if (autoAnswer) {
             startCountdown(preferences.getAutoAnswerDelaySeconds())
@@ -120,6 +125,20 @@ class IncomingCallActivity : AppCompatActivity() {
 
     private fun renderStatus() {
         tvStatus.text = IncomingCallDiagnostics.getDisplayText(this)
+    }
+
+    private fun renderMode(autoAnswer: Boolean) {
+        if (autoAnswer) {
+            tvMode.text = getString(R.string.incoming_call_mode_auto)
+            tvMode.setTextColor(getColor(R.color.launcher_action_dark))
+            tvMode.backgroundTintList = ColorStateList.valueOf(getColor(R.color.launcher_primary_soft))
+            tvGuidance.text = getString(R.string.incoming_call_guidance_auto)
+        } else {
+            tvMode.text = getString(R.string.incoming_call_mode_manual)
+            tvMode.setTextColor(getColor(R.color.launcher_primary_dark))
+            tvMode.backgroundTintList = ColorStateList.valueOf(getColor(R.color.launcher_surface_muted))
+            tvGuidance.text = getString(R.string.incoming_call_guidance_manual)
+        }
     }
 
     private fun startCountdown(seconds: Int) {

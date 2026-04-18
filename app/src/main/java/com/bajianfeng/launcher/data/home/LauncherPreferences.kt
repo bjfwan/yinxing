@@ -16,6 +16,8 @@ class LauncherPreferences(context: Context) {
         private const val KEY_AUTO_ANSWER_DELAY_SECONDS = "auto_answer_delay_seconds"
         const val DEFAULT_AUTO_ANSWER_DELAY_SECONDS = 5
         private const val KEY_KIOSK_MODE_ENABLED = "kiosk_mode_enabled"
+        private const val KEY_AUTOSTART_CONFIRMED = "autostart_confirmed"
+        private const val KEY_BACKGROUND_START_CONFIRMED = "background_start_confirmed"
 
         @Volatile
         private var instance: LauncherPreferences? = null
@@ -117,6 +119,22 @@ class LauncherPreferences(context: Context) {
         prefs.edit { putBoolean(KEY_KIOSK_MODE_ENABLED, enabled) }
     }
 
+    fun isAutoStartConfirmed(): Boolean {
+        return prefs.getBoolean(KEY_AUTOSTART_CONFIRMED, false)
+    }
+
+    fun setAutoStartConfirmed(confirmed: Boolean) {
+        prefs.edit { putBoolean(KEY_AUTOSTART_CONFIRMED, confirmed) }
+    }
+
+    fun isBackgroundStartConfirmed(): Boolean {
+        return prefs.getBoolean(KEY_BACKGROUND_START_CONFIRMED, false)
+    }
+
+    fun setBackgroundStartConfirmed(confirmed: Boolean) {
+        prefs.edit { putBoolean(KEY_BACKGROUND_START_CONFIRMED, confirmed) }
+    }
+
     fun registerListener(listener: SharedPreferences.OnSharedPreferenceChangeListener) {
         prefs.registerOnSharedPreferenceChangeListener(listener)
     }
@@ -135,7 +153,9 @@ class LauncherPreferences(context: Context) {
             key != KEY_LOW_PERFORMANCE_MODE &&
             key != KEY_AUTO_ANSWER_ENABLED &&
             key != KEY_AUTO_ANSWER_DELAY_SECONDS &&
-            key != KEY_KIOSK_MODE_ENABLED
+            key != KEY_KIOSK_MODE_ENABLED &&
+            key != KEY_AUTOSTART_CONFIRMED &&
+            key != KEY_BACKGROUND_START_CONFIRMED
     }
 
     fun isHomeAppConfigKey(key: String?): Boolean {

@@ -116,6 +116,36 @@ class SettingsActivitySmokeTest {
     }
 
     @Test
+    fun incomingGuardSummaryShowsCurrentBlockerOnLaunch() {
+        val activity = Robolectric.buildActivity(SettingsActivity::class.java).setup().get()
+        idle()
+        val summaryView = activity.findViewById<TextView>(R.id.tv_incoming_guard_summary)
+        val actionView = activity.findViewById<TextView>(R.id.tv_incoming_guard_action)
+
+        assertTrue(summaryView.text.contains(activity.getString(R.string.settings_phone_permission_title)))
+        assertTrue(actionView.text.contains(activity.getString(R.string.settings_phone_permission_title)))
+    }
+
+    @Test
+    fun autoStartManualConfirmationUsesSavedState() {
+        LauncherPreferences.getInstance(context).setAutoStartConfirmed(true)
+
+        val activity = Robolectric.buildActivity(SettingsActivity::class.java).setup().get()
+        idle()
+        val summaryView = activity.findViewById<TextView>(R.id.tv_autostart_summary)
+        val statusView = activity.findViewById<TextView>(R.id.tv_autostart_status)
+
+        assertEquals(
+            activity.getString(R.string.settings_autostart_summary_on),
+            summaryView.text.toString()
+        )
+        assertEquals(
+            activity.getString(R.string.settings_guard_status_confirmed),
+            statusView.text.toString()
+        )
+    }
+
+    @Test
     fun incomingTraceSummaryShowsLatestCallChain() {
         IncomingCallDiagnostics.recordBroadcastReceived(
             context = context,

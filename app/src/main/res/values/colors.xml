@@ -19,6 +19,7 @@
     <color name="launcher_outline">#D2E4F2</color>
     <color name="launcher_divider">#E3EEF7</color>
     <color name="launcher_warning">#F59E0B</color>
+    <color name="launcher_warning_soft">#FEF3C7</color>
     <color name="launcher_danger">#EF4444</color>
     <color name="launcher_danger_soft">#FEE2E2</color>
 </resources>

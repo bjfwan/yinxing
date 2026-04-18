@@ -67,4 +67,25 @@ class LauncherPreferencesTest {
         preferences.setAutoAnswerEnabled(true)
         assertTrue(preferences.isAutoAnswerEnabled())
     }
+
+    @Test
+    fun autoStartConfirmationDefaultsToFalse() {
+        assertFalse(preferences.isAutoStartConfirmed())
+    }
+
+    @Test
+    fun backgroundStartConfirmationDefaultsToFalse() {
+        assertFalse(preferences.isBackgroundStartConfirmed())
+    }
+
+    @Test
+    fun manualGuardConfirmationsPersistAcrossInstances() {
+        preferences.setAutoStartConfirmed(true)
+        preferences.setBackgroundStartConfirmed(true)
+
+        val restored = LauncherPreferences(context)
+
+        assertTrue(restored.isAutoStartConfirmed())
+        assertTrue(restored.isBackgroundStartConfirmed())
+    }
 }
