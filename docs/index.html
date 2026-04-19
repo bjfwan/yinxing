@@ -37,14 +37,54 @@
       padding: 80px 32px;
       -webkit-font-smoothing: antialiased;
       -moz-osx-font-smoothing: grayscale;
-      /* 极细噪点纹理 */
-      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.025'/%3E%3C/svg%3E");
+      position: relative;
+      overflow: hidden;
+    }
+
+    /* ── 背景装饰层 ──────────────────── */
+
+    /* 1. 暖奶油底色 + 细噪点纹理 */
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background:
+        radial-gradient(ellipse 80% 60% at 50% -10%, rgba(184,136,42,0.10) 0%, transparent 65%),
+        radial-gradient(ellipse 60% 40% at 100% 100%, rgba(184,136,42,0.07) 0%, transparent 55%),
+        radial-gradient(ellipse 50% 40% at 0% 80%, rgba(3,105,161,0.05) 0%, transparent 50%);
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    /* 2. 极细点阵网格 */
+    body::after {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background-image: radial-gradient(circle, rgba(28,25,20,0.12) 1px, transparent 1px);
+      background-size: 28px 28px;
+      pointer-events: none;
+      z-index: 0;
+      mask-image: radial-gradient(ellipse 70% 70% at 50% 50%, black 20%, transparent 80%);
+      -webkit-mask-image: radial-gradient(ellipse 70% 70% at 50% 50%, black 20%, transparent 80%);
+    }
+
+    /* 3. SVG 装饰：大圆弧线条 */
+    .deco-svg {
+      position: fixed;
+      top: 0; left: 0;
+      width: 100%; height: 100%;
+      pointer-events: none;
+      z-index: 0;
+      overflow: visible;
     }
 
     /* ── 整体容器 ─────────────────────── */
     .wrap {
       width: 100%;
       max-width: 560px;
+      position: relative;
+      z-index: 1;
     }
 
     /* ── 顶部标识行 ──────────────────── */
@@ -263,6 +303,20 @@
   </style>
 </head>
 <body>
+
+  <!-- 背景装饰 SVG：右上大圆弧 + 左下细线圆 -->
+  <svg class="deco-svg" viewBox="0 0 100 100" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg">
+    <!-- 右上角大弧 -->
+    <circle cx="95" cy="5" r="38" fill="none" stroke="rgba(184,136,42,0.09)" stroke-width="0.3" vector-effect="non-scaling-stroke"/>
+    <circle cx="95" cy="5" r="52" fill="none" stroke="rgba(184,136,42,0.06)" stroke-width="0.2" vector-effect="non-scaling-stroke"/>
+    <!-- 左下角细圆 -->
+    <circle cx="5" cy="95" r="24" fill="none" stroke="rgba(28,25,20,0.06)" stroke-width="0.2" vector-effect="non-scaling-stroke"/>
+    <circle cx="5" cy="95" r="40" fill="none" stroke="rgba(28,25,20,0.04)" stroke-width="0.15" vector-effect="non-scaling-stroke"/>
+    <!-- 中部斜线装饰 -->
+    <line x1="72" y1="0" x2="100" y2="30" stroke="rgba(184,136,42,0.07)" stroke-width="0.15" vector-effect="non-scaling-stroke"/>
+    <line x1="80" y1="0" x2="100" y2="22" stroke="rgba(184,136,42,0.05)" stroke-width="0.1" vector-effect="non-scaling-stroke"/>
+  </svg>
+
   <div class="wrap">
 
     <div class="brand">
