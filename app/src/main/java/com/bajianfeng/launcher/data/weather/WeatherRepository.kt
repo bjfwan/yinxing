@@ -1,6 +1,7 @@
 package com.bajianfeng.launcher.data.weather
 
 import android.util.Base64
+import com.bajianfeng.launcher.BuildConfig
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import org.json.JSONObject

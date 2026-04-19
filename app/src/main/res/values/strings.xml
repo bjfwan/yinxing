@@ -2,7 +2,7 @@
     <string name="app_name">银杏</string>
     <string name="accessibility_service_description">用于自动拨打微信视频通话</string>
     <string name="select_to_speak_service_description">微信视频通话辅助朗读服务（需与主服务同时开启）</string>
-    <string name="home_title">老人桌面</string>
+    <string name="home_title">银杏</string>
     <string name="home_subtitle">常用功能都在这里，轻点一下就能进入</string>
 
     <string name="home_time_placeholder">12:00</string>
@@ -394,7 +394,7 @@
 
     <!-- 引导设为默认桌面 -->
     <string name="set_default_launcher_title">设为默认桌面</string>
-    <string name="set_default_launcher_message">点击"立即设置"后，系统会优先弹出默认桌面选择窗口，请选择"老人桌面"。如果系统没有弹出选择窗口，再进入系统设置手动选择。\n\n设置成功后，按 Home 键会优先回到本应用。</string>
+    <string name="set_default_launcher_message">点击"立即设置"后，系统会优先弹出默认桌面选择窗口，请选择"银杏"。如果系统没有弹出选择窗口，再进入系统设置手动选择。\n\n设置成功后，按 Home 键会优先回到本应用。</string>
     <string name="set_default_launcher_action">立即设置</string>
     <string name="set_default_launcher_later">稍后再说</string>
     <string name="set_default_launcher_summary_on">已设置，按 Home 键会回到本桌面</string>
