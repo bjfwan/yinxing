@@ -1517,15 +1517,13 @@ class SelectToSpeakService : AccessibilityService() {
         val currentClass = resolveCurrentWeChatClass(root)
         when (detectWeChatPage(root, currentClass)) {
 
-            WeChatPage.CHAT,
             WeChatPage.CONTACT_DETAIL -> {
-                if (!isTargetConversationPage(root, currentClass, session.contactName)) {
-                    Log.d(TAG, "WAITING_CONTACT_DETAIL: 当前不是目标联系人页，返回首页重来")
-                    session.searchTextApplied = false
-                    session.launcherPrepared = false
-                    rerouteTo(session, Step.WAITING_HOME, "正在返回微信首页")
-                    return
-                }
+                // 已在联系人详情页，无需名字二次验证，直接往下点击音视频通话
+                Log.d(TAG, "WAITING_CONTACT_DETAIL: 已在联系人详情页，直接发起视频")
+            }
+            WeChatPage.CHAT -> {
+                // 搜索后点击结果直接进入聊天页，继续往下点+展开菜单发起视频通话
+                Log.d(TAG, "WAITING_CONTACT_DETAIL: 当前在聊天页，继续点+发起视频通话")
             }
             WeChatPage.SEARCH -> {
 

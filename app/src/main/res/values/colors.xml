@@ -1,7 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <color name="launcher_bg_start">#F0F9FF</color>
-    <color name="launcher_bg_end">#DCF2FF</color>
+    <color name="launcher_bg_start">#C7E8FA</color>
+    <color name="launcher_bg_mid">#DFF2FB</color>
+    <color name="launcher_bg_end">#F0F9FF</color>
     <color name="launcher_surface">#FFFFFFFF</color>
     <color name="launcher_surface_muted">#F7FBFF</color>
     <color name="launcher_surface_soft">#EAF5FF</color>

@@ -103,6 +103,14 @@ class HomeAppAdapter(
             context.dpToPx(if (lowPerformanceMode) 12 else 16)
         )
 
+        // 根据类型设置图标圆形背景色
+        val iconBgRes = when (item.type) {
+            HomeAppItem.Type.PHONE -> R.drawable.icon_background_phone
+            HomeAppItem.Type.WECHAT_VIDEO -> R.drawable.icon_background_wechat
+            else -> R.drawable.icon_background
+        }
+        holder.icon.setBackgroundResource(iconBgRes)
+
         holder.iconJob?.cancel()
         if (item.type == HomeAppItem.Type.APP) {
             holder.icon.setImageResource(android.R.drawable.sym_def_app_icon)
