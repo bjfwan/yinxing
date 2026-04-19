@@ -3,432 +3,105 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>旧启动器 · 专为长辈设计的手机桌面</title>
+  <title>旧启动器 · 下载</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=Work+Sans:wght@300;400;500;600;700&family=Noto+Sans+SC:wght@400;500;700&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;800&family=Noto+Sans+SC:wght@400;700&display=swap" rel="stylesheet" />
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
-    :root {
-      --primary:   #0EA5E9;
-      --primary-d: #0284C7;
-      --secondary: #38BDF8;
-      --cta:       #F97316;
-      --cta-d:     #EA6C0A;
-      --bg:        #F0F9FF;
-      --surface:   #FFFFFF;
-      --border:    #E0F2FE;
-      --text:      #0C4A6E;
-      --muted:     #64748B;
-      --light:     #BAE6FD;
-      --radius:    16px;
-    }
-
-    html { scroll-behavior: smooth; }
-
     body {
-      background: var(--bg);
-      color: var(--text);
-      font-family: 'Outfit', 'Noto Sans SC', sans-serif;
-      line-height: 1.6;
-      overflow-x: hidden;
-    }
-
-    /* ── NAV ── */
-    nav {
-      position: fixed;
-      top: 12px; left: 50%; transform: translateX(-50%);
-      width: calc(100% - 32px);
-      max-width: 900px;
-      background: rgba(255,255,255,0.85);
-      backdrop-filter: blur(16px);
-      -webkit-backdrop-filter: blur(16px);
-      border: 1px solid var(--border);
-      border-radius: 50px;
-      padding: 12px 24px;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      z-index: 100;
-      box-shadow: 0 4px 24px rgba(14,165,233,0.08);
-    }
-
-    .nav-logo {
-      font-weight: 700;
-      font-size: 1rem;
-      color: var(--text);
-      display: flex;
-      align-items: center;
-      gap: 8px;
-    }
-
-    .nav-logo .dot {
-      width: 8px; height: 8px;
-      background: var(--cta);
-      border-radius: 50%;
-      display: inline-block;
-    }
-
-    .nav-btn {
-      background: var(--cta);
-      color: #fff;
-      border: none;
-      border-radius: 50px;
-      padding: 8px 20px;
-      font-family: 'Outfit', sans-serif;
-      font-size: 0.85rem;
-      font-weight: 600;
-      cursor: pointer;
-      text-decoration: none;
-      transition: background 0.2s, transform 0.15s;
-    }
-    .nav-btn:hover { background: var(--cta-d); transform: translateY(-1px); }
-
-    /* ── HERO ── */
-    .hero {
       min-height: 100vh;
       display: flex;
       align-items: center;
-      padding: 120px 24px 80px;
-      position: relative;
-      overflow: hidden;
+      justify-content: center;
+      padding: 24px;
+      font-family: 'Outfit', 'Noto Sans SC', sans-serif;
+      background: #060F1E;
+      color: #E2EAF4;
+      overflow-x: hidden;
     }
 
-    .hero::before {
+    /* 背景光晕 */
+    body::before {
       content: '';
-      position: absolute;
+      position: fixed;
       inset: 0;
       background:
-        radial-gradient(ellipse 70% 60% at 60% 20%, rgba(56,189,248,0.15) 0%, transparent 60%),
-        radial-gradient(ellipse 50% 40% at 20% 80%, rgba(14,165,233,0.08) 0%, transparent 50%);
+        radial-gradient(ellipse 60% 50% at 50% -10%, rgba(56,189,248,0.18) 0%, transparent 60%),
+        radial-gradient(ellipse 40% 30% at 80% 90%, rgba(99,102,241,0.12) 0%, transparent 50%);
       pointer-events: none;
     }
 
-    /* decorative circles */
-    .hero::after {
-      content: '';
-      position: absolute;
-      width: 500px; height: 500px;
-      border-radius: 50%;
-      border: 1px solid rgba(14,165,233,0.12);
-      top: -100px; right: -100px;
-      pointer-events: none;
-    }
-
-    .hero-inner {
-      max-width: 1000px;
-      margin: 0 auto;
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 60px;
-      align-items: center;
-      width: 100%;
+    .card {
       position: relative;
       z-index: 1;
-    }
-
-    .hero-tag {
-      display: inline-flex;
-      align-items: center;
-      gap: 6px;
-      background: rgba(14,165,233,0.1);
-      color: var(--primary);
-      border: 1px solid rgba(14,165,233,0.2);
-      border-radius: 50px;
-      padding: 5px 14px;
-      font-size: 0.78rem;
-      font-weight: 600;
-      letter-spacing: 0.05em;
-      margin-bottom: 20px;
+      width: 100%;
+      max-width: 420px;
+      background: rgba(255,255,255,0.04);
+      border: 1px solid rgba(255,255,255,0.1);
+      border-radius: 24px;
+      padding: 40px 36px;
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      box-shadow: 0 32px 80px rgba(0,0,0,0.4);
       animation: fadeUp 0.5s ease both;
     }
 
-    .hero-tag svg { flex-shrink: 0; }
-
-    h1 {
-      font-size: clamp(2.4rem, 5vw, 3.6rem);
-      font-weight: 800;
-      line-height: 1.15;
-      letter-spacing: -0.02em;
-      color: var(--text);
-      animation: fadeUp 0.5s 0.08s ease both;
+    /* 顶部装饰线 */
+    .card::before {
+      content: '';
+      position: absolute;
+      top: 0; left: 50%;
+      transform: translateX(-50%);
+      width: 60%;
+      height: 1px;
+      background: linear-gradient(90deg, transparent, rgba(56,189,248,0.6), transparent);
+      border-radius: 1px;
     }
 
-    h1 .highlight {
-      background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
+    .tag {
+      display: inline-block;
+      background: rgba(56,189,248,0.12);
+      color: #38BDF8;
+      border: 1px solid rgba(56,189,248,0.25);
+      border-radius: 50px;
+      padding: 4px 14px;
+      font-size: 0.72rem;
+      font-weight: 600;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      margin-bottom: 20px;
+    }
+
+    h1 {
+      font-size: 2.2rem;
+      font-weight: 800;
+      line-height: 1.2;
+      letter-spacing: -0.02em;
+      margin-bottom: 8px;
+    }
+
+    h1 span {
+      background: linear-gradient(135deg, #38BDF8 0%, #818CF8 100%);
       -webkit-background-clip: text;
       -webkit-text-fill-color: transparent;
       background-clip: text;
     }
 
-    .hero-desc {
-      margin-top: 16px;
-      color: var(--muted);
-      font-size: 1.05rem;
-      line-height: 1.75;
-      animation: fadeUp 0.5s 0.16s ease both;
-    }
-
-    .hero-actions {
-      margin-top: 32px;
-      display: flex;
-      gap: 12px;
-      flex-wrap: wrap;
-      animation: fadeUp 0.5s 0.24s ease both;
-    }
-
-    .btn-primary {
-      display: inline-flex;
-      align-items: center;
-      gap: 8px;
-      background: var(--cta);
-      color: #fff;
-      text-decoration: none;
-      border-radius: 50px;
-      padding: 14px 28px;
-      font-weight: 700;
-      font-size: 1rem;
-      transition: background 0.2s, transform 0.15s, box-shadow 0.2s;
-      box-shadow: 0 4px 20px rgba(249,115,22,0.3);
-      cursor: pointer;
-    }
-    .btn-primary:hover {
-      background: var(--cta-d);
-      transform: translateY(-2px);
-      box-shadow: 0 8px 28px rgba(249,115,22,0.35);
-    }
-
-    .btn-secondary {
-      display: inline-flex;
-      align-items: center;
-      gap: 8px;
-      background: var(--surface);
-      color: var(--text);
-      text-decoration: none;
-      border-radius: 50px;
-      padding: 14px 24px;
-      font-weight: 600;
-      font-size: 1rem;
-      border: 1.5px solid var(--border);
-      transition: border-color 0.2s, transform 0.15s;
-      cursor: pointer;
-    }
-    .btn-secondary:hover {
-      border-color: var(--primary);
-      transform: translateY(-2px);
-    }
-
-    .hero-stats {
-      margin-top: 40px;
-      display: flex;
-      gap: 32px;
-      animation: fadeUp 0.5s 0.32s ease both;
-    }
-
-    .stat-item { text-align: left; }
-    .stat-num {
-      font-size: 1.6rem;
-      font-weight: 800;
-      color: var(--text);
-      line-height: 1;
-    }
-    .stat-label {
-      font-size: 0.78rem;
-      color: var(--muted);
-      margin-top: 2px;
-    }
-
-    /* ── PHONE MOCKUP ── */
-    .phone-wrap {
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      animation: fadeUp 0.5s 0.1s ease both;
-      position: relative;
-    }
-
-    .phone-glow {
-      position: absolute;
-      width: 280px; height: 280px;
-      background: radial-gradient(circle, rgba(14,165,233,0.2) 0%, transparent 70%);
-      border-radius: 50%;
-      top: 50%; left: 50%;
-      transform: translate(-50%, -50%);
-      animation: pulse 3s ease-in-out infinite;
-    }
-
-    @keyframes pulse {
-      0%, 100% { transform: translate(-50%, -50%) scale(1); opacity: 0.7; }
-      50% { transform: translate(-50%, -50%) scale(1.1); opacity: 1; }
-    }
-
-    .phone {
-      width: 220px;
-      background: #0C4A6E;
-      border-radius: 36px;
-      padding: 14px 10px;
-      box-shadow:
-        0 30px 80px rgba(12,74,110,0.25),
-        0 0 0 1px rgba(255,255,255,0.1),
-        inset 0 1px 0 rgba(255,255,255,0.15);
-      position: relative;
-      z-index: 1;
-    }
-
-    .phone-screen {
-      background: #fff;
-      border-radius: 26px;
-      overflow: hidden;
-      aspect-ratio: 9/16;
-      display: flex;
-      flex-direction: column;
-    }
-
-    .phone-status {
-      background: var(--primary);
-      padding: 8px 14px 6px;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-    }
-
-    .phone-time { color: #fff; font-size: 0.7rem; font-weight: 700; }
-    .phone-icons { display: flex; gap: 4px; }
-    .phone-icons span { width: 10px; height: 6px; background: rgba(255,255,255,0.8); border-radius: 2px; }
-
-    .phone-body {
-      flex: 1;
-      background: linear-gradient(160deg, #EFF6FF 0%, #F0F9FF 100%);
-      padding: 12px 8px;
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 7px;
-      align-content: start;
-    }
-
-    .phone-app {
-      background: #fff;
-      border-radius: 14px;
-      padding: 12px 8px 8px;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      gap: 5px;
-      box-shadow: 0 2px 8px rgba(0,0,0,0.06);
-    }
-
-    .phone-app-icon {
-      width: 36px; height: 36px;
-      border-radius: 10px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-    }
-
-    .phone-app-label { font-size: 0.5rem; color: #334155; font-weight: 600; text-align: center; }
-
-    .app-phone  { background: linear-gradient(135deg, #22C55E, #16A34A); }
-    .app-msg    { background: linear-gradient(135deg, #3B82F6, #1D4ED8); }
-    .app-cam    { background: linear-gradient(135deg, #F59E0B, #D97706); }
-    .app-set    { background: linear-gradient(135deg, #6366F1, #4338CA); }
-
-    .phone-notch {
-      position: absolute;
-      top: 14px; left: 50%;
-      transform: translateX(-50%);
-      width: 60px; height: 18px;
-      background: #0C4A6E;
-      border-radius: 0 0 12px 12px;
-      z-index: 2;
-    }
-
-    /* ── FEATURES ── */
-    .section {
-      padding: 80px 24px;
-      max-width: 1000px;
-      margin: 0 auto;
-    }
-
-    .section-label {
-      text-align: center;
-      font-size: 0.78rem;
-      font-weight: 700;
-      color: var(--primary);
-      letter-spacing: 0.12em;
-      text-transform: uppercase;
-      margin-bottom: 12px;
-    }
-
-    .section-title {
-      text-align: center;
-      font-size: clamp(1.8rem, 4vw, 2.6rem);
-      font-weight: 800;
-      line-height: 1.2;
-      color: var(--text);
-      margin-bottom: 12px;
-    }
-
-    .section-sub {
-      text-align: center;
-      color: var(--muted);
-      font-size: 1rem;
-      max-width: 520px;
-      margin: 0 auto 48px;
+    .desc {
+      color: #94A3B8;
+      font-size: 0.9rem;
       line-height: 1.7;
+      margin-bottom: 28px;
     }
 
-    .features-grid {
-      display: grid;
-      grid-template-columns: repeat(3, 1fr);
-      gap: 20px;
-    }
-
-    .feature-card {
-      background: var(--surface);
-      border: 1px solid var(--border);
-      border-radius: var(--radius);
-      padding: 28px 24px;
-      transition: box-shadow 0.2s, transform 0.2s, border-color 0.2s;
-      cursor: default;
-    }
-
-    .feature-card:hover {
-      box-shadow: 0 8px 32px rgba(14,165,233,0.1);
-      transform: translateY(-4px);
-      border-color: var(--light);
-    }
-
-    .feature-icon {
-      width: 48px; height: 48px;
+    /* 信息列表 */
+    .info {
+      background: rgba(255,255,255,0.03);
+      border: 1px solid rgba(255,255,255,0.07);
       border-radius: 14px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      margin-bottom: 16px;
-      background: linear-gradient(135deg, rgba(14,165,233,0.1), rgba(56,189,248,0.08));
-    }
-
-    .feature-icon svg { color: var(--primary); }
-
-    .feature-title {
-      font-size: 1rem;
-      font-weight: 700;
-      color: var(--text);
-      margin-bottom: 8px;
-    }
-
-    .feature-desc {
-      font-size: 0.875rem;
-      color: var(--muted);
-      line-height: 1.65;
-    }
-
-    /* ── INFO TABLE ── */
-    .info-section {
-      background: var(--surface);
-      border: 1px solid var(--border);
-      border-radius: var(--radius);
+      margin-bottom: 24px;
       overflow: hidden;
     }
 
@@ -436,360 +109,111 @@
       display: flex;
       justify-content: space-between;
       align-items: center;
-      padding: 16px 28px;
-      border-bottom: 1px solid var(--border);
+      padding: 12px 18px;
+      border-bottom: 1px solid rgba(255,255,255,0.06);
     }
     .info-row:last-child { border-bottom: none; }
 
     .info-key {
-      font-size: 0.875rem;
-      color: var(--muted);
-      font-weight: 500;
-      display: flex;
-      align-items: center;
-      gap: 8px;
+      font-size: 0.8rem;
+      color: #64748B;
     }
-
-    .info-key svg { color: var(--primary); flex-shrink: 0; }
 
     .info-val {
-      font-size: 0.9rem;
+      font-size: 0.82rem;
       font-weight: 600;
-      color: var(--text);
+      color: #CBD5E1;
     }
 
-    .badge-green {
-      background: rgba(34,197,94,0.1);
-      color: #15803D;
-      border-radius: 50px;
-      padding: 3px 10px;
-      font-size: 0.75rem;
-      font-weight: 700;
-    }
-
-    /* ── CTA ── */
-    .cta-section {
-      text-align: center;
-      padding: 80px 24px;
-      background: linear-gradient(135deg, #0C4A6E 0%, #0E7490 100%);
-      position: relative;
-      overflow: hidden;
-    }
-
-    .cta-section::before {
-      content: '';
-      position: absolute;
-      inset: 0;
-      background-image: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='0.03'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
-      pointer-events: none;
-    }
-
-    .cta-section .section-title { color: #fff; position: relative; z-index: 1; }
-    .cta-section .section-sub { color: rgba(255,255,255,0.7); position: relative; z-index: 1; }
-
-    .cta-btn {
-      position: relative;
-      z-index: 1;
-      display: inline-flex;
+    /* 下载按钮 */
+    .btn {
+      display: flex;
       align-items: center;
+      justify-content: center;
       gap: 10px;
-      background: var(--cta);
+      width: 100%;
+      padding: 15px;
+      background: linear-gradient(135deg, #0EA5E9 0%, #6366F1 100%);
       color: #fff;
       text-decoration: none;
-      border-radius: 50px;
-      padding: 16px 36px;
+      border-radius: 14px;
+      font-size: 1rem;
       font-weight: 700;
-      font-size: 1.1rem;
-      transition: background 0.2s, transform 0.15s, box-shadow 0.2s;
-      box-shadow: 0 6px 28px rgba(249,115,22,0.4);
+      transition: opacity 0.2s, transform 0.15s;
+      box-shadow: 0 8px 32px rgba(14,165,233,0.25);
       cursor: pointer;
     }
-    .cta-btn:hover {
-      background: var(--cta-d);
-      transform: translateY(-2px);
-      box-shadow: 0 10px 36px rgba(249,115,22,0.45);
-    }
 
-    .cta-hint {
-      position: relative;
-      z-index: 1;
-      margin-top: 16px;
-      color: rgba(255,255,255,0.5);
-      font-size: 0.8rem;
-    }
+    .btn:hover { opacity: 0.9; transform: translateY(-2px); }
+    .btn:active { transform: translateY(0); }
 
-    /* ── FOOTER ── */
-    footer {
+    .hint {
+      margin-top: 14px;
       text-align: center;
-      padding: 28px 24px;
-      border-top: 1px solid var(--border);
-      color: var(--muted);
-      font-size: 0.8rem;
+      font-size: 0.72rem;
+      color: #475569;
+      line-height: 1.6;
     }
 
-    footer a { color: var(--primary); text-decoration: none; }
-    footer a:hover { text-decoration: underline; }
+    .footer {
+      margin-top: 28px;
+      padding-top: 20px;
+      border-top: 1px solid rgba(255,255,255,0.06);
+      text-align: center;
+      font-size: 0.72rem;
+      color: #334155;
+    }
 
-    /* ── ANIMATIONS ── */
+    .footer a { color: #38BDF8; text-decoration: none; }
+    .footer a:hover { text-decoration: underline; }
+
     @keyframes fadeUp {
-      from { opacity: 0; transform: translateY(20px); }
+      from { opacity: 0; transform: translateY(24px); }
       to   { opacity: 1; transform: translateY(0); }
     }
 
-    .reveal {
-      opacity: 0;
-      transform: translateY(24px);
-      transition: opacity 0.55s ease, transform 0.55s ease;
-    }
-    .reveal.visible {
-      opacity: 1;
-      transform: translateY(0);
-    }
-
-    @media (prefers-reduced-motion: reduce) {
-      *, *::before, *::after { animation: none !important; transition: none !important; }
-    }
-
-    /* ── RESPONSIVE ── */
-    @media (max-width: 768px) {
-      .hero-inner {
-        grid-template-columns: 1fr;
-        text-align: center;
-      }
-      .hero-actions { justify-content: center; }
-      .hero-stats { justify-content: center; }
-      .phone-wrap { order: -1; }
-      .features-grid { grid-template-columns: 1fr; }
-      nav .nav-btn { display: none; }
-    }
-
     @media (max-width: 480px) {
-      .hero { padding: 100px 16px 60px; }
-      .section { padding: 60px 16px; }
-      .info-row { padding: 14px 18px; }
+      .card { padding: 32px 24px; }
+      h1 { font-size: 1.9rem; }
     }
   </style>
 </head>
 <body>
+  <div class="card">
+    <div class="tag">Android · 免费</div>
+    <h1>旧启动器<br/><span>OldLauncher</span></h1>
+    <p class="desc">专为长辈设计的简洁手机桌面，大字体、大图标、一键拨号。</p>
 
-  <!-- NAV -->
-  <nav>
-    <div class="nav-logo">
-      <span class="dot"></span>
-      旧启动器
-    </div>
-    <a class="nav-btn" href="#download">立即下载</a>
-  </nav>
-
-  <!-- HERO -->
-  <section class="hero">
-    <div class="hero-inner">
-      <div class="hero-content">
-        <div class="hero-tag">
-          <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="12" r="10"/></svg>
-          Android 免费应用
-        </div>
-        <h1>专为<span class="highlight">长辈</span>设计<br/>的手机桌面</h1>
-        <p class="hero-desc">
-          超大字体、超大图标、一键拨号。<br/>
-          让爸妈轻松用上智能手机。
-        </p>
-        <div class="hero-actions">
-          <a class="btn-primary" href="./app-release.apk" download="旧启动器.apk">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-            下载 APK
-          </a>
-          <a class="btn-secondary" href="#features">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 8 12 12 14 14"/></svg>
-            了解功能
-          </a>
-        </div>
-        <div class="hero-stats">
-          <div class="stat-item">
-            <div class="stat-num" data-count="1">1.7</div>
-            <div class="stat-label">MB 极小体积</div>
-          </div>
-          <div class="stat-item">
-            <div class="stat-num">Android 7+</div>
-            <div class="stat-label">系统兼容</div>
-          </div>
-          <div class="stat-item">
-            <div class="stat-num">免费</div>
-            <div class="stat-label">永久使用</div>
-          </div>
-        </div>
-      </div>
-
-      <!-- PHONE MOCKUP -->
-      <div class="phone-wrap">
-        <div class="phone-glow"></div>
-        <div class="phone">
-          <div class="phone-notch"></div>
-          <div class="phone-screen">
-            <div class="phone-status">
-              <span class="phone-time">10:24</span>
-              <div class="phone-icons">
-                <span></span><span style="width:6px;height:6px;border-radius:50%"></span><span style="width:8px;height:6px"></span>
-              </div>
-            </div>
-            <div class="phone-body">
-              <div class="phone-app">
-                <div class="phone-app-icon app-phone">
-                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 12a19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 3.6 1.28h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L7.91 8.96a16 16 0 0 0 6.13 6.13l.96-.9a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
-                </div>
-                <span class="phone-app-label">打电话</span>
-              </div>
-              <div class="phone-app">
-                <div class="phone-app-icon app-msg">
-                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
-                </div>
-                <span class="phone-app-label">发短信</span>
-              </div>
-              <div class="phone-app">
-                <div class="phone-app-icon app-cam">
-                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
-                </div>
-                <span class="phone-app-label">相机</span>
-              </div>
-              <div class="phone-app">
-                <div class="phone-app-icon app-set">
-                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
-                </div>
-                <span class="phone-app-label">设置</span>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-  </section>
-
-  <!-- FEATURES -->
-  <section class="section" id="features">
-    <p class="section-label reveal">核心功能</p>
-    <h2 class="section-title reveal">简单，才是最好的设计</h2>
-    <p class="section-sub reveal">去掉一切复杂的东西，只留下长辈真正需要的功能</p>
-
-    <div class="features-grid">
-      <div class="feature-card reveal">
-        <div class="feature-icon">
-          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-        </div>
-        <div class="feature-title">超大图标与字体</div>
-        <div class="feature-desc">所有图标和文字放大 2 倍，老人再也不用眯眼看手机，一眼就能找到想用的 App。</div>
-      </div>
-      <div class="feature-card reveal">
-        <div class="feature-icon">
-          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.69 12a19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 3.6 1.28h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L7.91 8.96a16 16 0 0 0 6.13 6.13l.96-.9a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"/></svg>
-        </div>
-        <div class="feature-title">一键快捷拨号</div>
-        <div class="feature-desc">把家人联系人放到桌面，点一下立即拨出，不需要翻通讯录，不会误操作。</div>
-      </div>
-      <div class="feature-card reveal">
-        <div class="feature-icon">
-          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
-        </div>
-        <div class="feature-title">来电大字提醒</div>
-        <div class="feature-desc">来电时全屏显示来电人姓名，配合响亮振动，确保长辈不会错过每一个重要来电。</div>
-      </div>
-      <div class="feature-card reveal">
-        <div class="feature-icon">
-          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 21V9"/></svg>
-        </div>
-        <div class="feature-title">简洁桌面布局</div>
-        <div class="feature-desc">2×4 大格子布局，每个格子只放一个 App，清晰明了，不会乱，找东西一秒钟。</div>
-      </div>
-      <div class="feature-card reveal">
-        <div class="feature-icon">
-          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
-        </div>
-        <div class="feature-title">防误触设计</div>
-        <div class="feature-desc">关键操作需要确认，避免长辈误触导致误删 App 或误拨电话，安全放心。</div>
-      </div>
-      <div class="feature-card reveal">
-        <div class="feature-icon">
-          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg>
-        </div>
-        <div class="feature-title">极低电量消耗</div>
-        <div class="feature-desc">仅 1.7MB，无后台广告，无推送骚扰，对手机电量几乎没有影响。</div>
-      </div>
-    </div>
-  </section>
-
-  <!-- INFO -->
-  <section class="section" id="download" style="padding-top: 0;">
-    <p class="section-label reveal">安装包信息</p>
-    <h2 class="section-title reveal">安全可靠，放心安装</h2>
-    <p class="section-sub reveal">开源项目，代码公开透明，无广告、无收费、无隐私收集</p>
-
-    <div class="info-section reveal">
+    <div class="info">
       <div class="info-row">
-        <span class="info-key">
-          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
-          版本号
-        </span>
+        <span class="info-key">版本</span>
         <span class="info-val">v1.0</span>
       </div>
       <div class="info-row">
-        <span class="info-key">
-          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-          安装包大小
-        </span>
+        <span class="info-key">大小</span>
         <span class="info-val">1.7 MB</span>
       </div>
       <div class="info-row">
-        <span class="info-key">
-          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="2" width="14" height="20" rx="2" ry="2"/><line x1="12" y1="18" x2="12.01" y2="18"/></svg>
-          系统要求
-        </span>
-        <span class="info-val">Android 7.0 及以上</span>
+        <span class="info-key">系统要求</span>
+        <span class="info-val">Android 7.0+</span>
       </div>
       <div class="info-row">
-        <span class="info-key">
-          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
-          安全状态
-        </span>
-        <span class="badge-green">无广告 · 无收费 · 开源</span>
-      </div>
-      <div class="info-row">
-        <span class="info-key">
-          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
-          更新日期
-        </span>
-        <span class="info-val">2026 年 4 月</span>
+        <span class="info-key">广告 / 收费</span>
+        <span class="info-val">无</span>
       </div>
     </div>
-  </section>
 
-  <!-- CTA -->
-  <section class="cta-section">
-    <p class="section-label" style="color:rgba(255,255,255,0.6)">立即体验</p>
-    <h2 class="section-title">让长辈爱上用手机</h2>
-    <p class="section-sub" style="margin-bottom:36px">下载后打开，1 分钟完成设置，马上就能用</p>
-    <a class="cta-btn" href="./app-release.apk" download="旧启动器.apk">
-      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-      免费下载 APK（1.7 MB）
+    <a class="btn" href="./app-release.apk" download="旧启动器.apk">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+      立即下载 APK
     </a>
-    <p class="cta-hint">安装前请在「设置 → 安全」中开启「允许安装未知来源应用」</p>
-  </section>
 
-  <!-- FOOTER -->
-  <footer>
-    <p>© 2026 巴建峰 · <a href="https://github.com/bjfwan/old-launcher" target="_blank">GitHub 开源项目</a></p>
-  </footer>
+    <p class="hint">安装前请在「设置 → 安全」中开启允许安装未知来源应用</p>
 
-  <script>
-    // Intersection Observer for reveal animations
-    const reveals = document.querySelectorAll('.reveal');
-    const observer = new IntersectionObserver((entries) => {
-      entries.forEach((entry, i) => {
-        if (entry.isIntersecting) {
-          setTimeout(() => entry.target.classList.add('visible'), i * 60);
-          observer.unobserve(entry.target);
-        }
-      });
-    }, { threshold: 0.12 });
-    reveals.forEach(el => observer.observe(el));
-  </script>
+    <div class="footer">
+      © 2026 巴建峰 ·
+      <a href="https://github.com/bjfwan/old-launcher" target="_blank">GitHub 开源</a>
+    </div>
+  </div>
 </body>
 </html>
