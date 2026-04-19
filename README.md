@@ -1,45 +1,97 @@
-# OldLauncher
+# 银杏 · Yinxing Launcher
 
-OldLauncher 是一个面向老年用户的 Android 本地桌面应用，当前主线目标是把桌面主页、常用应用入口、电话联系人与基础设置收拢到一个更简单、更稳定的启动器里。
+> 专为长辈设计的 Android 简洁桌面
 
-## 当前项目范围
+---
+
+## 这个项目为什么存在
+
+我是一名大三的学生。开发这个项目，起因很简单——我的爷爷。
+
+AI 发展的速度，今天的我们都有目共睹。有人说它不过是玩具，有人说它无所不能。但对我来说，它给了我一种可能：用自己有限的能力，让我身边的人不至于在信息化的浪潮里被边缘化。
+
+我最初只是想做一个自己用的东西，让爷爷能更顺手地用手机。但做着做着我意识到，在 AI 的浪潮声里，我们身边还有无数的老人，正在悄悄地被这个时代甩在身后。我没有办法改变这件事，但我可以做一件小事。
+
+这个项目也许有很多不足。市面上或许也有无数类似的轮子。但我需要一个能让我及时跟进、持续为爷爷优化的项目——所以我选择开源，希望更多人能看到这件事，也欢迎每一位愿意一起做这件事的人。
+
+**今天，我们正式发布了它。**
+
+---
+
+## 银杏是什么
+
+银杏是一个面向老年用户的 Android Launcher，目标是把手机最常用的事情做到最简单：
+
+- **大字体、大图标**，视力不好也能看清
+- **一键拨号**，直接呼叫家人
+- **微信视频**，和子女视频通话
+- **简洁桌面**，去掉一切干扰
+
+---
+
+## 下载安装
+
+**[📥 立即下载 APK](https://old.likeyou.qz.io)**
+
+或直接扫码访问下载页。
+
+---
+
+## 当前功能
 
 - 桌面主页与默认 Launcher 入口
 - 应用管理与桌面应用选择
 - 电话联系人查看、添加、编辑、删除、拨号
-- 微信视频联系人页、本地联系人管理与实验性发起入口
+- 微信视频联系人管理与发起入口
 - 低性能模式与基础系统设置入口
 
-## 当前工程结构
-
-- `app`：主应用模块
-- `benchmark`：Baseline Profile 与 Macrobenchmark 模块
-- `docs`：产品、架构、开发、测试与发布文档
-
-## 当前测试基线
-
-- 单元测试：`.\gradlew.bat :app:testDebugUnitTest`
-- Debug 构建：`.\gradlew.bat :app:assembleDebug`
-- 仪器测试编译：`.\gradlew.bat :app:assembleDebugAndroidTest`
-- Lint：`.\gradlew.bat :app:lintDebug`
-- 设备级执行：连接设备或模拟器后运行 `.\gradlew.bat :app:connectedDebugAndroidTest`
-
-## 当前不作为已交付能力
+## 暂未支持
 
 - 微信自动化拨号稳定能力
 - 微信或系统电话自动接听
 - 通知监听、远程协助、云同步
 
-## 文档入口
+---
 
-- [文档总览](docs/README.md)
+## 参与贡献
+
+如果你也有同样想帮助身边老人的想法，欢迎提 Issue、PR，或者只是给一个 Star——让更多人看到这件事。
+
+---
+
+## 构建
+
+```bash
+# Debug 构建
+.\gradlew.bat :app:assembleDebug
+
+# Release 构建
+.\gradlew.bat :app:assembleRelease
+
+# 单元测试
+.\gradlew.bat :app:testDebugUnitTest
+
+# Lint
+.\gradlew.bat :app:lintDebug
+```
+
+## 工程结构
+
+```
+app/          主应用模块
+benchmark/    Baseline Profile 与性能测试
+docs/         产品、架构、开发文档
+```
+
+## 文档
+
 - [产品需求](docs/product/product-requirements.md)
-- [功能状态](docs/product/current-feature-status.md)
 - [当前架构](docs/architecture/current-architecture.md)
-- [项目结构](docs/development/project-structure.md)
 - [构建说明](docs/development/setup-and-build.md)
-- [Git 协作规范](docs/development/git-workflow.md)
-- [测试策略](docs/testing/test-strategy.md)
 - [项目路线图](docs/roadmap/project-roadmap.md)
-- [微信视频规划](docs/roadmap/wechat-video-call-plan.md)
-- [发布检查清单](docs/release/release-checklist.md)
+
+---
+
+<p align="center">
+  <sub>用代码，陪伴那些被时代遗忘的人。</sub>
+</p>
