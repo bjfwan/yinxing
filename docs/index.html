@@ -43,15 +43,16 @@
 
     /* ── 背景装饰层 ──────────────────── */
 
-    /* 1. 暖奶油底色 + 细噪点纹理 */
+    /* 1. 多层光晕 */
     body::before {
       content: '';
       position: fixed;
       inset: 0;
       background:
-        radial-gradient(ellipse 80% 60% at 50% -10%, rgba(184,136,42,0.10) 0%, transparent 65%),
-        radial-gradient(ellipse 60% 40% at 100% 100%, rgba(184,136,42,0.07) 0%, transparent 55%),
-        radial-gradient(ellipse 50% 40% at 0% 80%, rgba(3,105,161,0.05) 0%, transparent 50%);
+        radial-gradient(ellipse 90% 55% at 50% -5%,  rgba(184,136,42,0.13) 0%, transparent 60%),
+        radial-gradient(ellipse 55% 45% at 100% 100%, rgba(184,136,42,0.09) 0%, transparent 55%),
+        radial-gradient(ellipse 45% 40% at 0%   85%,  rgba(3,105,161,0.07)  0%, transparent 50%),
+        radial-gradient(ellipse 30% 30% at 20%  10%,  rgba(184,136,42,0.05) 0%, transparent 45%);
       pointer-events: none;
       z-index: 0;
     }
@@ -61,15 +62,15 @@
       content: '';
       position: fixed;
       inset: 0;
-      background-image: radial-gradient(circle, rgba(28,25,20,0.12) 1px, transparent 1px);
-      background-size: 28px 28px;
+      background-image: radial-gradient(circle, rgba(28,25,20,0.11) 1px, transparent 1px);
+      background-size: 26px 26px;
       pointer-events: none;
       z-index: 0;
-      mask-image: radial-gradient(ellipse 70% 70% at 50% 50%, black 20%, transparent 80%);
-      -webkit-mask-image: radial-gradient(ellipse 70% 70% at 50% 50%, black 20%, transparent 80%);
+      mask-image: radial-gradient(ellipse 75% 75% at 50% 50%, black 10%, transparent 80%);
+      -webkit-mask-image: radial-gradient(ellipse 75% 75% at 50% 50%, black 10%, transparent 80%);
     }
 
-    /* 3. SVG 装饰：大圆弧线条 */
+    /* 3. SVG 装饰层 */
     .deco-svg {
       position: fixed;
       top: 0; left: 0;
@@ -77,6 +78,35 @@
       pointer-events: none;
       z-index: 0;
       overflow: visible;
+    }
+
+    /* 4. 浮动银杏叶剪影 */
+    .deco-leaf {
+      position: fixed;
+      pointer-events: none;
+      z-index: 0;
+      opacity: 0;
+      animation: leafFloat 20s ease-in-out infinite;
+    }
+    .deco-leaf:nth-child(1) { top: 8%;  right: 6%;  width: 120px; animation-delay: 0s;    animation-duration: 18s; }
+    .deco-leaf:nth-child(2) { top: 55%; left: 3%;   width: 80px;  animation-delay: 4s;    animation-duration: 22s; }
+    .deco-leaf:nth-child(3) { top: 78%; right: 10%; width: 60px;  animation-delay: 8s;    animation-duration: 16s; }
+
+    @keyframes leafFloat {
+      0%   { opacity: 0;    transform: translateY(0px)   rotate(0deg); }
+      15%  { opacity: 0.06; }
+      50%  { opacity: 0.09; transform: translateY(-18px) rotate(6deg); }
+      85%  { opacity: 0.06; }
+      100% { opacity: 0;    transform: translateY(0px)   rotate(0deg); }
+    }
+
+    /* 5. 顶部金色细横线 */
+    .deco-topline {
+      position: fixed;
+      top: 0; left: 0; right: 0;
+      height: 1px;
+      background: linear-gradient(90deg, transparent 0%, rgba(184,136,42,0.5) 50%, transparent 100%);
+      z-index: 2;
     }
 
     /* ── 整体容器 ─────────────────────── */
@@ -304,17 +334,31 @@
 </head>
 <body>
 
-  <!-- 背景装饰 SVG：右上大圆弧 + 左下细线圆 -->
+  <!-- 顶部金线 -->
+  <div class="deco-topline"></div>
+
+  <!-- 浮动银杏叶剪影 -->
+  <img class="deco-leaf" src="./icon.png" alt="" />
+  <img class="deco-leaf" src="./icon.png" alt="" />
+  <img class="deco-leaf" src="./icon.png" alt="" />
+
+  <!-- 背景装饰 SVG -->
   <svg class="deco-svg" viewBox="0 0 100 100" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg">
-    <!-- 右上角大弧 -->
-    <circle cx="95" cy="5" r="38" fill="none" stroke="rgba(184,136,42,0.09)" stroke-width="0.3" vector-effect="non-scaling-stroke"/>
-    <circle cx="95" cy="5" r="52" fill="none" stroke="rgba(184,136,42,0.06)" stroke-width="0.2" vector-effect="non-scaling-stroke"/>
-    <!-- 左下角细圆 -->
-    <circle cx="5" cy="95" r="24" fill="none" stroke="rgba(28,25,20,0.06)" stroke-width="0.2" vector-effect="non-scaling-stroke"/>
-    <circle cx="5" cy="95" r="40" fill="none" stroke="rgba(28,25,20,0.04)" stroke-width="0.15" vector-effect="non-scaling-stroke"/>
-    <!-- 中部斜线装饰 -->
-    <line x1="72" y1="0" x2="100" y2="30" stroke="rgba(184,136,42,0.07)" stroke-width="0.15" vector-effect="non-scaling-stroke"/>
-    <line x1="80" y1="0" x2="100" y2="22" stroke="rgba(184,136,42,0.05)" stroke-width="0.1" vector-effect="non-scaling-stroke"/>
+    <!-- 右上角同心圆弧 -->
+    <circle cx="98" cy="2"  r="30" fill="none" stroke="rgba(184,136,42,0.10)" stroke-width="0.25" vector-effect="non-scaling-stroke"/>
+    <circle cx="98" cy="2"  r="44" fill="none" stroke="rgba(184,136,42,0.07)" stroke-width="0.18" vector-effect="non-scaling-stroke"/>
+    <circle cx="98" cy="2"  r="60" fill="none" stroke="rgba(184,136,42,0.04)" stroke-width="0.12" vector-effect="non-scaling-stroke"/>
+    <!-- 左下角同心圆弧 -->
+    <circle cx="2"  cy="98" r="22" fill="none" stroke="rgba(28,25,20,0.07)"   stroke-width="0.2"  vector-effect="non-scaling-stroke"/>
+    <circle cx="2"  cy="98" r="36" fill="none" stroke="rgba(28,25,20,0.05)"   stroke-width="0.15" vector-effect="non-scaling-stroke"/>
+    <circle cx="2"  cy="98" r="52" fill="none" stroke="rgba(3,105,161,0.04)"  stroke-width="0.12" vector-effect="non-scaling-stroke"/>
+    <!-- 右上角放射斜线 -->
+    <line x1="68" y1="0" x2="100" y2="34" stroke="rgba(184,136,42,0.08)" stroke-width="0.15" vector-effect="non-scaling-stroke"/>
+    <line x1="76" y1="0" x2="100" y2="26" stroke="rgba(184,136,42,0.05)" stroke-width="0.1"  vector-effect="non-scaling-stroke"/>
+    <line x1="84" y1="0" x2="100" y2="18" stroke="rgba(184,136,42,0.03)" stroke-width="0.08" vector-effect="non-scaling-stroke"/>
+    <!-- 中央水平刻度线 -->
+    <line x1="0" y1="50" x2="8"  y2="50" stroke="rgba(184,136,42,0.12)" stroke-width="0.2" vector-effect="non-scaling-stroke"/>
+    <line x1="92" y1="50" x2="100" y2="50" stroke="rgba(184,136,42,0.12)" stroke-width="0.2" vector-effect="non-scaling-stroke"/>
   </svg>
 
   <div class="wrap">
