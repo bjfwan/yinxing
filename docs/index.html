@@ -1,0 +1,250 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>旧启动器 · 下载</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@400;700;900&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg: #0d0d0d;
+      --surface: #161616;
+      --border: #2a2a2a;
+      --accent: #e8c97a;
+      --accent2: #c47a3a;
+      --text: #e8e2d5;
+      --muted: #7a7570;
+    }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'Noto Serif SC', serif;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 2rem;
+      overflow-x: hidden;
+    }
+
+    /* 背景纹理 */
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background-image:
+        radial-gradient(ellipse 80% 60% at 50% 0%, rgba(232,201,122,0.07) 0%, transparent 60%),
+        url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='0.02'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    .container {
+      position: relative;
+      z-index: 1;
+      max-width: 560px;
+      width: 100%;
+    }
+
+    /* 顶部徽标区 */
+    .badge {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.7rem;
+      color: var(--accent);
+      letter-spacing: 0.2em;
+      text-transform: uppercase;
+      border: 1px solid rgba(232,201,122,0.3);
+      display: inline-block;
+      padding: 0.3em 0.8em;
+      margin-bottom: 1.8rem;
+      animation: fadeUp 0.6s ease both;
+    }
+
+    .title {
+      font-size: clamp(2.4rem, 8vw, 3.8rem);
+      font-weight: 900;
+      line-height: 1.1;
+      letter-spacing: -0.02em;
+      animation: fadeUp 0.6s 0.1s ease both;
+    }
+
+    .title span {
+      display: block;
+      background: linear-gradient(135deg, var(--accent) 0%, var(--accent2) 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    .subtitle {
+      margin-top: 1rem;
+      color: var(--muted);
+      font-size: 1rem;
+      line-height: 1.7;
+      animation: fadeUp 0.6s 0.2s ease both;
+    }
+
+    /* 卡片 */
+    .card {
+      margin-top: 2.5rem;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      padding: 2rem;
+      animation: fadeUp 0.6s 0.3s ease both;
+    }
+
+    .info-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 0.6rem 0;
+      border-bottom: 1px solid var(--border);
+    }
+    .info-row:last-of-type { border-bottom: none; }
+
+    .info-label {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.75rem;
+      color: var(--muted);
+      letter-spacing: 0.1em;
+    }
+
+    .info-value {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.85rem;
+      color: var(--text);
+    }
+
+    /* 下载按钮 */
+    .btn-download {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.7rem;
+      margin-top: 2rem;
+      width: 100%;
+      padding: 1rem 1.5rem;
+      background: linear-gradient(135deg, var(--accent) 0%, var(--accent2) 100%);
+      color: #0d0d0d;
+      font-family: 'Noto Serif SC', serif;
+      font-size: 1.05rem;
+      font-weight: 700;
+      text-decoration: none;
+      border: none;
+      cursor: pointer;
+      transition: opacity 0.2s, transform 0.2s;
+      animation: fadeUp 0.6s 0.4s ease both;
+    }
+
+    .btn-download:hover {
+      opacity: 0.9;
+      transform: translateY(-2px);
+    }
+
+    .btn-download:active {
+      transform: translateY(0);
+    }
+
+    .btn-download svg {
+      flex-shrink: 0;
+    }
+
+    /* 提示 */
+    .hint {
+      margin-top: 1.2rem;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.72rem;
+      color: var(--muted);
+      text-align: center;
+      line-height: 1.6;
+      animation: fadeUp 0.6s 0.5s ease both;
+    }
+
+    .hint a { color: var(--accent); text-decoration: none; }
+    .hint a:hover { text-decoration: underline; }
+
+    /* 分隔线 */
+    .divider {
+      margin-top: 2.5rem;
+      border: none;
+      border-top: 1px solid var(--border);
+      animation: fadeUp 0.6s 0.5s ease both;
+    }
+
+    .footer {
+      margin-top: 1.2rem;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.68rem;
+      color: var(--muted);
+      text-align: center;
+      animation: fadeUp 0.6s 0.6s ease both;
+    }
+
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(16px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    @media (max-width: 480px) {
+      .card { padding: 1.4rem; }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="badge">Android App · 免费下载</div>
+
+    <h1 class="title">
+      旧启动器
+      <span>OldLauncher</span>
+    </h1>
+
+    <p class="subtitle">
+      为老人设计的简洁启动器，大字体、大图标、易操作。<br/>
+      支持来电提醒、联系人快捷拨号等实用功能。
+    </p>
+
+    <div class="card">
+      <div class="info-row">
+        <span class="info-label">版本</span>
+        <span class="info-value">v1.0</span>
+      </div>
+      <div class="info-row">
+        <span class="info-label">大小</span>
+        <span class="info-value">1.7 MB</span>
+      </div>
+      <div class="info-row">
+        <span class="info-label">系统要求</span>
+        <span class="info-value">Android 7.0+</span>
+      </div>
+      <div class="info-row">
+        <span class="info-label">格式</span>
+        <span class="info-value">APK（需允许未知来源）</span>
+      </div>
+    </div>
+
+    <a class="btn-download" href="./app-release.apk" download="旧启动器.apk">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+        <polyline points="7 10 12 15 17 10"/>
+        <line x1="12" y1="15" x2="12" y2="3"/>
+      </svg>
+      立即下载 APK
+    </a>
+
+    <p class="hint">
+      安装前请在手机 <strong>设置 → 安全</strong> 中开启「允许安装未知来源应用」<br/>
+      如遇拦截，可尝试用文件管理器打开已下载的 APK 文件
+    </p>
+
+    <hr class="divider" />
+    <p class="footer">© 2026 巴建峰 · bjfwan/旧启动器</p>
+  </div>
+</body>
+</html>
