@@ -14,6 +14,10 @@ android {
     namespace = "com.bajianfeng.launcher"
     compileSdk = 36
 
+    buildFeatures {
+        buildConfig = true
+    }
+
     defaultConfig {
         applicationId = "com.bajianfeng.launcher"
         minSdk = 24
@@ -22,6 +26,10 @@ android {
         versionName = "1.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+
+        buildConfigField("String", "SENIVERSE_UID", "\"${localProps["SENIVERSE_UID"] ?: ""}\"")
+        buildConfigField("String", "SENIVERSE_PK",  "\"${localProps["SENIVERSE_PK"]  ?: ""}\"")
+        buildConfigField("String", "TENCENT_KEY",   "\"${localProps["TENCENT_KEY"]   ?: ""}\"")
     }
 
     signingConfigs {

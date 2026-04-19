@@ -33,12 +33,13 @@
       display: flex;
       flex-direction: column;
       align-items: center;
-      justify-content: center;
+      justify-content: flex-start;
       padding: 80px 32px;
       -webkit-font-smoothing: antialiased;
       -moz-osx-font-smoothing: grayscale;
       position: relative;
-      overflow: hidden;
+      overflow-x: hidden;
+      overflow-y: auto;
     }
 
     /* ── 背景装饰层 ──────────────────── */
@@ -320,15 +321,21 @@
 
     /* ── 响应式 ──────────────────────── */
     @media (max-width: 520px) {
-      body { padding: 60px 24px; }
-      .brand { margin-bottom: 56px; }
-      .hero { margin-bottom: 48px; }
+      body { padding: 48px 20px 60px; justify-content: flex-start; }
+      .brand { margin-bottom: 48px; }
+      .hero { margin-bottom: 40px; }
       .specs { grid-template-columns: repeat(2, 1fr); }
       .spec { border-right: none; border-bottom: 1px solid var(--ink-06); }
       .spec:nth-child(odd) { border-right: 1px solid var(--ink-06); }
       .spec:last-child { border-bottom: none; }
       .spec:nth-last-child(2):nth-child(odd) { border-bottom: none; }
       .foot { flex-direction: column; gap: 10px; text-align: center; }
+    }
+
+    @media (max-width: 360px) {
+      body { padding: 36px 16px 48px; }
+      .hero h1 { font-size: clamp(3.5rem, 20vw, 4.5rem); }
+      .btn { padding: 18px 20px; }
     }
   </style>
 </head>
@@ -386,7 +393,7 @@
       </div>
       <div class="spec">
         <div class="spec-label">大小</div>
-        <div class="spec-value">1.7 MB</div>
+        <div class="spec-value">1.74 MB</div>
       </div>
       <div class="spec">
         <div class="spec-label">系统</div>
@@ -402,7 +409,7 @@
       <a class="btn" href="./app-release.apk" download="银杏.apk">
         <span>下载 APK</span>
         <span class="btn-right">
-          <span>1.7 MB</span>
+          <span>1.74 MB</span>
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
         </span>
       </a>
@@ -410,7 +417,7 @@
     </div>
 
     <div class="foot">
-      <span>© 2026 巴建峰</span>
+      <span>联系作者：<a href="mailto:2632507193@qq.com">2632507193@qq.com</a></span>
       <a href="https://github.com/bjfwan/yinxing" target="_blank">GitHub</a>
     </div>
 

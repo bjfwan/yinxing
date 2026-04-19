@@ -12,12 +12,12 @@ import javax.crypto.spec.SecretKeySpec
 
 object WeatherRepository {
 
-    // 心知天气
-    private const val SENIVERSE_UID = "PcKXu0IVRoFlFSexr"
-    private const val SENIVERSE_PK = "S1IeZhxP1fZbI5Ay0"
+    // 心知天气（从 BuildConfig 注入，密钥在 local.properties 中配置）
+    private const val SENIVERSE_UID = BuildConfig.SENIVERSE_UID
+    private const val SENIVERSE_PK = BuildConfig.SENIVERSE_PK
 
-    // 腾讯位置
-    private const val TENCENT_KEY = "JONBZ-DWYK3-IXS3J-RX75T-SZ2HE-U2FVV"
+    // 腾讯位置（从 BuildConfig 注入，密钥在 local.properties 中配置）
+    private const val TENCENT_KEY = BuildConfig.TENCENT_KEY
 
     // 缓存刷新间隔：30分钟
     private const val CACHE_TTL_MS = 30 * 60 * 1000L
