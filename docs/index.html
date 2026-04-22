@@ -272,6 +272,15 @@
     .btn:hover { background: #2E2A24; transform: translateY(-1px); }
     .btn:active { transform: translateY(0); }
 
+    .btn-secondary {
+      background: transparent;
+      color: var(--ink-60);
+      border: 1px solid var(--ink-12);
+      margin-bottom: 16px;
+    }
+    .btn-secondary:hover { background: var(--ink-06); color: var(--ink); border-color: var(--ink-30); transform: translateY(-1px); }
+    .btn-secondary:active { transform: translateY(0); }
+
     .btn-right {
       display: flex;
       align-items: center;
@@ -430,9 +439,16 @@
     </div>
 
     <div class="dl-wrap">
-      <a class="btn" href="./app-release.apk" download="银杏.apk">
-        <span>下载 APK</span>
+      <a class="btn" href="https://github.com/bjfwan/yinxing/releases/latest/download/app-release.apk" download="银杏.apk">
+        <span>下载 APK <span style="font-size:0.65rem;opacity:0.5;letter-spacing:0.08em;">· GitHub（推荐）</span></span>
         <span class="btn-right">
+          <span>1.74 MB</span>
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+        </span>
+      </a>
+      <a class="btn btn-secondary" href="./app-release.apk" download="银杏.apk">
+        <span>下载 APK <span style="font-size:0.65rem;opacity:0.6;letter-spacing:0.08em;">· 备用线路</span></span>
+        <span class="btn-right" style="color:rgba(28,25,20,0.35);">
           <span>1.74 MB</span>
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
         </span>
