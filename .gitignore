@@ -17,6 +17,7 @@ out/
 *.jks
 *.keystore
 keystore.properties
+google-services.json
 launcher_prefs*.xml
 %SystemDrive%/
 .codex-backup/

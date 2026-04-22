@@ -17,6 +17,8 @@ OldLauncher/
 ├── gradlew
 ├── gradlew.bat
 └── README.md
+
+> `app/google-services.json` 已加入 `.gitignore`，需从 Firebase Console 单独下载。
 ```
 
 ## 2. 主应用源码结构

@@ -137,7 +137,19 @@ app/build/outputs/apk/debug/
 app/build/outputs/apk/androidTest/debug/
 ```
 
-## 6. 当前真实状态
+## 6. Firebase Crashlytics 配置
+
+项目已接入 Firebase Crashlytics，用于自动捕获崩溃日志。
+
+- Firebase 项目：`launcher-d4690a2f`
+- 应用包名：`com.yinxing.launcher`
+- `google-services.json` 需放在 `app/` 目录下（已加入 `.gitignore`，不提交到仓库）
+- 无需任何额外代码，App 崩溃后下次启动自动上传日志
+- 查看崩溃报告：[console.firebase.google.com](https://console.firebase.google.com) → 项目 → Crashlytics
+
+> 注意：从 GitHub clone 项目后需自行在 Firebase Console 下载 `google-services.json` 并放到 `app/` 目录，否则构建会失败。
+
+## 7. 当前真实状态
 
 - 当前已于 2026-04-12 验证 `:app:assembleDebugAndroidTest` 可通过
 - 当前已于 2026-04-12 验证 `:app:testDebugUnitTest` 可通过
@@ -146,6 +158,7 @@ app/build/outputs/apk/androidTest/debug/
 - 当前 `lintDebug` 结果为 `No issues found.`
 - 当前已通过 `D:\androidsdk\platform-tools\adb.exe devices` 检测到在线设备 `10AD5H082S000H5`
 - 当前已于 2026-04-12 在真机 `10AD5H082S000H5` 上执行 `:app:connectedDebugAndroidTest` 并通过
+- 当前已于 2026-04-22 接入 Firebase Crashlytics，构建验证通过（`assembleDebug` BUILD SUCCESSFUL）
 
 
 ## 7. 推荐协作方式
