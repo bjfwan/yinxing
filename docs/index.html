@@ -278,9 +278,6 @@
       opacity: 0;
       animation: fade 1s 0.65s ease forwards;
       border-radius: 10px;
-      backdrop-filter: blur(18px) saturate(1.6) brightness(1.04);
-      -webkit-backdrop-filter: blur(18px) saturate(1.6) brightness(1.04);
-      background: rgba(255,255,255,0.22);
       border: 1px solid rgba(255,255,255,0.55);
       box-shadow:
         0 4px 24px rgba(184,136,42,0.07),
@@ -288,6 +285,17 @@
         inset 0 -1px 0 rgba(28,25,20,0.04);
       position: relative;
       overflow: hidden;
+    }
+
+    .specs-bg {
+      position: absolute;
+      inset: 0;
+      border-radius: 10px;
+      backdrop-filter: blur(18px) saturate(1.6) brightness(1.04);
+      -webkit-backdrop-filter: blur(18px) saturate(1.6) brightness(1.04);
+      background: rgba(255,255,255,0.22);
+      pointer-events: none;
+      z-index: 0;
     }
 
     .specs::before {
@@ -304,9 +312,7 @@
       position: absolute;
       inset: 0;
       border-radius: inherit;
-      background: radial-gradient(ellipse at var(--gx, 25%) var(--gy, 15%), rgba(255,255,255,0.22) 0%, transparent 55%);
       pointer-events: none;
-      transition: background 0.1s ease;
     }
 
     .spec {
@@ -551,6 +557,7 @@
     <div class="rule"></div>
 
     <div class="specs">
+      <div class="specs-bg" id="specs-bg"></div>
       <div class="spec">
         <div class="spec-label">版本</div>
         <div class="spec-value">1.0</div>
@@ -631,6 +638,7 @@
     /* ── Liquid Glass 动态 SVG 滤镜 ── */
     const turb = document.getElementById('lg-turb');
     const specs = document.querySelector('.specs');
+    const specsBg = document.getElementById('specs-bg');
     let t = 0;
     let mouseX = 0.5, mouseY = 0.5;
     let targetX = 0.5, targetY = 0.5;
@@ -651,10 +659,11 @@
       turb.setAttribute('baseFrequency', `${fx} ${fy}`);
       const scale = 10 + Math.sin(t * 1.3) * 5 + Math.abs(mouseX - 0.5) * 8;
       turb.nextElementSibling.setAttribute('scale', scale.toFixed(2));
-      if (specs) {
-        specs.style.filter = 'url(#lg-filter)';
-        specs.style.setProperty('--gx', `${20 + mouseX * 60}%`);
-        specs.style.setProperty('--gy', `${10 + mouseY * 40}%`);
+      if (specsBg) {
+        specsBg.style.filter = 'url(#lg-filter)';
+        const gx = 20 + mouseX * 60;
+        const gy = 10 + mouseY * 40;
+        specsBg.style.background = `radial-gradient(ellipse at ${gx}% ${gy}%, rgba(255,255,255,0.28) 0%, rgba(255,255,255,0.18) 100%)`;
       }
       requestAnimationFrame(tick);
     }
