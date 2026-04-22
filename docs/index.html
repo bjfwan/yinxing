@@ -635,7 +635,6 @@
   </svg>
 
   <script>
-    /* ── Liquid Glass 动态 SVG 滤镜 ── */
     const turb = document.getElementById('lg-turb');
     const specs = document.querySelector('.specs');
     const specsBg = document.getElementById('specs-bg');
@@ -669,7 +668,6 @@
     }
     tick();
 
-    /* ── 1. 磁吸按钮 ── */
     document.querySelectorAll('.btn').forEach(btn => {
       btn.addEventListener('mousemove', e => {
         const r = btn.getBoundingClientRect();
@@ -686,10 +684,7 @@
       btn.addEventListener('mouseenter', () => {
         btn.style.transition = 'transform 0.1s ease, background 0.3s, box-shadow 0.3s';
       });
-    });
 
-    /* ── 2. 点击涟漪 ── */
-    document.querySelectorAll('.btn').forEach(btn => {
       btn.style.overflow = 'hidden';
       btn.addEventListener('click', e => {
         const r = btn.getBoundingClientRect();
@@ -711,7 +706,6 @@
       });
     });
 
-    /* ── 3. 图标摇晃 ── */
     const iconImg = document.querySelector('.icon-block img');
     if (iconImg) {
       iconImg.style.cursor = 'pointer';
@@ -727,30 +721,43 @@
       });
     }
 
-    /* ── 4. 鼠标跟随光晕 ── */
-    const cursor = document.createElement('div');
-    cursor.style.cssText = `
-      position:fixed;pointer-events:none;z-index:999;
-      width:280px;height:280px;border-radius:50%;
-      background:radial-gradient(circle, rgba(184,136,42,0.06) 0%, transparent 70%);
+    const cursorOuter = document.createElement('div');
+    const cursorInner = document.createElement('div');
+    cursorOuter.style.cssText = `
+      position:fixed;pointer-events:none;z-index:9999;
+      width:500px;height:500px;border-radius:50%;
+      background:radial-gradient(circle, rgba(184,136,42,0.18) 0%, rgba(184,136,42,0.06) 40%, transparent 70%);
       transform:translate(-50%,-50%);
-      transition:opacity 0.3s;
-      will-change:transform;
+      will-change:left,top;
+      mix-blend-mode:multiply;
     `;
-    document.body.appendChild(cursor);
-    let cx = -500, cy = -500, tcx = -500, tcy = -500;
+    cursorInner.style.cssText = `
+      position:fixed;pointer-events:none;z-index:9999;
+      width:120px;height:120px;border-radius:50%;
+      background:radial-gradient(circle, rgba(184,136,42,0.35) 0%, transparent 70%);
+      transform:translate(-50%,-50%);
+      will-change:left,top;
+    `;
+    document.body.appendChild(cursorOuter);
+    document.body.appendChild(cursorInner);
+
+    let ocx = -999, ocy = -999, icx = -999, icy = -999, tcx = -999, tcy = -999;
     document.addEventListener('mousemove', e => { tcx = e.clientX; tcy = e.clientY; });
-    document.addEventListener('mouseleave', () => { cursor.style.opacity = '0'; });
-    document.addEventListener('mouseenter', () => { cursor.style.opacity = '1'; });
+    document.addEventListener('mouseleave', () => { cursorOuter.style.opacity = '0'; cursorInner.style.opacity = '0'; });
+    document.addEventListener('mouseenter', () => { cursorOuter.style.opacity = '1'; cursorInner.style.opacity = '1'; });
+
     (function cursorTick() {
-      cx = lerp(cx, tcx, 0.1);
-      cy = lerp(cy, tcy, 0.1);
-      cursor.style.left = cx + 'px';
-      cursor.style.top  = cy + 'px';
+      ocx = lerp(ocx, tcx, 0.06);
+      ocy = lerp(ocy, tcy, 0.06);
+      icx = lerp(icx, tcx, 0.18);
+      icy = lerp(icy, tcy, 0.18);
+      cursorOuter.style.left = ocx + 'px';
+      cursorOuter.style.top  = ocy + 'px';
+      cursorInner.style.left = icx + 'px';
+      cursorInner.style.top  = icy + 'px';
       requestAnimationFrame(cursorTick);
     })();
 
-    /* ── 5. specs 数字计数动效 ── */
     const observer = new IntersectionObserver(entries => {
       entries.forEach(entry => {
         if (!entry.isIntersecting) return;
