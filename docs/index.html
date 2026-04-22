@@ -48,10 +48,10 @@
       --gold: #B8882A;
       --gold-faint: rgba(184,136,42,0.12);
       --ink: #1C1914;
-      --ink-60: rgba(28,25,20,0.6);
-      --ink-30: rgba(28,25,20,0.3);
-      --ink-12: rgba(28,25,20,0.12);
-      --ink-06: rgba(28,25,20,0.06);
+      --ink-60: rgba(28,25,20,0.72);
+      --ink-30: rgba(28,25,20,0.50);
+      --ink-12: rgba(28,25,20,0.14);
+      --ink-06: rgba(28,25,20,0.08);
     }
 
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -277,15 +277,46 @@
       margin-bottom: 40px;
       opacity: 0;
       animation: fade 1s 0.65s ease forwards;
+      border-radius: 10px;
+      backdrop-filter: blur(18px) saturate(1.6) brightness(1.04);
+      -webkit-backdrop-filter: blur(18px) saturate(1.6) brightness(1.04);
+      background: rgba(255,255,255,0.22);
+      border: 1px solid rgba(255,255,255,0.55);
+      box-shadow:
+        0 4px 24px rgba(184,136,42,0.07),
+        inset 0 1px 0 rgba(255,255,255,0.75),
+        inset 0 -1px 0 rgba(28,25,20,0.04);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .specs::before {
+      content: '';
+      position: absolute;
+      top: 0; left: 0; right: 0;
+      height: 1px;
+      background: linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.9) 40%, rgba(255,255,255,0.9) 60%, transparent 100%);
+      pointer-events: none;
+    }
+
+    .specs::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      border-radius: inherit;
+      background: radial-gradient(ellipse at 25% 15%, rgba(255,255,255,0.18) 0%, transparent 55%);
+      pointer-events: none;
     }
 
     .spec {
-      padding: 20px 0;
-      border-right: 1px solid var(--ink-06);
+      padding: 20px 0 20px 20px;
+      border-right: 1px solid rgba(255,255,255,0.35);
+      position: relative;
+      z-index: 1;
     }
 
     .spec:last-child { border-right: none; }
-    .spec:not(:first-child) { padding-left: 20px; }
+    .spec:first-child { padding-left: 20px; }
 
     .spec-label {
       font-size: 0.6rem;
@@ -363,7 +394,7 @@
       font-size: 0.68rem;
       font-weight: 300;
       letter-spacing: 0.05em;
-      color: var(--ink-30);
+      color: rgba(28,25,20,0.45);
       line-height: 1.7;
       text-align: center;
       margin-bottom: 0;
@@ -392,7 +423,7 @@
       font-size: 0.6rem;
       letter-spacing: 0.22em;
       text-transform: uppercase;
-      color: var(--ink-30);
+      color: rgba(28,25,20,0.45);
       white-space: nowrap;
       padding: 0 32px;
     }
@@ -583,7 +614,6 @@
         GitHub
       </a>
     </div>
-
   </div>
 </body>
 </html>
