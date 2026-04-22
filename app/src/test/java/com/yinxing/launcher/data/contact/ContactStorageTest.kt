@@ -1,6 +1,6 @@
-package com.bajianfeng.launcher.data.contact
+package com.yinxing.launcher.data.contact
 
-import com.bajianfeng.launcher.common.util.AccessibilityServiceMatcher
+import com.yinxing.launcher.common.util.AccessibilityServiceMatcher
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull

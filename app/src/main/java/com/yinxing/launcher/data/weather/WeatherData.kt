@@ -1,4 +1,4 @@
-package com.bajianfeng.launcher.data.weather
+package com.yinxing.launcher.data.weather
 
 data class WeatherNow(
     val cityName: String,

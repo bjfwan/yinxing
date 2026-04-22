@@ -1,7 +1,7 @@
 package com.google.android.accessibility.selecttospeak
 
 import android.view.accessibility.AccessibilityNodeInfo
-import com.bajianfeng.launcher.automation.wechat.util.AccessibilityUtil
+import com.yinxing.launcher.automation.wechat.util.AccessibilityUtil
 
 internal data class WeChatUiSnapshot(
     val text: String? = null,

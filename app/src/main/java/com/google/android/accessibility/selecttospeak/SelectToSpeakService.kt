@@ -13,13 +13,13 @@ import androidx.annotation.RequiresApi
 import android.view.accessibility.AccessibilityEvent
 import android.view.accessibility.AccessibilityNodeInfo
 import android.view.accessibility.AccessibilityWindowInfo
-import com.bajianfeng.launcher.automation.wechat.manager.TimeoutManager
-import com.bajianfeng.launcher.automation.wechat.model.AutomationState
-import com.bajianfeng.launcher.automation.wechat.util.AccessibilityUtil
-import com.bajianfeng.launcher.common.util.CallAudioStrategy
-import com.bajianfeng.launcher.common.ui.FloatingStatusView
-import com.bajianfeng.launcher.data.home.LauncherPreferences
-import com.bajianfeng.launcher.feature.home.MainActivity
+import com.yinxing.launcher.automation.wechat.manager.TimeoutManager
+import com.yinxing.launcher.automation.wechat.model.AutomationState
+import com.yinxing.launcher.automation.wechat.util.AccessibilityUtil
+import com.yinxing.launcher.common.util.CallAudioStrategy
+import com.yinxing.launcher.common.ui.FloatingStatusView
+import com.yinxing.launcher.data.home.LauncherPreferences
+import com.yinxing.launcher.feature.home.MainActivity
 
 
 import kotlinx.coroutines.CoroutineScope

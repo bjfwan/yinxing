@@ -1,4 +1,4 @@
-package com.bajianfeng.launcher.common.media
+package com.yinxing.launcher.common.media
 
 import android.content.ContentResolver
 import android.content.Context

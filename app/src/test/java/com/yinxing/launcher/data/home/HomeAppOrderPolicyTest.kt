@@ -1,4 +1,4 @@
-package com.bajianfeng.launcher.data.home
+package com.yinxing.launcher.data.home
 
 import org.junit.Assert.assertEquals
 import org.junit.Test

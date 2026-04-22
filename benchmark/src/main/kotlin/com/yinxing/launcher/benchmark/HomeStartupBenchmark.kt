@@ -1,4 +1,4 @@
-package com.bajianfeng.launcher.benchmark
+package com.yinxing.launcher.benchmark
 
 import androidx.benchmark.macro.ArtMetric
 import androidx.benchmark.macro.BaselineProfileMode

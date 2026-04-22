@@ -1,6 +1,6 @@
-package com.bajianfeng.launcher.feature.videocall
+package com.yinxing.launcher.feature.videocall
 
-import com.bajianfeng.launcher.automation.wechat.model.AutomationState
+import com.yinxing.launcher.automation.wechat.model.AutomationState
 
 fun interface VideoCallStateListener {
     fun onUpdate(state: VideoCallStateUpdate)

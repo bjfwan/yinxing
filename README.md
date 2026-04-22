@@ -9,7 +9,8 @@
 [![License](https://img.shields.io/badge/license-MIT-B8882A?labelColor=1C1914&style=flat-square)](#)
 [![Release](https://img.shields.io/badge/⬇︎%20下载%20APK-B8882A?labelColor=1C1914&style=flat-square)](https://yx.likeyou.qzz.io)
 [![Platform](https://img.shields.io/badge/Android%207%2B-0369A1?labelColor=1C1914&style=flat-square&logo=android&logoColor=white)](#)
-[![Size](https://img.shields.io/badge/1.88%20MB-555?labelColor=1C1914&style=flat-square)](#)
+[![Size](https://img.shields.io/badge/2.11%20MB-555?labelColor=1C1914&style=flat-square)](#)
+[![Version](https://img.shields.io/badge/v1.2.0-B8882A?labelColor=1C1914&style=flat-square)](#)
 [![Stars](https://img.shields.io/github/stars/bjfwan/yinxing?color=B8882A&labelColor=1C1914&style=flat-square)](https://github.com/bjfwan/yinxing/stargazers)
 
 </div>

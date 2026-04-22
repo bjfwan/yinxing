@@ -1,4 +1,4 @@
-package com.bajianfeng.launcher.feature.incoming
+package com.yinxing.launcher.feature.incoming
 
 import android.content.Context
 import android.content.Intent
@@ -7,8 +7,8 @@ import android.view.View
 import android.widget.TextView
 import androidx.cardview.widget.CardView
 import androidx.test.core.app.ApplicationProvider
-import com.bajianfeng.launcher.R
-import com.bajianfeng.launcher.data.home.LauncherPreferences
+import com.yinxing.launcher.R
+import com.yinxing.launcher.data.home.LauncherPreferences
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertTrue

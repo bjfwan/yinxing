@@ -1,4 +1,4 @@
-package com.bajianfeng.launcher.common.util
+package com.yinxing.launcher.common.util
 
 import android.Manifest
 import android.annotation.SuppressLint

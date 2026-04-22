@@ -1,4 +1,4 @@
-package com.bajianfeng.launcher.common.util
+package com.yinxing.launcher.common.util
 
 object AccessibilityServiceMatcher {
     fun contains(enabledServices: String?, serviceName: String): Boolean {

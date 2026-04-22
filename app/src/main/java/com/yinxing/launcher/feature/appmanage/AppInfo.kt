@@ -1,4 +1,4 @@
-package com.bajianfeng.launcher.feature.appmanage
+package com.yinxing.launcher.feature.appmanage
 
 data class AppInfo(
     val packageName: String,

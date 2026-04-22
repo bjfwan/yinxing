@@ -1,4 +1,4 @@
-package com.bajianfeng.launcher.feature.incoming
+package com.yinxing.launcher.feature.incoming
 
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull

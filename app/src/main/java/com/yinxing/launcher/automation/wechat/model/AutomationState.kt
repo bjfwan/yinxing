@@ -1,4 +1,4 @@
-package com.bajianfeng.launcher.automation.wechat.model
+package com.yinxing.launcher.automation.wechat.model
 
 enum class AutomationState {
     IDLE,

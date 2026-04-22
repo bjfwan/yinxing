@@ -1,4 +1,4 @@
-package com.bajianfeng.launcher.automation.wechat.model
+package com.yinxing.launcher.automation.wechat.model
 
 /**
  * 各步骤耗时历史记录，支持自适应超时计算。

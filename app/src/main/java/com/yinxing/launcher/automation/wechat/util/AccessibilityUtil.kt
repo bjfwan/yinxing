@@ -1,4 +1,4 @@
-package com.bajianfeng.launcher.automation.wechat.util
+package com.yinxing.launcher.automation.wechat.util
 
 import android.accessibilityservice.AccessibilityService
 import android.accessibilityservice.GestureDescription

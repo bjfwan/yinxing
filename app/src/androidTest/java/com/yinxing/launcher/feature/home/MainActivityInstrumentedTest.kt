@@ -1,4 +1,4 @@
-package com.bajianfeng.launcher.feature.home
+package com.yinxing.launcher.feature.home
 
 import android.app.Activity
 import android.content.Intent
@@ -9,11 +9,11 @@ import androidx.test.core.app.ActivityScenario
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
 
-import com.bajianfeng.launcher.R
-import com.bajianfeng.launcher.feature.phone.PhoneContactActivity
+import com.yinxing.launcher.R
+import com.yinxing.launcher.feature.phone.PhoneContactActivity
 
-import com.bajianfeng.launcher.feature.videocall.VideoCallActivity
-import com.bajianfeng.launcher.testutil.InstrumentationTestEnvironment
+import com.yinxing.launcher.feature.videocall.VideoCallActivity
+import com.yinxing.launcher.testutil.InstrumentationTestEnvironment
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertTrue

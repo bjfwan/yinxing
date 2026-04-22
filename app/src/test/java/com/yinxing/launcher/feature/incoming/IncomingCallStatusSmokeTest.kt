@@ -1,10 +1,10 @@
-package com.bajianfeng.launcher.feature.incoming
+package com.yinxing.launcher.feature.incoming
 
 import android.content.Context
 import android.view.View
 import android.widget.TextView
 import androidx.test.core.app.ApplicationProvider
-import com.bajianfeng.launcher.R
+import com.yinxing.launcher.R
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Before

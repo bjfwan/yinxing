@@ -1,4 +1,4 @@
-package com.bajianfeng.launcher.benchmark
+package com.yinxing.launcher.benchmark
 
 import androidx.benchmark.macro.junit4.BaselineProfileRule
 import androidx.test.ext.junit.runners.AndroidJUnit4

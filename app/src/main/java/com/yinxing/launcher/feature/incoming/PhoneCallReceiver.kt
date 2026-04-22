@@ -1,11 +1,11 @@
-package com.bajianfeng.launcher.feature.incoming
+package com.yinxing.launcher.feature.incoming
 
 import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
 import android.telephony.TelephonyManager
-import com.bajianfeng.launcher.common.util.CallAudioStrategy
-import com.bajianfeng.launcher.feature.phone.PhoneContactManager
+import com.yinxing.launcher.common.util.CallAudioStrategy
+import com.yinxing.launcher.feature.phone.PhoneContactManager
 
 class PhoneCallReceiver : BroadcastReceiver() {
 

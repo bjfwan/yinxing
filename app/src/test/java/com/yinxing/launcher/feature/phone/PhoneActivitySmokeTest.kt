@@ -1,4 +1,4 @@
-package com.bajianfeng.launcher.feature.phone
+package com.yinxing.launcher.feature.phone
 
 import org.junit.Assert.assertTrue
 import org.junit.Test

@@ -1,13 +1,13 @@
-package com.bajianfeng.launcher
+package com.yinxing.launcher
 
 import android.app.Application
 import android.content.ComponentCallbacks2
 import android.util.Log
-import com.bajianfeng.launcher.common.media.MediaThumbnailLoader
-import com.bajianfeng.launcher.data.contact.ContactManager
-import com.bajianfeng.launcher.data.home.LauncherAppRepository
-import com.bajianfeng.launcher.data.home.LauncherPreferences
-import com.bajianfeng.launcher.feature.incoming.IncomingCallForegroundService
+import com.yinxing.launcher.common.media.MediaThumbnailLoader
+import com.yinxing.launcher.data.contact.ContactManager
+import com.yinxing.launcher.data.home.LauncherAppRepository
+import com.yinxing.launcher.data.home.LauncherPreferences
+import com.yinxing.launcher.feature.incoming.IncomingCallForegroundService
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob

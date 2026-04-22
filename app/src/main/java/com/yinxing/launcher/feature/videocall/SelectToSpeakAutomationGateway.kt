@@ -1,4 +1,4 @@
-package com.bajianfeng.launcher.feature.videocall
+package com.yinxing.launcher.feature.videocall
 
 import com.google.android.accessibility.selecttospeak.SelectToSpeakService
 

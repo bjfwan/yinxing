@@ -1,4 +1,4 @@
-package com.bajianfeng.launcher.testutil
+package com.yinxing.launcher.testutil
 
 import android.app.Activity
 import android.content.Context
@@ -8,10 +8,10 @@ import androidx.test.core.app.ApplicationProvider
 import androidx.test.platform.app.InstrumentationRegistry
 import androidx.test.runner.lifecycle.ActivityLifecycleMonitorRegistry
 import androidx.test.runner.lifecycle.Stage
-import com.bajianfeng.launcher.data.contact.Contact
-import com.bajianfeng.launcher.data.contact.ContactManager
-import com.bajianfeng.launcher.data.home.LauncherAppRepository
-import com.bajianfeng.launcher.data.home.LauncherPreferences
+import com.yinxing.launcher.data.contact.Contact
+import com.yinxing.launcher.data.contact.ContactManager
+import com.yinxing.launcher.data.home.LauncherAppRepository
+import com.yinxing.launcher.data.home.LauncherPreferences
 
 import org.junit.Assert.assertTrue
 

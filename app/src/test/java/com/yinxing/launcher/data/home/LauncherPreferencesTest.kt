@@ -1,4 +1,4 @@
-package com.bajianfeng.launcher.data.home
+package com.yinxing.launcher.data.home
 
 import android.content.Context
 import androidx.test.core.app.ApplicationProvider

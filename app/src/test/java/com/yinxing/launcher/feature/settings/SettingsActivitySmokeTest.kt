@@ -1,4 +1,4 @@
-package com.bajianfeng.launcher.feature.settings
+package com.yinxing.launcher.feature.settings
 
 import android.content.Context
 import android.content.Intent
@@ -11,9 +11,9 @@ import android.widget.TextView
 
 import androidx.appcompat.widget.SwitchCompat
 import androidx.test.core.app.ApplicationProvider
-import com.bajianfeng.launcher.R
-import com.bajianfeng.launcher.data.home.LauncherPreferences
-import com.bajianfeng.launcher.feature.incoming.IncomingCallDiagnostics
+import com.yinxing.launcher.R
+import com.yinxing.launcher.data.home.LauncherPreferences
+import com.yinxing.launcher.feature.incoming.IncomingCallDiagnostics
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue

@@ -1,4 +1,4 @@
-package com.bajianfeng.launcher.feature.home
+package com.yinxing.launcher.feature.home
 
 data class HomeAppItem(
     val packageName: String,

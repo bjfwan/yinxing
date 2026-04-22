@@ -1,4 +1,4 @@
-package com.bajianfeng.launcher.common.util
+package com.yinxing.launcher.common.util
 
 class PermissionRequestHandler(
     private val hasPermission: (String) -> Boolean,

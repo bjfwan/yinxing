@@ -1,11 +1,11 @@
-package com.bajianfeng.launcher.feature.incoming
+package com.yinxing.launcher.feature.incoming
 
 import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
-import com.bajianfeng.launcher.data.home.LauncherPreferences
-import com.bajianfeng.launcher.feature.home.MainActivity
+import com.yinxing.launcher.data.home.LauncherPreferences
+import com.yinxing.launcher.feature.home.MainActivity
 
 /**
  * 开机恢复入口。

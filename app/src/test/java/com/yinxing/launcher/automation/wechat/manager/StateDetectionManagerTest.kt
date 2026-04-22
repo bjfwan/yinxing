@@ -1,4 +1,4 @@
-package com.bajianfeng.launcher.automation.wechat.manager
+package com.yinxing.launcher.automation.wechat.manager
 
 import com.google.android.accessibility.selecttospeak.WeChatUiSnapshot
 import com.google.android.accessibility.selecttospeak.WeChatUiSnapshotAnalyzer

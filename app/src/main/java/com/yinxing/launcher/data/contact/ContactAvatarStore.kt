@@ -1,9 +1,9 @@
-package com.bajianfeng.launcher.data.contact
+package com.yinxing.launcher.data.contact
 
 import android.content.ContentResolver
 import android.content.Context
 import android.net.Uri
-import com.bajianfeng.launcher.common.media.MediaThumbnailLoader
+import com.yinxing.launcher.common.media.MediaThumbnailLoader
 import java.io.File
 import java.io.FileOutputStream
 

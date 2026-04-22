@@ -1,11 +1,11 @@
-package com.bajianfeng.launcher.feature.settings
+package com.yinxing.launcher.feature.settings
 
 import androidx.appcompat.widget.SwitchCompat
 import androidx.test.core.app.ActivityScenario
 import androidx.test.ext.junit.runners.AndroidJUnit4
-import com.bajianfeng.launcher.R
-import com.bajianfeng.launcher.data.home.LauncherPreferences
-import com.bajianfeng.launcher.testutil.InstrumentationTestEnvironment
+import com.yinxing.launcher.R
+import com.yinxing.launcher.data.home.LauncherPreferences
+import com.yinxing.launcher.testutil.InstrumentationTestEnvironment
 import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith

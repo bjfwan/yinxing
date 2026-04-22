@@ -1,4 +1,4 @@
-package com.bajianfeng.launcher.feature.videocall
+package com.yinxing.launcher.feature.videocall
 
 import android.widget.EditText
 import android.widget.TextView
@@ -7,9 +7,9 @@ import androidx.core.view.isVisible
 import androidx.recyclerview.widget.RecyclerView
 import androidx.test.core.app.ActivityScenario
 import androidx.test.ext.junit.runners.AndroidJUnit4
-import com.bajianfeng.launcher.R
-import com.bajianfeng.launcher.data.contact.Contact
-import com.bajianfeng.launcher.testutil.InstrumentationTestEnvironment
+import com.yinxing.launcher.R
+import com.yinxing.launcher.data.contact.Contact
+import com.yinxing.launcher.testutil.InstrumentationTestEnvironment
 import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -28,7 +28,7 @@ class VideoCallActivityInstrumentedTest {
                 scenario = scenario,
                 message = "视频联系人空状态未展示"
             ) { activity ->
-                activity.findViewById<com.bajianfeng.launcher.common.ui.PageStateView>(R.id.view_page_state).isVisible
+                activity.findViewById<com.yinxing.launcher.common.ui.PageStateView>(R.id.view_page_state).isVisible
             }
 
             scenario.onActivity { activity ->

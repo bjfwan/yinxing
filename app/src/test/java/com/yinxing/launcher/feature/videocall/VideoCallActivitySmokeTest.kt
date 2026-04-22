@@ -1,11 +1,11 @@
-package com.bajianfeng.launcher.feature.videocall
+package com.yinxing.launcher.feature.videocall
 
 import android.content.Context
 import android.view.View
 import android.widget.TextView
 import androidx.cardview.widget.CardView
 import androidx.test.core.app.ApplicationProvider
-import com.bajianfeng.launcher.R
+import com.yinxing.launcher.R
 import org.junit.Assert.assertEquals
 import org.junit.Before
 import org.junit.Test

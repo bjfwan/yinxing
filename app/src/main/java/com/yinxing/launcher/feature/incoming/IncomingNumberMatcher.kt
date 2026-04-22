@@ -1,6 +1,6 @@
-package com.bajianfeng.launcher.feature.incoming
+package com.yinxing.launcher.feature.incoming
 
-import com.bajianfeng.launcher.data.contact.Contact
+import com.yinxing.launcher.data.contact.Contact
 import kotlin.math.min
 
 object IncomingNumberMatcher {

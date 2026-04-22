@@ -1,10 +1,9 @@
-package com.bajianfeng.launcher.automation.wechat.manager
+package com.yinxing.launcher.automation.wechat.manager
 
 import android.app.ActivityManager
 import android.content.Context
 import android.content.SharedPreferences
-import android.os.Build
-import com.bajianfeng.launcher.automation.wechat.model.PerformanceMetrics
+import com.yinxing.launcher.automation.wechat.model.PerformanceMetrics
 
 /**
  * 超时管理器（升级版）。

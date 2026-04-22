@@ -1,4 +1,4 @@
-package com.bajianfeng.launcher.common.util
+package com.yinxing.launcher.common.util
 
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse

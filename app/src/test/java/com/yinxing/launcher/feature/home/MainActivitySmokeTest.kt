@@ -1,4 +1,4 @@
-package com.bajianfeng.launcher.feature.home
+package com.yinxing.launcher.feature.home
 
 import android.content.Context
 import android.content.Intent
@@ -11,9 +11,9 @@ import android.view.View
 import android.widget.TextView
 import androidx.recyclerview.widget.RecyclerView
 import androidx.test.core.app.ApplicationProvider
-import com.bajianfeng.launcher.R
-import com.bajianfeng.launcher.data.home.LauncherAppRepository
-import com.bajianfeng.launcher.data.home.LauncherPreferences
+import com.yinxing.launcher.R
+import com.yinxing.launcher.data.home.LauncherAppRepository
+import com.yinxing.launcher.data.home.LauncherPreferences
 import org.junit.Assert.assertEquals
 
 import org.junit.Assert.assertNotNull

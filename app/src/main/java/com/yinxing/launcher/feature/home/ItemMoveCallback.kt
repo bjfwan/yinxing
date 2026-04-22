@@ -1,4 +1,4 @@
-package com.bajianfeng.launcher.feature.home
+package com.yinxing.launcher.feature.home
 
 import androidx.recyclerview.widget.ItemTouchHelper
 import androidx.recyclerview.widget.RecyclerView

@@ -1,4 +1,4 @@
-package com.bajianfeng.launcher.data.contact
+package com.yinxing.launcher.data.contact
 
 import android.content.Context
 import android.content.SharedPreferences

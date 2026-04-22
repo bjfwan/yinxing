@@ -1,4 +1,4 @@
-package com.bajianfeng.launcher.benchmark
+package com.yinxing.launcher.benchmark
 
 import android.content.Intent
 import android.os.SystemClock
