@@ -584,6 +584,22 @@ class SettingsActivity : AppCompatActivity() {
         val kioskModeSummary = view.findViewById<TextView>(R.id.tv_kiosk_mode_sheet_summary)
         val lowPerformanceSwitch = view.findViewById<SwitchCompat>(R.id.switch_low_performance_sheet)
         val lowPerformanceSummary = view.findViewById<TextView>(R.id.tv_low_performance_sheet_summary)
+        val iconScaleSeekBar = view.findViewById<android.widget.SeekBar>(R.id.seekbar_icon_scale)
+        val iconScaleValue = view.findViewById<TextView>(R.id.tv_icon_scale_value)
+
+        iconScaleSeekBar.progress = launcherPreferences.getIconScale() - LauncherPreferences.MIN_ICON_SCALE
+        iconScaleValue.text = getString(R.string.settings_icon_scale_summary, launcherPreferences.getIconScale())
+        iconScaleSeekBar.setOnSeekBarChangeListener(object : android.widget.SeekBar.OnSeekBarChangeListener {
+            override fun onProgressChanged(seekBar: android.widget.SeekBar?, progress: Int, fromUser: Boolean) {
+                val scale = progress + LauncherPreferences.MIN_ICON_SCALE
+                iconScaleValue.text = getString(R.string.settings_icon_scale_summary, scale)
+            }
+            override fun onStartTrackingTouch(seekBar: android.widget.SeekBar?) = Unit
+            override fun onStopTrackingTouch(seekBar: android.widget.SeekBar?) {
+                val scale = (seekBar?.progress ?: 0) + LauncherPreferences.MIN_ICON_SCALE
+                launcherPreferences.setIconScale(scale)
+            }
+        })
 
         fun updateSheetState() {
             val isDefault = isDefaultLauncher()
