@@ -399,5 +399,8 @@
     <string name="set_default_launcher_later">稍后再说</string>
     <string name="set_default_launcher_summary_on">已设置，按 Home 键会回到本桌面</string>
     <string name="set_default_launcher_summary_off">未设置，点击引导开启</string>
+    <string name="clear_default_launcher_title">取消默认桌面</string>
+    <string name="clear_default_launcher_summary_on">点击前往系统设置更换默认桌面</string>
+    <string name="clear_default_launcher_summary_off">当前未设为默认桌面</string>
 
 </resources>

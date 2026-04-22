@@ -579,15 +579,21 @@ class SettingsActivity : AppCompatActivity() {
         dialog.setContentView(view)
 
         val defaultLauncherSummary = view.findViewById<TextView>(R.id.tv_default_launcher_sheet_summary)
+        val clearDefaultLauncherSummary = view.findViewById<TextView>(R.id.tv_clear_default_launcher_sheet_summary)
         val kioskModeSwitch = view.findViewById<SwitchCompat>(R.id.switch_kiosk_mode_sheet)
         val kioskModeSummary = view.findViewById<TextView>(R.id.tv_kiosk_mode_sheet_summary)
         val lowPerformanceSwitch = view.findViewById<SwitchCompat>(R.id.switch_low_performance_sheet)
         val lowPerformanceSummary = view.findViewById<TextView>(R.id.tv_low_performance_sheet_summary)
 
         fun updateSheetState() {
+            val isDefault = isDefaultLauncher()
             defaultLauncherSummary.text = getString(
-                if (isDefaultLauncher()) R.string.set_default_launcher_summary_on
+                if (isDefault) R.string.set_default_launcher_summary_on
                 else R.string.set_default_launcher_summary_off
+            )
+            clearDefaultLauncherSummary.text = getString(
+                if (isDefault) R.string.clear_default_launcher_summary_on
+                else R.string.clear_default_launcher_summary_off
             )
             kioskModeSwitch.isChecked = launcherPreferences.isKioskModeEnabled()
             kioskModeSummary.text = getString(
@@ -610,6 +616,11 @@ class SettingsActivity : AppCompatActivity() {
             } else {
                 showSetDefaultLauncherDialog()
             }
+        }
+
+        view.findViewById<View>(R.id.btn_clear_default_launcher_sheet).setOnClickListener {
+            dialog.dismiss()
+            clearDefaultLauncher()
         }
 
         kioskModeSwitch.setOnCheckedChangeListener { _, isChecked ->
@@ -1065,6 +1076,20 @@ class SettingsActivity : AppCompatActivity() {
             requestDefaultLauncherRole()
         }
         dialog.show()
+    }
+
+    private fun clearDefaultLauncher() {
+        if (!isDefaultLauncher()) {
+            Toast.makeText(this, getString(R.string.clear_default_launcher_summary_off), Toast.LENGTH_SHORT).show()
+            return
+        }
+        try {
+            @Suppress("DEPRECATION")
+            packageManager.clearPackagePreferredActivities(packageName)
+        } catch (_: Exception) {
+        }
+        openDefaultLauncherSettings()
+        Toast.makeText(this, "请在系统设置中选择其他桌面应用", Toast.LENGTH_LONG).show()
     }
 
     private fun requestDefaultLauncherRole() {
