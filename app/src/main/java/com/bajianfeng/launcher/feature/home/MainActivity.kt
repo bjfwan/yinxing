@@ -82,6 +82,7 @@ class MainActivity : AppCompatActivity() {
         android.content.SharedPreferences.OnSharedPreferenceChangeListener { _, key ->
             when {
                 launcherPreferences.isLowPerformanceModeKey(key) -> applyPerformanceMode()
+                launcherPreferences.isIconScaleKey(key) -> adapter.setIconScale(launcherPreferences.getIconScale())
                 launcherPreferences.isHomeAppConfigKey(key) -> {
                     appRepository.invalidateSelections()
                     refreshApps()
@@ -133,6 +134,7 @@ class MainActivity : AppCompatActivity() {
         adapter = HomeAppAdapter(
             scope = scope,
             lowPerformanceMode = launcherPreferences.isLowPerformanceModeEnabled(),
+            iconScale = launcherPreferences.getIconScale(),
             onItemClick = { item -> handleAppClick(item) },
             onItemLongClick = { item -> handleAppLongClick(item) },
             onOrderChanged = { items -> saveAppOrder(items) }

@@ -18,6 +18,10 @@ class LauncherPreferences(context: Context) {
         private const val KEY_KIOSK_MODE_ENABLED = "kiosk_mode_enabled"
         private const val KEY_AUTOSTART_CONFIRMED = "autostart_confirmed"
         private const val KEY_BACKGROUND_START_CONFIRMED = "background_start_confirmed"
+        private const val KEY_ICON_SCALE = "icon_scale"
+        const val DEFAULT_ICON_SCALE = 100
+        const val MIN_ICON_SCALE = 60
+        const val MAX_ICON_SCALE = 120
 
         @Volatile
         private var instance: LauncherPreferences? = null
@@ -135,6 +139,17 @@ class LauncherPreferences(context: Context) {
         prefs.edit { putBoolean(KEY_BACKGROUND_START_CONFIRMED, confirmed) }
     }
 
+    fun getIconScale(): Int {
+        return prefs.getInt(KEY_ICON_SCALE, DEFAULT_ICON_SCALE)
+            .coerceIn(MIN_ICON_SCALE, MAX_ICON_SCALE)
+    }
+
+    fun setIconScale(scale: Int) {
+        prefs.edit { putInt(KEY_ICON_SCALE, scale.coerceIn(MIN_ICON_SCALE, MAX_ICON_SCALE)) }
+    }
+
+    fun isIconScaleKey(key: String?) = key == KEY_ICON_SCALE
+
     fun registerListener(listener: SharedPreferences.OnSharedPreferenceChangeListener) {
         prefs.registerOnSharedPreferenceChangeListener(listener)
     }
@@ -155,7 +170,8 @@ class LauncherPreferences(context: Context) {
             key != KEY_AUTO_ANSWER_DELAY_SECONDS &&
             key != KEY_KIOSK_MODE_ENABLED &&
             key != KEY_AUTOSTART_CONFIRMED &&
-            key != KEY_BACKGROUND_START_CONFIRMED
+            key != KEY_BACKGROUND_START_CONFIRMED &&
+            key != KEY_ICON_SCALE
     }
 
     fun isHomeAppConfigKey(key: String?): Boolean {

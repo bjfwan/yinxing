@@ -402,5 +402,7 @@
     <string name="clear_default_launcher_title">取消默认桌面</string>
     <string name="clear_default_launcher_summary_on">点击前往系统设置更换默认桌面</string>
     <string name="clear_default_launcher_summary_off">当前未设为默认桌面</string>
+    <string name="settings_icon_scale_title">图标与文字大小</string>
+    <string name="settings_icon_scale_summary">%d%%（默认 100%%）</string>
 
 </resources>

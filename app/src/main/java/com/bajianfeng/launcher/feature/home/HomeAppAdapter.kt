@@ -20,6 +20,7 @@ import java.util.Collections
 class HomeAppAdapter(
     private val scope: CoroutineScope,
     private var lowPerformanceMode: Boolean,
+    private var iconScale: Int = 100,
     private val onItemClick: (HomeAppItem) -> Unit,
     private val onItemLongClick: (HomeAppItem) -> Boolean,
     private val onOrderChanged: (List<HomeAppItem>) -> Unit
@@ -50,6 +51,12 @@ class HomeAppAdapter(
     fun setLowPerformanceMode(enabled: Boolean) {
         if (lowPerformanceMode == enabled) return
         lowPerformanceMode = enabled
+        notifyItemRangeChanged(0, itemCount)
+    }
+
+    fun setIconScale(scale: Int) {
+        if (iconScale == scale) return
+        iconScale = scale
         notifyItemRangeChanged(0, itemCount)
     }
 
@@ -91,17 +98,23 @@ class HomeAppAdapter(
         holder.name.text = item.appName
         holder.card.contentDescription = item.appName
 
-        val iconSize = context.dpToPx(if (lowPerformanceMode) 80 else 96)
+        val baseIconDp = if (lowPerformanceMode) 80 else 96
+        val scaledIconDp = (baseIconDp * iconScale / 100f).toInt().coerceAtLeast(48)
+        val iconSize = context.dpToPx(scaledIconDp)
         holder.icon.layoutParams = holder.icon.layoutParams.apply {
             width = iconSize
             height = iconSize
         }
-        holder.icon.setPadding(
-            context.dpToPx(if (lowPerformanceMode) 12 else 16),
-            context.dpToPx(if (lowPerformanceMode) 12 else 16),
-            context.dpToPx(if (lowPerformanceMode) 12 else 16),
-            context.dpToPx(if (lowPerformanceMode) 12 else 16)
-        )
+        val basePadDp = if (lowPerformanceMode) 12 else 16
+        val scaledPadDp = (basePadDp * iconScale / 100f).toInt().coerceAtLeast(8)
+        val pad = context.dpToPx(scaledPadDp)
+        holder.icon.setPadding(pad, pad, pad, pad)
+
+        val baseCardDp = 200
+        val scaledCardDp = (baseCardDp * iconScale / 100f).toInt().coerceAtLeast(120)
+        holder.card.layoutParams = holder.card.layoutParams.apply {
+            height = context.dpToPx(scaledCardDp)
+        }
 
         // 根据类型设置图标圆形背景色
         val iconBgRes = when (item.type) {
