@@ -4,7 +4,7 @@ plugins {
 }
 
 android {
-    namespace = "com.bajianfeng.launcher.benchmark"
+    namespace = "com.yinxing.launcher.benchmark"
     compileSdk = 36
 
     defaultConfig {

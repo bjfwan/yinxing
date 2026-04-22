@@ -11,7 +11,7 @@ val localProps = Properties().apply {
 }
 
 android {
-    namespace = "com.bajianfeng.launcher"
+    namespace = "com.yinxing.launcher"
     compileSdk = 36
 
     buildFeatures {
@@ -19,7 +19,7 @@ android {
     }
 
     defaultConfig {
-        applicationId = "com.bajianfeng.launcher"
+        applicationId = "com.yinxing.launcher"
         minSdk = 24
         targetSdk = 36
         versionCode = 2

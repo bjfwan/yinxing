@@ -23,7 +23,7 @@ OldLauncher/
 
 ```text
 app/src/main/
-├── java/com/bajianfeng/launcher/
+├── java/com/yinxing/launcher/
 │   ├── automation/wechat/
 │   │   ├── manager/
 │   │   ├── model/

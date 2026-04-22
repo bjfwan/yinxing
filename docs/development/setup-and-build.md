@@ -104,15 +104,15 @@ List of devices attached
 当 `:benchmark:collectNonMinifiedReleaseBaselineProfile` 看起来卡住时，先不要直接重跑整套基线采集，优先按下面顺序执行分层探针：
 
 ```powershell
-.\gradlew.bat :benchmark:connectedNonMinifiedReleaseAndroidTest -Pandroid.testInstrumentationRunnerArguments.class=com.bajianfeng.launcher.benchmark.UiAutomationProbe#launcherUiSmoke
+.\gradlew.bat :benchmark:connectedNonMinifiedReleaseAndroidTest -Pandroid.testInstrumentationRunnerArguments.class=com.yinxing.launcher.benchmark.UiAutomationProbe#launcherUiSmoke
 ```
 
 ```powershell
-.\gradlew.bat :benchmark:connectedNonMinifiedReleaseAndroidTest -Pandroid.testInstrumentationRunnerArguments.class=com.bajianfeng.launcher.benchmark.MacrobenchmarkProbe#coldStartupProbe
+.\gradlew.bat :benchmark:connectedNonMinifiedReleaseAndroidTest -Pandroid.testInstrumentationRunnerArguments.class=com.yinxing.launcher.benchmark.MacrobenchmarkProbe#coldStartupProbe
 ```
 
 ```powershell
-.\gradlew.bat :benchmark:connectedNonMinifiedReleaseAndroidTest -Pandroid.testInstrumentationRunnerArguments.class=com.bajianfeng.launcher.benchmark.BaselineProfileFrameworkProbe#collectProbe
+.\gradlew.bat :benchmark:connectedNonMinifiedReleaseAndroidTest -Pandroid.testInstrumentationRunnerArguments.class=com.yinxing.launcher.benchmark.BaselineProfileFrameworkProbe#collectProbe
 ```
 
 结果解读建议：

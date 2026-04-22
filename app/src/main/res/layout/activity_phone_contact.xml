@@ -168,7 +168,7 @@
             android:overScrollMode="never"
             android:paddingBottom="20dp" />
 
-        <com.bajianfeng.launcher.common.ui.PageStateView
+        <com.yinxing.launcher.common.ui.PageStateView
             android:id="@+id/view_page_state"
             android:layout_width="match_parent"
             android:layout_height="match_parent"
