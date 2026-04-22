@@ -42,6 +42,7 @@
       position: relative;
       overflow-x: hidden;
     }
+
     body::before {
       content: '';
       position: fixed;
@@ -55,7 +56,6 @@
       z-index: 0;
     }
 
-    /* 2. 极细点阵网格 */
     body::after {
       content: '';
       position: fixed;
@@ -68,7 +68,22 @@
       -webkit-mask-image: radial-gradient(ellipse 75% 75% at 50% 50%, black 10%, transparent 80%);
     }
 
-    /* 3. SVG 装饰层 */
+    .deco-topline {
+      position: fixed;
+      top: 0; left: 0; right: 0;
+      height: 1px;
+      background: linear-gradient(90deg, transparent 0%, rgba(184,136,42,0.5) 50%, transparent 100%);
+      z-index: 2;
+    }
+
+    .deco-bottomline {
+      position: fixed;
+      bottom: 0; left: 0; right: 0;
+      height: 1px;
+      background: linear-gradient(90deg, transparent 0%, rgba(184,136,42,0.2) 50%, transparent 100%);
+      z-index: 2;
+    }
+
     .deco-svg {
       position: fixed;
       top: 0; left: 0;
@@ -78,7 +93,6 @@
       overflow: visible;
     }
 
-    /* 4. 浮动银杏叶剪影 */
     .deco-leaf {
       position: fixed;
       pointer-events: none;
@@ -86,9 +100,9 @@
       opacity: 0;
       animation: leafFloat 20s ease-in-out infinite;
     }
-    .deco-leaf:nth-child(1) { top: 8%;  right: 6%;  width: 120px; animation-delay: 0s;    animation-duration: 18s; }
-    .deco-leaf:nth-child(2) { top: 55%; left: 3%;   width: 80px;  animation-delay: 4s;    animation-duration: 22s; }
-    .deco-leaf:nth-child(3) { top: 78%; right: 10%; width: 60px;  animation-delay: 8s;    animation-duration: 16s; }
+    .deco-leaf:nth-child(1) { top: 8%;  right: 6%;  width: 120px; animation-delay: 0s;   animation-duration: 18s; }
+    .deco-leaf:nth-child(2) { top: 55%; left: 3%;   width: 80px;  animation-delay: 4s;   animation-duration: 22s; }
+    .deco-leaf:nth-child(3) { top: 78%; right: 10%; width: 60px;  animation-delay: 8s;   animation-duration: 16s; }
 
     @keyframes leafFloat {
       0%   { opacity: 0;    transform: translateY(0px)   rotate(0deg); }
@@ -98,16 +112,20 @@
       100% { opacity: 0;    transform: translateY(0px)   rotate(0deg); }
     }
 
-    /* 5. 顶部金色细横线 */
-    .deco-topline {
+    .deco-scanline {
       position: fixed;
-      top: 0; left: 0; right: 0;
-      height: 1px;
-      background: linear-gradient(90deg, transparent 0%, rgba(184,136,42,0.5) 50%, transparent 100%);
-      z-index: 2;
+      inset: 0;
+      background: repeating-linear-gradient(
+        0deg,
+        transparent,
+        transparent 3px,
+        rgba(28,25,20,0.012) 3px,
+        rgba(28,25,20,0.012) 4px
+      );
+      pointer-events: none;
+      z-index: 0;
     }
 
-    /* ── 整体容器 ─────────────────────── */
     .wrap {
       width: 100%;
       max-width: 560px;
@@ -116,7 +134,6 @@
       z-index: 1;
     }
 
-    /* ── 顶部标识行 ──────────────────── */
     .brand {
       display: flex;
       align-items: center;
@@ -146,11 +163,26 @@
       padding: 3px 10px;
     }
 
-    /* ── 图标 ────────────────────────── */
     .icon-block {
       margin-bottom: 52px;
       opacity: 0;
       animation: fade 1s 0.25s ease forwards;
+      position: relative;
+      display: inline-block;
+    }
+
+    .icon-block::before {
+      content: '';
+      position: absolute;
+      inset: -12px;
+      border-radius: 30px;
+      background: radial-gradient(ellipse at 50% 50%, rgba(184,136,42,0.10) 0%, transparent 70%);
+      animation: iconPulse 4s ease-in-out infinite;
+    }
+
+    @keyframes iconPulse {
+      0%, 100% { transform: scale(1);   opacity: 1; }
+      50%       { transform: scale(1.06); opacity: 0.7; }
     }
 
     .icon-block img {
@@ -158,13 +190,13 @@
       height: 96px;
       border-radius: 22px;
       display: block;
+      position: relative;
       box-shadow:
         0 1px 2px rgba(0,0,0,0.04),
         0 4px 16px rgba(0,0,0,0.08),
         0 20px 60px rgba(184,136,42,0.14);
     }
 
-    /* ── 大标题 ──────────────────────── */
     .hero {
       margin-bottom: 64px;
       opacity: 0;
@@ -195,17 +227,15 @@
       letter-spacing: 0.01em;
     }
 
-    /* ── 分隔线 ──────────────────────── */
     .rule {
       width: 100%;
       height: 1px;
-      background: var(--ink-06);
+      background: linear-gradient(90deg, var(--gold-faint) 0%, var(--ink-06) 60%, transparent 100%);
       margin-bottom: 40px;
       opacity: 0;
       animation: fade 1s 0.55s ease forwards;
     }
 
-    /* ── 规格行 ──────────────────────── */
     .specs {
       display: grid;
       grid-template-columns: repeat(4, 1fr);
@@ -239,7 +269,6 @@
       letter-spacing: 0.01em;
     }
 
-    /* ── 下载按钮 ────────────────────── */
     .dl-wrap {
       opacity: 0;
       animation: fade 1s 0.8s ease forwards;
@@ -260,13 +289,17 @@
       font-weight: 300;
       letter-spacing: 0.18em;
       text-transform: uppercase;
-      transition: background 0.3s ease, transform 0.2s ease;
+      transition: background 0.3s ease, transform 0.2s ease, box-shadow 0.3s ease;
       cursor: pointer;
-      margin-bottom: 16px;
+      margin-bottom: 12px;
     }
 
-    .btn:hover { background: #2E2A24; transform: translateY(-1px); }
-    .btn:active { transform: translateY(0); }
+    .btn:hover {
+      background: #2E2A24;
+      transform: translateY(-1px);
+      box-shadow: 0 8px 32px rgba(184,136,42,0.15);
+    }
+    .btn:active { transform: translateY(0); box-shadow: none; }
 
     .btn-secondary {
       background: transparent;
@@ -274,7 +307,13 @@
       border: 1px solid var(--ink-12);
       margin-bottom: 16px;
     }
-    .btn-secondary:hover { background: var(--ink-06); color: var(--ink); border-color: var(--ink-30); transform: translateY(-1px); }
+    .btn-secondary:hover {
+      background: var(--ink-06);
+      color: var(--ink);
+      border-color: var(--ink-30);
+      transform: translateY(-1px);
+      box-shadow: none;
+    }
     .btn-secondary:active { transform: translateY(0); }
 
     .btn-right {
@@ -286,7 +325,6 @@
       letter-spacing: 0.1em;
     }
 
-    /* ── 提示 ────────────────────────── */
     .hint {
       font-size: 0.68rem;
       font-weight: 300;
@@ -297,7 +335,46 @@
       margin-bottom: 0;
     }
 
-    /* ── 页脚 ────────────────────────── */
+    .marquee-wrap {
+      overflow: hidden;
+      margin-bottom: 64px;
+      opacity: 0;
+      animation: fade 1s 0.95s ease forwards;
+      border-top: 1px solid var(--ink-06);
+      border-bottom: 1px solid var(--ink-06);
+      padding: 10px 0;
+      mask-image: linear-gradient(90deg, transparent 0%, black 10%, black 90%, transparent 100%);
+      -webkit-mask-image: linear-gradient(90deg, transparent 0%, black 10%, black 90%, transparent 100%);
+    }
+
+    .marquee-track {
+      display: flex;
+      gap: 0;
+      animation: marquee 22s linear infinite;
+      width: max-content;
+    }
+
+    .marquee-track span {
+      font-size: 0.6rem;
+      letter-spacing: 0.22em;
+      text-transform: uppercase;
+      color: var(--ink-30);
+      white-space: nowrap;
+      padding: 0 32px;
+    }
+
+    .marquee-track span.dot {
+      color: var(--gold);
+      padding: 0;
+      letter-spacing: 0;
+      opacity: 0.5;
+    }
+
+    @keyframes marquee {
+      from { transform: translateX(0); }
+      to   { transform: translateX(-50%); }
+    }
+
     .foot {
       margin-top: 72px;
       padding-top: 28px;
@@ -337,18 +414,13 @@
       border-color: var(--ink-30);
       background: var(--ink-06);
     }
-    .foot-github svg {
-      flex-shrink: 0;
-      opacity: 0.7;
-    }
+    .foot-github svg { flex-shrink: 0; opacity: 0.7; }
 
-    /* ── 动画 ────────────────────────── */
     @keyframes fade {
       from { opacity: 0; transform: translateY(12px); }
       to   { opacity: 1; transform: translateY(0); }
     }
 
-    /* ── 响应式 ──────────────────────── */
     @media (max-width: 520px) {
       body { padding: 48px 20px 60px; justify-content: flex-start; }
       .brand { margin-bottom: 48px; }
@@ -370,31 +442,28 @@
 </head>
 <body>
 
-  <!-- 顶部金线 -->
   <div class="deco-topline"></div>
+  <div class="deco-bottomline"></div>
+  <div class="deco-scanline"></div>
 
-  <!-- 浮动银杏叶剪影 -->
   <img class="deco-leaf" src="./icon.png" alt="" />
   <img class="deco-leaf" src="./icon.png" alt="" />
   <img class="deco-leaf" src="./icon.png" alt="" />
 
-  <!-- 背景装饰 SVG -->
   <svg class="deco-svg" viewBox="0 0 100 100" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg">
-    <!-- 右上角同心圆弧 -->
     <circle cx="98" cy="2"  r="30" fill="none" stroke="rgba(184,136,42,0.10)" stroke-width="0.25" vector-effect="non-scaling-stroke"/>
     <circle cx="98" cy="2"  r="44" fill="none" stroke="rgba(184,136,42,0.07)" stroke-width="0.18" vector-effect="non-scaling-stroke"/>
     <circle cx="98" cy="2"  r="60" fill="none" stroke="rgba(184,136,42,0.04)" stroke-width="0.12" vector-effect="non-scaling-stroke"/>
-    <!-- 左下角同心圆弧 -->
     <circle cx="2"  cy="98" r="22" fill="none" stroke="rgba(28,25,20,0.07)"   stroke-width="0.2"  vector-effect="non-scaling-stroke"/>
     <circle cx="2"  cy="98" r="36" fill="none" stroke="rgba(28,25,20,0.05)"   stroke-width="0.15" vector-effect="non-scaling-stroke"/>
     <circle cx="2"  cy="98" r="52" fill="none" stroke="rgba(3,105,161,0.04)"  stroke-width="0.12" vector-effect="non-scaling-stroke"/>
-    <!-- 右上角放射斜线 -->
     <line x1="68" y1="0" x2="100" y2="34" stroke="rgba(184,136,42,0.08)" stroke-width="0.15" vector-effect="non-scaling-stroke"/>
     <line x1="76" y1="0" x2="100" y2="26" stroke="rgba(184,136,42,0.05)" stroke-width="0.1"  vector-effect="non-scaling-stroke"/>
     <line x1="84" y1="0" x2="100" y2="18" stroke="rgba(184,136,42,0.03)" stroke-width="0.08" vector-effect="non-scaling-stroke"/>
-    <!-- 中央水平刻度线 -->
-    <line x1="0" y1="50" x2="8"  y2="50" stroke="rgba(184,136,42,0.12)" stroke-width="0.2" vector-effect="non-scaling-stroke"/>
+    <line x1="0"  y1="50" x2="8"   y2="50" stroke="rgba(184,136,42,0.12)" stroke-width="0.2" vector-effect="non-scaling-stroke"/>
     <line x1="92" y1="50" x2="100" y2="50" stroke="rgba(184,136,42,0.12)" stroke-width="0.2" vector-effect="non-scaling-stroke"/>
+    <line x1="50" y1="0"  x2="50"  y2="5"  stroke="rgba(184,136,42,0.08)" stroke-width="0.15" vector-effect="non-scaling-stroke"/>
+    <line x1="50" y1="95" x2="50"  y2="100" stroke="rgba(184,136,42,0.08)" stroke-width="0.15" vector-effect="non-scaling-stroke"/>
   </svg>
 
   <div class="wrap">
@@ -450,6 +519,27 @@
         </span>
       </a>
       <p class="hint">安装前请在「设置 → 安全」中开启允许安装未知来源应用</p>
+    </div>
+
+    <div class="marquee-wrap">
+      <div class="marquee-track">
+        <span>大字体</span><span class="dot">·</span>
+        <span>大图标</span><span class="dot">·</span>
+        <span>一键拨号</span><span class="dot">·</span>
+        <span>微信视频</span><span class="dot">·</span>
+        <span>简洁桌面</span><span class="dot">·</span>
+        <span>免费无广告</span><span class="dot">·</span>
+        <span>Android 7+</span><span class="dot">·</span>
+        <span>开源</span><span class="dot">·</span>
+        <span>大字体</span><span class="dot">·</span>
+        <span>大图标</span><span class="dot">·</span>
+        <span>一键拨号</span><span class="dot">·</span>
+        <span>微信视频</span><span class="dot">·</span>
+        <span>简洁桌面</span><span class="dot">·</span>
+        <span>免费无广告</span><span class="dot">·</span>
+        <span>Android 7+</span><span class="dot">·</span>
+        <span>开源</span><span class="dot">·</span>
+      </div>
     </div>
 
     <div class="foot">
