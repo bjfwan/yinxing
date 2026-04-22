@@ -304,8 +304,9 @@
       position: absolute;
       inset: 0;
       border-radius: inherit;
-      background: radial-gradient(ellipse at 25% 15%, rgba(255,255,255,0.18) 0%, transparent 55%);
+      background: radial-gradient(ellipse at var(--gx, 25%) var(--gy, 15%), rgba(255,255,255,0.22) 0%, transparent 55%);
       pointer-events: none;
+      transition: background 0.1s ease;
     }
 
     .spec {
@@ -615,5 +616,55 @@
       </a>
     </div>
   </div>
+
+  <svg xmlns="http://www.w3.org/2000/svg" style="position:absolute;width:0;height:0;overflow:hidden">
+    <defs>
+      <filter id="lg-filter" x="-15%" y="-15%" width="130%" height="130%" color-interpolation-filters="sRGB">
+        <feTurbulence id="lg-turb" type="fractalNoise" baseFrequency="0.012 0.018" numOctaves="3" seed="4" result="noise"/>
+        <feDisplacementMap in="SourceGraphic" in2="noise" scale="14" xChannelSelector="R" yChannelSelector="G" result="displaced"/>
+        <feGaussianBlur in="displaced" stdDeviation="0.6"/>
+      </filter>
+    </defs>
+  </svg>
+
+  <script>
+    const turb = document.getElementById('lg-turb');
+    const specs = document.querySelector('.specs');
+    let t = 0;
+    let mouseX = 0.5, mouseY = 0.5;
+    let targetX = 0.5, targetY = 0.5;
+
+    document.addEventListener('mousemove', e => {
+      targetX = e.clientX / window.innerWidth;
+      targetY = e.clientY / window.innerHeight;
+    });
+
+    function lerp(a, b, n) { return a + (b - a) * n; }
+
+    function tick() {
+      t += 0.004;
+      mouseX = lerp(mouseX, targetX, 0.04);
+      mouseY = lerp(mouseY, targetY, 0.04);
+
+      const fx = (0.012 + Math.sin(t) * 0.004 + (mouseX - 0.5) * 0.006).toFixed(5);
+      const fy = (0.018 + Math.cos(t * 0.8) * 0.004 + (mouseY - 0.5) * 0.006).toFixed(5);
+      turb.setAttribute('baseFrequency', `${fx} ${fy}`);
+
+      const scale = 10 + Math.sin(t * 1.3) * 5 + Math.abs(mouseX - 0.5) * 8;
+      turb.nextElementSibling.setAttribute('scale', scale.toFixed(2));
+
+      if (specs) {
+        specs.style.filter = 'url(#lg-filter)';
+        const gx = 20 + mouseX * 60;
+        const gy = 10 + mouseY * 40;
+        specs.style.setProperty('--gx', `${gx}%`);
+        specs.style.setProperty('--gy', `${gy}%`);
+      }
+
+      requestAnimationFrame(tick);
+    }
+
+    tick();
+  </script>
 </body>
 </html>
