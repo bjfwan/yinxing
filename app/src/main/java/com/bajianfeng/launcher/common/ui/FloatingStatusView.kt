@@ -18,6 +18,13 @@ class FloatingStatusView(private val context: Context) {
     private val mainHandler = Handler(Looper.getMainLooper())
     private var floatingView: View? = null
     private var isShowing = false
+    private var onCancelLongClick: (() -> Unit)? = null
+
+    fun setOnCancelListener(listener: () -> Unit) {
+        onCancelLongClick = listener
+        // 如果悬浮窗已经显示，绑定一下
+        floatingView?.let { bindCancelButton(it) }
+    }
 
     fun show(message: String, stepLabel: String? = null) {
         mainHandler.post {
@@ -42,14 +49,17 @@ class FloatingStatusView(private val context: Context) {
                         @Suppress("DEPRECATION")
                         WindowManager.LayoutParams.TYPE_PHONE
                     },
-                    WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE or WindowManager.LayoutParams.FLAG_NOT_TOUCHABLE,
+                    // 去掉 FLAG_NOT_TOUCHABLE，保留 FLAG_NOT_FOCUSABLE 避免抢走输入焦点
+                    WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE,
                     PixelFormat.TRANSLUCENT
                 ).apply {
-                    gravity = Gravity.TOP or Gravity.CENTER_HORIZONTAL
+                    gravity = Gravity.TOP or Gravity.END
+                    x = 12
                     y = 100
                 }
 
                 bindText(message, stepLabel)
+                floatingView?.let { bindCancelButton(it) }
                 windowManager.addView(floatingView, params)
                 isShowing = true
             } catch (_: Exception) {
@@ -76,6 +86,14 @@ class FloatingStatusView(private val context: Context) {
                 floatingView = null
                 isShowing = false
             }
+        }
+    }
+
+    private fun bindCancelButton(view: View) {
+        val cancelBtn = view.findViewById<TextView>(R.id.tv_cancel) ?: return
+        cancelBtn.setOnLongClickListener {
+            onCancelLongClick?.invoke()
+            true
         }
     }
 
