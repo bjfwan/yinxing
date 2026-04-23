@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <com.google.android.material.card.MaterialCardView xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
     android:id="@+id/card_video_contact"
     style="@style/Widget.OldLauncher.ListItemCard"
     android:layout_width="match_parent"
@@ -15,39 +16,28 @@
 
     <LinearLayout
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
+        android:layout_height="220dp"
         android:gravity="center_vertical"
-        android:minHeight="188dp"
         android:orientation="horizontal"
-        android:paddingStart="20dp"
-        android:paddingTop="16dp"
-        android:paddingEnd="20dp"
-        android:paddingBottom="16dp">
+        android:paddingStart="24dp"
+        android:paddingEnd="24dp">
 
-        <FrameLayout
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_weight="1.1"
-            android:paddingEnd="8dp">
-
-            <ImageView
-                android:id="@+id/iv_video_contact_photo"
-                android:layout_width="152dp"
-                android:layout_height="152dp"
-                android:layout_gravity="center"
-                android:background="@drawable/icon_background"
-                android:contentDescription="@string/contact_photo_preview"
-                android:scaleType="centerCrop" />
-
-        </FrameLayout>
+        <com.google.android.material.imageview.ShapeableImageView
+            android:id="@+id/iv_video_contact_photo"
+            android:layout_width="180dp"
+            android:layout_height="180dp"
+            android:background="@color/launcher_surface_soft"
+            android:contentDescription="@string/contact_photo_preview"
+            android:scaleType="centerCrop"
+            app:shapeAppearanceOverlay="@style/ShapeAppearance.OldLauncher.Circle" />
 
         <LinearLayout
             android:layout_width="0dp"
             android:layout_height="wrap_content"
-            android:layout_weight="0.9"
-            android:gravity="center_vertical"
-            android:orientation="vertical"
-            android:paddingStart="12dp">
+            android:layout_marginStart="20dp"
+            android:layout_weight="1"
+            android:gravity="center_horizontal"
+            android:orientation="vertical">
 
             <TextView
                 android:id="@+id/tv_video_contact_name"
@@ -55,25 +45,32 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:ellipsize="end"
-                android:maxLines="2"
-                android:text="@string/video_contact_placeholder" />
-
-            <TextView
-                android:id="@+id/tv_video_contact_action"
-                style="@style/TextAppearance.OldLauncher.Badge"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="14dp"
-                android:background="@drawable/edit_text_background"
                 android:gravity="center"
                 android:maxLines="1"
-                android:minHeight="40dp"
-                android:paddingStart="14dp"
-                android:paddingTop="8dp"
-                android:paddingEnd="14dp"
-                android:paddingBottom="8dp"
+                android:text="@string/video_contact_placeholder"
+                android:textSize="26sp" />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btn_video_call"
+                style="@style/Widget.MaterialComponents.Button"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="12dp"
+                android:insetTop="0dp"
+                android:insetBottom="0dp"
+                android:minHeight="96dp"
+                android:padding="2dp"
                 android:text="@string/contact_card_action_wechat_compact"
-                android:textColor="@color/launcher_primary" />
+                android:textColor="@android:color/white"
+                android:textSize="18sp"
+                android:textStyle="bold"
+                app:backgroundTint="@color/launcher_action"
+                app:cornerRadius="16dp"
+                app:icon="@android:drawable/ic_menu_camera"
+                app:iconGravity="top"
+                app:iconPadding="4dp"
+                app:iconSize="32dp"
+                app:iconTint="@android:color/white" />
 
         </LinearLayout>
 

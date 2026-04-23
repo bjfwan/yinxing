@@ -1,4 +1,4 @@
-﻿package com.yinxing.launcher.feature.settings
+package com.yinxing.launcher.feature.settings
 
 import android.Manifest
 import android.app.role.RoleManager
@@ -170,8 +170,6 @@ class SettingsActivity : AppCompatActivity() {
         refreshOverviewUi()
         if (isDefaultLauncher()) {
             Toast.makeText(this, getString(R.string.set_default_launcher_summary_on), Toast.LENGTH_SHORT).show()
-        } else {
-            openDefaultLauncherSettings()
         }
     }
 
@@ -1067,9 +1065,7 @@ class SettingsActivity : AppCompatActivity() {
     }
 
     private fun isDefaultLauncher(): Boolean {
-        val intent = Intent(Intent.ACTION_MAIN).apply { addCategory(Intent.CATEGORY_HOME) }
-        val info = packageManager.resolveActivity(intent, PackageManager.MATCH_DEFAULT_ONLY)
-        return info?.activityInfo?.packageName == packageName
+        return PermissionUtil.isDefaultLauncher(this)
     }
 
     private fun showSetDefaultLauncherDialog() {

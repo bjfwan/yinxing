@@ -232,20 +232,20 @@
     </style>
 
     <style name="TextAppearance.OldLauncher.HeroSubtitle">
-        <item name="android:fontFamily">sans-serif-medium</item>
-        <item name="android:textSize">20sp</item>
+        <item name="android:fontFamily">sans-serif</item>
+        <item name="android:textSize">22sp</item>
         <item name="android:textColor">@color/launcher_text_secondary</item>
         <item name="android:includeFontPadding">false</item>
-        <item name="android:letterSpacing">0.02</item>
+        <item name="android:letterSpacing">0.05</item>
     </style>
 
     <style name="TextAppearance.OldLauncher.HeroTitle">
         <item name="android:fontFamily">sans-serif-medium</item>
-        <item name="android:textSize">46sp</item>
+        <item name="android:textSize">56sp</item>
         <item name="android:textStyle">bold</item>
-        <item name="android:textColor">@color/launcher_primary_dark</item>
+        <item name="android:textColor">@color/launcher_text_primary</item>
         <item name="android:includeFontPadding">false</item>
-        <item name="android:letterSpacing">-0.02</item>
+        <item name="android:letterSpacing">-0.03</item>
     </style>
 
     <style name="Widget.OldLauncher.PageHeroCard" parent="Widget.OldLauncher.DialogSurfaceCard">

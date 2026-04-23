@@ -6,5 +6,10 @@
     <style name="Theme.OldLauncher" parent="Base.Theme.OldLauncher" />
 
     <style name="Theme.OldLauncher.AppManage" parent="Base.Theme.OldLauncher" />
+
+    <style name="ShapeAppearance.OldLauncher.Circle" parent="">
+        <item name="cornerFamily">rounded</item>
+        <item name="cornerSize">50%</item>
+    </style>
 </resources>
 

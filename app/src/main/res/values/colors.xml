@@ -1,20 +1,20 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <color name="launcher_bg_start">#C7E8FA</color>
-    <color name="launcher_bg_mid">#DFF2FB</color>
-    <color name="launcher_bg_end">#F0F9FF</color>
-    <color name="launcher_surface">#FFFFFFFF</color>
-    <color name="launcher_surface_muted">#F7FBFF</color>
-    <color name="launcher_surface_soft">#EAF5FF</color>
-    <color name="launcher_surface_overlay">#D90C4A6E</color>
-    <color name="launcher_primary">#0369A1</color>
-    <color name="launcher_primary_dark">#0C4A6E</color>
-    <color name="launcher_primary_soft">#D8EEF9</color>
-    <color name="launcher_action">#22C55E</color>
-    <color name="launcher_action_dark">#15803D</color>
-    <color name="launcher_text_primary">#12324A</color>
-    <color name="launcher_text_secondary">#5C7287</color>
-    <color name="launcher_text_muted">#7C92A8</color>
+    <color name="launcher_bg_start">#F8FAFC</color>
+    <color name="launcher_bg_mid">#F1F5F9</color>
+    <color name="launcher_bg_end">#E2E8F0</color>
+    <color name="launcher_surface">#FFFFFF</color>
+    <color name="launcher_surface_muted">#F8FAFC</color>
+    <color name="launcher_surface_soft">#F1F5F9</color>
+    <color name="launcher_surface_overlay">#E60F172A</color>
+    <color name="launcher_primary">#0F172A</color>
+    <color name="launcher_primary_dark">#1E293B</color>
+    <color name="launcher_primary_soft">#F1F5F9</color>
+    <color name="launcher_action">#10B981</color>
+    <color name="launcher_action_dark">#059669</color>
+    <color name="launcher_text_primary">#0F172A</color>
+    <color name="launcher_text_secondary">#475569</color>
+    <color name="launcher_text_muted">#94A3B8</color>
     <color name="launcher_on_overlay">#FFFFFFFF</color>
     <color name="launcher_on_overlay_muted">#D9EAF4FF</color>
     <color name="launcher_outline">#D2E4F2</color>

@@ -21,8 +21,6 @@ object PermissionUtil {
     const val SELECT_TO_SPEAK_SERVICE =
         "com.yinxing.launcher/com.google.android.accessibility.selecttospeak.SelectToSpeakService"
 
-    // ── 无障碍服务 ────────────────────────────────────────────────────────────
-
     fun isAccessibilityServiceEnabled(context: Context, serviceName: String): Boolean {
         return isAccessibilityServiceEnabled(
             Settings.Secure.getString(
@@ -65,7 +63,20 @@ object PermissionUtil {
         context.startActivity(intent)
     }
 
-    // ── 通知权限（Android 13+）────────────────────────────────────────────────
+    /** 检查当前应用是否为默认桌面 */
+    fun isDefaultLauncher(context: Context): Boolean {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+            val roleManager = context.getSystemService(android.app.role.RoleManager::class.java)
+            return roleManager?.isRoleHeld(android.app.role.RoleManager.ROLE_HOME) == true
+        }
+        val intent = Intent(Intent.ACTION_MAIN).apply {
+            addCategory(Intent.CATEGORY_HOME)
+        }
+        val info = context.packageManager.resolveActivity(intent, PackageManager.MATCH_DEFAULT_ONLY)
+        val packageName = info?.activityInfo?.packageName
+        // 如果没有设置默认桌面，系统可能会返回 "android" (ResolverActivity) 或 null
+        return packageName == context.packageName
+    }
 
     fun hasNotificationPermission(context: Context): Boolean {
         return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
@@ -110,8 +121,6 @@ object PermissionUtil {
         context.startActivity(intent)
     }
 
-    // ── 电池优化豁免 ──────────────────────────────────────────────────────────
-
     /** 是否已被加入电池优化白名单（豁免） */
     fun isIgnoringBatteryOptimizations(context: Context): Boolean {
         val pm = context.getSystemService(Context.POWER_SERVICE) as? PowerManager ?: return false
@@ -142,8 +151,6 @@ object PermissionUtil {
         }
     }
 
-    // ── 管理外部存储（Android 11+）────────────────────────────────────────────
-
     fun hasManageExternalStorage(): Boolean {
         return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
             Environment.isExternalStorageManager()
@@ -171,8 +178,6 @@ object PermissionUtil {
         }
     }
 
-    // ── 电话权限（READ_PHONE_STATE / READ_CALL_LOG）───────────────────────────
-
     fun hasPhonePermission(context: Context): Boolean {
         return context.checkSelfPermission(Manifest.permission.CALL_PHONE) ==
             PackageManager.PERMISSION_GRANTED &&
@@ -184,8 +189,6 @@ object PermissionUtil {
                 context.checkSelfPermission(Manifest.permission.ANSWER_PHONE_CALLS) ==
                 PackageManager.PERMISSION_GRANTED)
     }
-
-    // ── 后台弹出界面（厂商专属，无标准 API）──────────────────────────────────
 
     fun canStartBackgroundActivity(): Boolean = false
 
@@ -225,8 +228,6 @@ object PermissionUtil {
         }
         openAppDetailSettings(context)
     }
-
-    // ── 自启动（厂商专属，无标准 API）────────────────────────────────────────
 
     fun isAutoStartEnabled(): Boolean = false
 
