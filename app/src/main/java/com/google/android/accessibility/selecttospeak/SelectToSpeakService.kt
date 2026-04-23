@@ -40,7 +40,7 @@ class SelectToSpeakService : AccessibilityService() {
 
         fun getInstance(): SelectToSpeakService? = instance
 
-        const val ACTION_START_VIDEO_CALL = "com.bajianfeng.launcher.START_VIDEO_CALL"
+        const val ACTION_START_VIDEO_CALL = "com.yinxing.launcher.START_VIDEO_CALL"
         const val EXTRA_CONTACT_NAME = "contact_name"
 
         private const val TAG = "WeChatAutoService"

@@ -1,4 +1,4 @@
-﻿package com.bajianfeng.launcher.feature.phone
+﻿package com.yinxing.launcher.feature.phone
 
 import android.content.ActivityNotFoundException
 import android.content.Intent

@@ -1,4 +1,4 @@
-﻿package com.bajianfeng.launcher.feature.appmanage
+﻿package com.yinxing.launcher.feature.appmanage
 
 import android.view.LayoutInflater
 import android.view.View
@@ -10,7 +10,7 @@ import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
 import com.yinxing.launcher.R
-import com.bajianfeng.launcher.common.media.MediaThumbnailLoader
+import com.yinxing.launcher.common.media.MediaThumbnailLoader
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch

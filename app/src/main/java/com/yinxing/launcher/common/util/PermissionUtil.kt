@@ -19,7 +19,7 @@ object PermissionUtil {
 
     /** 壳服务完整类名，微信会检测该服务是否运行以决定是否开放节点树 */
     const val SELECT_TO_SPEAK_SERVICE =
-        "com.bajianfeng.launcher/com.google.android.accessibility.selecttospeak.SelectToSpeakService"
+        "com.yinxing.launcher/com.google.android.accessibility.selecttospeak.SelectToSpeakService"
 
     // ── 无障碍服务 ────────────────────────────────────────────────────────────
 

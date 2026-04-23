@@ -1,4 +1,4 @@
-﻿package com.bajianfeng.launcher.feature.phone
+﻿package com.yinxing.launcher.feature.phone
 
 import android.net.Uri
 import android.view.LayoutInflater
@@ -10,7 +10,7 @@ import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
 import com.yinxing.launcher.R
-import com.bajianfeng.launcher.data.contact.Contact
+import com.yinxing.launcher.data.contact.Contact
 
 class PhoneContactAdapter(
     private val onCallClick: (Contact) -> Unit,

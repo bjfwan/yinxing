@@ -1,4 +1,4 @@
-﻿package com.bajianfeng.launcher.feature.videocall
+﻿package com.yinxing.launcher.feature.videocall
 
 import android.view.LayoutInflater
 import android.view.View
@@ -8,7 +8,7 @@ import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
 import com.yinxing.launcher.R
-import com.bajianfeng.launcher.data.contact.Contact
+import com.yinxing.launcher.data.contact.Contact
 import com.google.android.material.card.MaterialCardView
 
 class ContactManageAdapter(

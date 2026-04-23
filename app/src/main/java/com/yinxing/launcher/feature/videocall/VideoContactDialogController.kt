@@ -1,4 +1,4 @@
-﻿package com.bajianfeng.launcher.feature.videocall
+﻿package com.yinxing.launcher.feature.videocall
 
 import android.net.Uri
 import android.widget.EditText
@@ -9,7 +9,7 @@ import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.cardview.widget.CardView
 import com.yinxing.launcher.R
-import com.bajianfeng.launcher.data.contact.Contact
+import com.yinxing.launcher.data.contact.Contact
 
 class VideoContactDialogController(
     private val activity: AppCompatActivity,

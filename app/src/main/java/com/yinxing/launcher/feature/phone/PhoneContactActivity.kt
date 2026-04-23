@@ -1,4 +1,4 @@
-﻿package com.bajianfeng.launcher.feature.phone
+﻿package com.yinxing.launcher.feature.phone
 
 import android.Manifest
 import android.content.Context
@@ -25,10 +25,10 @@ import androidx.core.widget.doAfterTextChanged
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.yinxing.launcher.R
-import com.bajianfeng.launcher.common.ui.PageStateView
-import com.bajianfeng.launcher.data.contact.Contact
-import com.bajianfeng.launcher.data.contact.ContactAvatarStore
-import com.bajianfeng.launcher.data.contact.ContactStorage
+import com.yinxing.launcher.common.ui.PageStateView
+import com.yinxing.launcher.data.contact.Contact
+import com.yinxing.launcher.data.contact.ContactAvatarStore
+import com.yinxing.launcher.data.contact.ContactStorage
 import com.google.android.material.card.MaterialCardView
 import java.util.UUID
 

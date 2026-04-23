@@ -1,4 +1,4 @@
-﻿package com.bajianfeng.launcher.feature.incoming
+﻿package com.yinxing.launcher.feature.incoming
 
 import android.app.NotificationChannel
 import android.app.NotificationManager
@@ -18,7 +18,7 @@ class IncomingCallForegroundService : Service() {
     companion object {
         private const val TAG = "IncomingCallService"
 
-        internal const val ACTION_SHOW_INCOMING_CALL = "com.bajianfeng.launcher.action.SHOW_INCOMING_CALL"
+        internal const val ACTION_SHOW_INCOMING_CALL = "com.yinxing.launcher.action.SHOW_INCOMING_CALL"
         internal const val NOTIFICATION_ID = 41001
         internal const val CHANNEL_ID = "incoming_call_alerts"
 

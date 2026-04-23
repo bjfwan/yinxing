@@ -5,6 +5,7 @@ plugins {
     alias(libs.plugins.androidx.baselineprofile)
     alias(libs.plugins.google.services)
     alias(libs.plugins.firebase.crashlytics)
+    alias(libs.plugins.firebase.perf)
 }
 
 val localProps = Properties().apply {
@@ -88,6 +89,7 @@ dependencies {
     implementation(platform(libs.firebase.bom))
     implementation(libs.firebase.crashlytics)
     implementation(libs.firebase.analytics)
+    implementation(libs.firebase.perf)
     baselineProfile(project(":benchmark"))
     testImplementation(libs.junit)
     testImplementation(libs.json)

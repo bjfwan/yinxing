@@ -1,4 +1,4 @@
-﻿package com.bajianfeng.launcher.feature.videocall
+﻿package com.yinxing.launcher.feature.videocall
 
 import android.content.Context
 import android.content.Intent
@@ -16,14 +16,14 @@ import androidx.recyclerview.widget.DefaultItemAnimator
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.yinxing.launcher.R
-import com.bajianfeng.launcher.common.service.TTSService
-import com.bajianfeng.launcher.common.ui.PageStateView
-import com.bajianfeng.launcher.common.util.PermissionUtil
-import com.bajianfeng.launcher.data.contact.Contact
-import com.bajianfeng.launcher.data.contact.ContactAvatarStore
-import com.bajianfeng.launcher.data.contact.ContactManager
-import com.bajianfeng.launcher.data.contact.ContactStorage
-import com.bajianfeng.launcher.data.home.LauncherPreferences
+import com.yinxing.launcher.common.service.TTSService
+import com.yinxing.launcher.common.ui.PageStateView
+import com.yinxing.launcher.common.util.PermissionUtil
+import com.yinxing.launcher.data.contact.Contact
+import com.yinxing.launcher.data.contact.ContactAvatarStore
+import com.yinxing.launcher.data.contact.ContactManager
+import com.yinxing.launcher.data.contact.ContactStorage
+import com.yinxing.launcher.data.home.LauncherPreferences
 import com.google.android.material.card.MaterialCardView
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers

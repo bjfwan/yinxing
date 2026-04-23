@@ -1,14 +1,14 @@
-﻿package com.bajianfeng.launcher.feature.videocall
+﻿package com.yinxing.launcher.feature.videocall
 
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import com.yinxing.launcher.R
-import com.bajianfeng.launcher.automation.wechat.model.AutomationState
-import com.bajianfeng.launcher.common.service.TTSService
-import com.bajianfeng.launcher.common.util.NetworkUtil
-import com.bajianfeng.launcher.common.util.PermissionUtil
-import com.bajianfeng.launcher.data.contact.Contact
-import com.bajianfeng.launcher.data.contact.ContactManager
+import com.yinxing.launcher.automation.wechat.model.AutomationState
+import com.yinxing.launcher.common.service.TTSService
+import com.yinxing.launcher.common.util.NetworkUtil
+import com.yinxing.launcher.common.util.PermissionUtil
+import com.yinxing.launcher.data.contact.Contact
+import com.yinxing.launcher.data.contact.ContactManager
 
 class VideoCallCoordinator(
     private val activity: AppCompatActivity,

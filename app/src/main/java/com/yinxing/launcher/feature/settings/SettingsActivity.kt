@@ -1,4 +1,4 @@
-﻿package com.bajianfeng.launcher.feature.settings
+﻿package com.yinxing.launcher.feature.settings
 
 import android.Manifest
 import android.app.role.RoleManager
@@ -21,19 +21,19 @@ import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.widget.SwitchCompat
 import com.yinxing.launcher.R
-import com.bajianfeng.launcher.common.util.PermissionUtil
-import com.bajianfeng.launcher.data.contact.ContactManager
-import com.bajianfeng.launcher.data.home.LauncherPreferences
-import com.bajianfeng.launcher.data.weather.WeatherPreferences
-import com.bajianfeng.launcher.data.weather.WeatherRepository
-import com.bajianfeng.launcher.feature.appmanage.AppManageActivity
-import com.bajianfeng.launcher.feature.incoming.IncomingCallDiagnostics
-import com.bajianfeng.launcher.feature.incoming.IncomingGuardItem
-import com.bajianfeng.launcher.feature.incoming.IncomingGuardReadiness
-import com.bajianfeng.launcher.feature.incoming.IncomingGuardReadinessEvaluator
-import com.bajianfeng.launcher.feature.phone.PhoneContactActivity
-import com.bajianfeng.launcher.feature.phone.PhoneContactManager
-import com.bajianfeng.launcher.feature.videocall.VideoCallActivity
+import com.yinxing.launcher.common.util.PermissionUtil
+import com.yinxing.launcher.data.contact.ContactManager
+import com.yinxing.launcher.data.home.LauncherPreferences
+import com.yinxing.launcher.data.weather.WeatherPreferences
+import com.yinxing.launcher.data.weather.WeatherRepository
+import com.yinxing.launcher.feature.appmanage.AppManageActivity
+import com.yinxing.launcher.feature.incoming.IncomingCallDiagnostics
+import com.yinxing.launcher.feature.incoming.IncomingGuardItem
+import com.yinxing.launcher.feature.incoming.IncomingGuardReadiness
+import com.yinxing.launcher.feature.incoming.IncomingGuardReadinessEvaluator
+import com.yinxing.launcher.feature.phone.PhoneContactActivity
+import com.yinxing.launcher.feature.phone.PhoneContactManager
+import com.yinxing.launcher.feature.videocall.VideoCallActivity
 import com.google.android.material.bottomsheet.BottomSheetDialog
 
 class SettingsActivity : AppCompatActivity() {

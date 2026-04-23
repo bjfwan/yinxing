@@ -1,4 +1,4 @@
-﻿package com.bajianfeng.launcher.common.ui
+﻿package com.yinxing.launcher.common.ui
 
 import android.content.Context
 import android.util.AttributeSet

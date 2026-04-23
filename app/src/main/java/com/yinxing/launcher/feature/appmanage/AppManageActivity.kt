@@ -1,4 +1,4 @@
-﻿package com.bajianfeng.launcher.feature.appmanage
+﻿package com.yinxing.launcher.feature.appmanage
 
 import android.content.BroadcastReceiver
 import android.content.Context
@@ -15,8 +15,8 @@ import androidx.recyclerview.widget.DefaultItemAnimator
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.yinxing.launcher.R
-import com.bajianfeng.launcher.data.home.LauncherAppRepository
-import com.bajianfeng.launcher.data.home.LauncherPreferences
+import com.yinxing.launcher.data.home.LauncherAppRepository
+import com.yinxing.launcher.data.home.LauncherPreferences
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob

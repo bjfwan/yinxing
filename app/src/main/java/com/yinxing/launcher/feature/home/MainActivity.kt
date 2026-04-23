@@ -1,4 +1,4 @@
-﻿package com.bajianfeng.launcher.feature.home
+﻿package com.yinxing.launcher.feature.home
 
 import android.content.BroadcastReceiver
 import android.content.Context
@@ -19,16 +19,16 @@ import androidx.recyclerview.widget.GridLayoutManager
 import androidx.recyclerview.widget.ItemTouchHelper
 import androidx.recyclerview.widget.RecyclerView
 import com.yinxing.launcher.R
-import com.bajianfeng.launcher.data.home.LauncherAppRepository
-import com.bajianfeng.launcher.data.home.LauncherPreferences
-import com.bajianfeng.launcher.data.weather.WeatherPreferences
-import com.bajianfeng.launcher.data.weather.WeatherRepository
-import com.bajianfeng.launcher.data.weather.WeatherState
-import com.bajianfeng.launcher.feature.appmanage.AppManageActivity
-import com.bajianfeng.launcher.feature.phone.PhoneContactActivity
-import com.bajianfeng.launcher.feature.settings.SettingsActivity
+import com.yinxing.launcher.data.home.LauncherAppRepository
+import com.yinxing.launcher.data.home.LauncherPreferences
+import com.yinxing.launcher.data.weather.WeatherPreferences
+import com.yinxing.launcher.data.weather.WeatherRepository
+import com.yinxing.launcher.data.weather.WeatherState
+import com.yinxing.launcher.feature.appmanage.AppManageActivity
+import com.yinxing.launcher.feature.phone.PhoneContactActivity
+import com.yinxing.launcher.feature.settings.SettingsActivity
 
-import com.bajianfeng.launcher.feature.videocall.VideoCallActivity
+import com.yinxing.launcher.feature.videocall.VideoCallActivity
 
 
 import kotlinx.coroutines.CoroutineScope

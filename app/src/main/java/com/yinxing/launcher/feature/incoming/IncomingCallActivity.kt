@@ -1,4 +1,4 @@
-﻿package com.bajianfeng.launcher.feature.incoming
+﻿package com.yinxing.launcher.feature.incoming
 
 import android.Manifest
 import android.app.KeyguardManager
@@ -20,8 +20,8 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.cardview.widget.CardView
 import androidx.core.view.isVisible
 import com.yinxing.launcher.R
-import com.bajianfeng.launcher.common.util.CallAudioStrategy
-import com.bajianfeng.launcher.data.home.LauncherPreferences
+import com.yinxing.launcher.common.util.CallAudioStrategy
+import com.yinxing.launcher.data.home.LauncherPreferences
 import java.util.Locale
 
 class IncomingCallActivity : AppCompatActivity(), TextToSpeech.OnInitListener {

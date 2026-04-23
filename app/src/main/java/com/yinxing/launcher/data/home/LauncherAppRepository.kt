@@ -1,13 +1,13 @@
-﻿package com.bajianfeng.launcher.data.home
+﻿package com.yinxing.launcher.data.home
 
 import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.os.Build
 import com.yinxing.launcher.R
-import com.bajianfeng.launcher.common.media.MediaThumbnailLoader
-import com.bajianfeng.launcher.feature.appmanage.AppInfo
-import com.bajianfeng.launcher.feature.home.HomeAppItem
+import com.yinxing.launcher.common.media.MediaThumbnailLoader
+import com.yinxing.launcher.feature.appmanage.AppInfo
+import com.yinxing.launcher.feature.home.HomeAppItem
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 

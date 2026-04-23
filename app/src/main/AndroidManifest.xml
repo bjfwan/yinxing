@@ -52,6 +52,9 @@
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
         android:theme="@style/Theme.OldLauncher">
+        <meta-data
+            android:name="firebase_performance_logcat_enabled"
+            android:value="true" />
         <activity
             android:name=".feature.home.MainActivity"
             android:exported="true"

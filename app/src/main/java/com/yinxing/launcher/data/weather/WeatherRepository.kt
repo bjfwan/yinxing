@@ -1,4 +1,4 @@
-﻿package com.bajianfeng.launcher.data.weather
+﻿package com.yinxing.launcher.data.weather
 
 import android.util.Base64
 import com.yinxing.launcher.BuildConfig
