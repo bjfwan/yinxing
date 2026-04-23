@@ -70,6 +70,7 @@ git push -u origin feature/your-task-name
 3. 创建 PR
 4. 检查改动范围
 5. 确认无问题后合并到 `main`
+6. **注意：合并时必须选择 "Create a merge commit"（传统合并方式），严禁使用 "Squash and merge" 或 "Rebase and merge"，以保留完整的分支历史树。**
 
 ### 3.5 合并后本地收尾
 
