@@ -21,3 +21,4 @@ google-services.json
 launcher_prefs*.xml
 %SystemDrive%/
 .codex-backup/
+app/google-services .json
