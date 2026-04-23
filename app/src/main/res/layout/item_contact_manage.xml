@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <com.google.android.material.card.MaterialCardView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     style="@style/Widget.OldLauncher.ListItemCard"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
@@ -36,52 +37,47 @@
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginTop="18dp"
+            android:layout_marginTop="20dp"
             android:orientation="horizontal">
 
-            <com.google.android.material.card.MaterialCardView
+            <com.google.android.material.button.MaterialButton
                 android:id="@+id/btn_edit"
-                style="@style/Widget.OldLauncher.DialogButtonPrimary"
+                style="@style/Widget.MaterialComponents.Button"
                 android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_weight="1">
+                android:layout_height="64dp"
+                android:layout_weight="1"
+                android:text="@string/action_edit"
+                android:textAllCaps="false"
+                android:textSize="18sp"
+                android:textStyle="bold"
+                app:backgroundTint="@color/launcher_surface_soft"
+                app:cornerRadius="16dp"
+                app:icon="@android:drawable/ic_menu_edit"
+                app:iconGravity="textStart"
+                app:iconPadding="8dp"
+                app:iconTint="@color/launcher_primary"
+                android:textColor="@color/launcher_primary"
+                app:strokeColor="@color/launcher_outline"
+                app:strokeWidth="1dp" />
 
-                <TextView
-                    android:id="@+id/tv_edit_action"
-                    style="@style/TextAppearance.OldLauncher.ButtonPrimary"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:gravity="center"
-                    android:minHeight="52dp"
-                    android:paddingStart="16dp"
-                    android:paddingTop="14dp"
-                    android:paddingEnd="16dp"
-                    android:paddingBottom="14dp"
-                    android:text="@string/action_edit" />
-
-            </com.google.android.material.card.MaterialCardView>
-
-            <com.google.android.material.card.MaterialCardView
+            <com.google.android.material.button.MaterialButton
                 android:id="@+id/btn_delete"
-                style="@style/Widget.OldLauncher.DialogButtonDanger"
+                style="@style/Widget.MaterialComponents.Button"
                 android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_marginStart="12dp"
-                android:layout_weight="1">
-
-                <TextView
-                    style="@style/TextAppearance.OldLauncher.ButtonPrimary"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:gravity="center"
-                    android:minHeight="52dp"
-                    android:paddingStart="16dp"
-                    android:paddingTop="14dp"
-                    android:paddingEnd="16dp"
-                    android:paddingBottom="14dp"
-                    android:text="@string/action_delete" />
-
-            </com.google.android.material.card.MaterialCardView>
+                android:layout_height="64dp"
+                android:layout_marginStart="16dp"
+                android:layout_weight="1"
+                android:text="@string/action_delete"
+                android:textAllCaps="false"
+                android:textSize="18sp"
+                android:textStyle="bold"
+                app:backgroundTint="@color/launcher_danger_soft"
+                app:cornerRadius="16dp"
+                app:icon="@android:drawable/ic_menu_delete"
+                app:iconGravity="textStart"
+                app:iconPadding="8dp"
+                app:iconTint="@color/launcher_danger"
+                android:textColor="@color/launcher_danger" />
 
         </LinearLayout>
 

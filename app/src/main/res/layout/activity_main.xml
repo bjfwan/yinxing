@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
@@ -33,27 +34,19 @@
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
                     android:layout_weight="1"
-                    android:text="@string/home_title" />
+                    android:text="@string/home_title"
+                    android:alpha="0.8" />
 
-                <com.google.android.material.card.MaterialCardView
+                <com.google.android.material.button.MaterialButton
                     android:id="@+id/btn_family_settings"
-                    style="@style/Widget.OldLauncher.PageToolbarButton"
+                    style="@style/Widget.MaterialComponents.Button.TextButton"
                     android:layout_width="wrap_content"
-                    android:layout_height="wrap_content">
-
-                    <TextView
-                        style="@style/TextAppearance.OldLauncher.ButtonSecondary"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:gravity="center"
-                        android:minHeight="40dp"
-                        android:paddingStart="14dp"
-                        android:paddingTop="9dp"
-                        android:paddingEnd="14dp"
-                        android:paddingBottom="9dp"
-                        android:text="@string/home_caregiver_entry"
-                        android:textSize="14sp" />
-                </com.google.android.material.card.MaterialCardView>
+                    android:layout_height="wrap_content"
+                    android:text="@string/home_caregiver_entry"
+                    android:textColor="@color/launcher_text_muted"
+                    android:textAllCaps="false"
+                    app:icon="@android:drawable/ic_menu_preferences"
+                    app:iconTint="@color/launcher_text_muted" />
 
             </LinearLayout>
 
@@ -63,25 +56,37 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_gravity="center_horizontal"
-                android:layout_marginTop="8dp"
+                android:layout_marginTop="12dp"
                 android:text="@string/home_time_placeholder" />
 
-            <TextView
-                android:id="@+id/tv_date"
-                style="@style/TextAppearance.OldLauncher.Date"
+            <LinearLayout
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_gravity="center_horizontal"
                 android:layout_marginTop="4dp"
-                android:text="@string/home_date_placeholder" />
+                android:gravity="center_vertical"
+                android:orientation="horizontal">
 
-            <TextView
-                android:id="@+id/tv_lunar"
-                style="@style/TextAppearance.OldLauncher.Eyebrow"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_gravity="center_horizontal"
-                android:layout_marginTop="2dp" />
+                <TextView
+                    android:id="@+id/tv_date"
+                    style="@style/TextAppearance.OldLauncher.Date"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="@string/home_date_placeholder" />
+
+                <View
+                    android:layout_width="4dp"
+                    android:layout_height="4dp"
+                    android:layout_marginHorizontal="8dp"
+                    android:background="@drawable/dot_separator" />
+
+                <TextView
+                    android:id="@+id/tv_lunar"
+                    style="@style/TextAppearance.OldLauncher.Eyebrow"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:textColor="@color/launcher_text_muted" />
+            </LinearLayout>
 
             <View
                 android:layout_width="match_parent"

@@ -1,4 +1,4 @@
-﻿package com.yinxing.launcher.feature.home
+package com.yinxing.launcher.feature.home
 
 import android.view.LayoutInflater
 import android.view.View
@@ -60,16 +60,12 @@ class HomeAppAdapter(
         notifyItemRangeChanged(0, itemCount)
     }
 
-    // ── ViewHolder 定义 ──────────────────────────
-
     class AppViewHolder(view: View) : RecyclerView.ViewHolder(view) {
         val card: CardView = view.findViewById(R.id.card_item)
         val icon: ImageView = view.findViewById(R.id.icon)
         val name: TextView = view.findViewById(R.id.name)
         var iconJob: Job? = null
     }
-
-    // ── ListAdapter 接口 ─────────────────────────
 
     override fun getItemViewType(position: Int): Int = VIEW_TYPE_APP
 
@@ -82,15 +78,29 @@ class HomeAppAdapter(
 
     override fun onBindViewHolder(holder: RecyclerView.ViewHolder, position: Int) {
         val item = getItem(position)
-        if (holder is AppViewHolder) bindApp(holder, item)
+        if (holder is AppViewHolder) {
+            bindApp(holder, item)
+            animateIn(holder.itemView, position)
+        }
+    }
+
+    private fun animateIn(view: View, position: Int) {
+        if (lowPerformanceMode) return
+        view.alpha = 0f
+        view.translationY = 40f
+        view.animate()
+            .alpha(1f)
+            .translationY(0f)
+            .setDuration(400)
+            .setStartDelay((position * 50).toLong())
+            .setInterpolator(android.view.animation.DecelerateInterpolator())
+            .start()
     }
 
     override fun onViewRecycled(holder: RecyclerView.ViewHolder) {
         if (holder is AppViewHolder) holder.iconJob?.cancel()
         super.onViewRecycled(holder)
     }
-
-    // ── 绑定普通卡片 ─────────────────────────────
 
     private fun bindApp(holder: AppViewHolder, item: HomeAppItem) {
         val context = holder.itemView.context
@@ -116,6 +126,10 @@ class HomeAppAdapter(
             height = context.dpToPx(scaledCardDp)
         }
 
+        val baseTextSizeSp = 24f
+        val scaledTextSizeSp = (baseTextSizeSp * iconScale / 100f).coerceAtLeast(16f)
+        holder.name.textSize = scaledTextSizeSp
+
         // 根据类型设置图标圆形背景色
         val iconBgRes = when (item.type) {
             HomeAppItem.Type.PHONE -> R.drawable.icon_background_phone
@@ -140,10 +154,21 @@ class HomeAppAdapter(
         }
 
         holder.icon.setOnLongClickListener(null)
-        holder.card.setOnClickListener { onItemClick(item) }
-        holder.itemView.setOnClickListener { onItemClick(item) }
-        holder.icon.setOnClickListener { onItemClick(item) }
-        holder.name.setOnClickListener { onItemClick(item) }
+        val clickListener = View.OnClickListener { 
+            it.animate()
+                .scaleX(0.95f)
+                .scaleY(0.95f)
+                .setDuration(100)
+                .withEndAction {
+                    it.animate().scaleX(1f).scaleY(1f).setDuration(100).start()
+                    onItemClick(item)
+                }
+                .start()
+        }
+        holder.card.setOnClickListener(clickListener)
+        holder.itemView.setOnClickListener(clickListener)
+        holder.icon.setOnClickListener(clickListener)
+        holder.name.setOnClickListener(clickListener)
         if (item.type == HomeAppItem.Type.APP) {
             holder.card.setOnLongClickListener { onItemLongClick(item) }
             holder.icon.setOnLongClickListener {
@@ -154,8 +179,6 @@ class HomeAppAdapter(
             holder.card.setOnLongClickListener(null)
         }
     }
-
-    // ── ItemTouchHelper（拖拽，内置卡片不参与）──
 
     override fun canMoveItem(position: Int): Boolean =
         getItem(position).type == HomeAppItem.Type.APP

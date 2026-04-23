@@ -28,6 +28,7 @@ class PhoneContactAdapter(
     inner class ViewHolder(itemView: android.view.View) : RecyclerView.ViewHolder(itemView) {
         val avatar: ImageView = itemView.findViewById(R.id.iv_avatar)
         val name: TextView = itemView.findViewById(R.id.tv_contact_name)
+        val btnCall: android.view.View = itemView.findViewById(R.id.btn_call)
         val manageHint: TextView = itemView.findViewById(R.id.tv_manage_hint)
     }
 
@@ -41,10 +42,15 @@ class PhoneContactAdapter(
         val contact = getItem(position)
         val context = holder.itemView.context
         holder.name.text = contact.name
-        holder.manageHint.isVisible = true
-        holder.manageHint.text = context.getString(
-            if (isManageMode) R.string.contact_manage_hint_edit else R.string.contact_card_action_phone_compact
-        )
+        
+        if (isManageMode) {
+            holder.btnCall.isVisible = false
+            holder.manageHint.isVisible = true
+            holder.manageHint.text = context.getString(R.string.contact_manage_hint_edit)
+        } else {
+            holder.btnCall.isVisible = true
+            holder.manageHint.isVisible = false
+        }
 
         val uri = contact.avatarUri?.takeIf { it.isNotBlank() }
 
@@ -53,14 +59,15 @@ class PhoneContactAdapter(
             holder.avatar.setImageURI(null)
             holder.avatar.setImageURI(Uri.parse(uri))
         } else {
-            val padding = (24 * holder.itemView.context.resources.displayMetrics.density).toInt()
-            holder.avatar.setPadding(padding, padding, padding, padding)
+            holder.avatar.setPadding(0, 0, 0, 0)
             holder.avatar.setImageResource(android.R.drawable.ic_menu_myplaces)
         }
 
-        holder.itemView.setOnClickListener {
+        val clickListener = android.view.View.OnClickListener {
             if (isManageMode) onEditClick(contact) else onCallClick(contact)
         }
+        holder.itemView.setOnClickListener(clickListener)
+        holder.btnCall.setOnClickListener(clickListener)
     }
 
     companion object {

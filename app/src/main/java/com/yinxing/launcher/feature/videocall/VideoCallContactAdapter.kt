@@ -1,4 +1,4 @@
-﻿package com.yinxing.launcher.feature.videocall
+package com.yinxing.launcher.feature.videocall
 
 import android.net.Uri
 import android.view.LayoutInflater
@@ -46,7 +46,7 @@ class VideoCallContactAdapter(
         val card: CardView = view.findViewById(R.id.card_video_contact)
         val photo: ImageView = view.findViewById(R.id.iv_video_contact_photo)
         val name: TextView = view.findViewById(R.id.tv_video_contact_name)
-        val action: TextView = view.findViewById(R.id.tv_video_contact_action)
+        val btnVideoCall: View = view.findViewById(R.id.btn_video_call)
         var photoJob: Job? = null
     }
 
@@ -80,28 +80,14 @@ class VideoCallContactAdapter(
         holder.name.text = contact.displayName
 
         val isWechat = contact.preferredAction == Contact.PreferredAction.WECHAT_VIDEO
-        holder.action.text = context.getString(
-            if (isWechat) R.string.contact_card_action_wechat_compact
-            else R.string.contact_card_action_phone_compact
-        )
-
-        holder.action.contentDescription = context.getString(
+        
+        holder.btnVideoCall.contentDescription = context.getString(
             if (isWechat) R.string.video_contact_wechat_action_description
             else R.string.video_contact_phone_action_description,
             contact.displayName
         )
         holder.photo.contentDescription = context.getString(R.string.contact_photo_description, contact.displayName)
         holder.card.contentDescription = context.getString(R.string.video_contact_action_description, contact.displayName)
-
-        val photoSize = context.dpToPx(if (lowPerformanceMode) 128 else 160)
-
-
-
-
-        holder.photo.layoutParams = holder.photo.layoutParams.apply {
-            width = photoSize
-            height = photoSize
-        }
 
         holder.photo.setDefaultAvatar(context, contact.preferredAction)
         holder.photoJob?.cancel()
@@ -110,8 +96,8 @@ class VideoCallContactAdapter(
                 val bitmap = MediaThumbnailLoader.loadBitmap(
                     context,
                     Uri.parse(contact.avatarUri),
-                    photoSize,
-                    photoSize
+                    320,
+                    320
                 )
                 val currentPosition = holder.bindingAdapterPosition
                 if (currentPosition == RecyclerView.NO_POSITION) {
@@ -125,17 +111,17 @@ class VideoCallContactAdapter(
             }
         }
 
-        holder.card.setOnClickListener { onContactClick(contact) }
-        holder.photo.setOnClickListener { onContactClick(contact) }
-        holder.name.setOnClickListener { onContactClick(contact) }
-        holder.action.setOnClickListener {
+        val clickListener = View.OnClickListener { onContactClick(contact) }
+        holder.card.setOnClickListener(clickListener)
+        holder.photo.setOnClickListener(clickListener)
+        holder.name.setOnClickListener(clickListener)
+        holder.btnVideoCall.setOnClickListener {
             if (contact.preferredAction == Contact.PreferredAction.WECHAT_VIDEO) {
                 onWechatVideoClick(contact)
             } else {
                 onContactClick(contact)
             }
         }
-
     }
 
     private fun ImageView.setDefaultAvatar(context: android.content.Context, action: Contact.PreferredAction) {

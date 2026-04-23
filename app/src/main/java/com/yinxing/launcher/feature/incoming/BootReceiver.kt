@@ -4,6 +4,7 @@ import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
+import com.yinxing.launcher.common.util.PermissionUtil
 import com.yinxing.launcher.data.home.LauncherPreferences
 import com.yinxing.launcher.feature.home.MainActivity
 
@@ -22,7 +23,7 @@ class BootReceiver : BroadcastReceiver() {
         IncomingCallForegroundService.ensureNotificationChannels(context)
 
         val prefs = LauncherPreferences.getInstance(context)
-        if (!prefs.isKioskModeEnabled() && !isDefaultLauncher(context)) {
+        if (!prefs.isKioskModeEnabled() && !PermissionUtil.isDefaultLauncher(context)) {
             return
         }
 
@@ -30,13 +31,5 @@ class BootReceiver : BroadcastReceiver() {
             addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_SINGLE_TOP)
         }
         context.startActivity(launch)
-    }
-
-    private fun isDefaultLauncher(context: Context): Boolean {
-        val intent = Intent(Intent.ACTION_MAIN).apply {
-            addCategory(Intent.CATEGORY_HOME)
-        }
-        val info = context.packageManager.resolveActivity(intent, PackageManager.MATCH_DEFAULT_ONLY)
-        return info?.activityInfo?.packageName == context.packageName
     }
 }

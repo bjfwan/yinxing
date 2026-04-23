@@ -15,39 +15,28 @@
 
     <LinearLayout
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
+        android:layout_height="220dp"
         android:gravity="center_vertical"
-        android:minHeight="188dp"
         android:orientation="horizontal"
-        android:paddingStart="20dp"
-        android:paddingTop="16dp"
-        android:paddingEnd="20dp"
-        android:paddingBottom="16dp">
+        android:paddingStart="24dp"
+        android:paddingEnd="24dp">
 
-        <FrameLayout
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_weight="1.1"
-            android:paddingEnd="8dp">
-
-            <ImageView
-                android:id="@+id/iv_avatar"
-                android:layout_width="152dp"
-                android:layout_height="152dp"
-                android:layout_gravity="center"
-                android:background="@drawable/icon_background"
-                android:contentDescription="@string/contact_photo_preview"
-                android:scaleType="centerCrop" />
-
-        </FrameLayout>
+        <com.google.android.material.imageview.ShapeableImageView
+            android:id="@+id/iv_avatar"
+            android:layout_width="180dp"
+            android:layout_height="180dp"
+            android:background="@color/launcher_surface_soft"
+            android:contentDescription="@string/contact_photo_preview"
+            android:scaleType="centerCrop"
+            app:shapeAppearanceOverlay="@style/ShapeAppearance.OldLauncher.Circle" />
 
         <LinearLayout
             android:layout_width="0dp"
             android:layout_height="wrap_content"
-            android:layout_weight="0.9"
-            android:gravity="center_vertical"
-            android:orientation="vertical"
-            android:paddingStart="12dp">
+            android:layout_marginStart="20dp"
+            android:layout_weight="1"
+            android:gravity="center_horizontal"
+            android:orientation="vertical">
 
             <TextView
                 android:id="@+id/tv_contact_name"
@@ -55,8 +44,32 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:ellipsize="end"
-                android:maxLines="2"
-                android:text="@string/contact_name_placeholder" />
+                android:gravity="center"
+                android:maxLines="1"
+                android:text="@string/contact_name_placeholder"
+                android:textSize="26sp" />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btn_call"
+                style="@style/Widget.MaterialComponents.Button"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="12dp"
+                android:insetTop="0dp"
+                android:insetBottom="0dp"
+                android:minHeight="96dp"
+                android:padding="2dp"
+                android:text="@string/contact_card_action_phone_compact"
+                android:textColor="@android:color/white"
+                android:textSize="18sp"
+                android:textStyle="bold"
+                app:backgroundTint="@color/launcher_primary"
+                app:cornerRadius="16dp"
+                app:icon="@android:drawable/ic_menu_call"
+                app:iconGravity="top"
+                app:iconPadding="4dp"
+                app:iconSize="32dp"
+                app:iconTint="@android:color/white" />
 
             <TextView
                 android:id="@+id/tv_manage_hint"
@@ -79,5 +92,4 @@
         </LinearLayout>
 
     </LinearLayout>
-
 </com.google.android.material.card.MaterialCardView>

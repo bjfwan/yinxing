@@ -1,4 +1,4 @@
-﻿package com.yinxing.launcher.feature.home
+package com.yinxing.launcher.feature.home
 
 import android.content.BroadcastReceiver
 import android.content.Context
@@ -82,7 +82,11 @@ class MainActivity : AppCompatActivity() {
         android.content.SharedPreferences.OnSharedPreferenceChangeListener { _, key ->
             when {
                 launcherPreferences.isLowPerformanceModeKey(key) -> applyPerformanceMode()
-                launcherPreferences.isIconScaleKey(key) -> adapter.setIconScale(launcherPreferences.getIconScale())
+                launcherPreferences.isIconScaleKey(key) -> {
+                    val scale = launcherPreferences.getIconScale()
+                    adapter.setIconScale(scale)
+                    applyHeaderScale(scale)
+                }
                 launcherPreferences.isHomeAppConfigKey(key) -> {
                     appRepository.invalidateSelections()
                     refreshApps()
@@ -149,6 +153,7 @@ class MainActivity : AppCompatActivity() {
 
         registerPackageReceiver()
         applyPerformanceMode()
+        applyHeaderScale(launcherPreferences.getIconScale())
         refreshApps()
     }
 
@@ -205,6 +210,17 @@ class MainActivity : AppCompatActivity() {
         itemMoveCallback.setAnimateDrag(!lowPerformanceMode)
         updateTime()
         scheduleNextTimeUpdate()
+    }
+
+    private fun applyHeaderScale(scale: Int) {
+        val ratio = scale / 100f
+        tvTime.textSize = (46f * ratio).coerceAtLeast(32f)
+        tvDate.textSize = (20f * ratio).coerceAtLeast(16f)
+        tvLunar.textSize = (16f * ratio).coerceAtLeast(12f)
+        tvWeatherTemp.textSize = (52f * ratio).coerceAtLeast(36f)
+        tvWeatherCity.textSize = (22f * ratio).coerceAtLeast(16f)
+        tvWeatherDesc.textSize = (18f * ratio).coerceAtLeast(14f)
+        tvWeatherHighLow.textSize = (18f * ratio).coerceAtLeast(14f)
     }
 
     private fun scheduleNextTimeUpdate() {

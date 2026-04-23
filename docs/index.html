@@ -43,476 +43,10 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;1,300;1,400&family=Jost:wght@200;300;400&display=swap" rel="stylesheet" />
-  <style>
-    :root {
-      --cream: #F7F4EF;
-      --warm-white: #FDFCFA;
-      --gold: #B8882A;
-      --gold-faint: rgba(184,136,42,0.12);
-      --ink: #1C1914;
-      --ink-60: rgba(28,25,20,0.72);
-      --ink-30: rgba(28,25,20,0.50);
-      --ink-12: rgba(28,25,20,0.14);
-      --ink-06: rgba(28,25,20,0.08);
-    }
-
-    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-
-    html {
-      font-size: 16px;
-      scroll-behavior: smooth;
-      height: 100%;
-      overflow-y: auto;
-      -webkit-overflow-scrolling: touch;
-    }
-
-    body {
-      background: var(--warm-white);
-      color: var(--ink);
-      font-family: 'Jost', sans-serif;
-      font-weight: 300;
-      min-height: 100%;
-      padding: 80px 32px;
-      -webkit-font-smoothing: antialiased;
-      -moz-osx-font-smoothing: grayscale;
-      position: relative;
-      overflow-x: hidden;
-    }
-
-    body::before {
-      content: '';
-      position: fixed;
-      inset: 0;
-      background:
-        radial-gradient(ellipse 90% 55% at 50% -5%,  rgba(184,136,42,0.13) 0%, transparent 60%),
-        radial-gradient(ellipse 55% 45% at 100% 100%, rgba(184,136,42,0.09) 0%, transparent 55%),
-        radial-gradient(ellipse 45% 40% at 0%   85%,  rgba(3,105,161,0.07)  0%, transparent 50%),
-        radial-gradient(ellipse 30% 30% at 20%  10%,  rgba(184,136,42,0.05) 0%, transparent 45%);
-      pointer-events: none;
-      z-index: 0;
-    }
-
-    body::after {
-      content: '';
-      position: fixed;
-      inset: 0;
-      background-image: radial-gradient(circle, rgba(28,25,20,0.11) 1px, transparent 1px);
-      background-size: 26px 26px;
-      pointer-events: none;
-      z-index: 0;
-      mask-image: radial-gradient(ellipse 75% 75% at 50% 50%, black 10%, transparent 80%);
-      -webkit-mask-image: radial-gradient(ellipse 75% 75% at 50% 50%, black 10%, transparent 80%);
-    }
-
-    .deco-topline {
-      position: fixed;
-      top: 0; left: 0; right: 0;
-      height: 1px;
-      background: linear-gradient(90deg, transparent 0%, rgba(184,136,42,0.5) 50%, transparent 100%);
-      z-index: 2;
-    }
-
-    .deco-bottomline {
-      position: fixed;
-      bottom: 0; left: 0; right: 0;
-      height: 1px;
-      background: linear-gradient(90deg, transparent 0%, rgba(184,136,42,0.2) 50%, transparent 100%);
-      z-index: 2;
-    }
-
-    .deco-svg {
-      position: fixed;
-      top: 0; left: 0;
-      width: 100%; height: 100%;
-      pointer-events: none;
-      z-index: 0;
-      overflow: visible;
-    }
-
-    .deco-leaf {
-      position: fixed;
-      pointer-events: none;
-      z-index: 0;
-      opacity: 0;
-      animation: leafFloat 20s ease-in-out infinite;
-    }
-    .deco-leaf:nth-child(1) { top: 8%;  right: 6%;  width: 120px; animation-delay: 0s;   animation-duration: 18s; }
-    .deco-leaf:nth-child(2) { top: 55%; left: 3%;   width: 80px;  animation-delay: 4s;   animation-duration: 22s; }
-    .deco-leaf:nth-child(3) { top: 78%; right: 10%; width: 60px;  animation-delay: 8s;   animation-duration: 16s; }
-
-    @keyframes leafFloat {
-      0%   { opacity: 0;    transform: translateY(0px)   rotate(0deg); }
-      15%  { opacity: 0.06; }
-      50%  { opacity: 0.09; transform: translateY(-18px) rotate(6deg); }
-      85%  { opacity: 0.06; }
-      100% { opacity: 0;    transform: translateY(0px)   rotate(0deg); }
-    }
-
-    .deco-scanline {
-      position: fixed;
-      inset: 0;
-      background: repeating-linear-gradient(
-        0deg,
-        transparent,
-        transparent 3px,
-        rgba(28,25,20,0.012) 3px,
-        rgba(28,25,20,0.012) 4px
-      );
-      pointer-events: none;
-      z-index: 0;
-    }
-
-    .wrap {
-      width: 100%;
-      max-width: 560px;
-      margin: 0 auto;
-      position: relative;
-      z-index: 1;
-    }
-
-    .brand {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      margin-bottom: 80px;
-      opacity: 0;
-      animation: fade 1s 0.1s ease forwards;
-    }
-
-    .brand-name {
-      font-family: 'Cormorant Garamond', serif;
-      font-weight: 300;
-      font-size: 0.95rem;
-      letter-spacing: 0.22em;
-      text-transform: uppercase;
-      color: var(--ink-60);
-    }
-
-    .brand-tag {
-      font-size: 0.65rem;
-      font-weight: 300;
-      letter-spacing: 0.16em;
-      text-transform: uppercase;
-      color: var(--ink-30);
-      border: 1px solid var(--ink-12);
-      border-radius: 2px;
-      padding: 3px 10px;
-    }
-
-    .icon-block {
-      margin-bottom: 52px;
-      opacity: 0;
-      animation: fade 1s 0.25s ease forwards;
-      position: relative;
-      display: inline-block;
-    }
-
-    .icon-block::before {
-      content: '';
-      position: absolute;
-      inset: -12px;
-      border-radius: 30px;
-      background: radial-gradient(ellipse at 50% 50%, rgba(184,136,42,0.10) 0%, transparent 70%);
-      animation: iconPulse 4s ease-in-out infinite;
-    }
-
-    @keyframes iconPulse {
-      0%, 100% { transform: scale(1);   opacity: 1; }
-      50%       { transform: scale(1.06); opacity: 0.7; }
-    }
-
-    .icon-block img {
-      width: 96px;
-      height: 96px;
-      border-radius: 22px;
-      display: block;
-      position: relative;
-      box-shadow:
-        0 1px 2px rgba(0,0,0,0.04),
-        0 4px 16px rgba(0,0,0,0.08),
-        0 20px 60px rgba(184,136,42,0.14);
-    }
-
-    .hero {
-      margin-bottom: 64px;
-      opacity: 0;
-      animation: fade 1s 0.4s ease forwards;
-    }
-
-    .hero h1 {
-      font-family: 'Cormorant Garamond', serif;
-      font-weight: 300;
-      font-size: clamp(4.5rem, 14vw, 7.5rem);
-      line-height: 0.92;
-      letter-spacing: -0.02em;
-      color: var(--ink);
-      margin-bottom: 20px;
-    }
-
-    .hero h1 em {
-      font-style: italic;
-      color: var(--gold);
-    }
-
-    .hero-desc {
-      font-size: 0.92rem;
-      font-weight: 300;
-      line-height: 1.85;
-      color: var(--ink-60);
-      max-width: 340px;
-      letter-spacing: 0.01em;
-    }
-
-    .rule {
-      width: 100%;
-      height: 1px;
-      background: linear-gradient(90deg, var(--gold-faint) 0%, var(--ink-06) 60%, transparent 100%);
-      margin-bottom: 40px;
-      opacity: 0;
-      animation: fade 1s 0.55s ease forwards;
-    }
-
-    .specs {
-      display: grid;
-      grid-template-columns: repeat(4, 1fr);
-      gap: 0;
-      margin-bottom: 40px;
-      opacity: 0;
-      animation: fade 1s 0.65s ease forwards;
-      border-radius: 10px;
-      border: 1px solid rgba(255,255,255,0.55);
-      box-shadow:
-        0 4px 24px rgba(184,136,42,0.07),
-        inset 0 1px 0 rgba(255,255,255,0.75),
-        inset 0 -1px 0 rgba(28,25,20,0.04);
-      position: relative;
-      overflow: hidden;
-    }
-
-    .specs-bg {
-      position: absolute;
-      inset: 0;
-      border-radius: 10px;
-      backdrop-filter: blur(18px) saturate(1.6) brightness(1.04);
-      -webkit-backdrop-filter: blur(18px) saturate(1.6) brightness(1.04);
-      background: rgba(255,255,255,0.22);
-      pointer-events: none;
-      z-index: 0;
-    }
-
-    .specs::before {
-      content: '';
-      position: absolute;
-      top: 0; left: 0; right: 0;
-      height: 1px;
-      background: linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.9) 40%, rgba(255,255,255,0.9) 60%, transparent 100%);
-      pointer-events: none;
-    }
-
-    .specs::after {
-      content: '';
-      position: absolute;
-      inset: 0;
-      border-radius: inherit;
-      pointer-events: none;
-    }
-
-    .spec {
-      padding: 20px 0 20px 20px;
-      border-right: 1px solid rgba(255,255,255,0.35);
-      position: relative;
-      z-index: 1;
-    }
-
-    .spec:last-child { border-right: none; }
-    .spec:first-child { padding-left: 20px; }
-
-    .spec-label {
-      font-size: 0.6rem;
-      letter-spacing: 0.16em;
-      text-transform: uppercase;
-      color: var(--ink-30);
-      font-weight: 400;
-      margin-bottom: 8px;
-    }
-
-    .spec-value {
-      font-size: 0.88rem;
-      font-weight: 300;
-      color: var(--ink);
-      letter-spacing: 0.01em;
-    }
-
-    .dl-wrap {
-      opacity: 0;
-      animation: fade 1s 0.8s ease forwards;
-    }
-
-    .btn {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      width: 100%;
-      padding: 20px 28px;
-      background: var(--ink);
-      color: rgba(255,255,255,0.9);
-      text-decoration: none;
-      border-radius: 4px;
-      font-family: 'Jost', sans-serif;
-      font-size: 0.8rem;
-      font-weight: 300;
-      letter-spacing: 0.18em;
-      text-transform: uppercase;
-      transition: background 0.3s ease, transform 0.2s ease, box-shadow 0.3s ease;
-      cursor: pointer;
-      margin-bottom: 12px;
-    }
-
-    .btn:hover {
-      background: #2E2A24;
-      transform: translateY(-1px);
-      box-shadow: 0 8px 32px rgba(184,136,42,0.15);
-    }
-    .btn:active { transform: translateY(0); box-shadow: none; }
-
-    .btn-secondary {
-      background: transparent;
-      color: var(--ink-60);
-      border: 1px solid var(--ink-12);
-      margin-bottom: 16px;
-    }
-    .btn-secondary:hover {
-      background: var(--ink-06);
-      color: var(--ink);
-      border-color: var(--ink-30);
-      transform: translateY(-1px);
-      box-shadow: none;
-    }
-    .btn-secondary:active { transform: translateY(0); }
-
-    .btn-right {
-      display: flex;
-      align-items: center;
-      gap: 14px;
-      color: rgba(255,255,255,0.35);
-      font-size: 0.68rem;
-      letter-spacing: 0.1em;
-    }
-
-    .hint {
-      font-size: 0.68rem;
-      font-weight: 300;
-      letter-spacing: 0.05em;
-      color: rgba(28,25,20,0.45);
-      line-height: 1.7;
-      text-align: center;
-      margin-bottom: 0;
-    }
-
-    .marquee-wrap {
-      overflow: hidden;
-      margin-bottom: 64px;
-      opacity: 0;
-      animation: fade 1s 0.95s ease forwards;
-      border-top: 1px solid var(--ink-06);
-      border-bottom: 1px solid var(--ink-06);
-      padding: 10px 0;
-      mask-image: linear-gradient(90deg, transparent 0%, black 10%, black 90%, transparent 100%);
-      -webkit-mask-image: linear-gradient(90deg, transparent 0%, black 10%, black 90%, transparent 100%);
-    }
-
-    .marquee-track {
-      display: flex;
-      gap: 0;
-      animation: marquee 22s linear infinite;
-      width: max-content;
-    }
-
-    .marquee-track span {
-      font-size: 0.6rem;
-      letter-spacing: 0.22em;
-      text-transform: uppercase;
-      color: rgba(28,25,20,0.45);
-      white-space: nowrap;
-      padding: 0 32px;
-    }
-
-    .marquee-track span.dot {
-      color: var(--gold);
-      padding: 0;
-      letter-spacing: 0;
-      opacity: 0.5;
-    }
-
-    @keyframes marquee {
-      from { transform: translateX(0); }
-      to   { transform: translateX(-50%); }
-    }
-
-    .foot {
-      margin-top: 72px;
-      padding-top: 28px;
-      border-top: 1px solid var(--ink-06);
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      font-size: 0.65rem;
-      font-weight: 300;
-      letter-spacing: 0.1em;
-      color: var(--ink-30);
-      opacity: 0;
-      animation: fade 1s 1s ease forwards;
-    }
-
-    .foot a {
-      color: var(--ink-30);
-      text-decoration: none;
-      transition: color 0.2s;
-    }
-    .foot a:hover { color: var(--gold); }
-
-    .foot-github {
-      display: inline-flex;
-      align-items: center;
-      gap: 7px;
-      color: var(--ink-60) !important;
-      border: 1px solid var(--ink-12);
-      border-radius: 4px;
-      padding: 6px 14px;
-      font-size: 0.72rem;
-      letter-spacing: 0.12em;
-      transition: color 0.2s, border-color 0.2s, background 0.2s !important;
-    }
-    .foot-github:hover {
-      color: var(--ink) !important;
-      border-color: var(--ink-30);
-      background: var(--ink-06);
-    }
-    .foot-github svg { flex-shrink: 0; opacity: 0.7; }
-
-    @keyframes fade {
-      from { opacity: 0; transform: translateY(12px); }
-      to   { opacity: 1; transform: translateY(0); }
-    }
-
-    @media (max-width: 520px) {
-      body { padding: 48px 20px 60px; justify-content: flex-start; }
-      .brand { margin-bottom: 48px; }
-      .hero { margin-bottom: 40px; }
-      .specs { grid-template-columns: repeat(2, 1fr); }
-      .spec { border-right: none; border-bottom: 1px solid var(--ink-06); }
-      .spec:nth-child(odd) { border-right: 1px solid var(--ink-06); }
-      .spec:last-child { border-bottom: none; }
-      .spec:nth-last-child(2):nth-child(odd) { border-bottom: none; }
-      .foot { flex-direction: column; gap: 10px; text-align: center; }
-    }
-
-    @media (max-width: 360px) {
-      body { padding: 36px 16px 48px; }
-      .hero h1 { font-size: clamp(3.5rem, 20vw, 4.5rem); }
-      .btn { padding: 18px 20px; }
-    }
-  </style>
+  
+  <!-- 外部样式与脚本 -->
+  <link rel="stylesheet" href="assets/css/style.css">
+  <script src="assets/js/main.js" defer></script>
 </head>
 <body>
 
@@ -520,11 +54,11 @@
   <div class="deco-bottomline"></div>
   <div class="deco-scanline"></div>
 
-  <img class="deco-leaf" src="./icon.png" alt="" />
-  <img class="deco-leaf" src="./icon.png" alt="" />
-  <img class="deco-leaf" src="./icon.png" alt="" />
+  <img class="deco-leaf" src="./icon.png" alt="" aria-hidden="true" />
+  <img class="deco-leaf" src="./icon.png" alt="" aria-hidden="true" />
+  <img class="deco-leaf" src="./icon.png" alt="" aria-hidden="true" />
 
-  <svg class="deco-svg" viewBox="0 0 100 100" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg">
+  <svg class="deco-svg" viewBox="0 0 100 100" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
     <circle cx="98" cy="2"  r="30" fill="none" stroke="rgba(184,136,42,0.10)" stroke-width="0.25" vector-effect="non-scaling-stroke"/>
     <circle cx="98" cy="2"  r="44" fill="none" stroke="rgba(184,136,42,0.07)" stroke-width="0.18" vector-effect="non-scaling-stroke"/>
     <circle cx="98" cy="2"  r="60" fill="none" stroke="rgba(184,136,42,0.04)" stroke-width="0.12" vector-effect="non-scaling-stroke"/>
@@ -540,25 +74,25 @@
     <line x1="50" y1="95" x2="50"  y2="100" stroke="rgba(184,136,42,0.08)" stroke-width="0.15" vector-effect="non-scaling-stroke"/>
   </svg>
 
-  <div class="wrap">
+  <main class="wrap">
 
-    <div class="brand">
+    <header class="brand">
       <span class="brand-name">银杏</span>
       <span class="brand-tag">Free · No Ads</span>
-    </div>
+    </header>
 
     <div class="icon-block">
-      <img src="./icon.png" alt="银杏" onerror="this.style.display='none'" />
+      <img src="./icon.png" alt="银杏桌面图标" onerror="this.style.display='none'" />
     </div>
 
-    <div class="hero">
+    <section class="hero">
       <h1>银<em>杏</em></h1>
       <p class="hero-desc">专为长辈设计的简洁桌面。大字体、大图标、一键拨号，让科技回归温暖与简单。</p>
-    </div>
+    </section>
 
-    <div class="rule"></div>
+    <div class="rule" aria-hidden="true"></div>
 
-    <div class="specs">
+    <section class="specs" aria-label="软件规格">
       <div class="specs-bg" id="specs-bg"></div>
       <div class="spec">
         <div class="spec-label">版本</div>
@@ -566,7 +100,7 @@
       </div>
       <div class="spec">
         <div class="spec-label">大小</div>
-        <div class="spec-value">2.88 MB</div>
+        <div class="spec-value">3.0 MB</div>
       </div>
       <div class="spec">
         <div class="spec-label">系统</div>
@@ -576,27 +110,27 @@
         <div class="spec-label">收费</div>
         <div class="spec-value">免费</div>
       </div>
-    </div>
+    </section>
 
-    <div class="dl-wrap">
-      <a class="btn" href="https://github.com/bjfwan/yinxing/releases/latest/download/app-release.apk" download="银杏.apk">
+    <section class="dl-wrap" aria-label="下载选项">
+      <a class="btn" href="https://github.com/bjfwan/yinxing/releases/latest/download/app-release.apk" download="银杏.apk" title="从 GitHub 下载银杏 APK">
         <span>下载 APK <span style="font-size:0.65rem;opacity:0.5;letter-spacing:0.08em;">· GitHub</span></span>
         <span class="btn-right">
-          <span>2.88 MB</span>
+          <span>3.0 MB</span>
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
         </span>
       </a>
-      <a class="btn btn-secondary" href="./app-release.apk" download="银杏.apk">
+      <a class="btn btn-secondary" href="./app-release.apk" download="银杏.apk" title="从 Cloudflare 下载银杏 APK">
         <span>下载 APK <span style="font-size:0.65rem;opacity:0.6;letter-spacing:0.08em;">· Cloudflare</span></span>
         <span class="btn-right" style="color:rgba(28,25,20,0.35);">
-          <span>2.88 MB</span>
+          <span>3.0 MB</span>
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
         </span>
       </a>
       <p class="hint">安装前请在「设置 → 安全」中开启允许安装未知来源应用</p>
-    </div>
+    </section>
 
-    <div class="marquee-wrap">
+    <section class="marquee-wrap" aria-hidden="true">
       <div class="marquee-track">
         <span>大字体</span><span class="dot">·</span>
         <span>大图标</span><span class="dot">·</span>
@@ -615,16 +149,16 @@
         <span>Android 7+</span><span class="dot">·</span>
         <span>开源</span><span class="dot">·</span>
       </div>
-    </div>
+    </section>
 
-    <div class="foot">
+    <footer class="foot">
       <span>联系作者：<a href="mailto:2632507193@qq.com">2632507193@qq.com</a></span>
-      <a class="foot-github" href="https://github.com/bjfwan/yinxing" target="_blank">
+      <a class="foot-github" href="https://github.com/bjfwan/yinxing" target="_blank" rel="noopener noreferrer">
         <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg"><path d="M12 2C6.477 2 2 6.477 2 12c0 4.418 2.865 8.166 6.839 9.489.5.092.682-.217.682-.482 0-.237-.009-.868-.013-1.703-2.782.604-3.369-1.34-3.369-1.34-.454-1.154-1.11-1.462-1.11-1.462-.908-.62.069-.608.069-.608 1.003.07 1.531 1.03 1.531 1.03.892 1.529 2.341 1.087 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.11-4.555-4.943 0-1.091.39-1.984 1.029-2.683-.103-.253-.446-1.27.098-2.647 0 0 .84-.269 2.75 1.025A9.578 9.578 0 0 1 12 6.836a9.59 9.59 0 0 1 2.504.337c1.909-1.294 2.747-1.025 2.747-1.025.546 1.377.202 2.394.1 2.647.64.699 1.028 1.592 1.028 2.683 0 3.842-2.339 4.687-4.566 4.935.359.309.678.919.678 1.852 0 1.336-.012 2.415-.012 2.743 0 .267.18.578.688.48C19.138 20.163 22 16.418 22 12c0-5.523-4.477-10-10-10z"/></svg>
         GitHub
       </a>
-    </div>
-  </div>
+    </footer>
+  </main>
 
   <svg xmlns="http://www.w3.org/2000/svg" style="position:absolute;width:0;height:0;overflow:hidden">
     <defs>
@@ -636,166 +170,5 @@
     </defs>
   </svg>
 
-  <script>
-    const turb = document.getElementById('lg-turb');
-    const specs = document.querySelector('.specs');
-    const specsBg = document.getElementById('specs-bg');
-    let t = 0;
-    let mouseX = 0.5, mouseY = 0.5;
-    let targetX = 0.5, targetY = 0.5;
-
-    document.addEventListener('mousemove', e => {
-      targetX = e.clientX / window.innerWidth;
-      targetY = e.clientY / window.innerHeight;
-    });
-
-    function lerp(a, b, n) { return a + (b - a) * n; }
-
-    function tick() {
-      t += 0.004;
-      mouseX = lerp(mouseX, targetX, 0.04);
-      mouseY = lerp(mouseY, targetY, 0.04);
-      const fx = (0.012 + Math.sin(t) * 0.004 + (mouseX - 0.5) * 0.006).toFixed(5);
-      const fy = (0.018 + Math.cos(t * 0.8) * 0.004 + (mouseY - 0.5) * 0.006).toFixed(5);
-      turb.setAttribute('baseFrequency', `${fx} ${fy}`);
-      const scale = 10 + Math.sin(t * 1.3) * 5 + Math.abs(mouseX - 0.5) * 8;
-      turb.nextElementSibling.setAttribute('scale', scale.toFixed(2));
-      if (specsBg) {
-        specsBg.style.filter = 'url(#lg-filter)';
-        const gx = 20 + mouseX * 60;
-        const gy = 10 + mouseY * 40;
-        specsBg.style.background = `radial-gradient(ellipse at ${gx}% ${gy}%, rgba(255,255,255,0.28) 0%, rgba(255,255,255,0.18) 100%)`;
-      }
-      requestAnimationFrame(tick);
-    }
-    tick();
-
-    document.querySelectorAll('.btn').forEach(btn => {
-      btn.addEventListener('mousemove', e => {
-        const r = btn.getBoundingClientRect();
-        const cx = r.left + r.width / 2;
-        const cy = r.top + r.height / 2;
-        const dx = (e.clientX - cx) * 0.18;
-        const dy = (e.clientY - cy) * 0.18;
-        btn.style.transform = `translate(${dx}px, ${dy}px)`;
-      });
-      btn.addEventListener('mouseleave', () => {
-        btn.style.transform = '';
-        btn.style.transition = 'transform 0.5s cubic-bezier(0.23,1,0.32,1), background 0.3s, box-shadow 0.3s';
-      });
-      btn.addEventListener('mouseenter', () => {
-        btn.style.transition = 'transform 0.1s ease, background 0.3s, box-shadow 0.3s';
-      });
-
-      btn.style.overflow = 'hidden';
-      btn.addEventListener('click', e => {
-        const r = btn.getBoundingClientRect();
-        const ripple = document.createElement('span');
-        const size = Math.max(r.width, r.height) * 2;
-        ripple.style.cssText = `
-          position:absolute;
-          width:${size}px;height:${size}px;
-          left:${e.clientX - r.left - size/2}px;
-          top:${e.clientY - r.top - size/2}px;
-          border-radius:50%;
-          background:rgba(255,255,255,0.18);
-          transform:scale(0);
-          animation:ripple 0.6s ease-out forwards;
-          pointer-events:none;
-        `;
-        btn.appendChild(ripple);
-        setTimeout(() => ripple.remove(), 700);
-      });
-    });
-
-    const iconImg = document.querySelector('.icon-block img');
-    if (iconImg) {
-      iconImg.style.cursor = 'pointer';
-      let shaking = false;
-      iconImg.addEventListener('click', () => {
-        if (shaking) return;
-        shaking = true;
-        iconImg.style.animation = 'iconShake 0.5s ease';
-        setTimeout(() => {
-          iconImg.style.animation = '';
-          shaking = false;
-        }, 500);
-      });
-    }
-
-    const cursorOuter = document.createElement('div');
-    const cursorInner = document.createElement('div');
-    cursorOuter.style.cssText = `
-      position:fixed;pointer-events:none;z-index:9999;
-      width:500px;height:500px;border-radius:50%;
-      background:radial-gradient(circle, rgba(184,136,42,0.18) 0%, rgba(184,136,42,0.06) 40%, transparent 70%);
-      transform:translate(-50%,-50%);
-      will-change:left,top;
-      mix-blend-mode:multiply;
-    `;
-    cursorInner.style.cssText = `
-      position:fixed;pointer-events:none;z-index:9999;
-      width:120px;height:120px;border-radius:50%;
-      background:radial-gradient(circle, rgba(184,136,42,0.35) 0%, transparent 70%);
-      transform:translate(-50%,-50%);
-      will-change:left,top;
-    `;
-    document.body.appendChild(cursorOuter);
-    document.body.appendChild(cursorInner);
-
-    let ocx = -999, ocy = -999, icx = -999, icy = -999, tcx = -999, tcy = -999;
-    document.addEventListener('mousemove', e => { tcx = e.clientX; tcy = e.clientY; });
-    document.addEventListener('mouseleave', () => { cursorOuter.style.opacity = '0'; cursorInner.style.opacity = '0'; });
-    document.addEventListener('mouseenter', () => { cursorOuter.style.opacity = '1'; cursorInner.style.opacity = '1'; });
-
-    (function cursorTick() {
-      ocx = lerp(ocx, tcx, 0.06);
-      ocy = lerp(ocy, tcy, 0.06);
-      icx = lerp(icx, tcx, 0.18);
-      icy = lerp(icy, tcy, 0.18);
-      cursorOuter.style.left = ocx + 'px';
-      cursorOuter.style.top  = ocy + 'px';
-      cursorInner.style.left = icx + 'px';
-      cursorInner.style.top  = icy + 'px';
-      requestAnimationFrame(cursorTick);
-    })();
-
-    const observer = new IntersectionObserver(entries => {
-      entries.forEach(entry => {
-        if (!entry.isIntersecting) return;
-        entry.target.querySelectorAll('.spec-value').forEach(el => {
-          const text = el.textContent.trim();
-          const num = parseFloat(text);
-          if (isNaN(num)) return;
-          const suffix = text.replace(/[\d.]/g, '');
-          let start = 0;
-          const dur = 900, step = 16;
-          const inc = num / (dur / step);
-          const timer = setInterval(() => {
-            start = Math.min(start + inc, num);
-            el.textContent = (Number.isInteger(num) ? Math.round(start) : start.toFixed(2)) + suffix;
-            if (start >= num) clearInterval(timer);
-          }, step);
-        });
-        observer.unobserve(entry.target);
-      });
-    }, { threshold: 0.5 });
-    if (specs) observer.observe(specs);
-  </script>
-
-  <style>
-    @keyframes ripple {
-      to { transform: scale(1); opacity: 0; }
-    }
-    @keyframes iconShake {
-      0%,100% { transform: rotate(0deg) scale(1); }
-      15%      { transform: rotate(-8deg) scale(1.08); }
-      30%      { transform: rotate(8deg)  scale(1.08); }
-      45%      { transform: rotate(-6deg) scale(1.05); }
-      60%      { transform: rotate(6deg)  scale(1.05); }
-      75%      { transform: rotate(-3deg) scale(1.02); }
-      90%      { transform: rotate(3deg)  scale(1.02); }
-    }
-  </style>
 </body>
 </html>
