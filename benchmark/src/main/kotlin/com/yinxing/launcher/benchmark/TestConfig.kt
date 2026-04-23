@@ -18,7 +18,7 @@ import java.util.Locale
 import java.util.concurrent.atomic.AtomicBoolean
 import java.util.concurrent.atomic.AtomicReference
 
-internal const val PACKAGE_NAME = "com.bajianfeng.launcher"
+internal const val PACKAGE_NAME = "com.yinxing.launcher"
 internal const val UI_TIMEOUT_MS = 10_000L
 
 private const val BENCHMARK_TAG = "OldLauncherBenchmark"
