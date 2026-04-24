@@ -27,12 +27,10 @@ import com.yinxing.launcher.data.weather.WeatherState
 import com.yinxing.launcher.feature.appmanage.AppManageActivity
 import com.yinxing.launcher.feature.phone.PhoneContactActivity
 import com.yinxing.launcher.feature.settings.SettingsActivity
-
 import com.yinxing.launcher.feature.videocall.VideoCallActivity
-
-
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.launch
@@ -41,6 +39,15 @@ import java.util.Calendar
 import java.util.Locale
 
 class MainActivity : AppCompatActivity() {
+    companion object {
+        private val lunarMonthNames = arrayOf("", "正", "二", "三", "四", "五", "六", "七", "八", "九", "十", "冬", "腊")
+        private val lunarDayNames = arrayOf(
+            "", "初一", "初二", "初三", "初四", "初五", "初六", "初七", "初八", "初九", "初十",
+            "十一", "十二", "十三", "十四", "十五", "十六", "十七", "十八", "十九", "二十",
+            "廿一", "廿二", "廿三", "廿四", "廿五", "廿六", "廿七", "廿八", "廿九", "三十"
+        )
+    }
+
     private lateinit var recyclerView: RecyclerView
     private lateinit var adapter: HomeAppAdapter
     private lateinit var tvTime: TextView
@@ -59,10 +66,12 @@ class MainActivity : AppCompatActivity() {
     private val handler = Handler(Looper.getMainLooper())
     private val timeFormat = SimpleDateFormat("HH:mm", Locale.CHINA)
     private val dateFormat = SimpleDateFormat("yyyy年MM月dd日 EEEE", Locale.CHINA)
-    private var packageReceiverRegistered = false
-
-    // 天气刷新间隔：3小时（腾讯每天6000次，心知充足）
     private val weatherRefreshInterval = 8 * 60 * 60 * 1000L
+    private var packageReceiverRegistered = false
+    private var lastHeaderDayKey = Int.MIN_VALUE
+    private var weatherJob: Job? = null
+    private var refreshAppsJob: Job? = null
+
 
     private val updateTimeRunnable = object : Runnable {
         override fun run() {
@@ -97,11 +106,9 @@ class MainActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
-
         launcherPreferences = LauncherPreferences.getInstance(this)
         weatherPreferences = WeatherPreferences.getInstance(this)
         launcherPreferences.registerListener(preferenceListener)
-
         onBackPressedDispatcher.addCallback(this, object : OnBackPressedCallback(true) {
             override fun handleOnBackPressed() {
                 Toast.makeText(
@@ -111,8 +118,6 @@ class MainActivity : AppCompatActivity() {
                 ).show()
             }
         })
-
-        // 顶部卡片 View
         tvTime = findViewById(R.id.tv_time)
         tvDate = findViewById(R.id.tv_date)
         tvLunar = findViewById(R.id.tv_lunar)
@@ -121,20 +126,11 @@ class MainActivity : AppCompatActivity() {
         tvWeatherTemp = findViewById(R.id.tv_weather_temp)
         tvWeatherHighLow = findViewById(R.id.tv_weather_high_low)
         tvWeatherUpdate = findViewById(R.id.tv_weather_update)
-        findViewById<android.view.View>(R.id.card_weather).setOnClickListener {
-            openWeatherEntry()
-        }
-        findViewById<android.view.View>(R.id.btn_family_settings).setOnClickListener {
-            showCaregiverEntryDialog()
-        }
-
+        findViewById<android.view.View>(R.id.card_weather).setOnClickListener { openWeatherEntry() }
+        findViewById<android.view.View>(R.id.btn_family_settings).setOnClickListener { showCaregiverEntryDialog() }
         recyclerView = findViewById(R.id.recycler_home)
-
-
-        val gridLayout = GridLayoutManager(this, 2)
-        recyclerView.layoutManager = gridLayout
+        recyclerView.layoutManager = GridLayoutManager(this, 2)
         recyclerView.setHasFixedSize(false)
-
         adapter = HomeAppAdapter(
             scope = scope,
             lowPerformanceMode = launcherPreferences.isLowPerformanceModeEnabled(),
@@ -144,13 +140,10 @@ class MainActivity : AppCompatActivity() {
             onOrderChanged = { items -> saveAppOrder(items) }
         )
         recyclerView.adapter = adapter
-
-        itemMoveCallback =
-            ItemMoveCallback(adapter, !launcherPreferences.isLowPerformanceModeEnabled())
+        itemMoveCallback = ItemMoveCallback(adapter, !launcherPreferences.isLowPerformanceModeEnabled())
         val touchHelper = ItemTouchHelper(itemMoveCallback)
         touchHelper.attachToRecyclerView(recyclerView)
         adapter.setTouchHelper(touchHelper)
-
         registerPackageReceiver()
         applyPerformanceMode()
         applyHeaderScale(launcherPreferences.getIconScale())
@@ -166,7 +159,6 @@ class MainActivity : AppCompatActivity() {
         super.onResume()
         updateTime()
         scheduleNextTimeUpdate()
-        // 仅缓存过期（>3小时）或城市变更时才重新请求
         maybeRefreshWeather()
     }
 
@@ -208,8 +200,6 @@ class MainActivity : AppCompatActivity() {
         recyclerView.itemAnimator = if (lowPerformanceMode) null else DefaultItemAnimator()
         adapter.setLowPerformanceMode(lowPerformanceMode)
         itemMoveCallback.setAnimateDrag(!lowPerformanceMode)
-        updateTime()
-        scheduleNextTimeUpdate()
     }
 
     private fun applyHeaderScale(scale: Int) {
@@ -225,8 +215,7 @@ class MainActivity : AppCompatActivity() {
 
     private fun scheduleNextTimeUpdate() {
         handler.removeCallbacks(updateTimeRunnable)
-        val interval =
-            if (launcherPreferences.isLowPerformanceModeEnabled()) 60_000L else 1_000L
+        val interval = 60_000L
         val now = System.currentTimeMillis()
         val delay = interval - (now % interval)
         handler.postDelayed(updateTimeRunnable, if (delay == 0L) interval else delay)
@@ -234,39 +223,41 @@ class MainActivity : AppCompatActivity() {
 
     private fun updateTime() {
         val now = Calendar.getInstance()
-        tvTime.text = timeFormat.format(now.time)
-        tvDate.text = dateFormat.format(now.time)
-        tvLunar.text = getLunarDateString(now)
+        val timeText = timeFormat.format(now.time)
+        if (tvTime.text != timeText) {
+            tvTime.text = timeText
+        }
+        val dayKey = now.get(Calendar.YEAR) * 1000 + now.get(Calendar.DAY_OF_YEAR)
+        if (dayKey != lastHeaderDayKey) {
+            lastHeaderDayKey = dayKey
+            tvDate.text = dateFormat.format(now.time)
+            tvLunar.text = buildLunarDateString(now)
+        }
     }
 
-    private fun getLunarDateString(cal: Calendar): String {
+    private fun buildLunarDateString(cal: Calendar): String {
         return try {
-            if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.N) {
-                val chinese = android.icu.util.ChineseCalendar()
-                chinese.timeInMillis = cal.timeInMillis
+            if (Build.VERSION.SDK_INT < Build.VERSION_CODES.N) {
+                ""
+            } else {
+                val chinese = android.icu.util.ChineseCalendar().apply {
+                    timeInMillis = cal.timeInMillis
+                }
                 val lunarMonth = chinese.get(android.icu.util.ChineseCalendar.MONTH) + 1
                 val lunarDay = chinese.get(android.icu.util.ChineseCalendar.DAY_OF_MONTH)
-                val isLeap = chinese.get(android.icu.util.ChineseCalendar.IS_LEAP_MONTH) == 1
-                val monthNames = arrayOf("", "正", "二", "三", "四", "五", "六", "七", "八", "九", "十", "冬", "腊")
-                val dayNames = arrayOf(
-                    "", "初一", "初二", "初三", "初四", "初五", "初六", "初七", "初八", "初九", "初十",
-                    "十一", "十二", "十三", "十四", "十五", "十六", "十七", "十八", "十九", "二十",
-                    "廿一", "廿二", "廿三", "廿四", "廿五", "廿六", "廿七", "廿八", "廿九", "三十"
-                )
-                val monthStr = (if (isLeap) "闰" else "") +
-                    (monthNames.getOrNull(lunarMonth) ?: "$lunarMonth") + "月"
-                val dayStr = dayNames.getOrNull(lunarDay) ?: "$lunarDay"
-                "农历 $monthStr$dayStr"
-            } else {
-                ""
+                val monthText = (if (chinese.get(android.icu.util.ChineseCalendar.IS_LEAP_MONTH) == 1) "闰" else "") +
+                    (lunarMonthNames.getOrNull(lunarMonth) ?: lunarMonth.toString()) + "月"
+                val dayText = lunarDayNames.getOrNull(lunarDay) ?: lunarDay.toString()
+                "农历 $monthText$dayText"
             }
-        } catch (e: Exception) {
+        } catch (_: Exception) {
             ""
         }
     }
 
     private fun refreshApps() {
-        scope.launch {
+        refreshAppsJob?.cancel()
+        refreshAppsJob = scope.launch {
             adapter.submitList(appRepository.getHomeItems(launcherPreferences))
         }
     }
@@ -274,17 +265,16 @@ class MainActivity : AppCompatActivity() {
     private fun maybeRefreshWeather() {
         val city = weatherPreferences.getCityName()
         val cached = WeatherRepository.getCached()
-        val expired = cached == null
-            || cached.cityName != city
-            || System.currentTimeMillis() - cached.lastFetchTime > weatherRefreshInterval
+        val expired = cached == null ||
+            cached.cityName != city ||
+            System.currentTimeMillis() - cached.lastFetchTime > weatherRefreshInterval
         if (expired) {
-            scope.launch {
-                val state = WeatherRepository.fetchWeather(city)
-                applyWeatherToHeader(state)
+            weatherJob?.cancel()
+            weatherJob = scope.launch {
+                applyWeatherToHeader(WeatherRepository.fetchWeather(city))
             }
         } else {
-            // 直接用缓存刷新 UI
-            applyWeatherToHeader(cached!!)
+            applyWeatherToHeader(cached)
         }
     }
 
@@ -293,53 +283,58 @@ class MainActivity : AppCompatActivity() {
         val today = state.forecast.firstOrNull()
         if (now != null) {
             tvWeatherCity.text = now.cityName
-            // 实况天气 + 今日白天预报（若不同则括号注明）
             val weatherText = if (today != null && today.textDay.isNotEmpty() && today.textDay != now.weather) {
-                "${now.weather}（今日${today.textDay}）"
+                getString(R.string.weather_summary_with_today, now.weather, today.textDay)
             } else {
                 now.weather
             }
-            tvWeatherDesc.text = "$weatherText  ${now.windDirection} ${now.windPower}"
-            tvWeatherTemp.text = "${now.temperature}°"
-            if (today != null) {
-                tvWeatherHighLow.text = "最高 ${today.high}°  最低 ${today.low}°"
+            tvWeatherDesc.text = listOf(weatherText, now.windDirection, now.windPower)
+                .filter { it.isNotBlank() }
+                .joinToString("  ")
+            tvWeatherTemp.text = getString(R.string.weather_temperature_format, now.temperature)
+            tvWeatherHighLow.text = if (today != null) {
+                getString(R.string.weather_high_low_format, today.high, today.low)
             } else {
-                tvWeatherHighLow.text = ""
+                ""
             }
-            tvWeatherUpdate.text = if (now.updateTime.isNotEmpty()) "更新于 ${now.updateTime}" else ""
+            tvWeatherUpdate.text = if (now.updateTime.isNotEmpty()) {
+                getString(R.string.weather_update_at, now.updateTime)
+            } else {
+                ""
+            }
         } else {
-            tvWeatherCity.text = state.cityName.ifEmpty { "天气" }
-            tvWeatherDesc.text = if (state.error != null) "加载失败" else "加载中…"
-            tvWeatherTemp.text = "--°"
+            tvWeatherCity.text = state.cityName.ifEmpty { getString(R.string.home_weather_placeholder_city) }
+            tvWeatherDesc.text = if (state.error != null) {
+                getString(R.string.weather_load_failed_short)
+            } else {
+                getString(R.string.weather_loading_short)
+            }
+            tvWeatherTemp.text = getString(R.string.weather_temperature_placeholder)
             tvWeatherHighLow.text = ""
             tvWeatherUpdate.text = ""
         }
     }
 
+
     private fun openWeatherEntry() {
-        val vendorWeatherPackages = listOf(
+        val vendorIntent = listOf(
             "com.miui.weather2",
             "com.huawei.android.totemweather",
             "com.oppo.weather",
             "com.vivo.weather"
-        )
-        val vendorIntent = vendorWeatherPackages
-            .asSequence()
-            .mapNotNull { packageManager.getLaunchIntentForPackage(it) }
-            .firstOrNull()
+        ).asSequence().mapNotNull { packageManager.getLaunchIntentForPackage(it) }.firstOrNull()
         if (vendorIntent != null) {
             startActivity(vendorIntent)
             return
         }
-
         val browserIntent = Intent(Intent.ACTION_VIEW, Uri.parse(getString(R.string.weather_fallback_url)))
-        runCatching {
-            startActivity(browserIntent)
-        }.onSuccess {
-            Toast.makeText(this, getString(R.string.weather_fallback_notice), Toast.LENGTH_SHORT).show()
-        }.onFailure {
-            Toast.makeText(this, getString(R.string.weather_not_available), Toast.LENGTH_SHORT).show()
-        }
+        runCatching { startActivity(browserIntent) }
+            .onSuccess {
+                Toast.makeText(this, getString(R.string.weather_fallback_notice), Toast.LENGTH_SHORT).show()
+            }
+            .onFailure {
+                Toast.makeText(this, getString(R.string.weather_not_available), Toast.LENGTH_SHORT).show()
+            }
     }
 
     private fun saveAppOrder(items: List<HomeAppItem>) {
@@ -358,15 +353,11 @@ class MainActivity : AppCompatActivity() {
             getString(R.string.home_caregiver_dialog_cancel)
         dialogView.findViewById<TextView>(R.id.tv_primary_label).text =
             getString(R.string.home_caregiver_dialog_confirm)
-
         val dialog = AlertDialog.Builder(this)
             .setView(dialogView)
             .create()
         dialog.window?.setBackgroundDrawableResource(android.R.color.transparent)
-
-        dialogView.findViewById<android.view.View>(R.id.btn_cancel).setOnClickListener {
-            dialog.dismiss()
-        }
+        dialogView.findViewById<android.view.View>(R.id.btn_cancel).setOnClickListener { dialog.dismiss() }
         dialogView.findViewById<android.view.View>(R.id.btn_open_settings).setOnClickListener {
             dialog.dismiss()
             startActivity(Intent(this, SettingsActivity::class.java))
@@ -389,17 +380,10 @@ class MainActivity : AppCompatActivity() {
                 }
             }
             HomeAppItem.Type.PHONE -> startActivity(Intent(this, PhoneContactActivity::class.java))
-            HomeAppItem.Type.WECHAT_VIDEO -> startActivity(
-                Intent(this, VideoCallActivity::class.java)
-            )
+            HomeAppItem.Type.WECHAT_VIDEO -> startActivity(Intent(this, VideoCallActivity::class.java))
             HomeAppItem.Type.ADD -> startActivity(Intent(this, AppManageActivity::class.java))
         }
     }
-
-
-
-
-
 
     private fun handleAppLongClick(item: HomeAppItem): Boolean {
         if (item.type == HomeAppItem.Type.APP) {

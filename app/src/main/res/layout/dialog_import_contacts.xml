@@ -38,20 +38,14 @@
             android:gravity="center"
             android:text="@string/contacts_import_hint" />
 
-        <ScrollView
+        <androidx.recyclerview.widget.RecyclerView
+            android:id="@+id/layout_import_list"
             android:layout_width="match_parent"
             android:layout_height="320dp"
             android:layout_marginTop="20dp"
-            android:fillViewport="true"
-            android:overScrollMode="never">
-
-            <LinearLayout
-                android:id="@+id/layout_import_list"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:orientation="vertical" />
-
-        </ScrollView>
+            android:clipToPadding="false"
+            android:overScrollMode="never"
+            android:paddingBottom="4dp" />
 
         <LinearLayout
             android:layout_width="match_parent"

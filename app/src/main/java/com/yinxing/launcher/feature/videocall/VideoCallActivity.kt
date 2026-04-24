@@ -15,6 +15,7 @@ import androidx.core.widget.doAfterTextChanged
 import androidx.recyclerview.widget.DefaultItemAnimator
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
+import com.google.android.material.card.MaterialCardView
 import com.yinxing.launcher.R
 import com.yinxing.launcher.common.service.TTSService
 import com.yinxing.launcher.common.ui.PageStateView
@@ -24,12 +25,17 @@ import com.yinxing.launcher.data.contact.ContactAvatarStore
 import com.yinxing.launcher.data.contact.ContactManager
 import com.yinxing.launcher.data.contact.ContactStorage
 import com.yinxing.launcher.data.home.LauncherPreferences
-import com.google.android.material.card.MaterialCardView
+import java.util.UUID
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
-import java.util.UUID
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
+
 
 class VideoCallActivity : AppCompatActivity() {
     companion object {
@@ -62,6 +68,7 @@ class VideoCallActivity : AppCompatActivity() {
     private var launchedFromManageEntry = false
     private var searchQuery = ""
     private var allContacts: List<Contact> = emptyList()
+    private var loadJob: Job? = null
 
     private val pickImageLauncher = registerForActivityResult(
         ActivityResultContracts.PickVisualMedia()
@@ -115,7 +122,7 @@ class VideoCallActivity : AppCompatActivity() {
             automationGateway = SelectToSpeakAutomationGateway,
             onNeedAccessibilityPermission = { dialogController.showAccessibilityDialog() },
             onNeedOverlayPermission = { contact -> dialogController.showOverlayPermissionDialog(contact) },
-            onCallCompleted = { loadContacts() }
+            onCallCompleted = { refreshContacts() }
         )
 
         dialogController = VideoContactDialogController(
@@ -163,13 +170,12 @@ class VideoCallActivity : AppCompatActivity() {
         } else {
             updateModeUi()
         }
-        loadContacts()
     }
 
     override fun onResume() {
         super.onResume()
         applyPerformanceMode()
-        loadContacts()
+        refreshContacts()
     }
 
     override fun onDestroy() {
@@ -236,64 +242,106 @@ class VideoCallActivity : AppCompatActivity() {
         wechatId: String,
         avatarUri: String?
     ) {
-        val contactId = original?.id ?: UUID.randomUUID().toString()
-        val resolvedAvatarUri = resolveAvatarUri(contactId, original?.avatarUri, avatarUri)
-        val contact = Contact(
-            id = contactId,
-            name = name,
-            wechatId = wechatId.trim().takeIf { it.isNotBlank() },
-            avatarUri = resolvedAvatarUri,
-            preferredAction = Contact.PreferredAction.WECHAT_VIDEO,
-            isPinned = original?.isPinned ?: false,
-            callCount = original?.callCount ?: 0,
-            lastCallTime = original?.lastCallTime ?: 0,
-            searchKeywords = original?.searchKeywords ?: emptyList()
-        )
-        if (original == null) {
-            contactManager.addContact(contact)
-            showToast(getString(R.string.contact_added_named, name))
-        } else {
-            contactManager.updateContact(contact)
-            showToast(getString(R.string.contact_updated))
+        scope.launch {
+            val failure = if (original == null) R.string.contact_add_failed else R.string.contact_update_failed
+            try {
+                withContext(Dispatchers.IO + NonCancellable) {
+                    val previousAvatar = original?.avatarUri
+                    val selectedAvatar = avatarUri
+                    val contactId = original?.id ?: UUID.randomUUID().toString()
+                    var createdAvatar: String? = null
+                    val resolvedAvatarUri = when {
+                        selectedAvatar.isNullOrBlank() -> previousAvatar
+                        selectedAvatar == previousAvatar -> previousAvatar
+                        else -> ContactAvatarStore.saveFromUri(this@VideoCallActivity, Uri.parse(selectedAvatar), contactId)
+                            ?.also { if (it != previousAvatar) createdAvatar = it }
+                            ?: previousAvatar
+                    }
+                    try {
+                        val contact = Contact(
+                            id = contactId,
+                            name = name,
+                            wechatId = wechatId.trim().takeIf { it.isNotBlank() },
+                            avatarUri = resolvedAvatarUri,
+                            preferredAction = Contact.PreferredAction.WECHAT_VIDEO,
+                            isPinned = original?.isPinned ?: false,
+                            callCount = original?.callCount ?: 0,
+                            lastCallTime = original?.lastCallTime ?: 0,
+                            searchKeywords = original?.searchKeywords ?: emptyList()
+                        )
+                        if (original == null) {
+                            contactManager.addContact(contact)
+                        } else {
+                            contactManager.updateContact(contact)
+                        }
+                        if (!previousAvatar.isNullOrBlank() && previousAvatar != resolvedAvatarUri) {
+                            ContactAvatarStore.deleteOwnedAvatar(this@VideoCallActivity, previousAvatar)
+                        }
+                    } catch (throwable: Throwable) {
+                        if (!createdAvatar.isNullOrBlank()) {
+                            ContactAvatarStore.deleteOwnedAvatar(this@VideoCallActivity, createdAvatar)
+                        }
+                        throw throwable
+                    }
+                }
+                refreshContacts()
+                if (original == null) {
+                    showToast(getString(R.string.contact_added_named, name))
+                } else {
+                    showToast(getString(R.string.contact_updated))
+                }
+            } catch (cancelled: CancellationException) {
+                throw cancelled
+            } catch (throwable: Throwable) {
+                showToast(getString(failure, throwable.message.orEmpty()))
+            }
         }
-        loadContacts()
-    }
-
-    private fun resolveAvatarUri(
-        contactId: String,
-        previousAvatarUri: String?,
-        selectedAvatarUri: String?
-    ): String? {
-        if (selectedAvatarUri.isNullOrBlank()) {
-            return previousAvatarUri
-        }
-        if (selectedAvatarUri == previousAvatarUri) {
-            return previousAvatarUri
-        }
-        val savedAvatarUri = ContactAvatarStore.saveFromUri(this, Uri.parse(selectedAvatarUri), contactId)
-            ?: return previousAvatarUri
-        if (!previousAvatarUri.isNullOrBlank() && previousAvatarUri != savedAvatarUri) {
-            ContactAvatarStore.deleteOwnedAvatar(this, previousAvatarUri)
-        }
-        return savedAvatarUri
     }
 
     private fun deleteContact(contact: Contact) {
-        ContactAvatarStore.deleteOwnedAvatar(this, contact.avatarUri)
-        contactManager.removeContact(contact.id)
-        loadContacts()
-        showToast(getString(R.string.contact_deleted))
+        scope.launch {
+            try {
+                withContext(Dispatchers.IO + NonCancellable) {
+                    contactManager.removeContact(contact.id)
+                    ContactAvatarStore.deleteOwnedAvatar(this@VideoCallActivity, contact.avatarUri)
+                }
+                refreshContacts()
+                showToast(getString(R.string.contact_deleted))
+            } catch (cancelled: CancellationException) {
+                throw cancelled
+            } catch (throwable: Throwable) {
+                showToast(getString(R.string.contact_delete_failed, throwable.message.orEmpty()))
+            }
+        }
     }
 
-    private fun loadContacts() {
-        allContacts = contactManager.getContacts()
-        renderContacts()
+
+    private fun refreshContacts() {
+        loadJob?.cancel()
+        loadJob = scope.launch {
+            try {
+                val contacts = withContext(Dispatchers.IO) { contactManager.getContacts() }
+                allContacts = contacts
+                renderContacts()
+            } catch (cancelled: CancellationException) {
+                throw cancelled
+            } catch (throwable: Throwable) {
+                showToast(getString(R.string.contact_load_failed, throwable.message.orEmpty()))
+            }
+        }
     }
 
     private fun renderContacts() {
-        val contacts = ContactStorage.filter(allContacts, if (isManageMode) searchQuery else "")
-        adapter.submitList(contacts)
-        manageAdapter.submitList(contacts)
+        val contacts = if (isManageMode && searchQuery.isNotBlank()) {
+            ContactStorage.filter(allContacts, searchQuery)
+        } else {
+            allContacts
+        }
+        if (isManageMode) {
+            manageAdapter.submitList(contacts)
+        } else {
+            adapter.submitList(contacts)
+        }
         updateState(contacts)
     }
 

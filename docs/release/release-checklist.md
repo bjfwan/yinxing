@@ -1,10 +1,10 @@
 # 发布检查清单
 
-更新时间：2026-04-12
+更新时间：2026-04-25
 
 ## 1. 版本信息
 
-- 版本号已更新
+- 版本号已更新（当前 `versionCode = 6`，`versionName = "1.3.0"`）
 - 变更范围已确认
 - 发布说明已准备
 
@@ -13,7 +13,7 @@
 - `JAVA_HOME` 已确认可用
 - `GRADLE_USER_HOME` 已确认使用稳定路径
 - `:app:assembleDebug` 通过
-- `:app:testDebugUnitTest` 通过
+- `:app:testDebugUnitTest` 通过（108 tests, 0 failed）
 - `:app:assembleDebugAndroidTest` 通过
 - `:app:lintDebug` 没有阻断错误
 - 目标设备可安装
@@ -50,4 +50,4 @@
 - 如环境有设备或模拟器，已执行 `:app:connectedDebugAndroidTest`
 - 当前无设备时，至少确认仪器测试 APK 可以编译
 - 关键已知问题已记录
-- 非当前版本能力没有被写成“已实现”
+- 非当前版本能力没有被写成"已实现"

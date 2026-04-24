@@ -20,7 +20,9 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.widget.SwitchCompat
+import androidx.lifecycle.lifecycleScope
 import com.yinxing.launcher.R
+
 import com.yinxing.launcher.common.util.PermissionUtil
 import com.yinxing.launcher.data.contact.ContactManager
 import com.yinxing.launcher.data.home.LauncherPreferences
@@ -35,6 +37,11 @@ import com.yinxing.launcher.feature.phone.PhoneContactActivity
 import com.yinxing.launcher.feature.phone.PhoneContactManager
 import com.yinxing.launcher.feature.videocall.VideoCallActivity
 import com.google.android.material.bottomsheet.BottomSheetDialog
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
+
 
 class SettingsActivity : AppCompatActivity() {
 
@@ -58,8 +65,10 @@ class SettingsActivity : AppCompatActivity() {
 
     private var incomingGuardReadiness = IncomingGuardReadiness(emptyList())
     private var permissionEntryStates = emptyMap<PermissionEntry, PermissionEntryState>()
+    private var contactsSummaryJob: Job? = null
 
     private enum class PermissionGroup(
+
         val titleRes: Int,
         val readySummaryRes: Int,
         val dialogMessageRes: Int
@@ -132,6 +141,12 @@ class SettingsActivity : AppCompatActivity() {
         val summary: String,
         val badge: BadgeStyle
     )
+
+    private data class ContactCounts(
+        val phoneCount: Int,
+        val videoCount: Int
+    )
+
 
     private val phonePermissionLauncher = registerForActivityResult(
         ActivityResultContracts.RequestMultiplePermissions()
@@ -225,16 +240,19 @@ class SettingsActivity : AppCompatActivity() {
     }
 
     private fun updateContactsHubSummary() {
-        val phoneCount = PhoneContactManager.getInstance(this).getContacts().size
-        val videoCount = ContactManager.getInstance(this).getContacts().size
         val homeAppCount = launcherPreferences.getSelectedPackages().size
-        tvContactsHubSummary.text = getString(
-            R.string.settings_contacts_hub_summary,
-            phoneCount,
-            videoCount,
-            homeAppCount
-        )
+        contactsSummaryJob?.cancel()
+        contactsSummaryJob = lifecycleScope.launch {
+            val counts = loadContactCounts()
+            tvContactsHubSummary.text = getString(
+                R.string.settings_contacts_hub_summary,
+                counts.phoneCount,
+                counts.videoCount,
+                homeAppCount
+            )
+        }
     }
+
 
     private fun updateAutoAnswerHubCard() {
         val enabled = launcherPreferences.isAutoAnswerEnabled()
@@ -278,6 +296,16 @@ class SettingsActivity : AppCompatActivity() {
         refreshPermissionHubCard()
         refreshDeviceHubCard()
     }
+
+    private suspend fun loadContactCounts(): ContactCounts {
+        return withContext(Dispatchers.IO) {
+            ContactCounts(
+                phoneCount = PhoneContactManager.getInstance(this@SettingsActivity).getContacts().size,
+                videoCount = ContactManager.getInstance(this@SettingsActivity).getContacts().size
+            )
+        }
+    }
+
 
     private fun refreshIncomingGuardUi() {
         incomingGuardReadiness = IncomingGuardReadinessEvaluator.evaluate(
@@ -451,43 +479,45 @@ class SettingsActivity : AppCompatActivity() {
     }
 
     private fun showContactsSheet() {
-        val sheet = createListSheet(
-            title = getString(R.string.settings_section_quick_setup_title),
-            message = getString(R.string.settings_sheet_contacts_message)
-        )
-        val phoneCount = PhoneContactManager.getInstance(this).getContacts().size
-        val videoCount = ContactManager.getInstance(this).getContacts().size
-        val homeAppCount = launcherPreferences.getSelectedPackages().size
+        lifecycleScope.launch {
+            val counts = loadContactCounts()
+            val sheet = createListSheet(
+                title = getString(R.string.settings_section_quick_setup_title),
+                message = getString(R.string.settings_sheet_contacts_message)
+            )
+            val homeAppCount = launcherPreferences.getSelectedPackages().size
 
-        addSheetEntry(
-            context = sheet,
-            title = getString(R.string.settings_manage_phone_contacts_title),
-            summary = getString(R.string.settings_contacts_phone_count, phoneCount),
-            badge = actionBadge(getString(R.string.settings_manage_action))
-        ) {
-            sheet.dialog.dismiss()
-            startActivity(PhoneContactActivity.createIntent(this, startInManageMode = true))
+            addSheetEntry(
+                context = sheet,
+                title = getString(R.string.settings_manage_phone_contacts_title),
+                summary = getString(R.string.settings_contacts_phone_count, counts.phoneCount),
+                badge = actionBadge(getString(R.string.settings_manage_action))
+            ) {
+                sheet.dialog.dismiss()
+                startActivity(PhoneContactActivity.createIntent(this@SettingsActivity, startInManageMode = true))
+            }
+            addSheetEntry(
+                context = sheet,
+                title = getString(R.string.settings_manage_video_contacts_title),
+                summary = getString(R.string.settings_contacts_video_count, counts.videoCount),
+                badge = actionBadge(getString(R.string.settings_manage_action))
+            ) {
+                sheet.dialog.dismiss()
+                startActivity(VideoCallActivity.createIntent(this@SettingsActivity, startInManageMode = true))
+            }
+            addSheetEntry(
+                context = sheet,
+                title = getString(R.string.settings_manage_home_apps_title),
+                summary = getString(R.string.settings_home_apps_count, homeAppCount),
+                badge = actionBadge(getString(R.string.settings_manage_action))
+            ) {
+                sheet.dialog.dismiss()
+                startActivity(Intent(this@SettingsActivity, AppManageActivity::class.java))
+            }
+            sheet.dialog.show()
         }
-        addSheetEntry(
-            context = sheet,
-            title = getString(R.string.settings_manage_video_contacts_title),
-            summary = getString(R.string.settings_contacts_video_count, videoCount),
-            badge = actionBadge(getString(R.string.settings_manage_action))
-        ) {
-            sheet.dialog.dismiss()
-            startActivity(VideoCallActivity.createIntent(this, startInManageMode = true))
-        }
-        addSheetEntry(
-            context = sheet,
-            title = getString(R.string.settings_manage_home_apps_title),
-            summary = getString(R.string.settings_home_apps_count, homeAppCount),
-            badge = actionBadge(getString(R.string.settings_manage_action))
-        ) {
-            sheet.dialog.dismiss()
-            startActivity(Intent(this, AppManageActivity::class.java))
-        }
-        sheet.dialog.show()
     }
+
 
     private fun showAutoAnswerSheet() {
         val dialog = BottomSheetDialog(this)
@@ -914,9 +944,9 @@ class SettingsActivity : AppCompatActivity() {
         }
         val permissions = mutableListOf(
             Manifest.permission.CALL_PHONE,
-            Manifest.permission.READ_PHONE_STATE,
-            Manifest.permission.READ_CALL_LOG
+            Manifest.permission.READ_PHONE_STATE
         ).apply {
+
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
                 add(Manifest.permission.ANSWER_PHONE_CALLS)
             }

@@ -66,7 +66,7 @@ class VideoCallActivitySmokeTest {
 
 
     private fun resetContactManagerSingleton() {
-        val field = Class.forName("com.bajianfeng.launcher.data.contact.ContactManager").getDeclaredField("instance")
+        val field = Class.forName("com.yinxing.launcher.data.contact.ContactManager").getDeclaredField("instance")
         field.isAccessible = true
         field.set(null, null)
     }

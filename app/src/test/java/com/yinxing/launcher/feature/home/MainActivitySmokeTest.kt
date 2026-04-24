@@ -54,7 +54,7 @@ class MainActivitySmokeTest {
             Thread.sleep(50)
         }
 
-        assertEquals(4, recyclerView.adapter?.itemCount)
+        assertEquals(3, recyclerView.adapter?.itemCount)
         assertTrue(timeView.text.isNotBlank())
     }
 
@@ -72,7 +72,7 @@ class MainActivitySmokeTest {
         val recyclerView = activity.findViewById<RecyclerView>(R.id.recycler_home)
         repeat(20) {
             shadowOf(Looper.getMainLooper()).idle()
-            if ((recyclerView.adapter?.itemCount ?: 0) >= 6) {
+            if ((recyclerView.adapter?.itemCount ?: 0) >= 5) {
                 return@repeat
             }
             Thread.sleep(50)
@@ -80,7 +80,7 @@ class MainActivitySmokeTest {
 
         val adapter = recyclerView.adapter as HomeAppAdapter
         assertEquals(
-            listOf("phone", "wechat_video", "pkg.browser", "pkg.camera", "settings", "add"),
+            listOf("phone", "wechat_video", "pkg.browser", "pkg.camera", "add"),
             adapter.currentList.map { it.packageName }
         )
     }
@@ -137,7 +137,7 @@ class MainActivitySmokeTest {
 
 
     private fun resetLauncherPreferencesSingleton() {
-        val field = Class.forName("com.bajianfeng.launcher.data.home.LauncherPreferences").getDeclaredField("instance")
+        val field = Class.forName("com.yinxing.launcher.data.home.LauncherPreferences").getDeclaredField("instance")
         field.isAccessible = true
         field.set(null, null)
     }

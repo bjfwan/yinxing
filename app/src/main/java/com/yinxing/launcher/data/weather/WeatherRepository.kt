@@ -3,6 +3,10 @@
 import android.util.Base64
 import com.yinxing.launcher.BuildConfig
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.async
+import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
 import org.json.JSONObject
 import java.net.HttpURLConnection
@@ -23,18 +27,20 @@ object WeatherRepository {
     // 缓存刷新间隔：30分钟
     private const val CACHE_TTL_MS = 30 * 60 * 1000L
 
-    @Volatile
+    private val cacheMutex = Mutex()
     private var cache: WeatherState? = null
 
     /** 外部调用入口：传城市名，返回完整天气状态 */
     suspend fun fetchWeather(cityName: String): WeatherState = withContext(Dispatchers.IO) {
-        val cached = cache
-        if (cached != null
-            && cached.cityName == cityName
-            && cached.isValid
-            && System.currentTimeMillis() - cached.lastFetchTime < CACHE_TTL_MS
-        ) {
-            return@withContext cached
+        cacheMutex.withLock {
+            val cached = cache
+            if (cached != null
+                && cached.cityName == cityName
+                && cached.isValid
+                && System.currentTimeMillis() - cached.lastFetchTime < CACHE_TTL_MS
+            ) {
+                return@withContext cached
+            }
         }
 
         return@withContext try {
@@ -46,8 +52,11 @@ object WeatherRepository {
                 )
 
             // Step2: 并行请求实况 + 预报
-            val now = fetchTencentNow(adcode, cityName)
-            val forecast = fetchSeniverseForecast(cityName)
+            val (now, forecast) = coroutineScope {
+                val nowDeferred = async { fetchTencentNow(adcode, cityName) }
+                val forecastDeferred = async { fetchSeniverseForecast(cityName) }
+                nowDeferred.await() to forecastDeferred.await()
+            }
 
             val state = WeatherState(
                 cityName = cityName,
@@ -56,8 +65,9 @@ object WeatherRepository {
                 forecast = forecast,
                 lastFetchTime = System.currentTimeMillis()
             )
-            cache = state
+            cacheMutex.withLock { cache = state }
             state
+
         } catch (e: Exception) {
             WeatherState.empty().copy(
                 cityName = cityName,

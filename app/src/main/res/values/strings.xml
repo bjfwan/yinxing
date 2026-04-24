@@ -32,8 +32,11 @@
     <string name="weather_desc_with_wind">%1$s · %2$s %3$s</string>
     <string name="weather_high_low_format">最高 %1$d° · 最低 %2$d°</string>
     <string name="weather_update_at">更新于 %1$s</string>
+    <string name="weather_temperature_format">%1$d°</string>
+    <string name="weather_temperature_placeholder">--°</string>
     <string name="weather_loading_short">正在更新天气…</string>
     <string name="weather_load_failed_short">天气暂时不可用</string>
+
     <string name="remove_app_title">移除应用</string>
     <string name="remove_app_message">确定要从桌面移除 %1$s 吗？</string>
     <string name="remove_success">已移除</string>
@@ -386,9 +389,11 @@
     <string name="action_select_all">全选</string>
     <string name="action_deselect_all">取消全选</string>
     <string name="contacts_empty">通讯录中没有找到联系人</string>
+    <string name="contacts_select_required">请至少选择一个联系人</string>
     <string name="contacts_imported">已导入 %1$d 个联系人</string>
     <string name="contacts_all_imported">通讯录联系人都已导入</string>
     <string name="contacts_imported_badge">已导入</string>
+    <string name="contacts_loading">正在读取系统通讯录…</string>
     <string name="contacts_import_subtitle">从系统通讯录中勾选联系人，导入后老人就能一键拨号</string>
     <string name="contacts_import_hint">已经导入过的联系人会自动跳过</string>
 
@@ -402,6 +407,8 @@
     <string name="clear_default_launcher_title">取消默认桌面</string>
     <string name="clear_default_launcher_summary_on">点击前往系统设置更换默认桌面</string>
     <string name="clear_default_launcher_summary_off">当前未设为默认桌面</string>
+    <string name="clear_default_launcher_choose_other">请在系统设置中选择其他桌面应用</string>
+
     <string name="settings_icon_scale_title">图标与文字大小</string>
     <string name="settings_icon_scale_summary">%d%%（默认 100%%）</string>
 

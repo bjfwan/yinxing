@@ -31,6 +31,7 @@ class AppManageActivity : AppCompatActivity() {
     private val appRepository by lazy { LauncherAppRepository.getInstance(this) }
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate)
     private var packageReceiverRegistered = false
+    private var loadAppsJob: kotlinx.coroutines.Job? = null
 
     private val packageChangeReceiver = object : BroadcastReceiver() {
         override fun onReceive(context: Context?, intent: Intent?) {
@@ -104,7 +105,8 @@ class AppManageActivity : AppCompatActivity() {
     }
 
     private fun loadInstalledApps() {
-        scope.launch {
+        loadAppsJob?.cancel()
+        loadAppsJob = scope.launch {
             val apps = appRepository.getInstalledApps(launcherPreferences)
             adapter.submitList(apps)
             recyclerView.isVisible = apps.isNotEmpty()

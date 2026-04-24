@@ -1,6 +1,6 @@
 # 项目结构规范
 
-更新时间：2026-04-12
+更新时间：2026-04-25
 
 ## 1. 根目录结构
 
@@ -17,9 +17,9 @@ OldLauncher/
 ├── gradlew
 ├── gradlew.bat
 └── README.md
+```
 
 > `app/google-services.json` 已加入 `.gitignore`，需从 Firebase Console 单独下载。
-```
 
 ## 2. 主应用源码结构
 

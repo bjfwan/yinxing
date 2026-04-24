@@ -7,10 +7,11 @@ import android.content.pm.PackageManager
 import android.net.Uri
 import android.os.Bundle
 import android.provider.ContactsContract
+import android.view.View
+import android.view.ViewGroup
 import android.widget.CheckBox
 import android.widget.EditText
 import android.widget.ImageView
-import android.widget.LinearLayout
 import android.widget.TextView
 import android.widget.Toast
 import androidx.activity.result.PickVisualMediaRequest
@@ -22,18 +23,124 @@ import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import androidx.core.view.isVisible
 import androidx.core.widget.doAfterTextChanged
+import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
+import com.google.android.material.card.MaterialCardView
 import com.yinxing.launcher.R
+import com.yinxing.launcher.common.media.MediaThumbnailLoader
 import com.yinxing.launcher.common.ui.PageStateView
+
 import com.yinxing.launcher.data.contact.Contact
 import com.yinxing.launcher.data.contact.ContactAvatarStore
 import com.yinxing.launcher.data.contact.ContactStorage
-import com.google.android.material.card.MaterialCardView
 import java.util.UUID
+import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.NonCancellable
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
+
+
+private data class ImportCandidate(
+    val name: String,
+    val phone: String,
+    val alreadyImported: Boolean
+)
+
+private class ImportCandidateAdapter(
+    private val candidates: List<ImportCandidate>
+) : RecyclerView.Adapter<ImportCandidateAdapter.ViewHolder>() {
+    var onSelectionChanged: (() -> Unit)? = null
+
+    private val checked = BooleanArray(candidates.size)
+
+    init {
+        setHasStableIds(true)
+    }
+
+    class ViewHolder(view: View) : RecyclerView.ViewHolder(view) {
+        val rowCard: MaterialCardView = view.findViewById(R.id.card_import_contact)
+        val checkBox: CheckBox = view.findViewById(R.id.cb_contact)
+        val nameView: TextView = view.findViewById(R.id.tv_contact_name)
+        val phoneView: TextView = view.findViewById(R.id.tv_contact_phone)
+        val importedBadge: TextView = view.findViewById(R.id.tv_imported_badge)
+    }
+
+    override fun getItemId(position: Int): Long {
+        val c = candidates[position]
+        return c.name.hashCode().toLong().shl(32) xor (c.phone.hashCode().toLong() and 0xFFFFFFFFL)
+    }
+
+    override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder {
+        val view = android.view.LayoutInflater.from(parent.context)
+            .inflate(R.layout.item_import_contact_option, parent, false)
+        return ViewHolder(view)
+    }
+
+    override fun onBindViewHolder(holder: ViewHolder, position: Int) {
+        val candidate = candidates[position]
+        holder.nameView.text = candidate.name
+        holder.phoneView.text = candidate.phone
+        holder.checkBox.setOnCheckedChangeListener(null)
+        holder.checkBox.isChecked = checked[position]
+        if (candidate.alreadyImported) {
+            holder.importedBadge.isVisible = true
+            holder.checkBox.isEnabled = false
+            holder.rowCard.alpha = 0.58f
+            holder.rowCard.setOnClickListener(null)
+        } else {
+            holder.importedBadge.isVisible = false
+            holder.checkBox.isEnabled = true
+            holder.rowCard.alpha = 1f
+            holder.rowCard.setOnClickListener {
+                holder.checkBox.isChecked = !holder.checkBox.isChecked
+            }
+            holder.checkBox.setOnCheckedChangeListener { _, isChecked ->
+                checked[position] = isChecked
+                onSelectionChanged?.invoke()
+
+            }
+        }
+    }
+
+    override fun getItemCount(): Int = candidates.size
+
+    fun hasSelectableItems(): Boolean {
+        return candidates.any { !it.alreadyImported }
+    }
+
+    fun hasUncheckedSelectable(): Boolean {
+        return candidates.indices.any { index ->
+            !candidates[index].alreadyImported && !checked[index]
+        }
+    }
+
+    fun toggleAll() {
+        val shouldSelectAll = hasUncheckedSelectable()
+        candidates.indices.forEach { index ->
+            if (!candidates[index].alreadyImported) {
+                checked[index] = shouldSelectAll
+            }
+        }
+        notifyItemRangeChanged(0, itemCount)
+        onSelectionChanged?.invoke()
+
+    }
+
+    fun selectedCandidates(): List<ImportCandidate> {
+        return buildList {
+            candidates.indices.forEach { index ->
+                if (!candidates[index].alreadyImported && checked[index]) {
+                    add(candidates[index])
+                }
+            }
+        }
+    }
+}
 
 class PhoneContactActivity : AppCompatActivity() {
-
     companion object {
         private const val EXTRA_START_IN_MANAGE_MODE = "extra_start_in_manage_mode"
 
@@ -42,12 +149,6 @@ class PhoneContactActivity : AppCompatActivity() {
                 .putExtra(EXTRA_START_IN_MANAGE_MODE, startInManageMode)
         }
     }
-
-    private data class ImportCandidate(
-        val name: String,
-        val phone: String,
-        val alreadyImported: Boolean
-    )
 
     private lateinit var recyclerView: RecyclerView
     private lateinit var adapter: PhoneContactAdapter
@@ -66,8 +167,12 @@ class PhoneContactActivity : AppCompatActivity() {
     private var searchQuery = ""
     private var allContacts: List<Contact> = emptyList()
     private var dialogPhotoPreview: ImageView? = null
+    private var dialogPhotoJob: Job? = null
     private var selectedAvatarUri: String? = null
     private var pendingCallContact: Contact? = null
+    private var loadJob: Job? = null
+    private var importJob: Job? = null
+
 
     private val pickImageLauncher = registerForActivityResult(
         ActivityResultContracts.PickVisualMedia()
@@ -86,8 +191,7 @@ class PhoneContactActivity : AppCompatActivity() {
         if (granted && contact != null) {
             makeCall(contact)
         } else {
-            Toast.makeText(this, getString(R.string.phone_call_permission_required), Toast.LENGTH_SHORT)
-                .show()
+            showToast(getString(R.string.phone_call_permission_required))
         }
     }
 
@@ -112,6 +216,7 @@ class PhoneContactActivity : AppCompatActivity() {
         clearSearchButton = findViewById(R.id.btn_clear_search)
 
         adapter = PhoneContactAdapter(
+            scope = lifecycleScope,
             onCallClick = { contact -> makeCall(contact) },
             onEditClick = { contact -> showContactDialog(contact) }
         )
@@ -148,12 +253,11 @@ class PhoneContactActivity : AppCompatActivity() {
         } else {
             updateModeUi()
         }
-        loadContacts()
     }
 
     override fun onResume() {
         super.onResume()
-        loadContacts()
+        refreshContacts()
     }
 
     private fun switchToManageMode() {
@@ -189,9 +293,19 @@ class PhoneContactActivity : AppCompatActivity() {
         clearSearchButton.isVisible = isManageMode && searchQuery.isNotBlank()
     }
 
-    private fun loadContacts() {
-        allContacts = manager.getContacts()
-        renderContacts()
+    private fun refreshContacts() {
+        loadJob?.cancel()
+        loadJob = lifecycleScope.launch {
+            try {
+                val contacts = withContext(Dispatchers.IO) { manager.getContacts() }
+                allContacts = contacts
+                renderContacts()
+            } catch (cancelled: CancellationException) {
+                throw cancelled
+            } catch (throwable: Throwable) {
+                showToast(getString(R.string.contact_load_failed, throwable.message.orEmpty()))
+            }
+        }
     }
 
     private fun renderContacts() {
@@ -242,10 +356,11 @@ class PhoneContactActivity : AppCompatActivity() {
         }
         val intent = Intent(Intent.ACTION_CALL, Uri.fromParts("tel", number, null))
         runCatching { startActivity(intent) }.onFailure {
-            Toast.makeText(this, getString(R.string.dial_failed, it.message ?: ""), Toast.LENGTH_SHORT)
-                .show()
+            showToast(getString(R.string.dial_failed, it.message ?: ""))
         }.onSuccess {
-            manager.incrementCallCount(contact.id)
+            lifecycleScope.launch(Dispatchers.Default) {
+                runCatching { manager.incrementCallCount(contact.id) }
+            }
         }
     }
 
@@ -257,7 +372,27 @@ class PhoneContactActivity : AppCompatActivity() {
             ActivityCompat.requestPermissions(this, arrayOf(Manifest.permission.READ_CONTACTS), 101)
             return
         }
+        importJob?.cancel()
+        showToast(getString(R.string.contacts_loading))
+        importJob = lifecycleScope.launch {
+            try {
+                val candidates = withContext(Dispatchers.IO) { loadImportCandidates() }
+                when {
+                    candidates.isEmpty() -> showToast(getString(R.string.contacts_empty))
+                    candidates.all { it.alreadyImported } -> {
+                        showToast(getString(R.string.contacts_all_imported))
+                    }
+                    else -> showImportDialog(candidates)
+                }
+            } catch (cancelled: CancellationException) {
+                throw cancelled
+            } catch (throwable: Throwable) {
+                showToast(getString(R.string.contact_load_failed, throwable.message.orEmpty()))
+            }
+        }
+    }
 
+    private fun loadImportCandidates(): List<ImportCandidate> {
         val entries = mutableListOf<Pair<String, String>>()
         contentResolver.query(
             ContactsContract.CommonDataKinds.Phone.CONTENT_URI,
@@ -271,121 +406,100 @@ class PhoneContactActivity : AppCompatActivity() {
         )?.use { cursor ->
             val nameIdx = cursor.getColumnIndex(ContactsContract.CommonDataKinds.Phone.DISPLAY_NAME)
             val phoneIdx = cursor.getColumnIndex(ContactsContract.CommonDataKinds.Phone.NUMBER)
-            val seen = mutableSetOf<String>()
+            val seen = hashSetOf<String>()
             while (cursor.moveToNext()) {
                 val name = cursor.getString(nameIdx)?.trim() ?: continue
                 val phone = cursor.getString(phoneIdx)?.trim() ?: continue
                 if (name.isBlank() || phone.isBlank()) continue
-                val key = "${name}_${phone.filter { it.isDigit() }}"
-                if (seen.add(key)) {
+                val digits = phone.filter(Char::isDigit)
+                if (digits.isEmpty()) continue
+                if (seen.add("${name}_$digits")) {
+
                     entries += name to phone
                 }
             }
         }
-
         if (entries.isEmpty()) {
-            Toast.makeText(this, getString(R.string.contacts_empty), Toast.LENGTH_SHORT).show()
-            return
+            return emptyList()
         }
-
         val existingPhones = manager.getContacts()
             .mapNotNull { it.phoneNumber?.filter(Char::isDigit) }
-            .toSet()
-        val candidates = entries.map { (name, phone) ->
+            .toHashSet()
+        return entries.map { (name, phone) ->
             ImportCandidate(
                 name = name,
                 phone = phone,
-                alreadyImported = existingPhones.contains(phone.filter(Char::isDigit))
+                alreadyImported = phone.filter(Char::isDigit) in existingPhones
             )
         }
+    }
 
-        if (candidates.all { it.alreadyImported }) {
-            Toast.makeText(this, getString(R.string.contacts_all_imported), Toast.LENGTH_SHORT).show()
-            return
-        }
-
-        val checked = BooleanArray(candidates.size)
+    private fun showImportDialog(candidates: List<ImportCandidate>) {
         val dialogView = layoutInflater.inflate(R.layout.dialog_import_contacts, null)
         val dialog = AlertDialog.Builder(this)
             .setView(dialogView)
             .create()
         dialog.window?.setBackgroundDrawableResource(android.R.color.transparent)
 
-        val listContainer = dialogView.findViewById<LinearLayout>(R.id.layout_import_list)
+        val listView = dialogView.findViewById<RecyclerView>(R.id.layout_import_list)
         val toggleButton = dialogView.findViewById<MaterialCardView>(R.id.btn_toggle_select)
         val toggleLabel = dialogView.findViewById<TextView>(R.id.tv_toggle_select)
         val cancelButton = dialogView.findViewById<MaterialCardView>(R.id.btn_cancel_import)
         val importButton = dialogView.findViewById<MaterialCardView>(R.id.btn_import)
-        val selectableCheckBoxes = mutableListOf<CheckBox>()
+        val selectionAdapter = ImportCandidateAdapter(candidates)
 
-        fun updateToggleLabel() {
+        selectionAdapter.onSelectionChanged = {
             toggleLabel.text = getString(
-                if (selectableCheckBoxes.any { !it.isChecked }) {
+                if (selectionAdapter.hasUncheckedSelectable()) {
                     R.string.action_select_all
                 } else {
                     R.string.action_deselect_all
                 }
             )
-            toggleButton.isVisible = selectableCheckBoxes.isNotEmpty()
+            toggleButton.isVisible = selectionAdapter.hasSelectableItems()
         }
 
-        candidates.forEachIndexed { index, candidate ->
-            val itemView = layoutInflater.inflate(R.layout.item_import_contact_option, listContainer, false)
-            val rowCard = itemView.findViewById<MaterialCardView>(R.id.card_import_contact)
-            val checkBox = itemView.findViewById<CheckBox>(R.id.cb_contact)
-            val nameView = itemView.findViewById<TextView>(R.id.tv_contact_name)
-            val phoneView = itemView.findViewById<TextView>(R.id.tv_contact_phone)
-            val importedBadge = itemView.findViewById<TextView>(R.id.tv_imported_badge)
+        listView.layoutManager = LinearLayoutManager(this)
+        listView.adapter = selectionAdapter
+        selectionAdapter.onSelectionChanged?.invoke()
 
-            nameView.text = candidate.name
-            phoneView.text = candidate.phone
-
-            if (candidate.alreadyImported) {
-                importedBadge.isVisible = true
-                checkBox.isChecked = false
-                checkBox.isEnabled = false
-                rowCard.alpha = 0.58f
-            } else {
-                selectableCheckBoxes += checkBox
-                rowCard.setOnClickListener { checkBox.isChecked = !checkBox.isChecked }
-                checkBox.setOnCheckedChangeListener { _, isChecked ->
-                    checked[index] = isChecked
-                    updateToggleLabel()
-                }
-            }
-
-            listContainer.addView(itemView)
-        }
 
         toggleButton.setOnClickListener {
-            val shouldSelectAll = selectableCheckBoxes.any { !it.isChecked }
-            selectableCheckBoxes.forEach { it.isChecked = shouldSelectAll }
+            selectionAdapter.toggleAll()
         }
         cancelButton.setOnClickListener { dialog.dismiss() }
         importButton.setOnClickListener {
-            var count = 0
-            candidates.forEachIndexed { index, candidate ->
-                if (!candidate.alreadyImported && checked[index]) {
-                    manager.addContact(
-                        Contact(
-                            id = UUID.randomUUID().toString(),
-                            name = candidate.name,
-                            phoneNumber = candidate.phone,
-                            preferredAction = Contact.PreferredAction.PHONE
-                        )
-                    )
-                    count++
-                }
+            val selected = selectionAdapter.selectedCandidates()
+            if (selected.isEmpty()) {
+                showToast(getString(R.string.contacts_select_required))
+                return@setOnClickListener
             }
             dialog.dismiss()
-            if (count > 0) {
-                loadContacts()
-                Toast.makeText(this, getString(R.string.contacts_imported, count), Toast.LENGTH_SHORT)
-                    .show()
+
+            lifecycleScope.launch {
+                try {
+                    val count = withContext(Dispatchers.IO) {
+                        val contacts = selected.map { candidate ->
+                            Contact(
+                                id = UUID.randomUUID().toString(),
+                                name = candidate.name,
+                                phoneNumber = candidate.phone,
+                                preferredAction = Contact.PreferredAction.PHONE
+                            )
+                        }
+                        manager.addContacts(contacts)
+                        contacts.size
+                    }
+                    refreshContacts()
+                    showToast(getString(R.string.contacts_imported, count))
+                } catch (cancelled: CancellationException) {
+                    throw cancelled
+                } catch (throwable: Throwable) {
+                    showToast(getString(R.string.contact_add_failed, throwable.message.orEmpty()))
+                }
             }
         }
 
-        updateToggleLabel()
         dialog.show()
         dialog.window?.setLayout(
             (resources.displayMetrics.widthPixels * 0.92f).toInt(),
@@ -455,12 +569,11 @@ class PhoneContactActivity : AppCompatActivity() {
             val name = nameField.text.toString().trim()
             val phone = phoneField.text.toString().trim()
             if (name.isEmpty()) {
-                Toast.makeText(this, getString(R.string.input_contact_name), Toast.LENGTH_SHORT).show()
+                showToast(getString(R.string.input_contact_name))
                 return@setOnClickListener
             }
             if (phone.isEmpty()) {
-                Toast.makeText(this, getString(R.string.contact_phone_required_simple), Toast.LENGTH_SHORT)
-                    .show()
+                showToast(getString(R.string.contact_phone_required_simple))
                 return@setOnClickListener
             }
             saveContact(initial, name, phone, autoAnswerSwitch.isChecked)
@@ -468,9 +581,11 @@ class PhoneContactActivity : AppCompatActivity() {
         }
 
         dialog.setOnDismissListener {
+            dialogPhotoJob?.cancel()
             dialogPhotoPreview = null
             selectedAvatarUri = null
         }
+
         dialog.show()
     }
 
@@ -486,60 +601,106 @@ class PhoneContactActivity : AppCompatActivity() {
             .setOnClickListener { dialog.dismiss() }
         dialogView.findViewById<MaterialCardView>(R.id.btn_delete)
             .setOnClickListener {
-                ContactAvatarStore.deleteOwnedAvatar(this, contact.avatarUri)
-                manager.removeContact(contact.id)
-                loadContacts()
-                Toast.makeText(this, getString(R.string.contact_deleted), Toast.LENGTH_SHORT).show()
+                lifecycleScope.launch {
+                    try {
+                        withContext(Dispatchers.IO) {
+                            ContactAvatarStore.deleteOwnedAvatar(this@PhoneContactActivity, contact.avatarUri)
+                            manager.removeContact(contact.id)
+                        }
+                        refreshContacts()
+                        showToast(getString(R.string.contact_deleted))
+                    } catch (cancelled: CancellationException) {
+                        throw cancelled
+                    } catch (throwable: Throwable) {
+                        showToast(getString(R.string.contact_delete_failed, throwable.message.orEmpty()))
+                    }
+                }
                 dialog.dismiss()
             }
         dialog.show()
     }
 
     private fun saveContact(original: Contact?, name: String, phone: String, autoAnswer: Boolean) {
-        val contactId = original?.id ?: UUID.randomUUID().toString()
-        val resolvedAvatar = resolveAvatar(contactId, original?.avatarUri, selectedAvatarUri)
-        val contact = Contact(
-            id = contactId,
-            name = name,
-            phoneNumber = phone,
-            avatarUri = resolvedAvatar,
-            preferredAction = Contact.PreferredAction.PHONE,
-            isPinned = original?.isPinned ?: false,
-            callCount = original?.callCount ?: 0,
-            lastCallTime = original?.lastCallTime ?: 0,
-            autoAnswer = autoAnswer
-        )
-        if (original == null) {
-            manager.addContact(contact)
-            Toast.makeText(this, getString(R.string.contact_added_named, name), Toast.LENGTH_SHORT).show()
-        } else {
-            manager.updateContact(contact)
-            Toast.makeText(this, getString(R.string.contact_updated), Toast.LENGTH_SHORT).show()
+        lifecycleScope.launch {
+            val action = if (original == null) R.string.contact_added_named else R.string.contact_updated
+            val failure = if (original == null) R.string.contact_add_failed else R.string.contact_update_failed
+            try {
+                withContext(Dispatchers.IO + NonCancellable) {
+                    val previousAvatar = original?.avatarUri
+                    val selectedAvatar = selectedAvatarUri
+                    val contactId = original?.id ?: UUID.randomUUID().toString()
+                    var createdAvatar: String? = null
+                    val resolvedAvatar = when {
+                        selectedAvatar.isNullOrBlank() -> previousAvatar
+                        selectedAvatar == previousAvatar -> previousAvatar
+                        else -> ContactAvatarStore.saveFromUri(this@PhoneContactActivity, Uri.parse(selectedAvatar), contactId)
+                            ?.also { if (it != previousAvatar) createdAvatar = it }
+                            ?: previousAvatar
+                    }
+                    try {
+                        val contact = Contact(
+                            id = contactId,
+                            name = name,
+                            phoneNumber = phone,
+                            avatarUri = resolvedAvatar,
+                            preferredAction = Contact.PreferredAction.PHONE,
+                            isPinned = original?.isPinned ?: false,
+                            callCount = original?.callCount ?: 0,
+                            lastCallTime = original?.lastCallTime ?: 0,
+                            autoAnswer = autoAnswer
+                        )
+                        if (original == null) {
+                            manager.addContact(contact)
+                        } else {
+                            manager.updateContact(contact)
+                        }
+                        if (!previousAvatar.isNullOrBlank() && previousAvatar != resolvedAvatar) {
+                            ContactAvatarStore.deleteOwnedAvatar(this@PhoneContactActivity, previousAvatar)
+                        }
+                    } catch (throwable: Throwable) {
+                        if (!createdAvatar.isNullOrBlank()) {
+                            ContactAvatarStore.deleteOwnedAvatar(this@PhoneContactActivity, createdAvatar)
+                        }
+                        throw throwable
+                    }
+                }
+                refreshContacts()
+                if (original == null) {
+                    showToast(getString(action, name))
+                } else {
+                    showToast(getString(action))
+                }
+            } catch (cancelled: CancellationException) {
+                throw cancelled
+            } catch (throwable: Throwable) {
+                showToast(getString(failure, throwable.message.orEmpty()))
+            }
         }
-        loadContacts()
     }
 
-    private fun resolveAvatar(contactId: String, previous: String?, selected: String?): String? {
-        if (selected.isNullOrBlank()) return previous
-        if (selected == previous) return previous
-        val saved = ContactAvatarStore.saveFromUri(this, Uri.parse(selected), contactId) ?: return previous
-        if (!previous.isNullOrBlank() && previous != saved) {
-            ContactAvatarStore.deleteOwnedAvatar(this, previous)
-        }
-        return saved
-    }
 
     private fun renderDialogPhoto() {
         val preview = dialogPhotoPreview ?: return
         val uri = selectedAvatarUri?.takeIf { it.isNotBlank() }
+        dialogPhotoJob?.cancel()
         if (uri == null) {
             val padding = (28 * resources.displayMetrics.density).toInt()
             preview.setPadding(padding, padding, padding, padding)
             preview.setImageResource(android.R.drawable.ic_menu_camera)
-        } else {
-            preview.setPadding(0, 0, 0, 0)
-            preview.setImageURI(null)
-            preview.setImageURI(Uri.parse(uri))
+            return
         }
+        preview.setPadding(0, 0, 0, 0)
+        preview.setImageDrawable(null)
+        dialogPhotoJob = lifecycleScope.launch {
+            val bitmap = MediaThumbnailLoader.loadBitmap(this@PhoneContactActivity, Uri.parse(uri), 480, 480)
+            if (dialogPhotoPreview === preview && selectedAvatarUri == uri && bitmap != null) {
+                preview.setImageBitmap(bitmap)
+            }
+        }
+    }
+
+
+    private fun showToast(message: String) {
+        Toast.makeText(this, message, Toast.LENGTH_SHORT).show()
     }
 }

@@ -81,6 +81,18 @@ object MediaThumbnailLoader {
         bitmapCache.evictAll()
     }
 
+    fun evictUri(uri: Uri, reqWidth: Int, reqHeight: Int) {
+        bitmapCache.remove("uri:$uri:$reqWidth:$reqHeight")
+    }
+
+    fun evictUri(uri: Uri) {
+        val cacheKeyPrefix = "uri:$uri:"
+        bitmapCache.snapshot().keys
+            .filter { it.startsWith(cacheKeyPrefix) }
+            .forEach(bitmapCache::remove)
+    }
+
+
     private fun decodeSampledBitmap(
         contentResolver: ContentResolver,
         uri: Uri,
@@ -107,6 +119,9 @@ object MediaThumbnailLoader {
                 val options = BitmapFactory.Options().apply { inJustDecodeBounds = true }
                 contentResolver.openInputStream(uri)?.use { stream ->
                     BitmapFactory.decodeStream(stream, null, options)
+                }
+                if (options.outWidth <= 0 || options.outHeight <= 0) {
+                    return@runCatching null
                 }
                 val decodeOptions = BitmapFactory.Options().apply {
                     inSampleSize = calculateInSampleSize(

@@ -8,16 +8,22 @@ import com.yinxing.launcher.R
 import com.yinxing.launcher.common.media.MediaThumbnailLoader
 import com.yinxing.launcher.feature.appmanage.AppInfo
 import com.yinxing.launcher.feature.home.HomeAppItem
+import java.util.concurrent.atomic.AtomicInteger
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
 
 class LauncherAppRepository private constructor(context: Context) {
     private val appContext = context.applicationContext
-    private val cacheLock = Any()
+    private val installMutex = Mutex()
+    private val homeMutex = Mutex()
     private var installedAppsCache: List<InstalledAppRecord>? = null
     private var homeItemsCache: List<HomeAppItem>? = null
-    private var installedAppsDirty = true
-    private var homeItemsDirty = true
+    @Volatile private var installedAppsDirty = true
+    @Volatile private var homeItemsDirty = true
+    private val installedAppsVersion = AtomicInteger(0)
+    private val homeItemsVersion = AtomicInteger(0)
 
     companion object {
         @Volatile
@@ -28,6 +34,10 @@ class LauncherAppRepository private constructor(context: Context) {
                 instance ?: LauncherAppRepository(context).also { instance = it }
             }
         }
+    }
+
+    suspend fun prewarmInstalledApps() {
+        loadInstalledApps()
     }
 
     suspend fun getInstalledApps(preferences: LauncherPreferences): List<AppInfo> = withContext(Dispatchers.IO) {
@@ -41,91 +51,91 @@ class LauncherAppRepository private constructor(context: Context) {
     }
 
     suspend fun getHomeItems(preferences: LauncherPreferences): List<HomeAppItem> = withContext(Dispatchers.IO) {
-        synchronized(cacheLock) {
+        homeMutex.withLock {
             if (!homeItemsDirty) {
                 homeItemsCache?.let { return@withContext it }
             }
-        }
 
-        val installedApps = loadInstalledApps()
-        val selectedApps = installedApps
-            .filter { preferences.isPackageSelected(it.packageName) }
-            .map { app ->
-                HomeAppItem(
-                    packageName = app.packageName,
-                    appName = app.appName,
-                    type = HomeAppItem.Type.APP
-                )
+            val requestVersion = homeItemsVersion.get()
+            val installedApps = loadInstalledApps()
+            val selectedApps = installedApps
+                .filter { preferences.isPackageSelected(it.packageName) }
+                .map { app ->
+                    HomeAppItem(
+                        packageName = app.packageName,
+                        appName = app.appName,
+                        type = HomeAppItem.Type.APP
+                    )
+                }
+
+            val selectedAppsByPackage = selectedApps.associateBy { it.packageName }
+            val orderedApps = HomeAppOrderPolicy.orderApps(
+                selectedApps.map { OrderedApp(it.packageName, it.appName) },
+                preferences.getAppOrder()
+            )
+
+            val items = buildList {
+                addPrimaryBuiltInItems()
+                orderedApps.forEach { app ->
+                    selectedAppsByPackage[app.packageName]?.let(::add)
+                }
+                addSecondaryBuiltInItems()
             }
 
-        val selectedAppsByPackage = selectedApps.associateBy { it.packageName }
-        val orderedApps = HomeAppOrderPolicy.orderApps(
-            selectedApps.map { OrderedApp(it.packageName, it.appName) },
-            preferences.getAppOrder()
-        )
+            preferences.syncAppOrder(orderedApps.map { it.packageName })
 
-        val items = buildList {
-            addPrimaryBuiltInItems()
-            orderedApps.forEach { app ->
-                selectedAppsByPackage[app.packageName]?.let(::add)
+            if (requestVersion == homeItemsVersion.get()) {
+                homeItemsCache = items
+                homeItemsDirty = false
             }
-            addSecondaryBuiltInItems()
+            items
         }
-
-
-        preferences.syncAppOrder(orderedApps.map { it.packageName })
-
-        synchronized(cacheLock) {
-            homeItemsCache = items
-            homeItemsDirty = false
-        }
-        items
     }
 
     fun invalidateInstalledApps() {
-        synchronized(cacheLock) {
-            installedAppsDirty = true
-            homeItemsDirty = true
-        }
+        installedAppsVersion.incrementAndGet()
+        homeItemsVersion.incrementAndGet()
+        installedAppsDirty = true
+        homeItemsDirty = true
         MediaThumbnailLoader.clearIconCache()
     }
 
     fun invalidateSelections() {
-        synchronized(cacheLock) {
-            homeItemsDirty = true
-        }
+        homeItemsVersion.incrementAndGet()
+        homeItemsDirty = true
     }
 
     private suspend fun loadInstalledApps(): List<InstalledAppRecord> = withContext(Dispatchers.IO) {
-        synchronized(cacheLock) {
+        installMutex.withLock {
             if (!installedAppsDirty) {
                 installedAppsCache?.let { return@withContext it }
             }
-        }
 
-        val launcherIntent = Intent(Intent.ACTION_MAIN).addCategory(Intent.CATEGORY_LAUNCHER)
-        val packageManager = appContext.packageManager
-        val resolveInfos = queryLauncherActivities(packageManager, launcherIntent)
-        val installedApps = resolveInfos
-            .mapNotNull { resolveInfo ->
-                val activityInfo = resolveInfo.activityInfo ?: return@mapNotNull null
-                val packageName = activityInfo.packageName
-                if (packageName == appContext.packageName) {
-                    return@mapNotNull null
+            val requestVersion = installedAppsVersion.get()
+            val launcherIntent = Intent(Intent.ACTION_MAIN).addCategory(Intent.CATEGORY_LAUNCHER)
+            val packageManager = appContext.packageManager
+            val resolveInfos = queryLauncherActivities(packageManager, launcherIntent)
+            val installedApps = resolveInfos
+                .mapNotNull { resolveInfo ->
+                    val activityInfo = resolveInfo.activityInfo ?: return@mapNotNull null
+                    val packageName = activityInfo.packageName
+                    if (packageName == appContext.packageName) {
+                        return@mapNotNull null
+                    }
+                    InstalledAppRecord(
+                        packageName = packageName,
+                        appName = activityInfo.applicationInfo.loadLabel(packageManager).toString()
+                    )
                 }
-                InstalledAppRecord(
-                    packageName = packageName,
-                    appName = activityInfo.applicationInfo.loadLabel(packageManager).toString()
-                )
-            }
-            .distinctBy { it.packageName }
-            .sortedBy { it.appName }
+                .distinctBy { it.packageName }
+                .sortedBy { it.appName }
 
-        synchronized(cacheLock) {
-            installedAppsCache = installedApps
-            installedAppsDirty = false
+            if (requestVersion == installedAppsVersion.get()) {
+                installedAppsCache = installedApps
+                installedAppsDirty = false
+            }
+            installedApps
         }
-        installedApps
     }
 
     private fun queryLauncherActivities(
