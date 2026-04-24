@@ -21,10 +21,22 @@
 
 *, *::before, *::after {
   box-sizing: border-box;
+  /* 清除 iOS Safari 点击蓝色高亮 */
+  -webkit-tap-highlight-color: transparent;
 }
 
+/* iOS Safari 惯性滚动 */
 html {
   scroll-behavior: smooth;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* 防止 iOS Safari 双击缩放、重置按钮默认外观 */
+a,
+button {
+  touch-action: manipulation;
+  -webkit-appearance: none;
+  appearance: none;
 }
 
 body {
@@ -34,6 +46,9 @@ body {
   color: var(--ink);
   background: var(--paper);
   padding: clamp(20px, 3vw, 36px);
+  padding-left: max(clamp(20px, 3vw, 36px), env(safe-area-inset-left));
+  padding-right: max(clamp(20px, 3vw, 36px), env(safe-area-inset-right));
+  padding-bottom: max(clamp(20px, 3vw, 36px), env(safe-area-inset-bottom));
   overflow-x: hidden;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
