@@ -247,7 +247,7 @@ a {
   color: var(--paper-bright);
 }
 
-
+.hero {
   display: grid;
   grid-template-columns: minmax(0, 1.04fr) minmax(340px, 0.96fr);
   gap: clamp(36px, 5vw, 84px);
