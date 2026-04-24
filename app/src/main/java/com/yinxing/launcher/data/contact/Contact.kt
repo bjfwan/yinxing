@@ -59,8 +59,7 @@ data class Contact(
                 normalizedPhoneNumber,
                 normalizedWechatId,
                 searchKeywords
-            ),
-            autoAnswer = autoAnswer
+            )
         )
     }
 
@@ -69,9 +68,12 @@ data class Contact(
         if (normalizedQuery.isEmpty()) {
             return true
         }
-        return buildSearchKeywords(name, phoneNumber, wechatId, searchKeywords).any { keyword ->
-            keyword.contains(normalizedQuery)
+        val keywords = if (searchKeywords.isNotEmpty()) {
+            searchKeywords
+        } else {
+            buildSearchKeywords(name, phoneNumber, wechatId, emptyList())
         }
+        return keywords.any { it.contains(normalizedQuery) }
     }
 }
 
@@ -94,9 +96,7 @@ private fun MutableList<String>.addSearchKeyword(value: String?) {
     if (normalizedValue.isNotEmpty()) {
         add(normalizedValue)
     }
-    val digitsOnlyValue = value
-        ?.filter { it.isDigit() }
-        .orEmpty()
+    val digitsOnlyValue = value?.filter { it.isDigit() }.orEmpty()
     if (digitsOnlyValue.isNotEmpty() && digitsOnlyValue != normalizedValue) {
         add(digitsOnlyValue)
     }

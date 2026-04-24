@@ -54,7 +54,7 @@
         android:theme="@style/Theme.OldLauncher">
         <meta-data
             android:name="firebase_performance_logcat_enabled"
-            android:value="true" />
+            android:value="false" />
         <activity
             android:name=".feature.home.MainActivity"
             android:exported="true"
@@ -110,7 +110,8 @@
         </receiver>
         <service
             android:name=".feature.incoming.IncomingCallForegroundService"
-            android:exported="false" />
+            android:exported="false"
+            android:foregroundServiceType="phoneCall" />
 
         <service
             android:name="com.google.android.accessibility.selecttospeak.SelectToSpeakService"

@@ -1,6 +1,6 @@
 # 构建与环境说明
 
-更新时间：2026-04-12
+更新时间：2026-04-25
 
 ## 1. 基础环境
 
@@ -20,11 +20,9 @@
 - 主应用仪器测试运行器：`androidx.test.runner.AndroidJUnitRunner`
 - `benchmark` 模块运行器：`androidx.benchmark.junit4.AndroidBenchmarkRunner`
 
-
 ## 3. 本地配置
 
 - Android SDK 通过 `local.properties` 中的 `sdk.dir` 指定
-- 当前工作区 `sdk.dir = D:\androidsdk`
 - 运行 Gradle 前需要确保 `JAVA_HOME` 可用，或 `java` 已在 `PATH`
 - 当前工作区已在 `JAVA_HOME=D:\android\jbr` 条件下直接执行 `.\gradlew.bat` 验证可运行
 - 如需把 Gradle 缓存放到非系统盘，可额外设置 `GRADLE_USER_HOME`
@@ -61,23 +59,10 @@ $env:Path="$env:JAVA_HOME\bin;$env:Path"
 
 ### 5.4 检查设备连接
 
-如果 `adb` 已在 `PATH` 中，可直接执行：
-
 ```powershell
 adb devices
-```
-
-如果当前终端找不到 `adb`，可直接使用 SDK 内的完整路径：
-
-```powershell
+# 或使用完整路径
 & 'D:\androidsdk\platform-tools\adb.exe' devices
-```
-
-期望输出示例：
-
-```text
-List of devices attached
-10AD5H082S000H5    device
 ```
 
 常见状态说明：
@@ -85,7 +70,6 @@ List of devices attached
 - `device`：已连接，可执行 `connectedDebugAndroidTest`
 - `unauthorized`：设备未授权当前电脑，需要在手机上确认 USB 调试授权
 - `offline`：设备已被识别但连接异常，通常需要重插数据线或重启 `adb`
-- 无设备：说明当前没有真机或模拟器在线
 
 ### 5.5 执行设备级仪器测试
 
@@ -93,48 +77,50 @@ List of devices attached
 .\gradlew.bat :app:connectedDebugAndroidTest
 ```
 
-如果设备在线但执行失败，优先检查：
-
-- 设备屏幕是否点亮并解锁
-- 设备是否弹出了安装确认或安全授权，并被手动拒绝
-- 当前设备是否允许通过 USB / `adb` 安装调试应用
-
-### 5.5.1 运行 Benchmark 分层探针
-
-当 `:benchmark:collectNonMinifiedReleaseBaselineProfile` 看起来卡住时，先不要直接重跑整套基线采集，优先按下面顺序执行分层探针：
+### 5.6 运行 Benchmark
 
 ```powershell
+# 完整冷启动基准（需真机或已启用 suppressErrors 的模拟器）
+.\gradlew.bat :benchmark:connectedAndroidTest `
+  "-Pandroid.testInstrumentationRunnerArguments.class=com.yinxing.launcher.benchmark.HomeStartupBenchmark" `
+  "-x" "uploadCrashlyticsMappingFileBenchmarkRelease"
+```
+
+#### Benchmark 分层探针（当采集卡住时按此顺序执行）
+
+```powershell
+# 第一步：确认设备 UI 可操作
 .\gradlew.bat :benchmark:connectedNonMinifiedReleaseAndroidTest -Pandroid.testInstrumentationRunnerArguments.class=com.yinxing.launcher.benchmark.UiAutomationProbe#launcherUiSmoke
-```
 
-```powershell
+# 第二步：确认 MacrobenchmarkRule 可进入
 .\gradlew.bat :benchmark:connectedNonMinifiedReleaseAndroidTest -Pandroid.testInstrumentationRunnerArguments.class=com.yinxing.launcher.benchmark.MacrobenchmarkProbe#coldStartupProbe
-```
 
-```powershell
+# 第三步：确认 BaselineProfileRule 可进入 lambda
 .\gradlew.bat :benchmark:connectedNonMinifiedReleaseAndroidTest -Pandroid.testInstrumentationRunnerArguments.class=com.yinxing.launcher.benchmark.BaselineProfileFrameworkProbe#collectProbe
+
+# 最后：完整基线采集
+.\gradlew.bat :benchmark:collectNonMinifiedReleaseBaselineProfile
 ```
 
-结果解读建议：
-
-- `UiAutomationProbe` 失败：优先看设备是否解锁、默认桌面状态、入口文案/选择器是否变化
-- `MacrobenchmarkProbe` 失败：说明问题已在 Macrobenchmark 基础设施层，不必继续跑 `Baseline Profile`
-- `BaselineProfileFrameworkProbe` 失败或长时间只打印 watchdog 心跳：大概率卡在 `BaselineProfileRule.collect(...)` 框架层或 ROM 兼容性
-- 三个探针都通过后，再执行完整的 `:benchmark:collectNonMinifiedReleaseBaselineProfile`
-
-### 5.6 运行 Lint
+### 5.7 运行 Lint
 
 ```powershell
 .\gradlew.bat :app:lintDebug
 ```
 
-### 5.7 输出位置
+### 5.8 构建 Release 包
 
+```powershell
+.\gradlew.bat :app:assembleRelease -x uploadCrashlyticsMappingFileReleaseRelease
+```
 
+### 5.9 输出位置
 
 ```text
 app/build/outputs/apk/debug/
+app/build/outputs/apk/release/
 app/build/outputs/apk/androidTest/debug/
+benchmark/build/outputs/connected_android_test_additional_output/  （benchmark JSON 结果）
 ```
 
 ## 6. Firebase Crashlytics 配置
@@ -148,18 +134,6 @@ app/build/outputs/apk/androidTest/debug/
 - 查看崩溃报告：[console.firebase.google.com](https://console.firebase.google.com) → 项目 → Crashlytics
 
 > 注意：从 GitHub clone 项目后需自行在 Firebase Console 下载 `google-services.json` 并放到 `app/` 目录，否则构建会失败。
-
-## 7. 当前真实状态
-
-- 当前已于 2026-04-12 验证 `:app:assembleDebugAndroidTest` 可通过
-- 当前已于 2026-04-12 验证 `:app:testDebugUnitTest` 可通过
-- 当前已于 2026-04-12 验证 `:app:assembleDebug` 可通过
-- 当前已于 2026-04-12 验证 `:app:lintDebug` 可通过
-- 当前 `lintDebug` 结果为 `No issues found.`
-- 当前已通过 `D:\androidsdk\platform-tools\adb.exe devices` 检测到在线设备 `10AD5H082S000H5`
-- 当前已于 2026-04-12 在真机 `10AD5H082S000H5` 上执行 `:app:connectedDebugAndroidTest` 并通过
-- 当前已于 2026-04-22 接入 Firebase Crashlytics，构建验证通过（`assembleDebug` BUILD SUCCESSFUL）
-
 
 ## 7. 推荐协作方式
 

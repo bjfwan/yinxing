@@ -1,6 +1,6 @@
 # 文档总览
 
-更新时间：2026-04-12
+更新时间：2026-04-25
 
 ## 文档使用规则
 
@@ -20,15 +20,13 @@
 - [构建说明](development/setup-and-build.md)
 - [Git 协作规范](development/git-workflow.md)
 - [测试策略](testing/test-strategy.md)
-- [老人桌面黑盒分析与长期测试规划](testing/ant-helper-blackbox-research-plan.md)
 - [项目路线图](roadmap/project-roadmap.md)
-- [微信视频规划](roadmap/wechat-video-call-plan.md)
 - [发布检查清单](release/release-checklist.md)
 
 ## 文档维护原则
 
 - 文档必须以当前仓库真实代码、Gradle 配置和测试结果为准
-- 规划类文档必须显式标注“规划中”或“暂停推进”
+- 规划类文档必须显式标注"规划中"或"暂停推进"
 - 功能、结构或测试覆盖有变化时，同步更新对应文档
 - 新增设备级测试时，至少同步更新 `testing` 与 `development` 文档
 - 根目录默认只保留 `README.md`，其他说明文档统一放在 `docs/`

@@ -3,26 +3,24 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>银杏 Yinxing · 专为长辈设计的 Android 简洁桌面 v1.2.2</title>
-  <meta name="description" content="银杏是一款专为老年人设计的 Android Launcher，大字体、大图标、一键拨号、微信视频，让长辈轻松使用手机。免费下载，无广告，支持 Android 7+。" />
+  <title>银杏 Yinxing · 专为长辈设计的 Android 简洁桌面 v1.3.0</title>
+  <meta name="description" content="银杏是一款专为长辈设计的 Android 简洁桌面，把电话、视频联系人、天气和常用应用收拢在一眼就懂的主页中。免费下载，无广告，支持 Android 7+。" />
   <meta name="keywords" content="老年人桌面,长辈手机桌面,大字体launcher,老人手机,简洁桌面,银杏,yinxing,Android launcher,老年模式" />
   <meta name="author" content="bjfwan" />
   <meta name="robots" content="index, follow" />
+  <meta name="theme-color" content="#efe7d7" />
   <link rel="canonical" href="https://yx.likeyou.qzz.io" />
-
   <meta property="og:type" content="website" />
   <meta property="og:title" content="银杏 · 专为长辈设计的 Android 简洁桌面" />
-  <meta property="og:description" content="大字体、大图标、一键拨号，让科技回归温暖与简单。免费下载，无广告。" />
+  <meta property="og:description" content="大字体、大图标、一键拨号，把长辈最常用的事情留在第一屏。免费下载，无广告。" />
   <meta property="og:url" content="https://yx.likeyou.qzz.io" />
   <meta property="og:image" content="https://yx.likeyou.qzz.io/icon.png" />
   <meta property="og:locale" content="zh_CN" />
   <meta property="og:site_name" content="银杏 Yinxing" />
-
   <meta name="twitter:card" content="summary" />
   <meta name="twitter:title" content="银杏 · 专为长辈设计的 Android 简洁桌面" />
-  <meta name="twitter:description" content="大字体、大图标、一键拨号，让科技回归温暖与简单。免费下载，无广告。" />
+  <meta name="twitter:description" content="把电话、视频联系人、天气和常用应用收拢在一眼就懂的主页中。" />
   <meta name="twitter:image" content="https://yx.likeyou.qzz.io/icon.png" />
-
   <script type="application/ld+json">
   {
     "@context": "https://schema.org",
@@ -30,145 +28,180 @@
     "name": "银杏 Yinxing",
     "operatingSystem": "Android 7+",
     "applicationCategory": "UtilitiesApplication",
-    "offers": { "@type": "Offer", "price": "0", "priceCurrency": "CNY" },
-    "description": "专为老年人设计的 Android Launcher，大字体、大图标、一键拨号、微信视频。",
+    "softwareVersion": "1.3.0",
+    "offers": {
+      "@type": "Offer",
+      "price": "0",
+      "priceCurrency": "CNY"
+    },
+    "description": "银杏是一款为长辈设计的 Android 简洁桌面，把电话、视频联系人、天气和常用应用集中在更容易理解的主页中。",
+    "downloadUrl": "https://github.com/bjfwan/yinxing/releases/latest/download/app-release.apk",
     "url": "https://yx.likeyou.qzz.io",
     "image": "https://yx.likeyou.qzz.io/icon.png",
-    "author": { "@type": "Person", "name": "bjfwan" }
+    "author": {
+      "@type": "Person",
+      "name": "bjfwan"
+    }
   }
   </script>
-
   <link rel="icon" type="image/png" href="./icon.png" />
   <link rel="apple-touch-icon" href="./icon.png" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;1,300;1,400&family=Jost:wght@200;300;400&display=swap" rel="stylesheet" />
-  
-  <!-- 外部样式与脚本 -->
-  <link rel="stylesheet" href="assets/css/style.css">
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;500;600&family=Noto+Sans+SC:wght@300;400;500;700&family=Noto+Serif+SC:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="assets/css/style.css" />
   <script src="assets/js/main.js" defer></script>
 </head>
 <body>
-
-  <div class="deco-topline"></div>
-  <div class="deco-bottomline"></div>
-  <div class="deco-scanline"></div>
-
-  <img class="deco-leaf" src="./icon.png" alt="" aria-hidden="true" />
-  <img class="deco-leaf" src="./icon.png" alt="" aria-hidden="true" />
-  <img class="deco-leaf" src="./icon.png" alt="" aria-hidden="true" />
-
-  <svg class="deco-svg" viewBox="0 0 100 100" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-    <circle cx="98" cy="2"  r="30" fill="none" stroke="rgba(184,136,42,0.10)" stroke-width="0.25" vector-effect="non-scaling-stroke"/>
-    <circle cx="98" cy="2"  r="44" fill="none" stroke="rgba(184,136,42,0.07)" stroke-width="0.18" vector-effect="non-scaling-stroke"/>
-    <circle cx="98" cy="2"  r="60" fill="none" stroke="rgba(184,136,42,0.04)" stroke-width="0.12" vector-effect="non-scaling-stroke"/>
-    <circle cx="2"  cy="98" r="22" fill="none" stroke="rgba(28,25,20,0.07)"   stroke-width="0.2"  vector-effect="non-scaling-stroke"/>
-    <circle cx="2"  cy="98" r="36" fill="none" stroke="rgba(28,25,20,0.05)"   stroke-width="0.15" vector-effect="non-scaling-stroke"/>
-    <circle cx="2"  cy="98" r="52" fill="none" stroke="rgba(3,105,161,0.04)"  stroke-width="0.12" vector-effect="non-scaling-stroke"/>
-    <line x1="68" y1="0" x2="100" y2="34" stroke="rgba(184,136,42,0.08)" stroke-width="0.15" vector-effect="non-scaling-stroke"/>
-    <line x1="76" y1="0" x2="100" y2="26" stroke="rgba(184,136,42,0.05)" stroke-width="0.1"  vector-effect="non-scaling-stroke"/>
-    <line x1="84" y1="0" x2="100" y2="18" stroke="rgba(184,136,42,0.03)" stroke-width="0.08" vector-effect="non-scaling-stroke"/>
-    <line x1="0"  y1="50" x2="8"   y2="50" stroke="rgba(184,136,42,0.12)" stroke-width="0.2" vector-effect="non-scaling-stroke"/>
-    <line x1="92" y1="50" x2="100" y2="50" stroke="rgba(184,136,42,0.12)" stroke-width="0.2" vector-effect="non-scaling-stroke"/>
-    <line x1="50" y1="0"  x2="50"  y2="5"  stroke="rgba(184,136,42,0.08)" stroke-width="0.15" vector-effect="non-scaling-stroke"/>
-    <line x1="50" y1="95" x2="50"  y2="100" stroke="rgba(184,136,42,0.08)" stroke-width="0.15" vector-effect="non-scaling-stroke"/>
-  </svg>
-
-  <main class="wrap">
-
-    <header class="brand">
-      <span class="brand-name">银杏</span>
-      <span class="brand-tag">Free · No Ads</span>
+  <div class="page-shell">
+    <header class="site-header" data-reveal>
+      <a class="brand" href="#top" aria-label="银杏首页">
+        <span class="brand-mark">
+          <img src="./icon.png" alt="银杏图标" />
+        </span>
+        <span class="brand-copy">
+          <span class="brand-name">银杏</span>
+          <span class="brand-subtitle">Yinxing Launcher</span>
+        </span>
+      </a>
+      <div class="header-meta">
+        <a class="header-link" href="#download">下载 APK</a>
+        <a class="header-link" href="https://github.com/bjfwan/yinxing" target="_blank" rel="noopener noreferrer">GitHub</a>
+        <span class="meta-pill">v1.3.0</span>
+      </div>
     </header>
 
-    <div class="icon-block">
-      <img src="./icon.png" alt="银杏桌面图标" onerror="this.style.display='none'" />
-    </div>
+    <main class="page" id="top">
+      <section class="hero">
+        <div class="hero-copy" data-reveal>
+          <p class="eyebrow">为长辈重新设计 Android 首页</p>
+          <h1 class="hero-title">让手机回到<span>一眼就懂</span>的样子</h1>
+          <p class="hero-summary">电话、视频联系人、天气、常用应用，一个桌面搞定。免费，无广告，本地运行。</p>
+          <div class="hero-actions" id="download">
+            <a class="button button-primary" href="./app-release.apk" download="银杏.apk" title="直接下载银杏 APK">
+              <span>下载 APK</span>
+              <strong>3.02 MB · 直链</strong>
+            </a>
+            <a class="button button-secondary" href="https://github.com/bjfwan/yinxing/releases/latest/download/app-release.apk" target="_blank" rel="noopener noreferrer" title="从 GitHub 下载银杏 APK">
+              <span>GitHub 备用</span>
+              <strong>同一安装包</strong>
+            </a>
+          </div>
+          <ul class="meta-row" aria-label="软件规格">
+            <li><span>版本</span><strong>v1.3.0</strong></li>
+            <li><span>大小</span><strong>3.02 MB</strong></li>
+            <li><span>系统</span><strong>Android 7+</strong></li>
+            <li><span>协议</span><strong>MIT 开源</strong></li>
+          </ul>
+        </div>
 
-    <section class="hero">
-      <h1>银<em>杏</em></h1>
-      <p class="hero-desc">专为长辈设计的简洁桌面。大字体、大图标、一键拨号，让科技回归温暖与简单。</p>
-    </section>
+        <div class="hero-stage" data-reveal>
+          <div class="device-shell" aria-hidden="true">
+            <div class="device-frame">
+              <div class="device-screen">
+                <div class="screen-top">
+                  <div>
+                    <div class="screen-clock">09:41</div>
+                    <div class="screen-date">周五 · 4月25日</div>
+                  </div>
+                  <div class="screen-signal">银杏</div>
+                </div>
+                <div class="weather-banner">
+                  <span>天气入口</span>
+                  <strong>22°C · 多云</strong>
+                </div>
+                <div class="screen-grid">
+                  <div class="screen-tile tile-accent">
+                    <span>电话</span>
+                    <strong>一键拨号</strong>
+                  </div>
+                  <div class="screen-tile">
+                    <span>视频联系人</span>
+                    <strong>微信视频入口</strong>
+                  </div>
+                  <div class="screen-tile">
+                    <span>常用应用</span>
+                    <strong>按需加入桌面</strong>
+                  </div>
+                  <div class="screen-tile">
+                    <span>设置</span>
+                    <strong>保留必要系统入口</strong>
+                  </div>
+                </div>
+                <div class="screen-contacts">
+                  <p>常联系的人</p>
+                  <div class="contact-row">
+                    <span>妈妈</span>
+                    <span>爸爸</span>
+                    <span>女儿</span>
+                    <span>医生</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <p class="stage-caption">电话、视频联系人、天气、设置和常用应用都在第一屏。</p>
+        </div>
+      </section>
 
-    <div class="rule" aria-hidden="true"></div>
+      <section class="section-block support-block" data-reveal>
+        <div class="section-heading">
+          <div>
+            <p class="section-kicker">现在包含</p>
+            <h2>把常用事情留在第一屏</h2>
+          </div>
+          <p class="section-intro">首页、电话、视频联系人和常用应用管理，够用就好。</p>
+        </div>
+        <div class="support-grid">
+          <div class="support-column">
+            <h3>现在可用</h3>
+            <ul>
+              <li>大字桌面与天气入口</li>
+              <li>本地电话联系人与直接拨号</li>
+              <li>独立视频联系人页</li>
+              <li>按需勾选常用应用</li>
+            </ul>
+          </div>
+          <div class="support-column is-muted">
+            <h3>保持克制</h3>
+            <ul>
+              <li>无账号、无后端</li>
+              <li>无广告</li>
+              <li>本地优先</li>
+              <li>Android 7+</li>
+            </ul>
+          </div>
+        </div>
+        <div class="install-strip">未知来源安装 · 设为默认桌面 · 按需整理首页</div>
+      </section>
 
-    <section class="specs" aria-label="软件规格">
-      <div class="specs-bg" id="specs-bg"></div>
-      <div class="spec">
-        <div class="spec-label">版本</div>
-        <div class="spec-value">1.2.2</div>
+      <section class="cta-section" data-reveal>
+        <div class="cta-card">
+          <div>
+            <h2>如果你在帮家里的长辈适应智能手机，可以先从首页开始。</h2>
+            <p>银杏不替代所有系统功能，只把最常用的操作整理得更清楚。</p>
+          </div>
+          <div class="cta-actions">
+            <a class="button button-primary" href="./app-release.apk" download="银杏.apk" title="下载银杏 APK">
+              <span>下载 APK</span>
+              <strong>立即开始</strong>
+            </a>
+            <a class="button button-ghost" href="mailto:2632507193@qq.com" title="联系作者">
+              <span>联系作者</span>
+              <strong>2632507193@qq.com</strong>
+            </a>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <footer class="site-footer" data-reveal>
+      <p>联系作者：<a href="mailto:2632507193@qq.com">2632507193@qq.com</a></p>
+      <div class="footer-links">
+        <a class="footer-link" href="https://github.com/bjfwan/yinxing" target="_blank" rel="noopener noreferrer">源码仓库</a>
+        <a class="footer-link" href="https://github.com/bjfwan/yinxing/releases" target="_blank" rel="noopener noreferrer">全部发布</a>
       </div>
-      <div class="spec">
-        <div class="spec-label">大小</div>
-        <div class="spec-value">3.0 MB</div>
-      </div>
-      <div class="spec">
-        <div class="spec-label">系统</div>
-        <div class="spec-value">Android 7+</div>
-      </div>
-      <div class="spec">
-        <div class="spec-label">收费</div>
-        <div class="spec-value">免费</div>
-      </div>
-    </section>
-
-    <section class="dl-wrap" aria-label="下载选项">
-      <a class="btn" href="https://github.com/bjfwan/yinxing/releases/latest/download/app-release.apk" download="银杏.apk" title="从 GitHub 下载银杏 APK">
-        <span>下载 APK <span style="font-size:0.65rem;opacity:0.5;letter-spacing:0.08em;">· GitHub</span></span>
-        <span class="btn-right">
-          <span>3.0 MB</span>
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-        </span>
-      </a>
-      <a class="btn btn-secondary" href="./app-release.apk" download="银杏.apk" title="从 Cloudflare 下载银杏 APK">
-        <span>下载 APK <span style="font-size:0.65rem;opacity:0.6;letter-spacing:0.08em;">· Cloudflare</span></span>
-        <span class="btn-right" style="color:rgba(28,25,20,0.35);">
-          <span>3.0 MB</span>
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-        </span>
-      </a>
-      <p class="hint">安装前请在「设置 → 安全」中开启允许安装未知来源应用</p>
-    </section>
-
-    <section class="marquee-wrap" aria-hidden="true">
-      <div class="marquee-track">
-        <span>大字体</span><span class="dot">·</span>
-        <span>大图标</span><span class="dot">·</span>
-        <span>一键拨号</span><span class="dot">·</span>
-        <span>微信视频</span><span class="dot">·</span>
-        <span>简洁桌面</span><span class="dot">·</span>
-        <span>免费无广告</span><span class="dot">·</span>
-        <span>Android 7+</span><span class="dot">·</span>
-        <span>开源</span><span class="dot">·</span>
-        <span>大字体</span><span class="dot">·</span>
-        <span>大图标</span><span class="dot">·</span>
-        <span>一键拨号</span><span class="dot">·</span>
-        <span>微信视频</span><span class="dot">·</span>
-        <span>简洁桌面</span><span class="dot">·</span>
-        <span>免费无广告</span><span class="dot">·</span>
-        <span>Android 7+</span><span class="dot">·</span>
-        <span>开源</span><span class="dot">·</span>
-      </div>
-    </section>
-
-    <footer class="foot">
-      <span>联系作者：<a href="mailto:2632507193@qq.com">2632507193@qq.com</a></span>
-      <a class="foot-github" href="https://github.com/bjfwan/yinxing" target="_blank" rel="noopener noreferrer">
-        <svg width="15" height="15" viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg"><path d="M12 2C6.477 2 2 6.477 2 12c0 4.418 2.865 8.166 6.839 9.489.5.092.682-.217.682-.482 0-.237-.009-.868-.013-1.703-2.782.604-3.369-1.34-3.369-1.34-.454-1.154-1.11-1.462-1.11-1.462-.908-.62.069-.608.069-.608 1.003.07 1.531 1.03 1.531 1.03.892 1.529 2.341 1.087 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.11-4.555-4.943 0-1.091.39-1.984 1.029-2.683-.103-.253-.446-1.27.098-2.647 0 0 .84-.269 2.75 1.025A9.578 9.578 0 0 1 12 6.836a9.59 9.59 0 0 1 2.504.337c1.909-1.294 2.747-1.025 2.747-1.025.546 1.377.202 2.394.1 2.647.64.699 1.028 1.592 1.028 2.683 0 3.842-2.339 4.687-4.566 4.935.359.309.678.919.678 1.852 0 1.336-.012 2.415-.012 2.743 0 .267.18.578.688.48C19.138 20.163 22 16.418 22 12c0-5.523-4.477-10-10-10z"/></svg>
-        GitHub
-      </a>
     </footer>
-  </main>
-
-  <svg xmlns="http://www.w3.org/2000/svg" style="position:absolute;width:0;height:0;overflow:hidden">
-    <defs>
-      <filter id="lg-filter" x="-15%" y="-15%" width="130%" height="130%" color-interpolation-filters="sRGB">
-        <feTurbulence id="lg-turb" type="fractalNoise" baseFrequency="0.012 0.018" numOctaves="3" seed="4" result="noise"/>
-        <feDisplacementMap in="SourceGraphic" in2="noise" scale="14" xChannelSelector="R" yChannelSelector="G" result="displaced"/>
-        <feGaussianBlur in="displaced" stdDeviation="0.6"/>
-      </filter>
-    </defs>
-  </svg>
-
+  </div>
 </body>
 </html>

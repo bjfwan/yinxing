@@ -33,14 +33,14 @@ class MainActivityInstrumentedTest {
     fun launchShowsBuiltInHomeItemsAndClock() {
         launchMainActivityScenario().use { scenario ->
             InstrumentationTestEnvironment.waitUntil(scenario, message = "主页未加载出内置入口") {
-                it.findViewById<RecyclerView>(R.id.recycler_home).adapter?.itemCount == 4
+                it.findViewById<RecyclerView>(R.id.recycler_home).adapter?.itemCount == 3
             }
 
             scenario.onActivity { activity ->
                 val recyclerView = activity.findViewById<RecyclerView>(R.id.recycler_home)
                 val timeText = activity.findViewById<android.widget.TextView>(R.id.tv_time).text
                 val dateText = activity.findViewById<android.widget.TextView>(R.id.tv_date).text
-                assertEquals(4, recyclerView.adapter?.itemCount)
+                assertEquals(3, recyclerView.adapter?.itemCount)
                 assertTrue(timeText.isNotBlank())
                 assertTrue(dateText.isNotBlank())
             }
@@ -74,7 +74,7 @@ class MainActivityInstrumentedTest {
     ) {
         launchMainActivityScenario().use { scenario ->
             InstrumentationTestEnvironment.waitUntil(scenario, message = "主页入口未准备完成") {
-                it.findViewById<RecyclerView>(R.id.recycler_home).adapter?.itemCount == 4
+                it.findViewById<RecyclerView>(R.id.recycler_home).adapter?.itemCount == 3
             }
 
             val label = InstrumentationRegistry.getInstrumentation().targetContext.getString(labelResId)

@@ -183,12 +183,11 @@ object PermissionUtil {
             PackageManager.PERMISSION_GRANTED &&
             context.checkSelfPermission(Manifest.permission.READ_PHONE_STATE) ==
             PackageManager.PERMISSION_GRANTED &&
-            context.checkSelfPermission(Manifest.permission.READ_CALL_LOG) ==
-            PackageManager.PERMISSION_GRANTED &&
             (Build.VERSION.SDK_INT < Build.VERSION_CODES.O ||
                 context.checkSelfPermission(Manifest.permission.ANSWER_PHONE_CALLS) ==
                 PackageManager.PERMISSION_GRANTED)
     }
+
 
     fun canStartBackgroundActivity(): Boolean = false
 

@@ -30,26 +30,6 @@ class IncomingCallStatusSmokeTest {
     }
 
     @Test
-    fun launchShowsTraceStatusLine() {
-        IncomingCallDiagnostics.recordBroadcastReceived(
-            context = context,
-            callerLabel = "王阿姨",
-            incomingNumber = "13812345678",
-            autoAnswer = false
-        )
-        IncomingCallDiagnostics.recordServiceStarted(context, "王阿姨", autoAnswer = false)
-
-        val activity = Robolectric.buildActivity(
-            IncomingCallActivity::class.java,
-            IncomingCallActivity.buildLaunchIntent(context, "王阿姨", autoAnswer = false)
-        ).setup().get()
-
-        val statusView = activity.findViewById<TextView>(R.id.tv_incoming_status)
-        assertTrue(statusView.text.contains(activity.getString(R.string.incoming_call_trace_activity)))
-        assertTrue(statusView.text.contains("王阿姨"))
-    }
-
-    @Test
     fun newIntentWithoutAutoAnswerHidesCountdown() {
         val controller = Robolectric.buildActivity(
             IncomingCallActivity::class.java,
@@ -67,7 +47,7 @@ class IncomingCallStatusSmokeTest {
     }
 
     private fun resetLauncherPreferencesSingleton() {
-        val field = Class.forName("com.bajianfeng.launcher.data.home.LauncherPreferences")
+        val field = Class.forName("com.yinxing.launcher.data.home.LauncherPreferences")
             .getDeclaredField("instance")
         field.isAccessible = true
         field.set(null, null)

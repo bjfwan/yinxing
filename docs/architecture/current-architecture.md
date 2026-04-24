@@ -1,6 +1,6 @@
 # 当前架构说明
 
-更新时间：2026-04-12
+更新时间：2026-04-25
 
 ## 1. 架构概览
 
@@ -18,8 +18,8 @@
   - 应用列表展示与勾选逻辑
 - `feature.phone`
   - 电话联系人页
-  - `ContactAdapter`
-  - `PhoneContactDialogController`
+  - `PhoneContactAdapter`
+  - `PhoneContactManager`
 - `feature.videocall`
   - 视频联系人页
   - `VideoCallContactAdapter`
@@ -28,6 +28,9 @@
   - `VideoContactDialogController`
 - `feature.settings`
   - 低性能模式和系统设置入口
+- `feature.incoming`
+  - 系统电话来电页（实验性）
+  - `PhoneCallReceiver`、`IncomingNumberMatcher`
 
 ### 2.2 data
 
@@ -36,13 +39,15 @@
   - `LauncherAppRepository`
   - `HomeAppOrderPolicy`
 - `data.contact`
-  - `Contact`、`ContactManager`、`ContactStorage`
-  - `PhoneContact`、`PhoneContactRepository`
+  - `Contact`、`ContactManager`、`ContactStorage`、`ContactAvatarStore`
+  - 所有写操作为 `suspend fun`，持久化通过 `Dispatchers.IO.limitedParallelism(1)` 串行化
+- `data.weather`
+  - `WeatherRepository`：双接口并行加载，`Mutex` 保护缓存原子性
 
 ### 2.3 common
 
 - `common.media`
-  - 应用图标与 URI 缩略图加载
+  - 应用图标与 URI 缩略图加载（`MediaThumbnailLoader`）
 - `common.service`
   - `TTSService`
 - `common.ui`
@@ -63,9 +68,9 @@
 ### 2.5 testing
 
 - `app/src/test`
-  - 单元测试与 Robolectric UI 冒烟
+  - 单元测试（108 tests, 0 failed）与 Robolectric UI 冒烟
 - `app/src/androidTest`
-  - 第一批设备级仪器测试脚手架
+  - 设备级仪器测试
 - `benchmark`
   - Baseline Profile 与 Macrobenchmark
 
@@ -75,10 +80,12 @@
   - 桌面已选择应用
   - 桌面应用顺序
   - 低性能模式开关
+- `contacts`（SharedPreferences key）
+  - 电话联系人本地列表，JSON 编码，由 `ContactManager` 统一管理
 - `wechat_contacts`
   - 视频联系人本地列表
 - `ContactsContract`
-  - 电话联系人真实数据源
+  - 系统通讯录，仅在导入时只读访问
 
 ## 4. 外部系统依赖
 
@@ -87,15 +94,17 @@
 - 系统照片选择器
 - 电话拨号权限
 - 系统设置页跳转
-- 无障碍服务
-- 悬浮窗权限
+- 无障碍服务（微信自动化）
+- 悬浮窗权限（微信自动化）
+- Firebase Crashlytics（崩溃日志上报）
 
 ## 5. 当前架构特点
 
 - 没有后端
-- 没有数据库层
+- 没有数据库层，数据存储依赖 SharedPreferences
 - 没有依赖注入框架
 - 主业务仍集中在单个 `app` 模块
+- 联系人和天气数据操作全面迁移至后台线程，主线程不做 IO
 - 空状态视图和权限流程已经形成公共抽象
 - 自动化能力与主业务已做包级隔离，但仍处在同一应用包内
 - 测试层已经拆分为单元测试、Robolectric 与设备级仪器测试三层
@@ -103,12 +112,13 @@
 ## 6. 当前仍需关注的点
 
 - `automation.wechat` 仍属于实验性代码，需要继续做设备级稳定性验证
-- 第一批仪器测试已搭起脚手架，但当前环境无连接设备，尚未跑通 `connectedDebugAndroidTest`
+- 系统电话自动接听（`feature.incoming`）兼容性覆盖尚不完整
 - 低性能模式、权限拒绝、系统设置跳转和跨页面链路仍缺更完整的设备级回归
-- 当前仍主要依赖 SharedPreferences 与系统 Provider，没有更强的状态恢复层
+- 当前仍主要依赖 SharedPreferences，没有更强的状态恢复层
 
 ## 7. 当前架构边界
 
 - 主页、应用管理、电话、设置、视频联系人属于当前主业务
 - 微信自动化属于实验性能力
-- 微信视频来电自动接听、通知监听、远程协助不在当前交付范围内；系统电话自动接听已接入实验性链路
+- 微信视频来电自动接听、通知监听、远程协助不在当前交付范围内
+- 系统电话自动接听已接入实验性链路，稳定性待补齐

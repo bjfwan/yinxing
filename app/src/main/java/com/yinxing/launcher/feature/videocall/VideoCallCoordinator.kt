@@ -2,6 +2,7 @@
 
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
+import androidx.lifecycle.lifecycleScope
 import com.yinxing.launcher.R
 import com.yinxing.launcher.automation.wechat.model.AutomationState
 import com.yinxing.launcher.common.service.TTSService
@@ -9,6 +10,8 @@ import com.yinxing.launcher.common.util.NetworkUtil
 import com.yinxing.launcher.common.util.PermissionUtil
 import com.yinxing.launcher.data.contact.Contact
 import com.yinxing.launcher.data.contact.ContactManager
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 
 class VideoCallCoordinator(
     private val activity: AppCompatActivity,
@@ -63,12 +66,12 @@ class VideoCallCoordinator(
 
         var terminalDeliveredSynchronously = false
         val requestId = automationGateway.requestVideoCall(targetName ?: contact.displayName, VideoCallStateListener { update ->
-            activity.runOnUiThread {
+            activity.lifecycleScope.launch(Dispatchers.Main) {
                 val ttsMessage = buildTtsMessage(update)
                 ttsService.speak(ttsMessage)
                 Toast.makeText(activity, update.message, Toast.LENGTH_SHORT).show()
                 if (!update.terminal) {
-                    return@runOnUiThread
+                    return@launch
                 }
                 if (activeRequestId == null) {
                     terminalDeliveredSynchronously = true
@@ -76,9 +79,10 @@ class VideoCallCoordinator(
                     activeRequestId = null
                 }
                 if (update.success) {
-                    contactManager.incrementCallCount(contact.id)
+                    runCatching { contactManager.incrementCallCount(contact.id) }
                     onCallCompleted()
                 }
+
             }
         })
         activeRequestId = if (terminalDeliveredSynchronously) null else requestId

@@ -10,18 +10,18 @@ object IncomingNumberMatcher {
         if (incomingVariants.isEmpty()) {
             return null
         }
-        return contacts
-            .mapIndexedNotNull { index, contact ->
-                score(contact.phoneNumber, incomingVariants)?.let { score ->
-                    ScoredContact(index = index, contact = contact, score = score)
-                }
+        var bestContact: Contact? = null
+        var bestScore = Int.MIN_VALUE
+        var bestIndex = Int.MAX_VALUE
+        contacts.forEachIndexed { index, contact ->
+            val score = score(contact.phoneNumber, incomingVariants) ?: return@forEachIndexed
+            if (score > bestScore || (score == bestScore && index < bestIndex)) {
+                bestContact = contact
+                bestScore = score
+                bestIndex = index
             }
-            .sortedWith(
-                compareByDescending<ScoredContact> { it.score }
-                    .thenBy { it.index }
-            )
-            .firstOrNull()
-            ?.contact
+        }
+        return bestContact
     }
 
     private fun score(phoneNumber: String?, incomingVariants: Set<String>): Int? {
@@ -83,10 +83,4 @@ object IncomingNumberMatcher {
             else -> shorterLength
         }
     }
-
-    private data class ScoredContact(
-        val index: Int,
-        val contact: Contact,
-        val score: Int
-    )
 }

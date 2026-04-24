@@ -2,6 +2,7 @@ package com.yinxing.launcher.data.contact
 
 import android.content.Context
 import androidx.test.core.app.ApplicationProvider
+import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Before
@@ -22,7 +23,7 @@ class ContactManagerTest {
     }
 
     @Test
-    fun addContactPersistsNormalizedAndSortedContacts() {
+    fun addContactPersistsNormalizedAndSortedContacts() = runTest {
         val manager = ContactManager(context)
 
         manager.addContact(Contact(id = "1", name = " 张三 ", phoneNumber = "138 0013 8000"))
@@ -36,7 +37,7 @@ class ContactManagerTest {
     }
 
     @Test
-    fun incrementCallCountUsesInjectedClock() {
+    fun incrementCallCountUsesInjectedClock() = runTest {
         val manager = ContactManager(context) { 123456L }
         manager.addContact(Contact(id = "1", name = "张三"))
 

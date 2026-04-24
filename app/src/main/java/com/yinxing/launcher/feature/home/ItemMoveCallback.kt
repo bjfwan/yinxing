@@ -7,7 +7,6 @@ class ItemMoveCallback(
     private val adapter: ItemTouchHelperAdapter,
     private var animateDrag: Boolean
 ) : ItemTouchHelper.Callback() {
-
     override fun isLongPressDragEnabled() = false
 
     override fun isItemViewSwipeEnabled() = false
@@ -20,8 +19,8 @@ class ItemMoveCallback(
             return makeMovementFlags(0, 0)
         }
 
-        val dragFlags = ItemTouchHelper.UP or ItemTouchHelper.DOWN or 
-                       ItemTouchHelper.LEFT or ItemTouchHelper.RIGHT
+        val dragFlags = ItemTouchHelper.UP or ItemTouchHelper.DOWN or
+            ItemTouchHelper.LEFT or ItemTouchHelper.RIGHT
         return makeMovementFlags(dragFlags, 0)
     }
 
@@ -41,6 +40,11 @@ class ItemMoveCallback(
 
     override fun onSelectedChanged(viewHolder: RecyclerView.ViewHolder?, actionState: Int) {
         super.onSelectedChanged(viewHolder, actionState)
+        if (actionState == ItemTouchHelper.ACTION_STATE_DRAG) {
+            viewHolder?.bindingAdapterPosition
+                ?.takeIf { it != RecyclerView.NO_POSITION }
+                ?.let(adapter::onDragStarted)
+        }
         if (animateDrag && actionState == ItemTouchHelper.ACTION_STATE_DRAG) {
             viewHolder?.itemView?.alpha = 0.7f
             viewHolder?.itemView?.scaleX = 1.05f
@@ -53,6 +57,7 @@ class ItemMoveCallback(
         viewHolder.itemView.alpha = 1.0f
         viewHolder.itemView.scaleX = 1.0f
         viewHolder.itemView.scaleY = 1.0f
+        adapter.onDragFinished()
     }
 
     fun setAnimateDrag(enabled: Boolean) {
@@ -62,5 +67,7 @@ class ItemMoveCallback(
 
 interface ItemTouchHelperAdapter {
     fun canMoveItem(position: Int): Boolean
+    fun onDragStarted(position: Int)
     fun onItemMove(fromPosition: Int, toPosition: Int): Boolean
+    fun onDragFinished()
 }

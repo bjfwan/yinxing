@@ -2,30 +2,19 @@ package com.yinxing.launcher.data.contact
 
 import android.content.Context
 import android.content.SharedPreferences
-import androidx.core.content.edit
+import kotlinx.coroutines.CoroutineDispatcher
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
 
-/**
- * 联系人管理器（升级版）。
- *
- * 优化：
- * - 增加排序结果缓存（sortedContactsCache）和脏标志（sortedDirty）
- * - 任何写操作将 sortedDirty 置 true，下次 getContacts() 时重新排序
- * - 数据未变化时直接返回缓存的排序结果，避免每次 getContacts() 都全量比较排序
- */
 class ContactManager(
     context: Context,
     private val currentTimeMillis: () -> Long = System::currentTimeMillis
 ) {
     private val prefs: SharedPreferences =
         context.applicationContext.getSharedPreferences("wechat_contacts", Context.MODE_PRIVATE)
-
-    /** 原始联系人列表缓存（未排序） */
-    private var cachedContacts: MutableList<Contact>? = null
-
-    /** 排序结果缓存，避免每次 getContacts() 重新排序 */
-    private var sortedContactsCache: List<Contact>? = null
-
-    /** 排序结果是否需要重新计算 */
+    private val persistDispatcher: CoroutineDispatcher = Dispatchers.IO.limitedParallelism(1)
+    private var cache: MutableList<Contact>? = null
+    private var sortedCache: List<Contact>? = null
     private var sortedDirty = true
 
     companion object {
@@ -39,87 +28,104 @@ class ContactManager(
         }
     }
 
+    @Synchronized
     fun getContacts(): List<Contact> {
-        // 优先返回缓存的排序结果
-        val sorted = sortedContactsCache
-        if (sorted != null && !sortedDirty) {
-            return sorted
-        }
-
-        // 原始列表缓存未命中 → 从 SP 加载
-        if (cachedContacts == null) {
-            cachedContacts = ContactStorage.decode(prefs.getString("contacts", "[]"))
-        }
-
-        // 重新排序并缓存
-        val result = ContactStorage.sort(cachedContacts.orEmpty())
-        sortedContactsCache = result
+        sortedCache?.takeIf { !sortedDirty }?.let { return it }
+        ensureCache()
+        val result = ContactStorage.sort(cache.orEmpty())
+        sortedCache = result
         sortedDirty = false
         return result
     }
 
-    fun addContact(contact: Contact) {
-        ensureCache()
-        cachedContacts?.removeAll { it.id == contact.id }
-        cachedContacts?.add(contact.normalized())
-        markDirtyAndSave()
+    suspend fun addContact(contact: Contact) {
+        persistSnapshot(updateSnapshot { contacts ->
+            contacts.removeAll { it.id == contact.id }
+            contacts.add(contact.normalized())
+        })
     }
 
-    fun removeContact(contactId: String) {
-        ensureCache()
-        cachedContacts?.removeAll { it.id == contactId }
-        markDirtyAndSave()
+    suspend fun removeContact(contactId: String) {
+        persistSnapshot(updateSnapshot { contacts ->
+            contacts.removeAll { it.id == contactId }
+        })
     }
 
-    fun updateContact(contact: Contact) {
-        ensureCache()
-        val index = cachedContacts?.indexOfFirst { it.id == contact.id } ?: -1
-        if (index >= 0) {
-            cachedContacts?.set(index, contact.normalized())
-            markDirtyAndSave()
+    suspend fun updateContact(contact: Contact) {
+        val snapshot = synchronized(this) {
+            ensureCache()
+            val contacts = cache ?: mutableListOf<Contact>().also { cache = it }
+            val index = contacts.indexOfFirst { it.id == contact.id }
+            if (index < 0) {
+                return
+            }
+            contacts[index] = contact.normalized()
+            markDirtyAndSnapshot()
         }
+        persistSnapshot(snapshot)
     }
 
-    fun incrementCallCount(contactId: String) {
-        ensureCache()
-        val index = cachedContacts?.indexOfFirst { it.id == contactId } ?: -1
-        if (index >= 0) {
-            val contact = cachedContacts?.get(index) ?: return
-            cachedContacts?.set(
-                index,
-                contact.copy(
-                    callCount = contact.callCount + 1,
-                    lastCallTime = currentTimeMillis()
-                ).normalized()
-            )
-            markDirtyAndSave()
+    suspend fun incrementCallCount(contactId: String) {
+        val snapshot = synchronized(this) {
+            ensureCache()
+            val contacts = cache ?: mutableListOf<Contact>().also { cache = it }
+            val index = contacts.indexOfFirst { it.id == contactId }
+            if (index < 0) {
+                return
+            }
+            val contact = contacts[index]
+            contacts[index] = contact.copy(
+                callCount = contact.callCount + 1,
+                lastCallTime = currentTimeMillis()
+            ).normalized()
+            markDirtyAndSnapshot()
         }
+        persistSnapshot(snapshot)
     }
 
-    fun setPinned(contactId: String, pinned: Boolean) {
-        ensureCache()
-        val index = cachedContacts?.indexOfFirst { it.id == contactId } ?: -1
-        if (index >= 0) {
-            val contact = cachedContacts?.get(index) ?: return
-            cachedContacts?.set(index, contact.copy(isPinned = pinned).normalized())
-            markDirtyAndSave()
+    suspend fun setPinned(contactId: String, pinned: Boolean) {
+        val snapshot = synchronized(this) {
+            ensureCache()
+            val contacts = cache ?: mutableListOf<Contact>().also { cache = it }
+            val index = contacts.indexOfFirst { it.id == contactId }
+            if (index < 0) {
+                return
+            }
+            val contact = contacts[index]
+            contacts[index] = contact.copy(isPinned = pinned).normalized()
+            markDirtyAndSnapshot()
         }
+        persistSnapshot(snapshot)
     }
 
+    @Synchronized
     private fun ensureCache() {
-        if (cachedContacts == null) getContacts()
+        if (cache == null) {
+            cache = ContactStorage.decode(prefs.getString("contacts", "[]"))
+        }
     }
 
-    /** 标记排序结果脏并持久化 */
-    private fun markDirtyAndSave() {
+    @Synchronized
+    private fun updateSnapshot(block: (MutableList<Contact>) -> Unit): List<Contact> {
+        ensureCache()
+        val contacts = cache ?: mutableListOf<Contact>().also { cache = it }
+        block(contacts)
+        return markDirtyAndSnapshot()
+    }
+
+    @Synchronized
+    private fun markDirtyAndSnapshot(): List<Contact> {
         sortedDirty = true
-        saveContacts()
+        sortedCache = null
+        return cache?.toList().orEmpty()
     }
 
-    private fun saveContacts() {
-        val contacts = cachedContacts ?: return
-        prefs.edit {
-            putString("contacts", ContactStorage.encode(contacts))
+    private suspend fun persistSnapshot(snapshot: List<Contact>) {
+        withContext(persistDispatcher) {
+            val success = prefs.edit()
+                .putString("contacts", ContactStorage.encode(snapshot))
+                .commit()
+            check(success) { "保存视频联系人失败" }
         }
     }
 }

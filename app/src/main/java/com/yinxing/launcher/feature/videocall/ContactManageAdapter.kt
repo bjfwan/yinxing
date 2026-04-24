@@ -9,6 +9,7 @@ import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
 import com.yinxing.launcher.R
 import com.yinxing.launcher.data.contact.Contact
+import com.google.android.material.button.MaterialButton
 import com.google.android.material.card.MaterialCardView
 
 class ContactManageAdapter(
@@ -37,8 +38,8 @@ class ContactManageAdapter(
         val card: MaterialCardView = view as MaterialCardView
         val tvName: TextView = view.findViewById(R.id.tv_contact_name)
         val tvMeta: TextView = view.findViewById(R.id.tv_contact_meta)
-        val btnEdit: MaterialCardView = view.findViewById(R.id.btn_edit)
-        val btnDelete: MaterialCardView = view.findViewById(R.id.btn_delete)
+        val btnEdit: MaterialButton = view.findViewById(R.id.btn_edit)
+        val btnDelete: MaterialButton = view.findViewById(R.id.btn_delete)
     }
 
     override fun getItemId(position: Int): Long = getItem(position).id.hashCode().toLong()

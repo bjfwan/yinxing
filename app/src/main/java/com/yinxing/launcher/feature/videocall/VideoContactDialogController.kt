@@ -8,8 +8,13 @@ import android.widget.Toast
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.cardview.widget.CardView
+import androidx.lifecycle.lifecycleScope
 import com.yinxing.launcher.R
+import com.yinxing.launcher.common.media.MediaThumbnailLoader
 import com.yinxing.launcher.data.contact.Contact
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.launch
+
 
 class VideoContactDialogController(
     private val activity: AppCompatActivity,
@@ -22,6 +27,8 @@ class VideoContactDialogController(
 ) {
     private var selectedAvatarUri: String? = null
     private var photoPreview: ImageView? = null
+    private var previewJob: Job? = null
+
 
     fun updateSelectedPhoto(uri: Uri) {
         selectedAvatarUri = uri.toString()
@@ -134,24 +141,33 @@ class VideoContactDialogController(
         }
 
         dialog.setOnDismissListener {
+            previewJob?.cancel()
             photoPreview = null
             selectedAvatarUri = null
         }
+
         dialog.show()
     }
 
     private fun renderSelectedPhoto() {
         val preview = photoPreview ?: return
         val avatarUri = selectedAvatarUri?.takeIf { it.isNotBlank() }
+        previewJob?.cancel()
         if (avatarUri == null) {
             preview.setImageResource(android.R.drawable.ic_menu_camera)
             preview.setPadding(dp(28), dp(28), dp(28), dp(28))
             return
         }
         preview.setPadding(0, 0, 0, 0)
-        preview.setImageURI(null)
-        preview.setImageURI(Uri.parse(avatarUri))
+        preview.setImageDrawable(null)
+        previewJob = activity.lifecycleScope.launch {
+            val bitmap = MediaThumbnailLoader.loadBitmap(activity, Uri.parse(avatarUri), 480, 480)
+            if (photoPreview === preview && selectedAvatarUri == avatarUri && bitmap != null) {
+                preview.setImageBitmap(bitmap)
+            }
+        }
     }
+
 
     private fun dp(value: Int): Int {
         return (value * activity.resources.displayMetrics.density).toInt()

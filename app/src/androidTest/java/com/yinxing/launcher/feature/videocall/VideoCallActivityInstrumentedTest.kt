@@ -39,7 +39,7 @@ class VideoCallActivityInstrumentedTest {
                     title
                 )
                 org.junit.Assert.assertEquals(
-                    activity.getString(R.string.state_video_empty_action_manage),
+                    activity.getString(R.string.action_back_home),
                     action
                 )
             }

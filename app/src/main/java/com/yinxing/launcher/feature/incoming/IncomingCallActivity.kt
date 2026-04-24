@@ -226,7 +226,14 @@ class IncomingCallActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O_MR1) {
             setShowWhenLocked(true)
             setTurnScreenOn(true)
-            getSystemService(KeyguardManager::class.java)?.requestDismissKeyguard(this, null)
+            getSystemService(KeyguardManager::class.java)?.requestDismissKeyguard(
+                this,
+                object : KeyguardManager.KeyguardDismissCallback() {
+                    override fun onDismissError() {}
+                    override fun onDismissSucceeded() {}
+                    override fun onDismissCancelled() {}
+                }
+            )
         } else {
             @Suppress("DEPRECATION")
             window.addFlags(

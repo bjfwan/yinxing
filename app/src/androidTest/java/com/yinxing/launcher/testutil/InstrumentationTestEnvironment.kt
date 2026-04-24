@@ -12,7 +12,7 @@ import com.yinxing.launcher.data.contact.Contact
 import com.yinxing.launcher.data.contact.ContactManager
 import com.yinxing.launcher.data.home.LauncherAppRepository
 import com.yinxing.launcher.data.home.LauncherPreferences
-
+import kotlinx.coroutines.runBlocking
 import org.junit.Assert.assertTrue
 
 object InstrumentationTestEnvironment {
@@ -24,10 +24,10 @@ object InstrumentationTestEnvironment {
         clearPreferences("wechat_contacts")
         clearPreferences("phone_contacts")
         clearPreferences("incoming_call_diagnostics")
-        resetSingleton("com.bajianfeng.launcher.data.home.LauncherPreferences", "instance")
-        resetSingleton("com.bajianfeng.launcher.data.home.LauncherAppRepository", "instance")
-        resetSingleton("com.bajianfeng.launcher.data.contact.ContactManager", "instance")
-        resetSingleton("com.bajianfeng.launcher.feature.phone.PhoneContactManager", "instance")
+        resetSingleton("com.yinxing.launcher.data.home.LauncherPreferences", "instance")
+        resetSingleton("com.yinxing.launcher.data.home.LauncherAppRepository", "instance")
+        resetSingleton("com.yinxing.launcher.data.contact.ContactManager", "instance")
+        resetSingleton("com.yinxing.launcher.feature.phone.PhoneContactManager", "instance")
         LauncherPreferences.getInstance(appContext).setLowPerformanceModeEnabled(false)
         LauncherAppRepository.getInstance(appContext).invalidateInstalledApps()
         LauncherAppRepository.getInstance(appContext).invalidateSelections()
@@ -35,9 +35,9 @@ object InstrumentationTestEnvironment {
 
     fun seedVideoContacts(vararg contacts: Contact) {
         clearPreferences("wechat_contacts")
-        resetSingleton("com.bajianfeng.launcher.data.contact.ContactManager", "instance")
+        resetSingleton("com.yinxing.launcher.data.contact.ContactManager", "instance")
         val manager = ContactManager.getInstance(appContext)
-        contacts.forEach(manager::addContact)
+        runBlocking { contacts.forEach { manager.addContact(it) } }
     }
 
     fun primeLauncherRepositoryWithBuiltInOnlyHome() {

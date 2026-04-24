@@ -44,8 +44,7 @@ object ContactStorage {
 
     fun encode(contacts: List<Contact>): String {
         val jsonArray = JSONArray()
-        contacts.forEach { rawContact ->
-            val contact = rawContact.normalized()
+        contacts.forEach { contact ->
             val keywordArray = JSONArray()
             contact.searchKeywords.forEach(keywordArray::put)
             jsonArray.put(
@@ -72,6 +71,9 @@ object ContactStorage {
     }
 
     fun sort(contacts: List<Contact>): List<Contact> {
+        if (contacts.size < 2) {
+            return contacts.toList()
+        }
         return contacts.sortedWith(
             compareByDescending<Contact> { it.isPinned }
                 .thenByDescending { it.callCount }
@@ -82,10 +84,12 @@ object ContactStorage {
 
     fun filter(contacts: List<Contact>, query: String): List<Contact> {
         if (query.isBlank()) {
-            return sort(contacts)
+            return contacts.toList()
         }
         return sort(contacts.filter { it.matchesQuery(query) })
     }
+
+
 
     private fun JSONObject.optNullableString(key: String): String? {
         val value = optString(key).trim()
