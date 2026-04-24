@@ -190,7 +190,64 @@ a {
   padding-bottom: 32px;
 }
 
-.hero {
+/* ── Hero Card ── */
+.hero-card {
+  display: grid;
+  grid-template-columns: minmax(0, 1.15fr) minmax(280px, 0.85fr);
+  gap: clamp(28px, 4vw, 60px);
+  align-items: center;
+  padding: clamp(32px, 4vw, 52px) clamp(28px, 4vw, 52px);
+  margin-bottom: 0;
+  border-radius: var(--radius-xl);
+  background: linear-gradient(120deg, rgba(23, 20, 16, 0.96), rgba(56, 42, 23, 0.94) 58%, rgba(77, 122, 146, 0.86));
+  box-shadow: 0 40px 110px rgba(24, 18, 10, 0.22);
+  color: var(--paper-bright);
+}
+
+.hero-card-eyebrow {
+  color: rgba(255, 250, 241, 0.56);
+}
+
+.hero-card-title {
+  margin: 14px 0 0;
+  font-family: "Noto Serif SC", serif;
+  font-size: clamp(2.2rem, 4.5vw, 4.2rem);
+  line-height: 1.08;
+  letter-spacing: -0.04em;
+  color: var(--paper-bright);
+}
+
+.hero-card-title span {
+  color: var(--gold);
+  font-style: italic;
+}
+
+.hero-card-desc {
+  margin: 16px 0 0;
+  font-size: 1rem;
+  line-height: 1.8;
+  color: rgba(255, 250, 241, 0.72);
+}
+
+.hero-card-side {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.meta-row-dark {
+  border-color: rgba(255, 250, 241, 0.12);
+}
+
+.meta-row-dark span {
+  color: rgba(255, 250, 241, 0.48);
+}
+
+.meta-row-dark strong {
+  color: var(--paper-bright);
+}
+
+
   display: grid;
   grid-template-columns: minmax(0, 1.04fr) minmax(340px, 0.96fr);
   gap: clamp(36px, 5vw, 84px);
@@ -819,6 +876,29 @@ body.js-ready [data-reveal].is-visible {
     padding: 16px;
   }
 
+  .hero-card {
+    grid-template-columns: 1fr;
+    gap: 24px;
+    padding: 24px 20px;
+    border-radius: 24px;
+  }
+
+  .hero-card-title {
+    font-size: clamp(1.9rem, 11vw, 2.8rem);
+    margin-top: 10px;
+  }
+
+  .hero-card-desc {
+    font-size: 0.9rem;
+    margin-top: 12px;
+  }
+
+  .hero-card-side {
+    gap: 14px;
+  }
+
+
+
   .site-header {
     flex-direction: column;
     align-items: flex-start;
@@ -861,19 +941,20 @@ body.js-ready [data-reveal].is-visible {
   }
 
   .hero-title {
-    font-size: clamp(2.5rem, 16vw, 4.1rem);
-    line-height: 0.9;
-    max-width: 7ch;
+    font-size: clamp(2.1rem, 13vw, 3.2rem);
+    line-height: 0.95;
+    margin-top: 12px;
+    max-width: 8ch;
   }
 
   .hero-summary {
-    margin-top: 16px;
-    font-size: 0.96rem;
-    line-height: 1.75;
+    margin-top: 12px;
+    font-size: 0.9rem;
+    line-height: 1.7;
   }
 
   .hero-actions {
-    margin-top: 16px;
+    margin-top: 14px;
     gap: 10px;
     flex-direction: column;
   }
