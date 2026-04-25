@@ -1,6 +1,6 @@
 <div align="center">
 
-<img src="https://raw.githubusercontent.com/bjfwan/yinxing/main/docs/Android_App_Icons/google-play/icon.png" width="120" height="120" />
+<img src="https://raw.githubusercontent.com/bjfwan/yinxing/main/docs/icon.png" width="120" height="120" />
 
 <h1>银杏 · Yinxing Launcher</h1>
 
