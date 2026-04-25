@@ -12,6 +12,7 @@ import androidx.recyclerview.widget.RecyclerView
 import com.yinxing.launcher.R
 import com.yinxing.launcher.common.media.MediaThumbnailLoader
 import com.yinxing.launcher.data.contact.Contact
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
@@ -85,7 +86,13 @@ class PhoneContactAdapter(
             return
         }
         holder.avatarJob = scope.launch {
-            val bitmap = MediaThumbnailLoader.loadBitmap(context, Uri.parse(avatarUri), 240, 240)
+            val bitmap = try {
+                MediaThumbnailLoader.loadBitmap(context, Uri.parse(avatarUri), 240, 240)
+            } catch (cancelled: CancellationException) {
+                throw cancelled
+            } catch (_: Throwable) {
+                null
+            }
             val currentPosition = holder.bindingAdapterPosition
             if (currentPosition == RecyclerView.NO_POSITION) {
                 return@launch

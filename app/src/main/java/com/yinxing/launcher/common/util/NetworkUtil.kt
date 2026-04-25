@@ -6,7 +6,7 @@ import android.net.NetworkCapabilities
 
 object NetworkUtil {
     fun isNetworkAvailable(context: Context): Boolean {
-        val connectivityManager = context.getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
+        val connectivityManager = context.getSystemService(ConnectivityManager::class.java) ?: return false
         val network = connectivityManager.activeNetwork ?: return false
         val capabilities = connectivityManager.getNetworkCapabilities(network) ?: return false
         
@@ -15,7 +15,7 @@ object NetworkUtil {
     }
     
     fun getNetworkType(context: Context): String {
-        val connectivityManager = context.getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
+        val connectivityManager = context.getSystemService(ConnectivityManager::class.java) ?: return "无网络"
         val network = connectivityManager.activeNetwork ?: return "无网络"
         val capabilities = connectivityManager.getNetworkCapabilities(network) ?: return "无网络"
         

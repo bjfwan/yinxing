@@ -25,8 +25,8 @@ android {
         applicationId = "com.yinxing.launcher"
         minSdk = 24
         targetSdk = 36
-        versionCode = 6
-        versionName = "1.3.0"
+        versionCode = 7
+        versionName = "1.4.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
 
@@ -62,6 +62,9 @@ android {
             initWith(getByName("release"))
             signingConfig = signingConfigs.getByName("debug")
             matchingFallbacks += listOf("release")
+            configure<com.google.firebase.crashlytics.buildtools.gradle.CrashlyticsExtension> {
+                mappingFileUploadEnabled = false
+            }
         }
     }
     compileOptions {

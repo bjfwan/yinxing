@@ -19,7 +19,8 @@ class ContactManagerTest {
     @Before
     fun setUp() {
         context = ApplicationProvider.getApplicationContext()
-        context.getSharedPreferences("wechat_contacts", Context.MODE_PRIVATE).edit().clear().commit()
+        resetSingleton()
+        ContactSqliteStore.deleteDatabase(context)
     }
 
     @Test
@@ -46,5 +47,25 @@ class ContactManagerTest {
         val contact = ContactManager(context).getContacts().first()
         assertEquals(1, contact.callCount)
         assertEquals(123456L, contact.lastCallTime)
+    }
+
+    @Test
+    fun deleteDatabaseClearsStoredContacts() = runTest {
+        val manager = ContactManager(context)
+        manager.addContact(Contact(id = "legacy", name = " 老王 ", wechatId = "wx"))
+        manager.close()
+
+        ContactSqliteStore.deleteDatabase(context)
+        resetSingleton()
+
+        assertTrue(ContactManager(context).getContacts().isEmpty())
+    }
+
+    private fun resetSingleton() {
+        val field = Class.forName("com.yinxing.launcher.data.contact.ContactManager")
+            .getDeclaredField("instance")
+        field.isAccessible = true
+        (field.get(null) as? ContactManager)?.close()
+        field.set(null, null)
     }
 }

@@ -17,6 +17,7 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.google.android.material.card.MaterialCardView
 import com.yinxing.launcher.R
+import com.yinxing.launcher.common.media.MediaThumbnailLoader
 import com.yinxing.launcher.common.service.TTSService
 import com.yinxing.launcher.common.ui.PageStateView
 import com.yinxing.launcher.common.util.PermissionUtil
@@ -322,6 +323,11 @@ class VideoCallActivity : AppCompatActivity() {
             try {
                 val contacts = withContext(Dispatchers.IO) { contactManager.getContacts() }
                 allContacts = contacts
+                contacts.forEach { contact ->
+                    contact.avatarUri
+                        ?.takeIf { it.isNotBlank() }
+                        ?.let { runCatching { MediaThumbnailLoader.evictFailedUri(Uri.parse(it)) } }
+                }
                 renderContacts()
             } catch (cancelled: CancellationException) {
                 throw cancelled

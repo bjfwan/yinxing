@@ -1,13 +1,19 @@
 ﻿package com.yinxing.launcher.data.weather
 
 import android.util.Base64
+import android.util.Log
 import com.yinxing.launcher.BuildConfig
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.async
 import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.Deferred
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
+import kotlinx.coroutines.SupervisorJob
 import org.json.JSONObject
 import java.net.HttpURLConnection
 import java.net.URL
@@ -16,42 +22,80 @@ import javax.crypto.Mac
 import javax.crypto.spec.SecretKeySpec
 
 object WeatherRepository {
-
-    // 心知天气（从 BuildConfig 注入，密钥在 local.properties 中配置）
+    private const val TAG = "WeatherRepository"
     private const val SENIVERSE_UID = BuildConfig.SENIVERSE_UID
     private const val SENIVERSE_PK = BuildConfig.SENIVERSE_PK
-
-    // 腾讯位置（从 BuildConfig 注入，密钥在 local.properties 中配置）
     private const val TENCENT_KEY = BuildConfig.TENCENT_KEY
-
-    // 缓存刷新间隔：30分钟
     private const val CACHE_TTL_MS = 30 * 60 * 1000L
 
     private val cacheMutex = Mutex()
-    private var cache: WeatherState? = null
+    private val inFlightMutex = Mutex()
+    private val requestScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
+    private val inFlightRequests = mutableMapOf<String, Deferred<WeatherState>>()
+    @Volatile private var cache: WeatherState? = null
 
-    /** 外部调用入口：传城市名，返回完整天气状态 */
     suspend fun fetchWeather(cityName: String): WeatherState = withContext(Dispatchers.IO) {
+        val normalizedCityName = normalizeCityName(cityName)
         cacheMutex.withLock {
-            val cached = cache
-            if (cached != null
-                && cached.cityName == cityName
-                && cached.isValid
-                && System.currentTimeMillis() - cached.lastFetchTime < CACHE_TTL_MS
-            ) {
+            freshCached(normalizedCityName)?.let { cached ->
                 return@withContext cached
             }
         }
 
-        return@withContext try {
-            // Step1: 腾讯行政区划搜索 → adcode
+        val deferred = inFlightMutex.withLock {
+            inFlightRequests[normalizedCityName]?.takeIf { it.isActive } ?: requestScope.async {
+                runCatching { fetchWeatherInternal(normalizedCityName) }
+                    .getOrElse { failure ->
+                        if (failure is CancellationException) throw failure
+                        Log.w(TAG, "fetchWeatherInternal failed for $normalizedCityName", failure)
+                        WeatherState.empty().copy(
+                            cityName = normalizedCityName,
+                            error = failure.message ?: "网络请求失败"
+                        )
+                    }
+            }.also { request ->
+                inFlightRequests[normalizedCityName] = request
+                request.invokeOnCompletion {
+                    requestScope.launch {
+                        inFlightMutex.withLock {
+                            if (inFlightRequests[normalizedCityName] === request) {
+                                inFlightRequests.remove(normalizedCityName)
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        deferred.await()
+    }
+
+    fun clearCache() {
+        cache = null
+    }
+
+    fun getCached(): WeatherState? = cache
+
+    private fun normalizeCityName(cityName: String): String {
+        return cityName.trim().ifEmpty { "北京" }
+    }
+
+    private fun freshCached(cityName: String): WeatherState? {
+        val cached = cache ?: return null
+        return cached.takeIf {
+            it.cityName == cityName &&
+                it.isValid &&
+                System.currentTimeMillis() - it.lastFetchTime < CACHE_TTL_MS
+        }
+    }
+
+    private suspend fun fetchWeatherInternal(cityName: String): WeatherState {
+        return try {
             val adcode = searchAdcode(cityName)
-                ?: return@withContext WeatherState.empty().copy(
+                ?: return WeatherState.empty().copy(
                     cityName = cityName,
                     error = "未找到城市"
                 )
 
-            // Step2: 并行请求实况 + 预报
             val (now, forecast) = coroutineScope {
                 val nowDeferred = async { fetchTencentNow(adcode, cityName) }
                 val forecastDeferred = async { fetchSeniverseForecast(cityName) }
@@ -67,7 +111,6 @@ object WeatherRepository {
             )
             cacheMutex.withLock { cache = state }
             state
-
         } catch (e: Exception) {
             WeatherState.empty().copy(
                 cityName = cityName,
@@ -76,15 +119,6 @@ object WeatherRepository {
         }
     }
 
-    fun clearCache() {
-        cache = null
-    }
-
-    fun getCached(): WeatherState? = cache
-
-    // ──────────────────────────────────────────────
-    // 腾讯位置：行政区划搜索 → adcode
-    // ──────────────────────────────────────────────
     private fun searchAdcode(cityName: String): String? {
         val encoded = URLEncoder.encode(cityName, "UTF-8")
         val url = "https://apis.map.qq.com/ws/district/v1/search" +
@@ -96,7 +130,6 @@ object WeatherRepository {
         if (resultArr.length() == 0) return null
         val firstGroup = resultArr.getJSONArray(0)
         if (firstGroup.length() == 0) return null
-        // 取 level<=2（省/市级）的第一个结果
         for (i in 0 until firstGroup.length()) {
             val item = firstGroup.getJSONObject(i)
             val level = item.optInt("level", 99)
@@ -107,9 +140,6 @@ object WeatherRepository {
         return firstGroup.getJSONObject(0).getString("id")
     }
 
-    // ──────────────────────────────────────────────
-    // 腾讯位置：实况天气
-    // ──────────────────────────────────────────────
     private fun fetchTencentNow(adcode: String, cityName: String): WeatherNow? {
         val url = "https://apis.map.qq.com/ws/weather/v1/" +
                 "?adcode=$adcode&key=$TENCENT_KEY"
@@ -133,9 +163,6 @@ object WeatherRepository {
         )
     }
 
-    // ──────────────────────────────────────────────
-    // 心知天气：3天预报
-    // ──────────────────────────────────────────────
     private fun fetchSeniverseForecast(cityName: String): List<WeatherForecastDay> {
         val ts = (System.currentTimeMillis() / 1000).toString()
         val paramStr = "ts=$ts&uid=$SENIVERSE_UID"
@@ -167,9 +194,6 @@ object WeatherRepository {
         return list
     }
 
-    // ──────────────────────────────────────────────
-    // 工具：HMAC-SHA1 + Base64
-    // ──────────────────────────────────────────────
     private fun hmacSha1Base64(key: String, data: String): String {
         val mac = Mac.getInstance("HmacSHA1")
         mac.init(SecretKeySpec(key.toByteArray(Charsets.UTF_8), "HmacSHA1"))
@@ -177,19 +201,24 @@ object WeatherRepository {
         return Base64.encodeToString(bytes, Base64.NO_WRAP)
     }
 
-    // ──────────────────────────────────────────────
-    // 工具：HTTP GET
-    // ──────────────────────────────────────────────
     private fun httpGet(urlStr: String): String {
         val conn = URL(urlStr).openConnection() as HttpURLConnection
         conn.apply {
             requestMethod = "GET"
-            connectTimeout = 10_000
-            readTimeout = 10_000
+            connectTimeout = 5_000
+            readTimeout = 7_000
             setRequestProperty("Accept", "application/json")
         }
         return try {
-            conn.inputStream.bufferedReader().readText()
+            val responseCode = conn.responseCode
+            val stream = if (responseCode in 200..299) {
+                conn.inputStream
+            } else {
+                conn.errorStream ?: conn.inputStream
+            }
+            val body = stream.use { it.bufferedReader().readText() }
+            check(responseCode in 200..299) { "HTTP $responseCode" }
+            body
         } finally {
             conn.disconnect()
         }

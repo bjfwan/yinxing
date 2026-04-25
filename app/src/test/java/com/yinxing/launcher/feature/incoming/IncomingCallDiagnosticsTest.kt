@@ -63,4 +63,46 @@ class IncomingCallDiagnosticsTest {
                 .contains(context.getString(R.string.incoming_call_status_speaker_on))
         )
     }
+
+    @Test
+    fun serviceStartFailureAppendsAfterBroadcastReceived() {
+        IncomingCallDiagnostics.recordBroadcastReceived(
+            context = context,
+            callerLabel = "孙大爷",
+            incomingNumber = "13700000000",
+            autoAnswer = false
+        )
+        IncomingCallDiagnostics.recordServiceStartFailure(
+            context = context,
+            callerLabel = "孙大爷",
+            throwable = IllegalStateException("foreground denied")
+        )
+
+        assertEquals(
+            listOf(
+                context.getString(R.string.incoming_call_trace_broadcast),
+                context.getString(R.string.incoming_call_trace_service_failed)
+            ).joinToString(" · "),
+            IncomingCallDiagnostics.getSummaryText(context)
+        )
+        assertTrue(IncomingCallDiagnostics.getDisplayText(context).contains("孙大爷"))
+        assertTrue(IncomingCallDiagnostics.getDisplayText(context).contains("foreground denied"))
+    }
+
+    @Test
+    fun broadcastFailureIsIncludedInSummaryAndDetail() {
+        IncomingCallDiagnostics.recordBroadcastFailure(
+            context = context,
+            callerLabel = "李叔叔",
+            incomingNumber = "13900001111",
+            throwable = IllegalStateException("receiver failed")
+        )
+
+        assertEquals(
+            context.getString(R.string.incoming_call_trace_broadcast_failed),
+            IncomingCallDiagnostics.getSummaryText(context)
+        )
+        assertTrue(IncomingCallDiagnostics.getDisplayText(context).contains("李叔叔"))
+        assertTrue(IncomingCallDiagnostics.getDisplayText(context).contains("receiver failed"))
+    }
 }

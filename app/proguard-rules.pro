@@ -26,3 +26,9 @@
     public static int v(...);
     public static int i(...);
 }
+
+# androidx.profileinstaller's ProfileInstallReceiver is required by Macrobenchmark
+# (DROP_SHADER_CACHE / baseline profile install broadcasts) and must remain
+# unobfuscated in both the manifest and dex, even with R8 enabled.
+-keep class androidx.profileinstaller.** { *; }
+-keep class androidx.startup.** { *; }

@@ -1,8 +1,10 @@
 ﻿package com.yinxing.launcher.feature.videocall
 
+import android.util.Log
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.lifecycleScope
+
 import com.yinxing.launcher.R
 import com.yinxing.launcher.automation.wechat.model.AutomationState
 import com.yinxing.launcher.common.service.TTSService
@@ -12,6 +14,7 @@ import com.yinxing.launcher.data.contact.Contact
 import com.yinxing.launcher.data.contact.ContactManager
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 class VideoCallCoordinator(
     private val activity: AppCompatActivity,
@@ -22,7 +25,12 @@ class VideoCallCoordinator(
     private val onNeedOverlayPermission: (Contact) -> Unit,
     private val onCallCompleted: () -> Unit
 ) {
+    companion object {
+        private const val TAG = "VideoCallCoordinator"
+    }
+
     private var activeRequestId: String? = null
+    private var activeRequestToken = 0L
 
     fun start(contact: Contact) {
         if (!NetworkUtil.isNetworkAvailable(activity)) {
@@ -64,34 +72,70 @@ class VideoCallCoordinator(
 
         speakAndToast(R.string.starting_video_call_detail, R.string.starting_video_call)
 
-        var terminalDeliveredSynchronously = false
-        val requestId = automationGateway.requestVideoCall(targetName ?: contact.displayName, VideoCallStateListener { update ->
+        val requestToken = ++activeRequestToken
+        var requestId: String? = null
+        var pendingTerminalUpdate: VideoCallStateUpdate? = null
+        var terminalHandled = false
+
+        fun finishTerminalUpdate(update: VideoCallStateUpdate) {
+            if (terminalHandled || requestToken != activeRequestToken) {
+                return
+            }
+            terminalHandled = true
+            activeRequestId = null
+            requestId?.let(automationGateway::clearRequestListener)
+            if (update.success) {
+                persistSuccessfulCall(contact.id)
+            }
+        }
+
+        requestId = automationGateway.requestVideoCall(targetName ?: contact.displayName, VideoCallStateListener { update ->
             activity.lifecycleScope.launch(Dispatchers.Main) {
+                if (requestToken != activeRequestToken) {
+                    return@launch
+                }
                 val ttsMessage = buildTtsMessage(update)
                 ttsService.speak(ttsMessage)
                 Toast.makeText(activity, update.message, Toast.LENGTH_SHORT).show()
                 if (!update.terminal) {
                     return@launch
                 }
-                if (activeRequestId == null) {
-                    terminalDeliveredSynchronously = true
-                } else {
-                    activeRequestId = null
+                pendingTerminalUpdate = update
+                if (requestId != null) {
+                    finishTerminalUpdate(update)
                 }
-                if (update.success) {
-                    runCatching { contactManager.incrementCallCount(contact.id) }
-                    onCallCompleted()
-                }
-
             }
         })
-        activeRequestId = if (terminalDeliveredSynchronously) null else requestId
+        if (requestToken != activeRequestToken) {
+            requestId?.let(automationGateway::clearRequestListener)
+            return
+        }
+        activeRequestId = if (terminalHandled) null else requestId
+        pendingTerminalUpdate?.let(::finishTerminalUpdate)
     }
 
     fun clear() {
         ttsService.stop()
+        activeRequestToken++
         activeRequestId?.let(automationGateway::clearRequestListener)
         activeRequestId = null
+    }
+
+    private fun persistSuccessfulCall(contactId: String) {
+        activity.lifecycleScope.launch {
+            val updated = withContext(Dispatchers.IO) {
+                runCatching { contactManager.incrementCallCount(contactId) }
+                    .onFailure { Log.e(TAG, "Failed to update video call contact: $contactId", it) }
+                    .getOrDefault(false)
+            }
+            if (!updated) {
+                Log.w(TAG, "Video call completed but no contact row was updated: $contactId")
+                return@launch
+            }
+            if (!activity.isFinishing && !activity.isDestroyed) {
+                onCallCompleted()
+            }
+        }
     }
 
     private fun buildTtsMessage(update: VideoCallStateUpdate): String {

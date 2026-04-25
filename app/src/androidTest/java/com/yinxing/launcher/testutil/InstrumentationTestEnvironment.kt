@@ -9,9 +9,11 @@ import androidx.test.platform.app.InstrumentationRegistry
 import androidx.test.runner.lifecycle.ActivityLifecycleMonitorRegistry
 import androidx.test.runner.lifecycle.Stage
 import com.yinxing.launcher.data.contact.Contact
+import com.yinxing.launcher.data.contact.ContactSqliteStore
 import com.yinxing.launcher.data.contact.ContactManager
 import com.yinxing.launcher.data.home.LauncherAppRepository
 import com.yinxing.launcher.data.home.LauncherPreferences
+import com.yinxing.launcher.feature.phone.PhoneContactManager
 import kotlinx.coroutines.runBlocking
 import org.junit.Assert.assertTrue
 
@@ -21,9 +23,8 @@ object InstrumentationTestEnvironment {
 
     fun resetAppState() {
         clearPreferences("launcher_prefs")
-        clearPreferences("wechat_contacts")
-        clearPreferences("phone_contacts")
         clearPreferences("incoming_call_diagnostics")
+        resetContactDatabases()
         resetSingleton("com.yinxing.launcher.data.home.LauncherPreferences", "instance")
         resetSingleton("com.yinxing.launcher.data.home.LauncherAppRepository", "instance")
         resetSingleton("com.yinxing.launcher.data.contact.ContactManager", "instance")
@@ -34,7 +35,7 @@ object InstrumentationTestEnvironment {
     }
 
     fun seedVideoContacts(vararg contacts: Contact) {
-        clearPreferences("wechat_contacts")
+        resetContactDatabases()
         resetSingleton("com.yinxing.launcher.data.contact.ContactManager", "instance")
         val manager = ContactManager.getInstance(appContext)
         runBlocking { contacts.forEach { manager.addContact(it) } }
@@ -114,8 +115,22 @@ object InstrumentationTestEnvironment {
     }
 
     private fun clearPreferences(name: String) {
-
         appContext.getSharedPreferences(name, Context.MODE_PRIVATE).edit().clear().commit()
+    }
+
+    private fun resetContactDatabases() {
+        closeSingleton("com.yinxing.launcher.data.contact.ContactManager", "instance")
+        closeSingleton("com.yinxing.launcher.feature.phone.PhoneContactManager", "instance")
+        ContactSqliteStore.deleteDatabase(appContext)
+    }
+
+    private fun closeSingleton(className: String, fieldName: String) {
+        val field = Class.forName(className).getDeclaredField(fieldName)
+        field.isAccessible = true
+        val instance = field.get(null) ?: return
+        runCatching {
+            instance.javaClass.getMethod("close").invoke(instance)
+        }
     }
 
     private fun resetSingleton(className: String, fieldName: String) {

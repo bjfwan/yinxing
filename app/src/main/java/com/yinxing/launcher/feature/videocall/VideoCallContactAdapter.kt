@@ -14,6 +14,7 @@ import androidx.recyclerview.widget.RecyclerView
 import com.yinxing.launcher.R
 import com.yinxing.launcher.common.media.MediaThumbnailLoader
 import com.yinxing.launcher.data.contact.Contact
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
@@ -91,14 +92,21 @@ class VideoCallContactAdapter(
 
         holder.photo.setDefaultAvatar(context, contact.preferredAction)
         holder.photoJob?.cancel()
-        if (!contact.avatarUri.isNullOrBlank()) {
+        val avatarUri = contact.avatarUri?.takeIf { it.isNotBlank() }
+        if (avatarUri != null) {
             holder.photoJob = scope.launch {
-                val bitmap = MediaThumbnailLoader.loadBitmap(
-                    context,
-                    Uri.parse(contact.avatarUri),
-                    320,
-                    320
-                )
+                val bitmap = try {
+                    MediaThumbnailLoader.loadBitmap(
+                        context,
+                        Uri.parse(avatarUri),
+                        320,
+                        320
+                    )
+                } catch (cancelled: CancellationException) {
+                    throw cancelled
+                } catch (_: Throwable) {
+                    null
+                }
                 val currentPosition = holder.bindingAdapterPosition
                 if (currentPosition == RecyclerView.NO_POSITION) {
                     return@launch

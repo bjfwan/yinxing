@@ -158,11 +158,14 @@ class VideoContactDialogController(
             preview.setPadding(dp(28), dp(28), dp(28), dp(28))
             return
         }
-        preview.setPadding(0, 0, 0, 0)
-        preview.setImageDrawable(null)
+        preview.setImageResource(android.R.drawable.ic_menu_camera)
+        preview.setPadding(dp(28), dp(28), dp(28), dp(28))
         previewJob = activity.lifecycleScope.launch {
-            val bitmap = MediaThumbnailLoader.loadBitmap(activity, Uri.parse(avatarUri), 480, 480)
+            val bitmap = runCatching {
+                MediaThumbnailLoader.loadBitmap(activity, Uri.parse(avatarUri), 480, 480)
+            }.getOrNull()
             if (photoPreview === preview && selectedAvatarUri == avatarUri && bitmap != null) {
+                preview.setPadding(0, 0, 0, 0)
                 preview.setImageBitmap(bitmap)
             }
         }

@@ -4,7 +4,7 @@
 
 ## 1. 版本信息
 
-- 版本号已更新（当前 `versionCode = 6`，`versionName = "1.3.0"`）
+- 版本号已更新（当前 `versionCode = 7`，`versionName = "1.4.0"`）
 - 变更范围已确认
 - 发布说明已准备
 

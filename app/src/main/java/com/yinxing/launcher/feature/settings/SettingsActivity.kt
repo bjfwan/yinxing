@@ -7,6 +7,8 @@ import android.content.pm.PackageManager
 import android.content.res.ColorStateList
 import android.os.Build
 import android.os.Bundle
+import android.os.Handler
+import android.os.Looper
 import android.provider.Settings
 import android.util.Log
 import android.view.View
@@ -37,6 +39,7 @@ import com.yinxing.launcher.feature.phone.PhoneContactActivity
 import com.yinxing.launcher.feature.phone.PhoneContactManager
 import com.yinxing.launcher.feature.videocall.VideoCallActivity
 import com.google.android.material.bottomsheet.BottomSheetDialog
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
@@ -66,6 +69,12 @@ class SettingsActivity : AppCompatActivity() {
     private var incomingGuardReadiness = IncomingGuardReadiness(emptyList())
     private var permissionEntryStates = emptyMap<PermissionEntry, PermissionEntryState>()
     private var contactsSummaryJob: Job? = null
+    private val mainHandler = Handler(Looper.getMainLooper())
+    private var overviewRefreshQueued = false
+    private val overviewRefreshRunnable = Runnable {
+        overviewRefreshQueued = false
+        performOverviewRefresh()
+    }
 
     private enum class PermissionGroup(
 
@@ -204,6 +213,12 @@ class SettingsActivity : AppCompatActivity() {
         refreshOverviewUi()
     }
 
+    override fun onDestroy() {
+        mainHandler.removeCallbacks(overviewRefreshRunnable)
+        contactsSummaryJob?.cancel()
+        super.onDestroy()
+    }
+
     private fun bindOverviewViews() {
         tvIncomingGuardStatus = findViewById(R.id.tv_incoming_guard_status)
         tvIncomingGuardProgress = findViewById(R.id.tv_incoming_guard_progress)
@@ -233,6 +248,14 @@ class SettingsActivity : AppCompatActivity() {
     }
 
     private fun refreshOverviewUi() {
+        if (overviewRefreshQueued) {
+            return
+        }
+        overviewRefreshQueued = true
+        mainHandler.post(overviewRefreshRunnable)
+    }
+
+    private fun performOverviewRefresh() {
         updateContactsHubSummary()
         updateAutoAnswerHubCard()
         updateSystemHubCard()
@@ -243,13 +266,24 @@ class SettingsActivity : AppCompatActivity() {
         val homeAppCount = launcherPreferences.getSelectedPackages().size
         contactsSummaryJob?.cancel()
         contactsSummaryJob = lifecycleScope.launch {
-            val counts = loadContactCounts()
-            tvContactsHubSummary.text = getString(
-                R.string.settings_contacts_hub_summary,
-                counts.phoneCount,
-                counts.videoCount,
-                homeAppCount
-            )
+            try {
+                val counts = loadContactCounts()
+                tvContactsHubSummary.text = getString(
+                    R.string.settings_contacts_hub_summary,
+                    counts.phoneCount,
+                    counts.videoCount,
+                    homeAppCount
+                )
+            } catch (cancelled: CancellationException) {
+                throw cancelled
+            } catch (_: Throwable) {
+                tvContactsHubSummary.text = getString(
+                    R.string.settings_contacts_hub_summary,
+                    0,
+                    0,
+                    homeAppCount
+                )
+            }
         }
     }
 
@@ -285,7 +319,7 @@ class SettingsActivity : AppCompatActivity() {
         )
     }
 
-    private fun refreshAllPermissionUi() {
+    private fun refreshPermissionAndDeviceUi() {
         val accessibilityGranted = PermissionUtil.isAnyAccessibilityServiceEnabled(this)
         val overlayGranted = PermissionUtil.canDrawOverlays(this)
         refreshIncomingGuardUi()
@@ -297,11 +331,15 @@ class SettingsActivity : AppCompatActivity() {
         refreshDeviceHubCard()
     }
 
+    private fun refreshAllPermissionUi() {
+        refreshPermissionAndDeviceUi()
+    }
+
     private suspend fun loadContactCounts(): ContactCounts {
         return withContext(Dispatchers.IO) {
             ContactCounts(
-                phoneCount = PhoneContactManager.getInstance(this@SettingsActivity).getContacts().size,
-                videoCount = ContactManager.getInstance(this@SettingsActivity).getContacts().size
+                phoneCount = PhoneContactManager.getInstance(this@SettingsActivity).getContactCount(),
+                videoCount = ContactManager.getInstance(this@SettingsActivity).getContactCount()
             )
         }
     }
@@ -396,7 +434,8 @@ class SettingsActivity : AppCompatActivity() {
     }
 
     private fun refreshDeviceHubCard() {
-        val defaultSummary = if (isDefaultLauncher()) {
+        val isDefault = isDefaultLauncher()
+        val defaultSummary = if (isDefault) {
             getString(R.string.settings_device_hub_default_ready)
         } else {
             getString(R.string.settings_device_hub_default_pending)
@@ -419,13 +458,13 @@ class SettingsActivity : AppCompatActivity() {
         )
         applyInfoBadge(
             tv = tvDeviceHubStatus,
-            text = if (isDefaultLauncher()) {
+            text = if (isDefault) {
                 getString(R.string.settings_guard_status_done)
             } else {
                 getString(R.string.settings_guard_status_pending)
             },
-            textColorResId = if (isDefaultLauncher()) R.color.launcher_action_dark else R.color.launcher_warning,
-            backgroundColorResId = if (isDefaultLauncher()) R.color.launcher_primary_soft else R.color.launcher_warning_soft
+            textColorResId = if (isDefault) R.color.launcher_action_dark else R.color.launcher_warning,
+            backgroundColorResId = if (isDefault) R.color.launcher_primary_soft else R.color.launcher_warning_soft
         )
     }
 
@@ -480,7 +519,18 @@ class SettingsActivity : AppCompatActivity() {
 
     private fun showContactsSheet() {
         lifecycleScope.launch {
-            val counts = loadContactCounts()
+            val counts = try {
+                loadContactCounts()
+            } catch (cancelled: CancellationException) {
+                throw cancelled
+            } catch (throwable: Throwable) {
+                Toast.makeText(
+                    this@SettingsActivity,
+                    getString(R.string.contact_load_failed, throwable.message.orEmpty()),
+                    Toast.LENGTH_SHORT
+                ).show()
+                ContactCounts(0, 0)
+            }
             val sheet = createListSheet(
                 title = getString(R.string.settings_section_quick_setup_title),
                 message = getString(R.string.settings_sheet_contacts_message)

@@ -21,10 +21,15 @@ class WeatherPreferences private constructor(context: Context) {
             }
     }
 
-    fun getCityName(): String = prefs.getString(KEY_CITY, DEFAULT_CITY) ?: DEFAULT_CITY
+    fun getCityName(): String {
+        return prefs.getString(KEY_CITY, DEFAULT_CITY)
+            ?.trim()
+            ?.takeIf { it.isNotEmpty() }
+            ?: DEFAULT_CITY
+    }
 
     fun setCityName(city: String) {
-        prefs.edit().putString(KEY_CITY, city.trim()).apply()
+        prefs.edit().putString(KEY_CITY, city.trim().ifEmpty { DEFAULT_CITY }).apply()
     }
 
     fun hasCity(): Boolean = prefs.contains(KEY_CITY)

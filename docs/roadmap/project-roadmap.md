@@ -2,7 +2,7 @@
 
 更新时间：2026-04-25
 
-## 1. 当前状态（v1.3.0）
+## 1. 当前状态（v1.4.0）
 
 - 构建基线稳定：`assembleDebug` / `testDebugUnitTest`（108 tests, 0 failed）/ `lintDebug` 全部通过
 - 联系人、天气、桌面应用列表数据操作全面迁移至后台线程，消除主线程 IO 阻塞

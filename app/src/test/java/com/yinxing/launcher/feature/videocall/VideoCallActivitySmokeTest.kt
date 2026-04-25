@@ -6,6 +6,7 @@ import android.widget.TextView
 import androidx.cardview.widget.CardView
 import androidx.test.core.app.ApplicationProvider
 import com.yinxing.launcher.R
+import com.yinxing.launcher.data.contact.ContactSqliteStore
 import org.junit.Assert.assertEquals
 import org.junit.Before
 import org.junit.Test
@@ -22,9 +23,9 @@ class VideoCallActivitySmokeTest {
     @Before
     fun setUp() {
         context = ApplicationProvider.getApplicationContext()
-        context.getSharedPreferences("launcher_prefs", Context.MODE_PRIVATE).edit().clear().commit()
-        context.getSharedPreferences("wechat_contacts", Context.MODE_PRIVATE).edit().clear().commit()
         resetContactManagerSingleton()
+        ContactSqliteStore.deleteDatabase(context)
+        context.getSharedPreferences("launcher_prefs", Context.MODE_PRIVATE).edit().clear().commit()
     }
 
     @Test
@@ -68,6 +69,7 @@ class VideoCallActivitySmokeTest {
     private fun resetContactManagerSingleton() {
         val field = Class.forName("com.yinxing.launcher.data.contact.ContactManager").getDeclaredField("instance")
         field.isAccessible = true
+        (field.get(null) as? com.yinxing.launcher.data.contact.ContactManager)?.close()
         field.set(null, null)
     }
 }

@@ -2,6 +2,8 @@ package com.yinxing.launcher
 
 import android.app.Application
 import android.content.ComponentCallbacks2
+import android.os.Handler
+import android.os.Looper
 import com.yinxing.launcher.common.media.MediaThumbnailLoader
 import com.yinxing.launcher.data.home.LauncherAppRepository
 import com.yinxing.launcher.feature.incoming.IncomingCallForegroundService
@@ -15,12 +17,17 @@ class LauncherApplication : Application() {
 
     override fun onCreate() {
         super.onCreate()
-        IncomingCallForegroundService.ensureNotificationChannels(this)
-        appScope.launch {
-            runCatching {
-                LauncherAppRepository.getInstance(this@LauncherApplication).prewarmInstalledApps()
-            }
-        }
+        Handler(Looper.getMainLooper()).postDelayed(
+            {
+                IncomingCallForegroundService.ensureNotificationChannels(this)
+                appScope.launch {
+                    runCatching {
+                        LauncherAppRepository.getInstance(this@LauncherApplication).prewarmInstalledApps()
+                    }
+                }
+            },
+            3_000L
+        )
     }
 
     override fun onTrimMemory(level: Int) {

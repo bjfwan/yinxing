@@ -299,6 +299,11 @@ class PhoneContactActivity : AppCompatActivity() {
             try {
                 val contacts = withContext(Dispatchers.IO) { manager.getContacts() }
                 allContacts = contacts
+                contacts.forEach { contact ->
+                    contact.avatarUri
+                        ?.takeIf { it.isNotBlank() }
+                        ?.let { runCatching { MediaThumbnailLoader.evictFailedUri(Uri.parse(it)) } }
+                }
                 renderContacts()
             } catch (cancelled: CancellationException) {
                 throw cancelled
@@ -689,11 +694,15 @@ class PhoneContactActivity : AppCompatActivity() {
             preview.setImageResource(android.R.drawable.ic_menu_camera)
             return
         }
-        preview.setPadding(0, 0, 0, 0)
-        preview.setImageDrawable(null)
+        val padding = (28 * resources.displayMetrics.density).toInt()
+        preview.setImageResource(android.R.drawable.ic_menu_camera)
+        preview.setPadding(padding, padding, padding, padding)
         dialogPhotoJob = lifecycleScope.launch {
-            val bitmap = MediaThumbnailLoader.loadBitmap(this@PhoneContactActivity, Uri.parse(uri), 480, 480)
+            val bitmap = runCatching {
+                MediaThumbnailLoader.loadBitmap(this@PhoneContactActivity, Uri.parse(uri), 480, 480)
+            }.getOrNull()
             if (dialogPhotoPreview === preview && selectedAvatarUri == uri && bitmap != null) {
+                preview.setPadding(0, 0, 0, 0)
                 preview.setImageBitmap(bitmap)
             }
         }

@@ -16,7 +16,9 @@ object IncomingCallDiagnostics {
 
     private enum class Step(val code: String, val labelResId: Int) {
         BroadcastReceived("broadcast_received", R.string.incoming_call_trace_broadcast),
+        BroadcastFailed("broadcast_failed", R.string.incoming_call_trace_broadcast_failed),
         ForegroundServiceStarted("foreground_service_started", R.string.incoming_call_trace_service),
+        ForegroundServiceFailed("foreground_service_failed", R.string.incoming_call_trace_service_failed),
         ActivityShown("activity_shown", R.string.incoming_call_trace_activity),
         AcceptSucceeded("accept_succeeded", R.string.incoming_call_trace_accept_success),
         AcceptFailed("accept_failed", R.string.incoming_call_trace_accept_failed),
@@ -55,6 +57,26 @@ object IncomingCallDiagnostics {
         )
     }
 
+    fun recordBroadcastFailure(
+        context: Context,
+        callerLabel: String?,
+        incomingNumber: String?,
+        throwable: Throwable
+    ) {
+        val resolvedCallerLabel = resolveCallerLabel(context, callerLabel, incomingNumber)
+        replace(
+            context = context,
+            steps = listOf(Step.BroadcastFailed),
+            callerLabel = resolvedCallerLabel,
+            detail = joinDetail(
+                resolvedCallerLabel,
+                throwable.javaClass.simpleName,
+                throwable.message
+            ),
+            throwable = throwable
+        )
+    }
+
     fun recordServiceStarted(context: Context, callerLabel: String?, autoAnswer: Boolean) {
         val resolvedCallerLabel = callerLabel?.trim()?.takeIf { it.isNotEmpty() }
             ?: storedCallerLabel(context)
@@ -69,6 +91,26 @@ object IncomingCallDiagnostics {
                     else R.string.incoming_call_trace_detail_manual_answer
                 )
             )
+        )
+    }
+
+    fun recordServiceStartFailure(
+        context: Context,
+        callerLabel: String?,
+        throwable: Throwable
+    ) {
+        val resolvedCallerLabel = callerLabel?.trim()?.takeIf { it.isNotEmpty() }
+            ?: storedCallerLabel(context)
+        append(
+            context = context,
+            step = Step.ForegroundServiceFailed,
+            callerLabel = resolvedCallerLabel,
+            detail = joinDetail(
+                resolvedCallerLabel,
+                throwable.javaClass.simpleName,
+                throwable.message
+            ),
+            throwable = throwable
         )
     }
 
@@ -164,17 +206,19 @@ object IncomingCallDiagnostics {
         context: Context,
         steps: List<Step>,
         callerLabel: String?,
-        detail: String
+        detail: String,
+        throwable: Throwable? = null
     ) {
         write(context, steps, callerLabel, detail)
-        log(steps.last(), detail)
+        log(steps.last(), detail, throwable)
     }
 
     private fun append(
         context: Context,
         step: Step,
         callerLabel: String? = null,
-        detail: String
+        detail: String,
+        throwable: Throwable? = null
     ) {
         val existingSteps = readSteps(context)
         val nextSteps = buildList {
@@ -184,7 +228,7 @@ object IncomingCallDiagnostics {
             }
         }
         write(context, nextSteps, callerLabel ?: storedCallerLabel(context), detail)
-        log(step, detail)
+        log(step, detail, throwable)
     }
 
     private fun write(
@@ -236,7 +280,11 @@ object IncomingCallDiagnostics {
     private fun prefs(context: Context) =
         context.applicationContext.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
 
-    private fun log(step: Step, detail: String) {
-        Log.i(TAG, "${step.code}: $detail")
+    private fun log(step: Step, detail: String, throwable: Throwable? = null) {
+        if (throwable != null) {
+            Log.e(TAG, "${step.code}: $detail", throwable)
+        } else {
+            Log.i(TAG, "${step.code}: $detail")
+        }
     }
 }

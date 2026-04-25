@@ -70,6 +70,7 @@ class MainActivity : AppCompatActivity() {
     private var packageReceiverRegistered = false
     private var lastHeaderDayKey = Int.MIN_VALUE
     private var weatherJob: Job? = null
+    private var weatherLoadingCity: String? = null
     private var refreshAppsJob: Job? = null
 
 
@@ -78,6 +79,10 @@ class MainActivity : AppCompatActivity() {
             updateTime()
             scheduleNextTimeUpdate()
         }
+    }
+
+    private val weatherRefreshRunnable = Runnable {
+        refreshWeatherNow()
     }
 
     private val packageChangeReceiver = object : BroadcastReceiver() {
@@ -144,10 +149,11 @@ class MainActivity : AppCompatActivity() {
         val touchHelper = ItemTouchHelper(itemMoveCallback)
         touchHelper.attachToRecyclerView(recyclerView)
         adapter.setTouchHelper(touchHelper)
+        adapter.submitList(appRepository.getStaticHomeItems())
         registerPackageReceiver()
         applyPerformanceMode()
         applyHeaderScale(launcherPreferences.getIconScale())
-        refreshApps()
+        recyclerView.post { refreshApps() }
     }
 
     override fun onNewIntent(intent: Intent) {
@@ -165,10 +171,12 @@ class MainActivity : AppCompatActivity() {
     override fun onPause() {
         super.onPause()
         handler.removeCallbacks(updateTimeRunnable)
+        handler.removeCallbacks(weatherRefreshRunnable)
     }
 
     override fun onDestroy() {
         handler.removeCallbacks(updateTimeRunnable)
+        handler.removeCallbacks(weatherRefreshRunnable)
         if (packageReceiverRegistered) {
             unregisterReceiver(packageChangeReceiver)
         }
@@ -265,16 +273,36 @@ class MainActivity : AppCompatActivity() {
     private fun maybeRefreshWeather() {
         val city = weatherPreferences.getCityName()
         val cached = WeatherRepository.getCached()
+        if (cached != null && cached.cityName == city) {
+            applyWeatherToHeader(cached)
+        }
+        if (weatherJob?.isActive == true && weatherLoadingCity == city) {
+            return
+        }
         val expired = cached == null ||
             cached.cityName != city ||
             System.currentTimeMillis() - cached.lastFetchTime > weatherRefreshInterval
         if (expired) {
-            weatherJob?.cancel()
-            weatherJob = scope.launch {
+            handler.removeCallbacks(weatherRefreshRunnable)
+            handler.postDelayed(weatherRefreshRunnable, if (cached == null) 1_200L else 250L)
+        }
+    }
+
+    private fun refreshWeatherNow() {
+        val city = weatherPreferences.getCityName()
+        if (weatherJob?.isActive == true && weatherLoadingCity == city) {
+            return
+        }
+        weatherJob?.cancel()
+        weatherLoadingCity = city
+        weatherJob = scope.launch {
+            try {
                 applyWeatherToHeader(WeatherRepository.fetchWeather(city))
+            } finally {
+                if (weatherLoadingCity == city) {
+                    weatherLoadingCity = null
+                }
             }
-        } else {
-            applyWeatherToHeader(cached)
         }
     }
 

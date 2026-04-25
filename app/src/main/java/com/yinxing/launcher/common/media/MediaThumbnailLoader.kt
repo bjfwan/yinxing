@@ -9,18 +9,23 @@ import android.graphics.ImageDecoder
 import android.graphics.drawable.Drawable
 import android.net.Uri
 import android.os.Build
+import android.util.Log
 import android.util.LruCache
 import androidx.core.graphics.createBitmap
 import androidx.core.graphics.scale
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
+import java.util.concurrent.ConcurrentHashMap
 
 object MediaThumbnailLoader {
+    private const val TAG = "MediaThumbnailLoader"
     private val bitmapCache = object : LruCache<String, Bitmap>(
         (Runtime.getRuntime().maxMemory() / 8L).coerceAtMost(Int.MAX_VALUE.toLong()).toInt()
     ) {
         override fun sizeOf(key: String, value: Bitmap): Int = value.byteCount
     }
+    private val failedUriLoads = ConcurrentHashMap<String, Long>()
+    private const val FAILED_URI_TTL_MS = 60 * 1000L
 
     suspend fun loadAppIcon(context: Context, packageName: String, sizePx: Int): Bitmap? {
         return withContext(Dispatchers.IO) {
@@ -64,25 +69,46 @@ object MediaThumbnailLoader {
         reqHeight: Int
     ): Bitmap? {
         val cacheKey = "uri:$uri:$reqWidth:$reqHeight"
+        failedUriLoads[cacheKey]?.let { failedAt ->
+            if (System.currentTimeMillis() - failedAt < FAILED_URI_TTL_MS) {
+                return null
+            }
+        }
         bitmapCache.get(cacheKey)?.let { return it }
 
-        val bitmap = decodeSampledBitmap(
-            context.contentResolver,
-            uri,
-            reqWidth.coerceAtLeast(1),
-            reqHeight.coerceAtLeast(1)
-        ) ?: return null
+        val bitmap = try {
+            decodeSampledBitmap(
+                context.contentResolver,
+                uri,
+                reqWidth.coerceAtLeast(1),
+                reqHeight.coerceAtLeast(1)
+            )
+        } catch (oom: OutOfMemoryError) {
+            Log.w(TAG, "OOM decoding $uri; clearing bitmap cache")
+            bitmapCache.evictAll()
+            null
+        } catch (throwable: Throwable) {
+            Log.w(TAG, "Failed to decode $uri: ${throwable.message}")
+            null
+        } ?: run {
+            failedUriLoads[cacheKey] = System.currentTimeMillis()
+            return null
+        }
 
+        failedUriLoads.remove(cacheKey)
         bitmapCache.put(cacheKey, bitmap)
         return bitmap
     }
 
     fun clearIconCache() {
         bitmapCache.evictAll()
+        failedUriLoads.clear()
     }
 
     fun evictUri(uri: Uri, reqWidth: Int, reqHeight: Int) {
-        bitmapCache.remove("uri:$uri:$reqWidth:$reqHeight")
+        val cacheKey = "uri:$uri:$reqWidth:$reqHeight"
+        bitmapCache.remove(cacheKey)
+        failedUriLoads.remove(cacheKey)
     }
 
     fun evictUri(uri: Uri) {
@@ -90,6 +116,16 @@ object MediaThumbnailLoader {
         bitmapCache.snapshot().keys
             .filter { it.startsWith(cacheKeyPrefix) }
             .forEach(bitmapCache::remove)
+        failedUriLoads.keys
+            .filter { it.startsWith(cacheKeyPrefix) }
+            .forEach(failedUriLoads::remove)
+    }
+
+    fun evictFailedUri(uri: Uri) {
+        val cacheKeyPrefix = "uri:$uri:"
+        failedUriLoads.keys
+            .filter { it.startsWith(cacheKeyPrefix) }
+            .forEach(failedUriLoads::remove)
     }
 
 

@@ -364,7 +364,9 @@
     <string name="incoming_call_trace_detail_auto_answer">命中自动接听</string>
     <string name="incoming_call_trace_detail_manual_answer">等待手动接听</string>
     <string name="incoming_call_trace_broadcast">广播已收到</string>
+    <string name="incoming_call_trace_broadcast_failed">广播处理失败</string>
     <string name="incoming_call_trace_service">来电提醒已启动</string>
+    <string name="incoming_call_trace_service_failed">来电提醒启动失败</string>
     <string name="incoming_call_trace_activity">来电页已打开</string>
     <string name="incoming_call_trace_accept_success">接听成功</string>
     <string name="incoming_call_trace_accept_failed">接听失败</string>

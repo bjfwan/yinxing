@@ -40,6 +40,13 @@ class LauncherAppRepository private constructor(context: Context) {
         loadInstalledApps()
     }
 
+    fun getStaticHomeItems(): List<HomeAppItem> {
+        return buildList {
+            addPrimaryBuiltInItems()
+            addSecondaryBuiltInItems()
+        }
+    }
+
     suspend fun getInstalledApps(preferences: LauncherPreferences): List<AppInfo> = withContext(Dispatchers.IO) {
         loadInstalledApps().map { app ->
             AppInfo(
@@ -57,9 +64,8 @@ class LauncherAppRepository private constructor(context: Context) {
             }
 
             val requestVersion = homeItemsVersion.get()
-            val installedApps = loadInstalledApps()
-            val selectedApps = installedApps
-                .filter { preferences.isPackageSelected(it.packageName) }
+            val selectedPackages = preferences.getSelectedPackages()
+            val selectedApps = loadSelectedHomeApps(selectedPackages)
                 .map { app ->
                     HomeAppItem(
                         packageName = app.packageName,
@@ -149,6 +155,42 @@ class LauncherAppRepository private constructor(context: Context) {
     } else {
         @Suppress("DEPRECATION")
         packageManager.queryIntentActivities(launcherIntent, 0)
+    }
+
+    private suspend fun loadSelectedHomeApps(packageNames: Set<String>): List<InstalledAppRecord> {
+        if (packageNames.isEmpty()) {
+            return emptyList()
+        }
+        val packageManager = appContext.packageManager
+        val directApps = packageNames.mapNotNull { packageName ->
+            loadSelectedLauncherApp(packageManager, packageName)
+        }
+        val directPackages = directApps.mapTo(hashSetOf()) { it.packageName }
+        if (directPackages.size == packageNames.size) {
+            return directApps
+        }
+        return directApps + loadInstalledApps()
+            .filter { it.packageName in packageNames && it.packageName !in directPackages }
+    }
+
+    private fun loadSelectedLauncherApp(
+        packageManager: PackageManager,
+        packageName: String
+    ): InstalledAppRecord? {
+        if (packageName == appContext.packageName) {
+            return null
+        }
+        val launcherIntent = Intent(Intent.ACTION_MAIN)
+            .addCategory(Intent.CATEGORY_LAUNCHER)
+            .setPackage(packageName)
+        val activityInfo = queryLauncherActivities(packageManager, launcherIntent)
+            .firstOrNull()
+            ?.activityInfo
+            ?: return null
+        return InstalledAppRecord(
+            packageName = activityInfo.packageName,
+            appName = activityInfo.applicationInfo.loadLabel(packageManager).toString()
+        )
     }
 
     private fun MutableList<HomeAppItem>.addPrimaryBuiltInItems() {
