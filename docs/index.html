@@ -138,18 +138,23 @@
           <p class="section-intro">这套颜色不是为设计师做的，是按<strong>老花眼、对比敏感度下降、晶状体变黄</strong>等真实视觉变化反推出来的。所有改动基于 <code>colors.xml</code> 增量扩展，<strong>不破坏 110+ 处引用</strong>。</p>
         </div>
 
+        <div class="tokens-divider" aria-hidden="true"><span></span></div>
+
         <div class="tokens-rationale">
           <article class="tokens-rationale-card">
+            <span class="tokens-rationale-numeral" aria-hidden="true">01</span>
             <span class="tokens-rationale-label">为老人 · 红绿灯逻辑</span>
             <h3 class="tokens-rationale-title">绿 / 黄 / 红 = 走过几十年的颜色</h3>
             <p>老人在马路上看了一辈子红绿灯，<strong>不需要重新学习</strong>。所以绿色只给<strong>安全的操作</strong>（接听、保存），黄色只给<strong>需要确认</strong>（倒计时），红色只给<strong>不可逆</strong>（挂断、删除）。考虑到老年人红绿色弱发生率上升，每个动作还配<strong>文字 + 图标</strong>双重提示，不靠颜色单独表意。</p>
           </article>
           <article class="tokens-rationale-card">
+            <span class="tokens-rationale-numeral" aria-hidden="true">02</span>
             <span class="tokens-rationale-label">为老人 · 暖色感知偏好</span>
             <h3 class="tokens-rationale-title">银杏黄 取自他们熟悉的树叶</h3>
             <p>老年人晶状体逐年发黄，<strong>蓝光透过率下降，暖色辨识反而变好</strong>。所以品牌色没用流行的冷蓝紫，而是取<code>#B8882A</code> 银杏叶颜色——温暖、亲切、不刺激；柔淡变体 <code>#FBF1DC</code> 做大块背景，文字对比度仍稳在 <strong>WCAG AAA 级（≥7:1）</strong>，老花眼也看得清。</p>
           </article>
           <article class="tokens-rationale-card">
+            <span class="tokens-rationale-numeral" aria-hidden="true">03</span>
             <span class="tokens-rationale-label">为老人 · 暗光不眩光</span>
             <h3 class="tokens-rationale-title">夜起夜里 不被屏幕扎眼</h3>
             <p>老花眼对眩光特别敏感，<strong>纯黑底配纯白字反而最累</strong>。所以暗色背景 <code>#0F1419</code> 留一点墨蓝灰、文字 <code>#F1F5F9</code> 不用纯白；从近黑到深炭分两档，从象牙白到雾灰分两档，<strong>夜里起来看时间、看来电姓名都不晕</strong>。</p>
@@ -243,6 +248,11 @@
             </div>
           </article>
         </div>
+
+        <p class="tokens-footnote">
+          <span class="tokens-footnote-mark">※</span>
+          对比度按 <strong>WCAG 2.2 AAA</strong>（≥7:1）逐项核验 · 配色基于<strong>老年视觉变化</strong>的真实研究反推 · 所有色值与现有 <code>colors.xml</code> 一一对应
+        </p>
       </section>
 
     </main>

@@ -492,16 +492,41 @@ a {
   letter-spacing: 0.02em;
 }
 
+.tokens-divider {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+  margin: 0 0 28px;
+  padding-top: 4px;
+}
+
+.tokens-divider::before,
+.tokens-divider::after {
+  content: "";
+  flex: 1;
+  height: 1px;
+  background: linear-gradient(90deg, transparent 0%, rgba(181, 135, 44, 0.32) 50%, transparent 100%);
+}
+
+.tokens-divider span {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: var(--gold);
+  box-shadow: 0 0 0 4px rgba(181, 135, 44, 0.10);
+}
+
 .tokens-rationale {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 16px;
-  margin: 4px 0 36px;
+  margin: 0 0 40px;
 }
 
 .tokens-rationale-card {
   position: relative;
-  padding: 22px 22px 24px;
+  padding: 24px 22px 24px;
   border-radius: 22px;
   background: linear-gradient(155deg, rgba(255, 250, 241, 0.78) 0%, rgba(255, 250, 241, 0.42) 100%);
   border: 1px solid rgba(23, 20, 16, 0.08);
@@ -509,6 +534,7 @@ a {
   display: flex;
   flex-direction: column;
   gap: 10px;
+  overflow: hidden;
 }
 
 .tokens-rationale-card::before {
@@ -521,7 +547,23 @@ a {
   background: linear-gradient(90deg, transparent 0%, rgba(181, 135, 44, 0.5) 50%, transparent 100%);
 }
 
+.tokens-rationale-numeral {
+  position: absolute;
+  top: 14px;
+  right: 22px;
+  font-family: "Cormorant Garamond", serif;
+  font-size: 2.6rem;
+  font-weight: 300;
+  line-height: 1;
+  color: var(--gold);
+  opacity: 0.28;
+  letter-spacing: 0.02em;
+  pointer-events: none;
+}
+
 .tokens-rationale-label {
+  position: relative;
+  z-index: 1;
   font-family: "Cormorant Garamond", "Noto Serif SC", serif;
   font-size: 0.74rem;
   font-weight: 600;
@@ -643,6 +685,41 @@ a {
   font-size: 0.92rem;
   font-weight: 700;
   letter-spacing: 0.03em;
+}
+
+.tokens-footnote {
+  margin: 28px 0 0;
+  padding: 18px 22px;
+  border-top: 1px solid rgba(23, 20, 16, 0.08);
+  font-size: 0.84rem;
+  line-height: 1.85;
+  color: var(--ink-muted);
+  letter-spacing: 0.02em;
+}
+
+.tokens-footnote-mark {
+  display: inline-block;
+  margin-right: 8px;
+  font-family: "Cormorant Garamond", serif;
+  font-size: 1.05rem;
+  color: var(--gold);
+  vertical-align: -1px;
+}
+
+.tokens-footnote strong {
+  color: var(--ink-soft);
+  font-weight: 600;
+}
+
+.tokens-footnote code {
+  display: inline-block;
+  padding: 0 6px;
+  border-radius: 5px;
+  background: var(--gold-soft);
+  color: var(--gold);
+  font-family: ui-monospace, "SF Mono", Menlo, monospace;
+  font-size: 0.86em;
+  font-weight: 500;
 }
 
 /* ─────────────────────────────────────────
@@ -971,6 +1048,24 @@ body.js-ready [data-reveal].is-visible {
     line-height: 1.7;
   }
 
+  .tokens-rationale-numeral {
+    font-size: 2.2rem;
+    top: 12px;
+    right: 18px;
+    opacity: 0.24;
+  }
+
+  .tokens-divider {
+    margin-bottom: 22px;
+  }
+
+  .tokens-footnote {
+    margin-top: 22px;
+    padding: 14px 16px 0;
+    font-size: 0.78rem;
+    line-height: 1.78;
+  }
+
   /* Footer */
   .site-footer {
     gap: 12px;
@@ -1065,6 +1160,19 @@ body.js-ready [data-reveal].is-visible {
 
   .tokens-rationale-card p {
     font-size: 0.82rem;
+    line-height: 1.7;
+  }
+
+  .tokens-rationale-numeral {
+    font-size: 1.85rem;
+    top: 10px;
+    right: 14px;
+    opacity: 0.22;
+  }
+
+  .tokens-footnote {
+    padding: 12px 12px 0;
+    font-size: 0.74rem;
     line-height: 1.7;
   }
 
