@@ -224,6 +224,7 @@ a {
    Hero Card  (首屏深色大卡片)
 ───────────────────────────────────────── */
 .hero-card {
+  position: relative;
   display: grid;
   grid-template-columns: minmax(0, 1.15fr) minmax(260px, 0.85fr);
   gap: clamp(28px, 4vw, 60px);
@@ -264,6 +265,35 @@ a {
   color: rgba(255, 250, 241, 0.68);
 }
 
+.hero-card-quote-mark {
+  position: absolute;
+  top: -28px;
+  left: 18px;
+  font-family: "Cormorant Garamond", serif;
+  font-size: clamp(7rem, 14vw, 12rem);
+  font-weight: 300;
+  line-height: 1;
+  color: rgba(255, 250, 241, 0.07);
+  pointer-events: none;
+  user-select: none;
+  z-index: 0;
+}
+
+.hero-card-body,
+.hero-card-side {
+  position: relative;
+  z-index: 1;
+}
+
+.hero-card-signature {
+  margin: 22px 0 0;
+  font-family: "Cormorant Garamond", "Noto Serif SC", serif;
+  font-size: 0.86rem;
+  letter-spacing: 0.18em;
+  color: rgba(255, 250, 241, 0.42);
+  font-style: italic;
+}
+
 .hero-card-side {
   display: flex;
   flex-direction: column;
@@ -281,6 +311,20 @@ a {
   letter-spacing: 0.24em;
   text-transform: uppercase;
   color: var(--ink-muted);
+}
+
+.section-kicker-num {
+  display: inline-block;
+  margin-right: 14px;
+  padding-right: 14px;
+  border-right: 1px solid rgba(181, 135, 44, 0.4);
+  font-family: "Cormorant Garamond", serif;
+  font-size: 1rem;
+  font-weight: 500;
+  letter-spacing: 0.08em;
+  color: var(--gold);
+  vertical-align: -1px;
+  text-transform: none;
 }
 
 /* ─────────────────────────────────────────
@@ -397,12 +441,23 @@ a {
 }
 
 .section-heading h2 {
+  position: relative;
   margin: 16px 0 0;
   font-family: "Noto Serif SC", serif;
   font-size: clamp(2.1rem, 4vw, 3.6rem);
   line-height: 1.18;
   letter-spacing: -0.04em;
   max-width: 12ch;
+}
+
+.section-heading h2::after {
+  content: "";
+  display: block;
+  width: 56px;
+  height: 2px;
+  margin-top: 20px;
+  border-radius: 1px;
+  background: linear-gradient(90deg, var(--gold) 0%, rgba(181, 135, 44, 0) 100%);
 }
 
 .section-intro {
@@ -452,15 +507,35 @@ a {
 }
 
 .support-column li {
+  position: relative;
+  padding-left: 18px;
   padding-bottom: 16px;
   border-bottom: 1px solid rgba(23, 20, 16, 0.08);
   line-height: 1.75;
   color: var(--ink-soft);
 }
 
+.support-column li::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 0.78em;
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: var(--gold);
+  opacity: 0.7;
+  transition: transform 0.45s cubic-bezier(0.22, 1, 0.36, 1), opacity 0.4s ease;
+}
+
 .support-column.is-muted h3,
 .support-column.is-muted li {
   color: var(--ink-muted);
+}
+
+.support-column.is-muted li::before {
+  background: var(--ink-muted);
+  opacity: 0.42;
 }
 
 .install-strip {
@@ -723,6 +798,32 @@ a {
 }
 
 /* ─────────────────────────────────────────
+   Page tagline (footer separator + signature)
+───────────────────────────────────────── */
+.page-tagline {
+  position: relative;
+  margin-top: 64px;
+  padding-top: 28px;
+  text-align: center;
+  font-family: "Cormorant Garamond", "Noto Serif SC", serif;
+  font-size: 0.74rem;
+  letter-spacing: 0.36em;
+  text-transform: uppercase;
+  color: var(--ink-muted);
+}
+
+.page-tagline::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: clamp(180px, 28vw, 260px);
+  height: 1px;
+  background: linear-gradient(90deg, transparent 0%, rgba(181, 135, 44, 0.5) 50%, transparent 100%);
+}
+
+/* ─────────────────────────────────────────
    Footer
 ───────────────────────────────────────── */
 .site-footer {
@@ -730,7 +831,7 @@ a {
   align-items: center;
   justify-content: space-between;
   gap: 20px;
-  padding: 32px 0 8px;
+  padding: 22px 0 8px;
 }
 
 .site-footer p {
@@ -801,6 +902,15 @@ body.js-ready [data-reveal].is-visible {
   .token-swatch:hover {
     transform: translateY(-3px);
     box-shadow: 0 24px 52px rgba(28, 20, 12, 0.18);
+  }
+
+  .support-column li:hover::before {
+    transform: scale(1.5);
+    opacity: 1;
+  }
+
+  .support-column.is-muted li:hover::before {
+    opacity: 0.85;
   }
 }
 
@@ -920,8 +1030,39 @@ body.js-ready [data-reveal].is-visible {
     margin-top: 10px;
   }
 
+  .hero-card-quote-mark {
+    top: -16px;
+    left: 10px;
+    font-size: 6rem;
+    color: rgba(255, 250, 241, 0.05);
+  }
+
+  .hero-card-signature {
+    margin-top: 16px;
+    font-size: 0.74rem;
+    letter-spacing: 0.16em;
+  }
+
   .hero-card-side {
     gap: 12px;
+  }
+
+  .section-kicker-num {
+    margin-right: 10px;
+    padding-right: 10px;
+    font-size: 0.86rem;
+  }
+
+  .section-heading h2::after {
+    width: 42px;
+    margin-top: 14px;
+  }
+
+  .page-tagline {
+    margin-top: 36px;
+    padding-top: 22px;
+    font-size: 0.66rem;
+    letter-spacing: 0.28em;
   }
 
   /* Buttons */
@@ -1109,6 +1250,24 @@ body.js-ready [data-reveal].is-visible {
 
   .hero-card-desc {
     font-size: 0.84rem;
+  }
+
+  .hero-card-quote-mark {
+    top: -10px;
+    left: 6px;
+    font-size: 4.6rem;
+  }
+
+  .hero-card-signature {
+    font-size: 0.7rem;
+    letter-spacing: 0.14em;
+  }
+
+  .page-tagline {
+    margin-top: 28px;
+    padding-top: 18px;
+    font-size: 0.6rem;
+    letter-spacing: 0.22em;
   }
 
   .button {
