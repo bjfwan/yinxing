@@ -39,20 +39,22 @@
                 style="@style/Widget.OldLauncher.DialogButtonSecondary"
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
-                android:layout_marginEnd="8dp"
-                android:layout_weight="1">
+                android:layout_marginEnd="10dp"
+                android:layout_weight="2">
 
                 <TextView
                     style="@style/TextAppearance.OldLauncher.ButtonSecondary"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:gravity="center"
-                    android:minHeight="54dp"
+                    android:minHeight="60dp"
                     android:paddingStart="16dp"
-                    android:paddingTop="14dp"
+                    android:paddingTop="16dp"
                     android:paddingEnd="16dp"
-                    android:paddingBottom="14dp"
-                    android:text="@string/action_cancel" />
+                    android:paddingBottom="16dp"
+                    android:text="@string/action_cancel"
+                    android:textSize="20sp"
+                    android:textStyle="bold" />
             </com.google.android.material.card.MaterialCardView>
 
             <com.google.android.material.card.MaterialCardView
@@ -60,7 +62,7 @@
                 style="@style/Widget.OldLauncher.DialogButtonDanger"
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
-                android:layout_marginStart="8dp"
+                android:layout_marginStart="10dp"
                 android:layout_weight="1">
 
                 <TextView
@@ -68,12 +70,13 @@
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:gravity="center"
-                    android:minHeight="54dp"
-                    android:paddingStart="16dp"
-                    android:paddingTop="14dp"
-                    android:paddingEnd="16dp"
-                    android:paddingBottom="14dp"
-                    android:text="@string/action_delete" />
+                    android:minHeight="60dp"
+                    android:paddingStart="12dp"
+                    android:paddingTop="16dp"
+                    android:paddingEnd="12dp"
+                    android:paddingBottom="16dp"
+                    android:text="@string/action_delete"
+                    android:textSize="16sp" />
             </com.google.android.material.card.MaterialCardView>
         </LinearLayout>
     </LinearLayout>

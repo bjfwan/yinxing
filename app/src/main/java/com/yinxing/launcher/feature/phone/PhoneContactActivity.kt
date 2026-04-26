@@ -34,6 +34,7 @@ import com.yinxing.launcher.common.ui.PageStateView
 import com.yinxing.launcher.data.contact.Contact
 import com.yinxing.launcher.data.contact.ContactAvatarStore
 import com.yinxing.launcher.data.contact.ContactStorage
+import com.yinxing.launcher.data.home.LauncherPreferences
 import java.util.UUID
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
@@ -154,6 +155,7 @@ class PhoneContactActivity : AppCompatActivity() {
     private lateinit var adapter: PhoneContactAdapter
     private lateinit var stateView: PageStateView
     private lateinit var manager: PhoneContactManager
+    private lateinit var launcherPreferences: LauncherPreferences
     private lateinit var pageTitleText: TextView
     private lateinit var modeActionButton: MaterialCardView
     private lateinit var modeActionText: TextView
@@ -200,6 +202,7 @@ class PhoneContactActivity : AppCompatActivity() {
         setContentView(R.layout.activity_phone_contact)
 
         manager = PhoneContactManager.getInstance(this)
+        launcherPreferences = LauncherPreferences.getInstance(this)
 
         recyclerView = findViewById(R.id.recycler_phone_contacts)
         recyclerView.layoutManager = LinearLayoutManager(this)
@@ -257,6 +260,8 @@ class PhoneContactActivity : AppCompatActivity() {
 
     override fun onResume() {
         super.onResume()
+        adapter.setFullCardTapEnabled(launcherPreferences.isFullCardTapEnabled())
+        adapter.setAnimationsEnabled(!launcherPreferences.isLowPerformanceModeEnabled())
         refreshContacts()
     }
 

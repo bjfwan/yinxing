@@ -1,6 +1,6 @@
 # 发布检查清单
 
-更新时间：2026-04-25
+更新时间：2026-04-26
 
 ## 1. 版本信息
 
@@ -10,12 +10,14 @@
 
 ## 2. 构建检查
 
-- `JAVA_HOME` 已确认可用
+- `JAVA_HOME` 已确认可用（本地使用 `D:\android\jbr`）
 - `GRADLE_USER_HOME` 已确认使用稳定路径
 - `:app:assembleDebug` 通过
 - `:app:testDebugUnitTest` 通过（108 tests, 0 failed）
 - `:app:assembleDebugAndroidTest` 通过
 - `:app:lintDebug` 没有阻断错误
+- `:app:assembleRelease` 通过（输出 `app/build/outputs/apk/release/app-release.apk`，约 2.90 MB）
+- `:app:lintVitalRelease` 通过
 - 目标设备可安装
 - 关键权限声明已确认
 

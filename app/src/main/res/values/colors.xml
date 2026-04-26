@@ -23,4 +23,13 @@
     <color name="launcher_warning_soft">#FEF3C7</color>
     <color name="launcher_danger">#EF4444</color>
     <color name="launcher_danger_soft">#FEE2E2</color>
+
+    <color name="launcher_ginkgo">#B8882A</color>
+    <color name="launcher_ginkgo_deep">#8E661B</color>
+    <color name="launcher_ginkgo_soft">#FBF1DC</color>
+    <color name="launcher_ginkgo_line">#E9DEC7</color>
+
+    <color name="launcher_success">#2B7A5C</color>
+    <color name="launcher_success_soft">#DCFCE7</color>
+    <color name="launcher_success_line">#86EFAC</color>
 </resources>

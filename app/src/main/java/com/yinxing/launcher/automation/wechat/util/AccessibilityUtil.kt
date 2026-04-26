@@ -20,6 +20,9 @@ object AccessibilityUtil {
     /** 递归遍历最大深度（微信 UI 树通常不超过此深度） */
     private const val MAX_TRAVERSE_DEPTH = 12
 
+    /** dispatchGesture 单击时长，避开系统 tapTimeout 边界 */
+    private const val TAP_DURATION_MS = 60L
+
     fun findNodeByText(root: AccessibilityNodeInfo?, text: String): AccessibilityNodeInfo? {
         if (root == null) return null
         return root.findAccessibilityNodeInfosByText(text).firstOrNull()
@@ -185,7 +188,7 @@ object AccessibilityUtil {
     fun clickByCoordinate(service: AccessibilityService, x: Float, y: Float): Boolean {
         val path = Path().apply { moveTo(x, y) }
         val gesture = GestureDescription.Builder()
-            .addStroke(GestureDescription.StrokeDescription(path, 0, 100))
+            .addStroke(GestureDescription.StrokeDescription(path, 0, TAP_DURATION_MS))
             .build()
 
         return service.dispatchGesture(gesture, null, null)

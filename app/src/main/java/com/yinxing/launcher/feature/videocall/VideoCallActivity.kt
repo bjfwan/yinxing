@@ -176,6 +176,7 @@ class VideoCallActivity : AppCompatActivity() {
     override fun onResume() {
         super.onResume()
         applyPerformanceMode()
+        adapter.setFullCardTapEnabled(launcherPreferences.isFullCardTapEnabled())
         refreshContacts()
     }
 

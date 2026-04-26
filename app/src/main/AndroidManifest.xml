@@ -17,7 +17,7 @@
         tools:ignore="ScopedStorage" />
     <uses-permission android:name="android.permission.REQUEST_IGNORE_BATTERY_OPTIMIZATIONS" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
-    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_PHONE_CALL" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_SPECIAL_USE" />
     <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
 
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
@@ -59,6 +59,7 @@
             android:name=".feature.home.MainActivity"
             android:exported="true"
             android:launchMode="singleInstance"
+            android:enableOnBackInvokedCallback="false"
             android:stateNotNeeded="true">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
@@ -111,7 +112,11 @@
         <service
             android:name=".feature.incoming.IncomingCallForegroundService"
             android:exported="false"
-            android:foregroundServiceType="phoneCall" />
+            android:foregroundServiceType="specialUse">
+            <property
+                android:name="android.app.PROPERTY_SPECIAL_USE_FGS_SUBTYPE"
+                android:value="incoming_call_alert" />
+        </service>
 
         <service
             android:name="com.google.android.accessibility.selecttospeak.SelectToSpeakService"

@@ -11,6 +11,7 @@ import android.os.IBinder
 import android.util.Log
 import androidx.core.app.NotificationCompat
 import androidx.core.content.ContextCompat
+import com.google.firebase.crashlytics.FirebaseCrashlytics
 import com.yinxing.launcher.R
 
 class IncomingCallForegroundService : Service() {
@@ -133,6 +134,13 @@ class IncomingCallForegroundService : Service() {
             true
         }.getOrElse { error ->
             Log.e(TAG, "startForeground failed, fallback to regular notification", error)
+            runCatching {
+                FirebaseCrashlytics.getInstance().apply {
+                    setCustomKey("fgs_subtype", "incoming_call_alert")
+                    setCustomKey("android_sdk", Build.VERSION.SDK_INT)
+                    recordException(error)
+                }
+            }
             getSystemService(NotificationManager::class.java)?.notify(NOTIFICATION_ID, notification)
             false
         }

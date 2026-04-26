@@ -69,6 +69,7 @@ class MainActivity : AppCompatActivity() {
     private val weatherRefreshInterval = 8 * 60 * 60 * 1000L
     private var packageReceiverRegistered = false
     private var lastHeaderDayKey = Int.MIN_VALUE
+    private var lastTimeText: String? = null
     private var weatherJob: Job? = null
     private var weatherLoadingCity: String? = null
     private var refreshAppsJob: Job? = null
@@ -141,7 +142,6 @@ class MainActivity : AppCompatActivity() {
             lowPerformanceMode = launcherPreferences.isLowPerformanceModeEnabled(),
             iconScale = launcherPreferences.getIconScale(),
             onItemClick = { item -> handleAppClick(item) },
-            onItemLongClick = { item -> handleAppLongClick(item) },
             onOrderChanged = { items -> saveAppOrder(items) }
         )
         recyclerView.adapter = adapter
@@ -154,6 +154,24 @@ class MainActivity : AppCompatActivity() {
         applyPerformanceMode()
         applyHeaderScale(launcherPreferences.getIconScale())
         recyclerView.post { refreshApps() }
+        playEntryAnimation()
+    }
+
+    private fun playEntryAnimation() {
+        if (launcherPreferences.isLowPerformanceModeEnabled()) {
+            return
+        }
+        val root = findViewById<android.view.View>(R.id.layout_home_root) ?: return
+        root.alpha = 0f
+        root.translationY = 18f
+        root.post {
+            root.animate()
+                .alpha(1f)
+                .translationY(0f)
+                .setDuration(240)
+                .setInterpolator(android.view.animation.DecelerateInterpolator())
+                .start()
+        }
     }
 
     override fun onNewIntent(intent: Intent) {
@@ -233,7 +251,25 @@ class MainActivity : AppCompatActivity() {
         val now = Calendar.getInstance()
         val timeText = timeFormat.format(now.time)
         if (tvTime.text != timeText) {
-            tvTime.text = timeText
+            val animateChange = lastTimeText != null && !launcherPreferences.isLowPerformanceModeEnabled()
+            if (animateChange) {
+                tvTime.animate().cancel()
+                tvTime.animate()
+                    .alpha(0.45f)
+                    .setDuration(90)
+                    .withEndAction {
+                        tvTime.text = timeText
+                        tvTime.animate()
+                            .alpha(1f)
+                            .setDuration(160)
+                            .setInterpolator(android.view.animation.DecelerateInterpolator())
+                            .start()
+                    }
+                    .start()
+            } else {
+                tvTime.text = timeText
+            }
+            lastTimeText = timeText
         }
         val dayKey = now.get(Calendar.YEAR) * 1000 + now.get(Calendar.DAY_OF_YEAR)
         if (dayKey != lastHeaderDayKey) {
@@ -413,34 +449,4 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    private fun handleAppLongClick(item: HomeAppItem): Boolean {
-        if (item.type == HomeAppItem.Type.APP) {
-            showRemoveDialog(item)
-            return true
-        }
-        return false
-    }
-
-    private fun showRemoveDialog(item: HomeAppItem) {
-        val dialogView = layoutInflater.inflate(R.layout.dialog_remove_app, null)
-        val dialog = AlertDialog.Builder(this)
-            .setView(dialogView)
-            .create()
-        dialog.window?.setBackgroundDrawableResource(android.R.color.transparent)
-        dialogView.findViewById<TextView>(R.id.dialog_message).text =
-            getString(R.string.remove_app_message, item.appName)
-        dialogView.findViewById<androidx.cardview.widget.CardView>(R.id.btn_cancel)
-            .setOnClickListener { dialog.dismiss() }
-        dialogView.findViewById<androidx.cardview.widget.CardView>(R.id.btn_confirm)
-            .setOnClickListener {
-                dialog.dismiss()
-                removeApp(item.packageName)
-            }
-        dialog.show()
-    }
-
-    private fun removeApp(packageName: String) {
-        launcherPreferences.setPackageSelected(packageName, false)
-        Toast.makeText(this, getString(R.string.remove_success), Toast.LENGTH_SHORT).show()
-    }
 }

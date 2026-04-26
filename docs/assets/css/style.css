@@ -474,6 +474,111 @@ a {
 }
 
 /* ─────────────────────────────────────────
+   Tokens block
+───────────────────────────────────────── */
+.tokens-block {
+  padding-top: 62px;
+}
+
+.tokens-block code {
+  display: inline-block;
+  padding: 1px 9px;
+  border-radius: 6px;
+  background: var(--gold-soft);
+  color: var(--gold);
+  font-family: ui-monospace, "SF Mono", Menlo, monospace;
+  font-size: 0.84em;
+  font-weight: 500;
+  letter-spacing: 0.02em;
+}
+
+.tokens-row-label {
+  margin: 4px 0 18px;
+  font-family: "Noto Serif SC", serif;
+  font-size: 1rem;
+  font-weight: 500;
+  color: var(--ink-soft);
+  letter-spacing: 0.04em;
+}
+
+.tokens-grid {
+  display: grid;
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.token-swatch {
+  position: relative;
+  aspect-ratio: 1.5;
+  background: var(--bg);
+  color: var(--fg);
+  border-radius: 18px;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  border: 1px solid rgba(23, 20, 16, 0.06);
+  box-shadow: 0 14px 32px rgba(28, 20, 12, 0.10);
+  overflow: hidden;
+}
+
+.token-swatch::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(circle at 22% 18%, rgba(255, 255, 255, 0.10) 0%, rgba(255, 255, 255, 0) 55%);
+  pointer-events: none;
+}
+
+.token-tag {
+  position: absolute;
+  top: 11px;
+  right: 11px;
+  z-index: 1;
+  font-family: "Noto Sans SC", "Cormorant Garamond", serif;
+  font-size: 0.66rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  padding: 3px 9px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.18);
+  border: 1px solid rgba(255, 255, 255, 0.22);
+  white-space: nowrap;
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+}
+
+.token-tag.is-new {
+  background: rgba(255, 250, 241, 0.94);
+  color: var(--gold);
+  border-color: transparent;
+}
+
+.token-info {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.token-name {
+  font-family: ui-monospace, "SF Mono", Menlo, monospace;
+  font-size: 0.7rem;
+  font-weight: 500;
+  opacity: 0.78;
+  letter-spacing: 0.02em;
+  word-break: break-all;
+}
+
+.token-hex {
+  font-family: ui-monospace, "SF Mono", Menlo, monospace;
+  font-size: 0.92rem;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+}
+
+/* ─────────────────────────────────────────
    Footer
 ───────────────────────────────────────── */
 .site-footer {
@@ -543,6 +648,15 @@ body.js-ready [data-reveal].is-visible {
   .footer-link:hover {
     background: rgba(255, 250, 241, 0.82);
     border-color: var(--line-strong);
+  }
+
+  .token-swatch {
+    transition: transform 0.4s cubic-bezier(0.22, 1, 0.36, 1), box-shadow 0.4s ease;
+  }
+
+  .token-swatch:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 24px 52px rgba(28, 20, 12, 0.18);
   }
 }
 
@@ -748,6 +862,27 @@ body.js-ready [data-reveal].is-visible {
     padding-top: 14px;
   }
 
+  /* Tokens block */
+  .tokens-block {
+    padding-top: 36px;
+  }
+
+  .tokens-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 12px;
+  }
+
+  .token-swatch {
+    aspect-ratio: 1.45;
+    padding: 13px;
+    border-radius: 16px;
+  }
+
+  .tokens-row-label {
+    font-size: 0.92rem;
+    margin: 2px 0 14px;
+  }
+
   /* Footer */
   .site-footer {
     gap: 12px;
@@ -823,6 +958,39 @@ body.js-ready [data-reveal].is-visible {
   .support-block {
     padding: 18px 14px;
     border-radius: 16px;
+  }
+
+  /* Tokens — small phones: 2 columns, compact cards */
+  .tokens-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px;
+  }
+
+  .token-swatch {
+    aspect-ratio: 1.4;
+    padding: 11px;
+    border-radius: 14px;
+  }
+
+  .token-tag {
+    top: 8px;
+    right: 8px;
+    font-size: 0.58rem;
+    padding: 2px 7px;
+    letter-spacing: 0.06em;
+  }
+
+  .token-name {
+    font-size: 0.62rem;
+  }
+
+  .token-hex {
+    font-size: 0.78rem;
+  }
+
+  .tokens-block code {
+    padding: 1px 7px;
+    font-size: 0.8em;
   }
 }
 

@@ -13,6 +13,7 @@ import androidx.annotation.RequiresApi
 import android.view.accessibility.AccessibilityEvent
 import android.view.accessibility.AccessibilityNodeInfo
 import android.view.accessibility.AccessibilityWindowInfo
+import com.google.firebase.crashlytics.FirebaseCrashlytics
 import com.yinxing.launcher.automation.wechat.manager.TimeoutManager
 import com.yinxing.launcher.automation.wechat.model.AutomationState
 import com.yinxing.launcher.automation.wechat.util.AccessibilityUtil
@@ -185,6 +186,7 @@ class SelectToSpeakService : AccessibilityService() {
     private var systemLauncherPackages: Set<String> = emptySet()
     private var defaultLauncherPackage: String? = null
     private var lastLauncherOverviewAt = 0L
+    private var wechatVersionTagged = false
 
 
 
@@ -567,6 +569,7 @@ class SelectToSpeakService : AccessibilityService() {
         cancelSession(false)
         lastMissingRootLogAt = 0L
         lastWeChatClassName = null
+        tagWeChatVersionOnce()
         val session = VideoCallSession(
             requestId = requestId,
             contactName = contactName,
@@ -1940,6 +1943,26 @@ class SelectToSpeakService : AccessibilityService() {
         }
     }
 
+    private fun tagWeChatVersionOnce() {
+        if (wechatVersionTagged) return
+        wechatVersionTagged = true
+        runCatching {
+            val info = packageManager.getPackageInfo(WECHAT_PACKAGE, 0)
+            val versionCode = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+                info.longVersionCode
+            } else {
+                @Suppress("DEPRECATION")
+                info.versionCode.toLong()
+            }
+            FirebaseCrashlytics.getInstance().apply {
+                setCustomKey("wechat_version_name", info.versionName ?: "unknown")
+                setCustomKey("wechat_version_code", versionCode)
+                setCustomKey("device_brand", Build.BRAND)
+                setCustomKey("device_model", Build.MODEL)
+            }
+        }
+    }
+
     private fun findNodeByIds(root: AccessibilityNodeInfo?, vararg ids: String): AccessibilityNodeInfo? {
         for (id in ids) {
             val node = AccessibilityUtil.findNodeById(root, id)
@@ -2111,7 +2134,7 @@ class SelectToSpeakService : AccessibilityService() {
             val success = AccessibilityUtil.performClick(this, byText)
             Log.d(TAG, "clickContactResult: by text node=${AccessibilityUtil.summarizeNode(byText)}, click=$success")
             AccessibilityUtil.safeRecycle(byText)
-            return success
+            if (success) return true
         }
 
         val candidates = AccessibilityUtil.findAllById(root, "com.tencent.mm:id/odf")

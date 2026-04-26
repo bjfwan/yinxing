@@ -15,6 +15,11 @@ class LauncherPreferences(context: Context) {
         private const val KEY_AUTO_ANSWER_ENABLED = "auto_answer_enabled"
         private const val KEY_AUTO_ANSWER_DELAY_SECONDS = "auto_answer_delay_seconds"
         const val DEFAULT_AUTO_ANSWER_DELAY_SECONDS = 5
+        private const val KEY_FULL_CARD_TAP_ENABLED = "full_card_tap_enabled"
+        private const val KEY_DARK_MODE = "dark_mode"
+        const val DARK_MODE_SYSTEM = "system"
+        const val DARK_MODE_LIGHT = "light"
+        const val DARK_MODE_DARK = "dark"
         private const val KEY_KIOSK_MODE_ENABLED = "kiosk_mode_enabled"
         private const val KEY_AUTOSTART_CONFIRMED = "autostart_confirmed"
         private const val KEY_BACKGROUND_START_CONFIRMED = "background_start_confirmed"
@@ -115,6 +120,32 @@ class LauncherPreferences(context: Context) {
         prefs.edit { putInt(KEY_AUTO_ANSWER_DELAY_SECONDS, seconds.coerceIn(1, 30)) }
     }
 
+    fun isFullCardTapEnabled(): Boolean {
+        return prefs.getBoolean(KEY_FULL_CARD_TAP_ENABLED, false)
+    }
+
+    fun setFullCardTapEnabled(enabled: Boolean) {
+        if (prefs.getBoolean(KEY_FULL_CARD_TAP_ENABLED, false) == enabled) return
+        prefs.edit { putBoolean(KEY_FULL_CARD_TAP_ENABLED, enabled) }
+    }
+
+    fun isFullCardTapKey(key: String?): Boolean = key == KEY_FULL_CARD_TAP_ENABLED
+
+    fun getDarkMode(): String {
+        return prefs.getString(KEY_DARK_MODE, DARK_MODE_SYSTEM) ?: DARK_MODE_SYSTEM
+    }
+
+    fun setDarkMode(value: String) {
+        val normalized = when (value) {
+            DARK_MODE_LIGHT, DARK_MODE_DARK -> value
+            else -> DARK_MODE_SYSTEM
+        }
+        if (getDarkMode() == normalized) return
+        prefs.edit { putString(KEY_DARK_MODE, normalized) }
+    }
+
+    fun isDarkModeKey(key: String?): Boolean = key == KEY_DARK_MODE
+
     fun isKioskModeEnabled(): Boolean {
         return prefs.getBoolean(KEY_KIOSK_MODE_ENABLED, false)
     }
@@ -168,6 +199,8 @@ class LauncherPreferences(context: Context) {
             key != KEY_LOW_PERFORMANCE_MODE &&
             key != KEY_AUTO_ANSWER_ENABLED &&
             key != KEY_AUTO_ANSWER_DELAY_SECONDS &&
+            key != KEY_FULL_CARD_TAP_ENABLED &&
+            key != KEY_DARK_MODE &&
             key != KEY_KIOSK_MODE_ENABLED &&
             key != KEY_AUTOSTART_CONFIRMED &&
             key != KEY_BACKGROUND_START_CONFIRMED &&

@@ -23,7 +23,6 @@ class HomeAppAdapter(
     private var lowPerformanceMode: Boolean,
     private var iconScale: Int = 100,
     private val onItemClick: (HomeAppItem) -> Unit,
-    private val onItemLongClick: (HomeAppItem) -> Boolean,
     private val onOrderChanged: (List<HomeAppItem>) -> Unit
 ) : ListAdapter<HomeAppItem, RecyclerView.ViewHolder>(DiffCallback), ItemTouchHelperAdapter {
     companion object {
@@ -162,19 +161,17 @@ class HomeAppAdapter(
             holder.icon.setImageResource(item.iconResId ?: android.R.drawable.sym_def_app_icon)
         }
         holder.icon.setOnLongClickListener(null)
+        holder.card.setOnLongClickListener(null)
         val clickListener = View.OnClickListener { onItemClick(item) }
         holder.card.setOnClickListener(clickListener)
         holder.itemView.setOnClickListener(clickListener)
         holder.icon.setOnClickListener(clickListener)
         holder.name.setOnClickListener(clickListener)
         if (item.type == HomeAppItem.Type.APP) {
-            holder.card.setOnLongClickListener { onItemLongClick(item) }
             holder.icon.setOnLongClickListener {
                 touchHelper?.startDrag(holder)
                 true
             }
-        } else {
-            holder.card.setOnLongClickListener(null)
         }
     }
 

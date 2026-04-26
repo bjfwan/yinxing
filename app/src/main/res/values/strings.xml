@@ -37,9 +37,6 @@
     <string name="weather_loading_short">正在更新天气…</string>
     <string name="weather_load_failed_short">天气暂时不可用</string>
 
-    <string name="remove_app_title">移除应用</string>
-    <string name="remove_app_message">确定要从桌面移除 %1$s 吗？</string>
-    <string name="remove_success">已移除</string>
     <string name="app_manage_title">选择应用</string>
     <string name="app_manage_subtitle">勾选需要显示在桌面的应用，回到主页就能直接使用</string>
     <string name="app_manage_empty_message">未读取到可显示应用，请确认系统允许读取桌面应用列表</string>
@@ -88,10 +85,11 @@
     <string name="contact_default_action_label">呼叫方式</string>
     <string name="contact_action_phone">电话</string>
     <string name="contact_action_wechat">微信视频</string>
-    <string name="contact_card_action_phone">点击后拨打电话</string>
-    <string name="contact_card_action_phone_compact">一键拨号</string>
-    <string name="contact_card_action_wechat">点击后发起微信视频</string>
-    <string name="contact_card_action_wechat_compact">一键视频</string>
+    <string name="contact_card_action_phone_v2">拨打电话</string>
+    <string name="contact_card_action_wechat_v2">微信视频</string>
+    <string name="contact_auto_answer_badge">⚡ 自动接听</string>
+    <string name="contact_video_subtitle_wechat">微信：%1$s</string>
+    <string name="contact_video_subtitle_phone">%1$s</string>
     <string name="contact_manage_hint_edit">编辑资料</string>
 
     <string name="video_contact_wechat_action_description">给 %1$s 发起微信视频</string>
@@ -193,6 +191,10 @@
     <string name="settings_manage_home_apps_title">首页应用</string>
     <string name="settings_manage_home_apps_summary">调整首页要显示的应用</string>
     <string name="settings_manage_action">进入 ›</string>
+    <string name="settings_home_apps_tip_title">桌面应用怎么整理</string>
+    <string name="settings_home_apps_tip_drag">让老人长按图标，等图标抬起后就可以拖到想放的位置。</string>
+    <string name="settings_home_apps_tip_add">想增加应用：点「首页应用」→ 在列表里勾选要显示的应用。</string>
+    <string name="settings_home_apps_tip_remove">想从桌面去掉：点「首页应用」→ 取消勾选即可，应用本身不会被卸载。</string>
     <string name="settings_section_incoming_guard_title">先看来电保障</string>
     <string name="settings_section_incoming_guard_subtitle">缺哪一项，就先处理哪一项</string>
     <string name="settings_incoming_guard_status_ready">已完成</string>
@@ -224,8 +226,8 @@
     <string name="settings_permissions_hub_summary_pending">当前还差：%1$s</string>
     <string name="settings_incoming_guard_action_open">查看详情</string>
     <string name="settings_sheet_contacts_message">先把电话联系人、视频联系人和首页应用准备好。</string>
-    <string name="settings_sheet_auto_answer_title">设置自动接听</string>
-    <string name="settings_sheet_auto_answer_message">在这里调整自动接听开关、倒计时和最近来电状态。</string>
+    <string name="settings_sheet_auto_answer_title">来电与接听</string>
+    <string name="settings_sheet_auto_answer_message">这里调整自动接听、倒计时、整卡拨打方式和最近来电状态。</string>
     <string name="settings_sheet_permissions_message">按来电、后台和视频三类权限来检查。</string>
     <string name="settings_sheet_device_message">这里处理默认桌面、后台表现和性能模式。</string>
     <string name="settings_sheet_system_message">这里可以修改天气城市，或打开系统设置。</string>
@@ -257,6 +259,16 @@
     <string name="settings_auto_answer_delay_summary">%1$d 秒后自动接听</string>
     <string name="settings_auto_answer_delay_decrease">减少 1 秒</string>
     <string name="settings_auto_answer_delay_increase">增加 1 秒</string>
+    <string name="settings_dark_mode_title">显示模式</string>
+    <string name="settings_dark_mode_summary_system">跟随系统：开了系统暗色就用暗色，关了就用浅色</string>
+    <string name="settings_dark_mode_summary_light">浅色：白底黑字</string>
+    <string name="settings_dark_mode_summary_dark">深色：深底浅字，适合夜间</string>
+    <string name="settings_dark_mode_system">跟随系统</string>
+    <string name="settings_dark_mode_light">浅色</string>
+    <string name="settings_dark_mode_dark">深色</string>
+    <string name="settings_full_card_tap_title">整卡可点击拨打</string>
+    <string name="settings_full_card_tap_summary_on">已开启。点联系人卡片任意位置都拨号</string>
+    <string name="settings_full_card_tap_summary_off">已关闭。仅点拨打按钮拨号，避免误碰</string>
     <string name="settings_incoming_trace_title">最近来电状态</string>
     <string name="settings_incoming_trace_empty">还没有来电链路记录，来过一次电话后会显示广播、提醒、来电页和接听结果</string>
     <string name="settings_system_title">系统设置</string>

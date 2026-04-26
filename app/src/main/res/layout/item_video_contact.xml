@@ -36,7 +36,6 @@
             android:layout_height="wrap_content"
             android:layout_marginStart="20dp"
             android:layout_weight="1"
-            android:gravity="center_horizontal"
             android:orientation="vertical">
 
             <TextView
@@ -45,31 +44,45 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:ellipsize="end"
-                android:gravity="center"
                 android:maxLines="1"
                 android:text="@string/video_contact_placeholder"
-                android:textSize="26sp" />
+                android:textSize="28sp" />
+
+            <TextView
+                android:id="@+id/tv_video_contact_subtitle"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="6dp"
+                android:ellipsize="end"
+                android:fontFamily="monospace"
+                android:maxLines="1"
+                android:textColor="@color/launcher_text_primary"
+                android:textSize="20sp"
+                android:textStyle="bold"
+                android:visibility="gone"
+                tools:text="微信：奶奶" />
 
             <com.google.android.material.button.MaterialButton
                 android:id="@+id/btn_video_call"
                 style="@style/Widget.MaterialComponents.Button"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="12dp"
+                android:layout_marginTop="14dp"
                 android:insetTop="0dp"
                 android:insetBottom="0dp"
-                android:minHeight="96dp"
-                android:padding="2dp"
-                android:text="@string/contact_card_action_wechat_compact"
+                android:minHeight="56dp"
+                android:paddingStart="20dp"
+                android:paddingEnd="20dp"
+                android:text="@string/contact_card_action_wechat_v2"
                 android:textColor="@android:color/white"
-                android:textSize="18sp"
+                android:textSize="17sp"
                 android:textStyle="bold"
                 app:backgroundTint="@color/launcher_action"
                 app:cornerRadius="16dp"
                 app:icon="@android:drawable/ic_menu_camera"
-                app:iconGravity="top"
-                app:iconPadding="4dp"
-                app:iconSize="32dp"
+                app:iconGravity="textStart"
+                app:iconPadding="8dp"
+                app:iconSize="22dp"
                 app:iconTint="@android:color/white" />
 
         </LinearLayout>

@@ -21,7 +21,9 @@ import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
+import androidx.appcompat.app.AppCompatDelegate
 import androidx.appcompat.widget.SwitchCompat
+import androidx.core.content.ContextCompat
 import androidx.lifecycle.lifecycleScope
 import com.yinxing.launcher.R
 
@@ -39,6 +41,7 @@ import com.yinxing.launcher.feature.phone.PhoneContactActivity
 import com.yinxing.launcher.feature.phone.PhoneContactManager
 import com.yinxing.launcher.feature.videocall.VideoCallActivity
 import com.google.android.material.bottomsheet.BottomSheetDialog
+import com.google.android.material.card.MaterialCardView
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -206,6 +209,7 @@ class SettingsActivity : AppCompatActivity() {
 
         bindOverviewViews()
         bindOverviewActions()
+        playEntryAnimation()
     }
 
     override fun onResume() {
@@ -564,6 +568,15 @@ class SettingsActivity : AppCompatActivity() {
                 sheet.dialog.dismiss()
                 startActivity(Intent(this@SettingsActivity, AppManageActivity::class.java))
             }
+            addSheetTip(
+                context = sheet,
+                title = getString(R.string.settings_home_apps_tip_title),
+                lines = listOf(
+                    getString(R.string.settings_home_apps_tip_drag),
+                    getString(R.string.settings_home_apps_tip_add),
+                    getString(R.string.settings_home_apps_tip_remove)
+                )
+            )
             sheet.dialog.show()
         }
     }
@@ -579,6 +592,8 @@ class SettingsActivity : AppCompatActivity() {
         val autoAnswerDelaySummary = view.findViewById<TextView>(R.id.tv_auto_answer_delay_sheet_summary)
         val autoAnswerDelayMinus = view.findViewById<View>(R.id.btn_auto_answer_delay_sheet_minus)
         val autoAnswerDelayPlus = view.findViewById<View>(R.id.btn_auto_answer_delay_sheet_plus)
+        val fullCardTapSwitch = view.findViewById<SwitchCompat>(R.id.switch_full_card_tap_sheet)
+        val fullCardTapSummary = view.findViewById<TextView>(R.id.tv_full_card_tap_sheet_summary)
         val incomingTraceSummary = view.findViewById<TextView>(R.id.tv_incoming_trace_sheet_summary)
 
         fun updateDelayControls(enabled: Boolean) {
@@ -599,6 +614,12 @@ class SettingsActivity : AppCompatActivity() {
             autoAnswerDelaySummary.text = getString(
                 R.string.settings_auto_answer_delay_summary,
                 launcherPreferences.getAutoAnswerDelaySeconds()
+            )
+            val fullCardTap = launcherPreferences.isFullCardTapEnabled()
+            fullCardTapSwitch.isChecked = fullCardTap
+            fullCardTapSummary.text = getString(
+                if (fullCardTap) R.string.settings_full_card_tap_summary_on
+                else R.string.settings_full_card_tap_summary_off
             )
             incomingTraceSummary.text = IncomingCallDiagnostics.getDisplayText(this)
             updateDelayControls(enabled)
@@ -624,6 +645,10 @@ class SettingsActivity : AppCompatActivity() {
             launcherPreferences.setAutoAnswerDelaySeconds(updated)
             updateSheetSummary()
             updateAutoAnswerHubCard()
+        }
+        fullCardTapSwitch.setOnCheckedChangeListener { _, isChecked ->
+            launcherPreferences.setFullCardTapEnabled(isChecked)
+            updateSheetSummary()
         }
         view.findViewById<View>(R.id.btn_close_auto_answer_sheet).setOnClickListener {
             dialog.dismiss()
@@ -664,6 +689,10 @@ class SettingsActivity : AppCompatActivity() {
         val lowPerformanceSummary = view.findViewById<TextView>(R.id.tv_low_performance_sheet_summary)
         val iconScaleSeekBar = view.findViewById<android.widget.SeekBar>(R.id.seekbar_icon_scale)
         val iconScaleValue = view.findViewById<TextView>(R.id.tv_icon_scale_value)
+        val darkModeSummary = view.findViewById<TextView>(R.id.tv_dark_mode_summary)
+        val darkModeSystem = view.findViewById<MaterialCardView>(R.id.btn_dark_mode_system)
+        val darkModeLight = view.findViewById<MaterialCardView>(R.id.btn_dark_mode_light)
+        val darkModeDark = view.findViewById<MaterialCardView>(R.id.btn_dark_mode_dark)
 
         iconScaleSeekBar.progress = launcherPreferences.getIconScale() - LauncherPreferences.MIN_ICON_SCALE
         iconScaleValue.text = getString(R.string.settings_icon_scale_summary, launcherPreferences.getIconScale())
@@ -699,9 +728,28 @@ class SettingsActivity : AppCompatActivity() {
                 if (launcherPreferences.isLowPerformanceModeEnabled()) R.string.settings_low_performance_summary_on
                 else R.string.settings_low_performance_summary_off
             )
+            applyDarkModeChips(
+                launcherPreferences.getDarkMode(),
+                darkModeSummary,
+                darkModeSystem,
+                darkModeLight,
+                darkModeDark
+            )
         }
 
         updateSheetState()
+
+        val darkModeChips = mapOf(
+            LauncherPreferences.DARK_MODE_SYSTEM to darkModeSystem,
+            LauncherPreferences.DARK_MODE_LIGHT to darkModeLight,
+            LauncherPreferences.DARK_MODE_DARK to darkModeDark
+        )
+        darkModeChips.forEach { (mode, chip) ->
+            chip.setOnClickListener {
+                playChipTapPulse(chip)
+                handleDarkModeChipPicked(mode, dialog)
+            }
+        }
 
         view.findViewById<View>(R.id.btn_set_default_launcher_sheet).setOnClickListener {
             dialog.dismiss()
@@ -744,6 +792,127 @@ class SettingsActivity : AppCompatActivity() {
             dialog.dismiss()
         }
         dialog.show()
+    }
+
+    private fun animateChipState(
+        chip: MaterialCardView,
+        targetStrokeColor: Int,
+        targetFillColor: Int,
+        targetStrokeWidth: Int
+    ) {
+        val fromStroke = chip.strokeColorStateList?.defaultColor ?: targetStrokeColor
+        val fromFill = chip.cardBackgroundColor.defaultColor
+        if (fromStroke == targetStrokeColor && fromFill == targetFillColor && chip.strokeWidth == targetStrokeWidth) {
+            return
+        }
+        chip.strokeWidth = targetStrokeWidth
+        val tag = chip.getTag(R.id.tag_chip_color_animator)
+        (tag as? android.animation.ValueAnimator)?.cancel()
+        val animator = android.animation.ValueAnimator.ofFloat(0f, 1f).apply {
+            duration = 180
+            interpolator = android.view.animation.DecelerateInterpolator()
+            addUpdateListener { anim ->
+                val t = anim.animatedFraction
+                chip.strokeColor = androidx.core.graphics.ColorUtils.blendARGB(fromStroke, targetStrokeColor, t)
+                chip.setCardBackgroundColor(
+                    androidx.core.graphics.ColorUtils.blendARGB(fromFill, targetFillColor, t)
+                )
+            }
+        }
+        chip.setTag(R.id.tag_chip_color_animator, animator)
+        animator.start()
+    }
+
+    private fun playChipTapPulse(chip: View) {
+        chip.animate().cancel()
+        chip.scaleX = 1f
+        chip.scaleY = 1f
+        chip.animate()
+            .scaleX(0.96f)
+            .scaleY(0.96f)
+            .setDuration(80)
+            .withEndAction {
+                chip.animate()
+                    .scaleX(1f)
+                    .scaleY(1f)
+                    .setDuration(140)
+                    .setInterpolator(android.view.animation.OvershootInterpolator(2f))
+                    .start()
+            }
+            .start()
+    }
+
+    private fun playEntryAnimation() {
+        val root = findViewById<View>(R.id.scroll_settings_root) ?: return
+        root.alpha = 0f
+        root.translationY = 24f
+        root.post {
+            root.animate()
+                .alpha(1f)
+                .translationY(0f)
+                .setDuration(260)
+                .setInterpolator(android.view.animation.DecelerateInterpolator())
+                .start()
+        }
+    }
+
+    private fun handleDarkModeChipPicked(mode: String, sheetDialog: BottomSheetDialog) {
+        val newNightMode = when (mode) {
+            LauncherPreferences.DARK_MODE_LIGHT -> AppCompatDelegate.MODE_NIGHT_NO
+            LauncherPreferences.DARK_MODE_DARK -> AppCompatDelegate.MODE_NIGHT_YES
+            else -> AppCompatDelegate.MODE_NIGHT_FOLLOW_SYSTEM
+        }
+        val previous = launcherPreferences.getDarkMode()
+        launcherPreferences.setDarkMode(mode)
+        if (previous == mode && AppCompatDelegate.getDefaultNightMode() == newNightMode) {
+            return
+        }
+        sheetDialog.dismiss()
+        val root = findViewById<View>(R.id.scroll_settings_root) ?: window.decorView
+        root.animate()
+            .alpha(0f)
+            .setDuration(160)
+            .setInterpolator(android.view.animation.AccelerateInterpolator())
+            .withEndAction {
+                AppCompatDelegate.setDefaultNightMode(newNightMode)
+            }
+            .start()
+    }
+
+    private fun applyDarkModeChips(
+        current: String,
+        summary: TextView,
+        systemChip: MaterialCardView,
+        lightChip: MaterialCardView,
+        darkChip: MaterialCardView
+    ) {
+        val activeStroke = ContextCompat.getColor(this, R.color.launcher_action)
+        val activeFill = ContextCompat.getColor(this, R.color.launcher_primary_soft)
+        val inactiveStroke = ContextCompat.getColor(this, R.color.launcher_outline)
+        val inactiveFill = ContextCompat.getColor(this, R.color.launcher_surface)
+        val density = resources.displayMetrics.density
+        val activeStrokeWidth = (2f * density).toInt()
+        val inactiveStrokeWidth = (1f * density).toInt()
+        listOf(
+            systemChip to LauncherPreferences.DARK_MODE_SYSTEM,
+            lightChip to LauncherPreferences.DARK_MODE_LIGHT,
+            darkChip to LauncherPreferences.DARK_MODE_DARK
+        ).forEach { (chip, mode) ->
+            val active = mode == current
+            animateChipState(
+                chip = chip,
+                targetStrokeColor = if (active) activeStroke else inactiveStroke,
+                targetFillColor = if (active) activeFill else inactiveFill,
+                targetStrokeWidth = if (active) activeStrokeWidth else inactiveStrokeWidth
+            )
+        }
+        summary.text = getString(
+            when (current) {
+                LauncherPreferences.DARK_MODE_LIGHT -> R.string.settings_dark_mode_summary_light
+                LauncherPreferences.DARK_MODE_DARK -> R.string.settings_dark_mode_summary_dark
+                else -> R.string.settings_dark_mode_summary_system
+            }
+        )
     }
 
     private fun showSystemSheet() {
@@ -804,6 +973,23 @@ class SettingsActivity : AppCompatActivity() {
         )
         itemView.setOnClickListener { onClick() }
         context.container.addView(itemView)
+    }
+
+    private fun addSheetTip(
+        context: ListSheetContext,
+        title: String,
+        lines: List<String>
+    ) {
+        val tipView = layoutInflater.inflate(R.layout.item_settings_tip, context.container, false)
+        tipView.findViewById<TextView>(R.id.tv_tip_title).text = title
+        val linesContainer = tipView.findViewById<LinearLayout>(R.id.layout_tip_lines)
+        lines.forEachIndexed { index, text ->
+            val lineView = layoutInflater.inflate(R.layout.item_settings_tip_line, linesContainer, false)
+            lineView.findViewById<TextView>(R.id.tv_tip_line_index).text = "${index + 1}."
+            lineView.findViewById<TextView>(R.id.tv_tip_line_text).text = text
+            linesContainer.addView(lineView)
+        }
+        context.container.addView(tipView)
     }
 
     private fun actionBadge(text: String): BadgeStyle {
