@@ -492,6 +492,73 @@ a {
   letter-spacing: 0.02em;
 }
 
+.tokens-rationale {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 16px;
+  margin: 4px 0 36px;
+}
+
+.tokens-rationale-card {
+  position: relative;
+  padding: 22px 22px 24px;
+  border-radius: 22px;
+  background: linear-gradient(155deg, rgba(255, 250, 241, 0.78) 0%, rgba(255, 250, 241, 0.42) 100%);
+  border: 1px solid rgba(23, 20, 16, 0.08);
+  box-shadow: 0 16px 36px rgba(28, 20, 12, 0.08);
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.tokens-rationale-card::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 22px;
+  right: 22px;
+  height: 1px;
+  background: linear-gradient(90deg, transparent 0%, rgba(181, 135, 44, 0.5) 50%, transparent 100%);
+}
+
+.tokens-rationale-label {
+  font-family: "Cormorant Garamond", "Noto Serif SC", serif;
+  font-size: 0.74rem;
+  font-weight: 600;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--gold);
+}
+
+.tokens-rationale-title {
+  margin: 0;
+  font-family: "Noto Serif SC", serif;
+  font-size: 1.18rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  color: var(--ink);
+  line-height: 1.4;
+}
+
+.tokens-rationale-card p {
+  margin: 0;
+  font-size: 0.92rem;
+  line-height: 1.8;
+  color: var(--ink-soft);
+}
+
+.tokens-rationale-card code {
+  display: inline-block;
+  padding: 1px 7px;
+  border-radius: 5px;
+  background: var(--gold-soft);
+  color: var(--gold);
+  font-family: ui-monospace, "SF Mono", Menlo, monospace;
+  font-size: 0.86em;
+  font-weight: 500;
+  letter-spacing: 0.02em;
+}
+
 .tokens-row-label {
   margin: 4px 0 18px;
   font-family: "Noto Serif SC", serif;
@@ -677,6 +744,23 @@ body.js-ready [data-reveal].is-visible {
   .site-footer {
     flex-direction: column;
     align-items: flex-start;
+  }
+
+  /* Tokens — tablet: 3-column swatch grid */
+  .tokens-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 12px;
+  }
+
+  .token-swatch {
+    aspect-ratio: 1.45;
+    padding: 13px;
+    border-radius: 16px;
+  }
+
+  .tokens-row-label {
+    font-size: 0.96rem;
+    margin: 2px 0 14px;
   }
 }
 
@@ -867,20 +951,24 @@ body.js-ready [data-reveal].is-visible {
     padding-top: 36px;
   }
 
-  .tokens-grid {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
+  .tokens-rationale {
+    grid-template-columns: 1fr;
     gap: 12px;
+    margin-bottom: 28px;
   }
 
-  .token-swatch {
-    aspect-ratio: 1.45;
-    padding: 13px;
-    border-radius: 16px;
+  .tokens-rationale-card {
+    padding: 18px 18px 20px;
+    border-radius: 18px;
   }
 
-  .tokens-row-label {
-    font-size: 0.92rem;
-    margin: 2px 0 14px;
+  .tokens-rationale-title {
+    font-size: 1.05rem;
+  }
+
+  .tokens-rationale-card p {
+    font-size: 0.88rem;
+    line-height: 1.7;
   }
 
   /* Footer */
@@ -961,6 +1049,25 @@ body.js-ready [data-reveal].is-visible {
   }
 
   /* Tokens — small phones: 2 columns, compact cards */
+  .tokens-rationale-card {
+    padding: 16px 15px 18px;
+    border-radius: 14px;
+  }
+
+  .tokens-rationale-label {
+    font-size: 0.66rem;
+    letter-spacing: 0.18em;
+  }
+
+  .tokens-rationale-title {
+    font-size: 0.98rem;
+  }
+
+  .tokens-rationale-card p {
+    font-size: 0.82rem;
+    line-height: 1.7;
+  }
+
   .tokens-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: 10px;
