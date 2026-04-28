@@ -20,6 +20,10 @@ import java.util.concurrent.atomic.AtomicReference
 
 internal const val PACKAGE_NAME = "com.yinxing.launcher"
 internal const val UI_TIMEOUT_MS = 10_000L
+internal const val TRACE_APP_INIT = "oldlauncher.app.init"
+internal const val TRACE_HOME_APP_LIST_LOAD = "oldlauncher.home.app_list.load"
+internal const val TRACE_HOME_ICON_LOAD = "oldlauncher.home.icon.load"
+internal const val TRACE_HOME_WEATHER_REQUEST = "oldlauncher.home.weather.request"
 
 private const val BENCHMARK_TAG = "OldLauncherBenchmark"
 private const val DIAGNOSTIC_DIR_NAME = "benchmark-diagnostics"

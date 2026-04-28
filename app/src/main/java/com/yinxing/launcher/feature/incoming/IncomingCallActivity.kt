@@ -6,7 +6,6 @@ import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.media.AudioManager
-import android.os.Build
 import android.os.Bundle
 import android.os.CountDownTimer
 import android.speech.tts.TextToSpeech
@@ -37,6 +36,7 @@ class IncomingCallActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
     private var ttsReady = false
     private var pendingAnnouncement: String? = null
     private var lastAnnouncedCaller: String? = null
+    private val platformCompat = IncomingPlatformCompat()
 
     companion object {
         private const val TAG = "IncomingCallActivity"
@@ -125,6 +125,11 @@ class IncomingCallActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
         val triggerAction = intent.getStringExtra(EXTRA_TRIGGER_ACTION)
         val autoAnswer =
             intent.getBooleanExtra(EXTRA_AUTO_ANSWER, false) && preferences.isAutoAnswerEnabled()
+        val state = IncomingCallSessionState.uiShown(
+            callerLabel = callerName,
+            autoAnswer = autoAnswer,
+            autoAnswerDelaySeconds = preferences.getAutoAnswerDelaySeconds()
+        )
 
         tvCaller.text = callerName
         IncomingCallDiagnostics.recordActivityShown(this, callerName)
@@ -141,10 +146,9 @@ class IncomingCallActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
             }
         }
 
-        if (autoAnswer) {
-            startCountdown(preferences.getAutoAnswerDelaySeconds())
-        } else {
-            hideCountdown()
+        when (state) {
+            is IncomingCallState.WaitingAutoAnswer -> startCountdown(state.delaySeconds)
+            else -> hideCountdown()
         }
     }
 
@@ -187,6 +191,7 @@ class IncomingCallActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
 
         val result = answerRingingCall()
         if (result.success) {
+            IncomingCallSessionState.answered()
             IncomingCallDiagnostics.recordAcceptSuccess(this, result.detail)
             applyAnsweredCallAudioStrategy()
             IncomingCallForegroundService.stop(this)
@@ -194,7 +199,7 @@ class IncomingCallActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
             return
         }
 
-        IncomingCallDiagnostics.recordAcceptFailure(this, result.detail)
+        IncomingCallDiagnostics.recordAcceptFailure(this, result.detail, result.failureReason)
         Toast.makeText(this, result.detail, Toast.LENGTH_SHORT).show()
         actionInProgress = false
         setActionButtonsEnabled(true)
@@ -209,13 +214,14 @@ class IncomingCallActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
 
         val result = endRingingCall()
         if (result.success) {
+            IncomingCallSessionState.rejected()
             IncomingCallDiagnostics.recordDeclineSuccess(this, result.detail)
             IncomingCallForegroundService.stop(this)
             finish()
             return
         }
 
-        IncomingCallDiagnostics.recordDeclineFailure(this, result.detail)
+        IncomingCallDiagnostics.recordDeclineFailure(this, result.detail, result.failureReason)
         Toast.makeText(this, result.detail, Toast.LENGTH_SHORT).show()
         actionInProgress = false
         setActionButtonsEnabled(true)
@@ -223,7 +229,7 @@ class IncomingCallActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
 
     private fun configureWindowForIncomingCall() {
         window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O_MR1) {
+        if (platformCompat.supportsModernLockScreenApi) {
             setShowWhenLocked(true)
             setTurnScreenOn(true)
             getSystemService(KeyguardManager::class.java)?.requestDismissKeyguard(
@@ -247,19 +253,22 @@ class IncomingCallActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
     @Suppress("DEPRECATION")
     private fun answerRingingCall(): CallActionResult {
         return try {
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            if (platformCompat.supportsAcceptRingingCall) {
                 if (checkSelfPermission(Manifest.permission.ANSWER_PHONE_CALLS) != PackageManager.PERMISSION_GRANTED) {
                     Log.w(TAG, "answerRingingCall: ANSWER_PHONE_CALLS permission missing")
                     return CallActionResult(
                         success = false,
-                        detail = getString(R.string.incoming_call_status_permission_missing)
+                        detail = getString(R.string.incoming_call_status_permission_missing),
+                        failureReason = IncomingCallFailureReason(
+                            IncomingCallFailureCategory.PhonePermission,
+                            getString(R.string.incoming_call_status_permission_missing)
+                        )
                     )
                 }
                 val telecomManager = getSystemService(Context.TELECOM_SERVICE) as TelecomManager
                 telecomManager.acceptRingingCall()
                 Log.i(TAG, "answerRingingCall: acceptRingingCall() called")
             } else {
-
                 sendHookBroadcast()
                 Log.i(TAG, "answerRingingCall: HEADSETHOOK broadcast sent")
             }
@@ -278,6 +287,10 @@ class IncomingCallActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
                     R.string.incoming_call_status_action_failed,
                     getString(R.string.incoming_call_accept),
                     throwable.message ?: getString(R.string.incoming_call_status_unknown_error)
+                ),
+                failureReason = IncomingCallFailureReason(
+                    IncomingCallFailureCategory.CallAction,
+                    throwable.message ?: throwable.javaClass.simpleName
                 )
             )
         }
@@ -286,17 +299,25 @@ class IncomingCallActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
     @Suppress("DEPRECATION")
     private fun endRingingCall(): CallActionResult {
         return try {
-            if (Build.VERSION.SDK_INT < Build.VERSION_CODES.P) {
+            if (!platformCompat.supportsEndCall) {
                 return CallActionResult(
                     success = false,
-                    detail = getString(R.string.incoming_call_status_decline_unsupported)
+                    detail = getString(R.string.incoming_call_status_decline_unsupported),
+                    failureReason = IncomingCallFailureReason(
+                        IncomingCallFailureCategory.UnsupportedPlatform,
+                        getString(R.string.incoming_call_status_decline_unsupported)
+                    )
                 )
             }
             if (checkSelfPermission(Manifest.permission.ANSWER_PHONE_CALLS) != PackageManager.PERMISSION_GRANTED) {
                 Log.w(TAG, "endRingingCall: ANSWER_PHONE_CALLS permission missing")
                 return CallActionResult(
                     success = false,
-                    detail = getString(R.string.incoming_call_status_permission_missing)
+                    detail = getString(R.string.incoming_call_status_permission_missing),
+                    failureReason = IncomingCallFailureReason(
+                        IncomingCallFailureCategory.PhonePermission,
+                        getString(R.string.incoming_call_status_permission_missing)
+                    )
                 )
             }
             val telecomManager = getSystemService(Context.TELECOM_SERVICE) as TelecomManager
@@ -313,6 +334,10 @@ class IncomingCallActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
                     R.string.incoming_call_status_action_failed,
                     getString(R.string.incoming_call_decline),
                     throwable.message ?: getString(R.string.incoming_call_status_unknown_error)
+                ),
+                failureReason = IncomingCallFailureReason(
+                    IncomingCallFailureCategory.CallAction,
+                    throwable.message ?: throwable.javaClass.simpleName
                 )
             )
         }
@@ -406,6 +431,7 @@ class IncomingCallActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
 
     private data class CallActionResult(
         val success: Boolean,
-        val detail: String
+        val detail: String,
+        val failureReason: IncomingCallFailureReason? = null
     )
 }

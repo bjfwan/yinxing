@@ -1,6 +1,6 @@
 # 当前架构说明
 
-更新时间：2026-04-25
+更新时间：2026-04-27
 
 ## 1. 架构概览
 
@@ -19,7 +19,7 @@
 - `feature.phone`
   - 电话联系人页
   - `PhoneContactAdapter`
-  - `PhoneContactManager`
+  - `PhoneContactManager`，使用 `ContactSqliteStore` 的 `phone` 分组
 - `feature.videocall`
   - 视频联系人页
   - `VideoCallContactAdapter`
@@ -30,7 +30,7 @@
   - 低性能模式和系统设置入口
 - `feature.incoming`
   - 系统电话来电页（实验性）
-  - `PhoneCallReceiver`、`IncomingNumberMatcher`
+  - `PhoneCallReceiver`、`IncomingCallForegroundService`、`IncomingNumberMatcher`
 
 ### 2.2 data
 
@@ -39,7 +39,8 @@
   - `LauncherAppRepository`
   - `HomeAppOrderPolicy`
 - `data.contact`
-  - `Contact`、`ContactManager`、`ContactStorage`、`ContactAvatarStore`
+  - `Contact`、`ContactManager`、`ContactSqliteStore`、`ContactStorage`、`ContactAvatarStore`
+  - 电话联系人和视频联系人共享 SQLite 数据库，通过 `group_key` 区分 `phone` 与 `wechat`
   - 所有写操作为 `suspend fun`，持久化通过 `Dispatchers.IO.limitedParallelism(1)` 串行化
 - `data.weather`
   - `WeatherRepository`：双接口并行加载，`Mutex` 保护缓存原子性
@@ -68,7 +69,7 @@
 ### 2.5 testing
 
 - `app/src/test`
-  - 单元测试（108 tests, 0 failed）与 Robolectric UI 冒烟
+  - 单元测试（113 tests, 0 failed）与 Robolectric UI 冒烟
 - `app/src/androidTest`
   - 设备级仪器测试
 - `benchmark`
@@ -80,10 +81,12 @@
   - 桌面已选择应用
   - 桌面应用顺序
   - 低性能模式开关
-- `contacts`（SharedPreferences key）
-  - 电话联系人本地列表，JSON 编码，由 `ContactManager` 统一管理
-- `wechat_contacts`
-  - 视频联系人本地列表
+- `launcher_contacts.db`
+  - 共享联系人 SQLite 数据库
+  - `group_key = "phone"` 存储电话联系人
+  - `group_key = "wechat"` 存储视频联系人
+- `contacts` / `phone_contacts` / `wechat_contacts`
+  - 旧版 SharedPreferences JSON 数据源，仅作为历史迁移兼容边界
 - `ContactsContract`
   - 系统通讯录，仅在导入时只读访问
 
@@ -101,7 +104,7 @@
 ## 5. 当前架构特点
 
 - 没有后端
-- 没有数据库层，数据存储依赖 SharedPreferences
+- 已有轻量 SQLite 联系人数据层，设置和桌面应用配置仍依赖 SharedPreferences
 - 没有依赖注入框架
 - 主业务仍集中在单个 `app` 模块
 - 联系人和天气数据操作全面迁移至后台线程，主线程不做 IO
@@ -114,7 +117,7 @@
 - `automation.wechat` 仍属于实验性代码，需要继续做设备级稳定性验证
 - 系统电话自动接听（`feature.incoming`）兼容性覆盖尚不完整
 - 低性能模式、权限拒绝、系统设置跳转和跨页面链路仍缺更完整的设备级回归
-- 当前仍主要依赖 SharedPreferences，没有更强的状态恢复层
+- 设置、桌面应用选择和部分状态仍依赖 SharedPreferences，没有更强的状态恢复层
 
 ## 7. 当前架构边界
 

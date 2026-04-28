@@ -8,6 +8,10 @@ class WeatherPreferences private constructor(context: Context) {
     private val prefs: SharedPreferences =
         context.getSharedPreferences("weather_prefs", Context.MODE_PRIVATE)
 
+    init {
+        WeatherRepository.initialize(context)
+    }
+
     companion object {
         private const val KEY_CITY = "city_name"
         private const val DEFAULT_CITY = "北京"

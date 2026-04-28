@@ -6,7 +6,6 @@ import android.app.PendingIntent
 import android.app.Service
 import android.content.Context
 import android.content.Intent
-import android.os.Build
 import android.os.IBinder
 import android.util.Log
 import androidx.core.app.NotificationCompat
@@ -15,6 +14,8 @@ import com.google.firebase.crashlytics.FirebaseCrashlytics
 import com.yinxing.launcher.R
 
 class IncomingCallForegroundService : Service() {
+
+    private val platformCompat = IncomingPlatformCompat()
 
     companion object {
         private const val TAG = "IncomingCallService"
@@ -40,8 +41,11 @@ class IncomingCallForegroundService : Service() {
             context.stopService(Intent(context, IncomingCallForegroundService::class.java))
         }
 
-        fun ensureNotificationChannels(context: Context) {
-            if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) return
+        fun ensureNotificationChannels(
+            context: Context,
+            platformCompat: IncomingPlatformCompat = IncomingPlatformCompat()
+        ) {
+            if (!platformCompat.supportsNotificationChannels) return
             val manager = context.getSystemService(NotificationManager::class.java) ?: return
             val existing = manager.getNotificationChannel(CHANNEL_ID)
             if (existing != null) return
@@ -72,7 +76,7 @@ class IncomingCallForegroundService : Service() {
     }
 
     override fun onDestroy() {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
+        if (platformCompat.supportsStopForegroundRemoveFlag) {
             stopForeground(STOP_FOREGROUND_REMOVE)
         } else {
             @Suppress("DEPRECATION")
@@ -82,7 +86,7 @@ class IncomingCallForegroundService : Service() {
     }
 
     private fun showIncomingCall(callerName: String?, autoAnswer: Boolean) {
-        ensureNotificationChannels(this)
+        ensureNotificationChannels(this, platformCompat)
         IncomingCallDiagnostics.recordServiceStarted(this, callerName, autoAnswer)
         val callerLabel = callerName?.trim()?.takeIf { it.isNotEmpty() }
             ?: getString(R.string.incoming_call_unknown_caller)
@@ -137,13 +141,22 @@ class IncomingCallForegroundService : Service() {
             runCatching {
                 FirebaseCrashlytics.getInstance().apply {
                     setCustomKey("fgs_subtype", "incoming_call_alert")
-                    setCustomKey("android_sdk", Build.VERSION.SDK_INT)
+                    setCustomKey("android_sdk", platformCompat.sdkInt)
                     recordException(error)
                 }
             }
             getSystemService(NotificationManager::class.java)?.notify(NOTIFICATION_ID, notification)
             false
         }
+
+        if (startedInForeground) {
+            IncomingCallSessionState.foregroundServiceStarted(callerLabel, autoAnswer)
+        }
+        IncomingCallDiagnostics.recordForegroundServiceStartResult(
+            context = this,
+            callerLabel = callerLabel,
+            started = startedInForeground
+        )
 
         launchIncomingCallUi(openIntent)
         if (!startedInForeground) {

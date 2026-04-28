@@ -1,23 +1,27 @@
 # 发布检查清单
 
-更新时间：2026-04-26
+更新时间：2026-04-28
 
 ## 1. 版本信息
 
-- 版本号已更新（当前 `versionCode = 8`，`versionName = "1.5.0"`）
+- 版本号已更新（当前 `versionCode = 9`，`versionName = "1.6.0"`）
 - 变更范围已确认
 - 发布说明已准备
 
 ## 2. 构建检查
 
-- `JAVA_HOME` 已确认可用（本地使用 `D:\android\jbr`）
+- `JAVA_HOME` 已确认可用（本地 `build.bat` 使用 `D:\Android\jbr`）
 - `GRADLE_USER_HOME` 已确认使用稳定路径
 - `:app:assembleDebug` 通过
-- `:app:testDebugUnitTest` 通过（108 tests, 0 failed）
+- `:app:testDebugUnitTest` 通过（113 tests, 0 failed）
 - `:app:assembleDebugAndroidTest` 通过
 - `:app:lintDebug` 没有阻断错误
-- `:app:assembleRelease` 通过（输出 `app/build/outputs/apk/release/app-release.apk`，约 2.90 MB）
+- `:app:assembleRelease` 通过（输出 `app/build/outputs/apk/release/app-release.apk`，约 2.93 MB）
 - `:app:lintVitalRelease` 通过
+- `docs/app-release.apk` 已用本次 Release APK 覆盖
+- GitHub Release 已上传同一个 `app-release.apk`
+- Cloudflare 域名托管下载页已发布并验证主下载链接
+- `README.md` 与 `docs/index.html` 的版本号、包体大小和下载链接已同步
 - 目标设备可安装
 - 关键权限声明已确认
 

@@ -1,9 +1,11 @@
-﻿package com.yinxing.launcher.feature.incoming
+package com.yinxing.launcher.feature.incoming
 
 import android.content.Context
 import android.util.Log
 import androidx.core.content.edit
 import com.yinxing.launcher.R
+import com.yinxing.launcher.common.util.PermissionUtil
+import com.yinxing.launcher.data.home.LauncherPreferences
 
 object IncomingCallDiagnostics {
 
@@ -11,6 +13,8 @@ object IncomingCallDiagnostics {
     private const val KEY_CHAIN = "chain"
     private const val KEY_CALLER_LABEL = "caller_label"
     private const val KEY_DETAIL = "detail"
+    private const val KEY_FAILURE_CATEGORY = "failure_category"
+    private const val KEY_FAILURE_DETAIL = "failure_detail"
     private const val TAG = "IncomingCallTrace"
     private const val SEPARATOR = "|"
 
@@ -34,6 +38,7 @@ object IncomingCallDiagnostics {
 
     fun clear(context: Context) {
         prefs(context).edit { clear() }
+        IncomingCallSessionState.idle()
     }
 
     fun recordBroadcastReceived(
@@ -52,7 +57,8 @@ object IncomingCallDiagnostics {
                 context.getString(
                     if (autoAnswer) R.string.incoming_call_trace_detail_auto_answer
                     else R.string.incoming_call_trace_detail_manual_answer
-                )
+                ),
+                guardSnapshot(context).displayText()
             )
         )
     }
@@ -64,6 +70,10 @@ object IncomingCallDiagnostics {
         throwable: Throwable
     ) {
         val resolvedCallerLabel = resolveCallerLabel(context, callerLabel, incomingNumber)
+        val reason = IncomingCallFailureReason(
+            category = IncomingCallFailureCategory.Broadcast,
+            detail = throwable.message ?: throwable.javaClass.simpleName
+        )
         replace(
             context = context,
             steps = listOf(Step.BroadcastFailed),
@@ -71,10 +81,13 @@ object IncomingCallDiagnostics {
             detail = joinDetail(
                 resolvedCallerLabel,
                 throwable.javaClass.simpleName,
-                throwable.message
+                throwable.message,
+                guardSnapshot(context).displayText()
             ),
-            throwable = throwable
+            throwable = throwable,
+            failureReason = reason
         )
+        IncomingCallSessionState.failed(reason)
     }
 
     fun recordServiceStarted(context: Context, callerLabel: String?, autoAnswer: Boolean) {
@@ -89,9 +102,40 @@ object IncomingCallDiagnostics {
                 context.getString(
                     if (autoAnswer) R.string.incoming_call_trace_detail_auto_answer
                     else R.string.incoming_call_trace_detail_manual_answer
-                )
+                ),
+                guardSnapshot(context).displayText()
             )
         )
+    }
+
+    fun recordForegroundServiceStartResult(
+        context: Context,
+        callerLabel: String?,
+        started: Boolean,
+        throwable: Throwable? = null
+    ) {
+        val resolvedCallerLabel = callerLabel?.trim()?.takeIf { it.isNotEmpty() }
+            ?: storedCallerLabel(context)
+        val reason = if (started) null else IncomingCallFailureReason(
+            category = IncomingCallFailureCategory.ForegroundService,
+            detail = throwable?.message ?: throwable?.javaClass?.simpleName
+        )
+        append(
+            context = context,
+            step = if (started) Step.ForegroundServiceStarted else Step.ForegroundServiceFailed,
+            callerLabel = resolvedCallerLabel,
+            detail = joinDetail(
+                resolvedCallerLabel,
+                guardSnapshot(context, foregroundServiceStarted = started).displayText(),
+                throwable?.javaClass?.simpleName,
+                throwable?.message
+            ),
+            throwable = throwable,
+            failureReason = reason
+        )
+        if (reason != null) {
+            IncomingCallSessionState.failed(reason)
+        }
     }
 
     fun recordServiceStartFailure(
@@ -101,6 +145,10 @@ object IncomingCallDiagnostics {
     ) {
         val resolvedCallerLabel = callerLabel?.trim()?.takeIf { it.isNotEmpty() }
             ?: storedCallerLabel(context)
+        val reason = IncomingCallFailureReason(
+            category = IncomingCallFailureCategory.ForegroundService,
+            detail = throwable.message ?: throwable.javaClass.simpleName
+        )
         append(
             context = context,
             step = Step.ForegroundServiceFailed,
@@ -108,10 +156,13 @@ object IncomingCallDiagnostics {
             detail = joinDetail(
                 resolvedCallerLabel,
                 throwable.javaClass.simpleName,
-                throwable.message
+                throwable.message,
+                guardSnapshot(context, foregroundServiceStarted = false).displayText()
             ),
-            throwable = throwable
+            throwable = throwable,
+            failureReason = reason
         )
+        IncomingCallSessionState.failed(reason)
     }
 
     fun recordActivityShown(context: Context, callerLabel: String?) {
@@ -121,40 +172,72 @@ object IncomingCallDiagnostics {
             context = context,
             step = Step.ActivityShown,
             callerLabel = resolvedCallerLabel,
-            detail = resolvedCallerLabel
+            detail = joinDetail(resolvedCallerLabel, guardSnapshot(context).displayText())
         )
+    }
+
+    fun recordActivityLaunchFailure(context: Context, throwable: Throwable) {
+        val reason = IncomingCallFailureReason(
+            category = IncomingCallFailureCategory.BackgroundStart,
+            detail = throwable.message ?: throwable.javaClass.simpleName
+        )
+        append(
+            context = context,
+            step = Step.ForegroundServiceFailed,
+            detail = joinDetail(
+                storedCallerLabel(context),
+                throwable.javaClass.simpleName,
+                throwable.message,
+                guardSnapshot(context).displayText()
+            ),
+            throwable = throwable,
+            failureReason = reason
+        )
+        IncomingCallSessionState.failed(reason)
     }
 
     fun recordAcceptSuccess(context: Context, detail: String) {
         append(
             context = context,
             step = Step.AcceptSucceeded,
-            detail = joinDetail(storedCallerLabel(context), detail)
+            detail = joinDetail(storedCallerLabel(context), detail, guardSnapshot(context).displayText())
         )
     }
 
-    fun recordAcceptFailure(context: Context, detail: String) {
+    fun recordAcceptFailure(
+        context: Context,
+        detail: String,
+        failureReason: IncomingCallFailureReason? = null
+    ) {
         append(
             context = context,
             step = Step.AcceptFailed,
-            detail = joinDetail(storedCallerLabel(context), detail)
+            detail = joinDetail(storedCallerLabel(context), detail, guardSnapshot(context).displayText()),
+            failureReason = failureReason
         )
+        failureReason?.let(IncomingCallSessionState::failed)
     }
 
     fun recordDeclineSuccess(context: Context, detail: String) {
         append(
             context = context,
             step = Step.DeclineSucceeded,
-            detail = joinDetail(storedCallerLabel(context), detail)
+            detail = joinDetail(storedCallerLabel(context), detail, guardSnapshot(context).displayText())
         )
     }
 
-    fun recordDeclineFailure(context: Context, detail: String) {
+    fun recordDeclineFailure(
+        context: Context,
+        detail: String,
+        failureReason: IncomingCallFailureReason? = null
+    ) {
         append(
             context = context,
             step = Step.DeclineFailed,
-            detail = joinDetail(storedCallerLabel(context), detail)
+            detail = joinDetail(storedCallerLabel(context), detail, guardSnapshot(context).displayText()),
+            failureReason = failureReason
         )
+        failureReason?.let(IncomingCallSessionState::failed)
     }
 
     fun recordSpeakerEnabled(context: Context) {
@@ -163,7 +246,8 @@ object IncomingCallDiagnostics {
             step = Step.SpeakerEnabled,
             detail = joinDetail(
                 storedCallerLabel(context),
-                context.getString(R.string.incoming_call_status_speaker_on)
+                context.getString(R.string.incoming_call_status_speaker_on),
+                guardSnapshot(context).displayText()
             )
         )
     }
@@ -174,7 +258,8 @@ object IncomingCallDiagnostics {
             step = Step.SpeakerKeptPrivate,
             detail = joinDetail(
                 storedCallerLabel(context),
-                context.getString(R.string.incoming_call_status_speaker_kept_private)
+                context.getString(R.string.incoming_call_status_speaker_kept_private),
+                guardSnapshot(context).displayText()
             )
         )
     }
@@ -189,10 +274,13 @@ object IncomingCallDiagnostics {
     fun getDisplayText(context: Context): String {
         val summary = getSummaryText(context)
         val detail = prefs(context).getString(KEY_DETAIL, null).orEmpty().trim()
+        val failure = readFailureReason(context)?.let { "失败分类：${it.displayText()}" }
         if (summary == context.getString(R.string.settings_incoming_trace_empty)) {
             return summary
         }
-        return if (detail.isEmpty()) summary else "$summary\n$detail"
+        return listOf(summary, detail, failure)
+            .mapNotNull { it?.trim()?.takeIf { value -> value.isNotEmpty() } }
+            .joinToString("\n")
     }
 
     fun getNotificationStatusText(context: Context): String {
@@ -207,10 +295,11 @@ object IncomingCallDiagnostics {
         steps: List<Step>,
         callerLabel: String?,
         detail: String,
-        throwable: Throwable? = null
+        throwable: Throwable? = null,
+        failureReason: IncomingCallFailureReason? = null
     ) {
-        write(context, steps, callerLabel, detail)
-        log(steps.last(), detail, throwable)
+        write(context, steps, callerLabel, detail, failureReason)
+        log(steps.last(), detail, throwable, failureReason)
     }
 
     private fun append(
@@ -218,7 +307,8 @@ object IncomingCallDiagnostics {
         step: Step,
         callerLabel: String? = null,
         detail: String,
-        throwable: Throwable? = null
+        throwable: Throwable? = null,
+        failureReason: IncomingCallFailureReason? = null
     ) {
         val existingSteps = readSteps(context)
         val nextSteps = buildList {
@@ -227,20 +317,29 @@ object IncomingCallDiagnostics {
                 add(step)
             }
         }
-        write(context, nextSteps, callerLabel ?: storedCallerLabel(context), detail)
-        log(step, detail, throwable)
+        val storedFailure = failureReason ?: readFailureReason(context)
+        write(context, nextSteps, callerLabel ?: storedCallerLabel(context), detail, storedFailure)
+        log(step, detail, throwable, storedFailure)
     }
 
     private fun write(
         context: Context,
         steps: List<Step>,
         callerLabel: String?,
-        detail: String
+        detail: String,
+        failureReason: IncomingCallFailureReason?
     ) {
         prefs(context).edit {
             putString(KEY_CHAIN, steps.joinToString(SEPARATOR) { it.code })
             putString(KEY_CALLER_LABEL, callerLabel?.trim().orEmpty())
             putString(KEY_DETAIL, detail.trim())
+            if (failureReason == null) {
+                remove(KEY_FAILURE_CATEGORY)
+                remove(KEY_FAILURE_DETAIL)
+            } else {
+                putString(KEY_FAILURE_CATEGORY, failureReason.category.code)
+                putString(KEY_FAILURE_DETAIL, failureReason.detail.orEmpty())
+            }
         }
     }
 
@@ -250,6 +349,17 @@ object IncomingCallDiagnostics {
             .orEmpty()
             .split(SEPARATOR)
             .mapNotNull(Step::fromCode)
+    }
+
+    private fun readFailureReason(context: Context): IncomingCallFailureReason? {
+        val category = IncomingCallFailureCategory.fromCode(
+            prefs(context).getString(KEY_FAILURE_CATEGORY, null)
+        ) ?: return null
+        val detail = prefs(context)
+            .getString(KEY_FAILURE_DETAIL, null)
+            ?.trim()
+            ?.takeIf { it.isNotEmpty() }
+        return IncomingCallFailureReason(category, detail)
     }
 
     private fun storedCallerLabel(context: Context): String {
@@ -270,6 +380,26 @@ object IncomingCallDiagnostics {
             ?: context.getString(R.string.incoming_call_unknown_caller)
     }
 
+    private fun guardSnapshot(
+        context: Context,
+        foregroundServiceStarted: Boolean? = null
+    ): IncomingGuardDiagnosticSnapshot {
+        val appContext = context.applicationContext
+        val preferences = runCatching { LauncherPreferences.getInstance(appContext) }.getOrNull()
+        return IncomingGuardDiagnosticEvaluator.evaluate(
+            hasNotificationPermission = safeReady { PermissionUtil.hasNotificationPermission(appContext) },
+            canDrawOverlays = safeReady { PermissionUtil.canDrawOverlays(appContext) },
+            backgroundStartConfirmed = preferences?.isBackgroundStartConfirmed() == true,
+            hasAccessibilityService = safeReady { PermissionUtil.isAnyAccessibilityServiceEnabled(appContext) },
+            ignoresBatteryOptimizations = safeReady { PermissionUtil.isIgnoringBatteryOptimizations(appContext) },
+            foregroundServiceStarted = foregroundServiceStarted
+        )
+    }
+
+    private fun safeReady(block: () -> Boolean): Boolean {
+        return runCatching(block).getOrDefault(false)
+    }
+
     private fun joinDetail(vararg values: String?): String {
         return values
             .mapNotNull { it?.trim()?.takeIf { value -> value.isNotEmpty() } }
@@ -280,11 +410,17 @@ object IncomingCallDiagnostics {
     private fun prefs(context: Context) =
         context.applicationContext.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
 
-    private fun log(step: Step, detail: String, throwable: Throwable? = null) {
+    private fun log(
+        step: Step,
+        detail: String,
+        throwable: Throwable? = null,
+        failureReason: IncomingCallFailureReason? = null
+    ) {
+        val fullDetail = joinDetail(detail, failureReason?.displayText())
         if (throwable != null) {
-            Log.e(TAG, "${step.code}: $detail", throwable)
+            Log.e(TAG, "${step.code}: $fullDetail", throwable)
         } else {
-            Log.i(TAG, "${step.code}: $detail")
+            Log.i(TAG, "${step.code}: $fullDetail")
         }
     }
 }

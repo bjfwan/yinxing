@@ -6,6 +6,8 @@ import android.content.pm.PackageManager
 import android.os.Build
 import com.yinxing.launcher.R
 import com.yinxing.launcher.common.media.MediaThumbnailLoader
+import com.yinxing.launcher.common.perf.LauncherTraceNames
+import com.yinxing.launcher.common.perf.traceSection
 import com.yinxing.launcher.feature.appmanage.AppInfo
 import com.yinxing.launcher.feature.home.HomeAppItem
 import java.util.concurrent.atomic.AtomicInteger
@@ -14,11 +16,14 @@ import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
 
-class LauncherAppRepository private constructor(context: Context) {
+class LauncherAppRepository(
+    context: Context,
+    private val appSource: LauncherAppSource = AndroidLauncherAppSource(context)
+) {
     private val appContext = context.applicationContext
     private val installMutex = Mutex()
     private val homeMutex = Mutex()
-    private var installedAppsCache: List<InstalledAppRecord>? = null
+    private var installedAppsCache: List<LauncherAppRecord>? = null
     private var homeItemsCache: List<HomeAppItem>? = null
     @Volatile private var installedAppsDirty = true
     @Volatile private var homeItemsDirty = true
@@ -58,43 +63,45 @@ class LauncherAppRepository private constructor(context: Context) {
     }
 
     suspend fun getHomeItems(preferences: LauncherPreferences): List<HomeAppItem> = withContext(Dispatchers.IO) {
-        homeMutex.withLock {
-            if (!homeItemsDirty) {
-                homeItemsCache?.let { return@withContext it }
-            }
-
-            val requestVersion = homeItemsVersion.get()
-            val selectedPackages = preferences.getSelectedPackages()
-            val selectedApps = loadSelectedHomeApps(selectedPackages)
-                .map { app ->
-                    HomeAppItem(
-                        packageName = app.packageName,
-                        appName = app.appName,
-                        type = HomeAppItem.Type.APP
-                    )
+        traceSection(LauncherTraceNames.HOME_APP_LIST_LOAD) {
+            homeMutex.withLock {
+                if (!homeItemsDirty) {
+                    homeItemsCache?.let { return@traceSection it }
                 }
 
-            val selectedAppsByPackage = selectedApps.associateBy { it.packageName }
-            val orderedApps = HomeAppOrderPolicy.orderApps(
-                selectedApps.map { OrderedApp(it.packageName, it.appName) },
-                preferences.getAppOrder()
-            )
+                val requestVersion = homeItemsVersion.get()
+                val selectedPackages = preferences.getSelectedPackages()
+                val selectedApps = loadSelectedHomeApps(selectedPackages)
+                    .map { app ->
+                        HomeAppItem(
+                            packageName = app.packageName,
+                            appName = app.appName,
+                            type = HomeAppItem.Type.APP
+                        )
+                    }
 
-            val items = buildList {
-                addPrimaryBuiltInItems()
-                orderedApps.forEach { app ->
-                    selectedAppsByPackage[app.packageName]?.let(::add)
+                val selectedAppsByPackage = selectedApps.associateBy { it.packageName }
+                val orderedApps = HomeAppOrderPolicy.orderApps(
+                    selectedApps.map { OrderedApp(it.packageName, it.appName) },
+                    preferences.getAppOrder()
+                )
+
+                val items = buildList {
+                    addPrimaryBuiltInItems()
+                    orderedApps.forEach { app ->
+                        selectedAppsByPackage[app.packageName]?.let(::add)
+                    }
+                    addSecondaryBuiltInItems()
                 }
-                addSecondaryBuiltInItems()
-            }
 
-            preferences.syncAppOrder(orderedApps.map { it.packageName })
+                preferences.syncAppOrder(orderedApps.map { it.packageName })
 
-            if (requestVersion == homeItemsVersion.get()) {
-                homeItemsCache = items
-                homeItemsDirty = false
+                if (requestVersion == homeItemsVersion.get()) {
+                    homeItemsCache = items
+                    homeItemsDirty = false
+                }
+                items
             }
-            items
         }
     }
 
@@ -103,7 +110,7 @@ class LauncherAppRepository private constructor(context: Context) {
         homeItemsVersion.incrementAndGet()
         installedAppsDirty = true
         homeItemsDirty = true
-        MediaThumbnailLoader.clearIconCache()
+        MediaThumbnailLoader.clearIconCache(appContext)
     }
 
     fun invalidateSelections() {
@@ -111,28 +118,14 @@ class LauncherAppRepository private constructor(context: Context) {
         homeItemsDirty = true
     }
 
-    private suspend fun loadInstalledApps(): List<InstalledAppRecord> = withContext(Dispatchers.IO) {
+    private suspend fun loadInstalledApps(): List<LauncherAppRecord> = withContext(Dispatchers.IO) {
         installMutex.withLock {
             if (!installedAppsDirty) {
                 installedAppsCache?.let { return@withContext it }
             }
 
             val requestVersion = installedAppsVersion.get()
-            val launcherIntent = Intent(Intent.ACTION_MAIN).addCategory(Intent.CATEGORY_LAUNCHER)
-            val packageManager = appContext.packageManager
-            val resolveInfos = queryLauncherActivities(packageManager, launcherIntent)
-            val installedApps = resolveInfos
-                .mapNotNull { resolveInfo ->
-                    val activityInfo = resolveInfo.activityInfo ?: return@mapNotNull null
-                    val packageName = activityInfo.packageName
-                    if (packageName == appContext.packageName) {
-                        return@mapNotNull null
-                    }
-                    InstalledAppRecord(
-                        packageName = packageName,
-                        appName = activityInfo.applicationInfo.loadLabel(packageManager).toString()
-                    )
-                }
+            val installedApps = appSource.loadInstalledApps()
                 .distinctBy { it.packageName }
                 .sortedBy { it.appName }
 
@@ -144,53 +137,18 @@ class LauncherAppRepository private constructor(context: Context) {
         }
     }
 
-    private fun queryLauncherActivities(
-        packageManager: PackageManager,
-        launcherIntent: Intent
-    ) = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-        packageManager.queryIntentActivities(
-            launcherIntent,
-            PackageManager.ResolveInfoFlags.of(0)
-        )
-    } else {
-        @Suppress("DEPRECATION")
-        packageManager.queryIntentActivities(launcherIntent, 0)
-    }
-
-    private suspend fun loadSelectedHomeApps(packageNames: Set<String>): List<InstalledAppRecord> {
+    private suspend fun loadSelectedHomeApps(packageNames: Set<String>): List<LauncherAppRecord> {
         if (packageNames.isEmpty()) {
             return emptyList()
         }
-        val packageManager = appContext.packageManager
-        val directApps = packageNames.mapNotNull { packageName ->
-            loadSelectedLauncherApp(packageManager, packageName)
-        }
+        val directApps = appSource.loadSelectedApps(packageNames)
+            .distinctBy { it.packageName }
         val directPackages = directApps.mapTo(hashSetOf()) { it.packageName }
         if (directPackages.size == packageNames.size) {
             return directApps
         }
         return directApps + loadInstalledApps()
             .filter { it.packageName in packageNames && it.packageName !in directPackages }
-    }
-
-    private fun loadSelectedLauncherApp(
-        packageManager: PackageManager,
-        packageName: String
-    ): InstalledAppRecord? {
-        if (packageName == appContext.packageName) {
-            return null
-        }
-        val launcherIntent = Intent(Intent.ACTION_MAIN)
-            .addCategory(Intent.CATEGORY_LAUNCHER)
-            .setPackage(packageName)
-        val activityInfo = queryLauncherActivities(packageManager, launcherIntent)
-            .firstOrNull()
-            ?.activityInfo
-            ?: return null
-        return InstalledAppRecord(
-            packageName = activityInfo.packageName,
-            appName = activityInfo.applicationInfo.loadLabel(packageManager).toString()
-        )
     }
 
     private fun MutableList<HomeAppItem>.addPrimaryBuiltInItems() {
@@ -222,14 +180,61 @@ class LauncherAppRepository private constructor(context: Context) {
             )
         )
     }
+}
 
+private class AndroidLauncherAppSource(context: Context) : LauncherAppSource {
+    private val appContext = context.applicationContext
 
+    override suspend fun loadInstalledApps(): List<LauncherAppRecord> {
+        val launcherIntent = Intent(Intent.ACTION_MAIN).addCategory(Intent.CATEGORY_LAUNCHER)
+        val packageManager = appContext.packageManager
+        return queryLauncherActivities(packageManager, launcherIntent)
+            .mapNotNull { resolveInfo ->
+                val activityInfo = resolveInfo.activityInfo ?: return@mapNotNull null
+                val packageName = activityInfo.packageName
+                if (packageName == appContext.packageName) {
+                    return@mapNotNull null
+                }
+                LauncherAppRecord(
+                    packageName = packageName,
+                    appName = activityInfo.applicationInfo.loadLabel(packageManager).toString()
+                )
+            }
+    }
 
+    override suspend fun loadSelectedApps(packageNames: Set<String>): List<LauncherAppRecord> {
+        if (packageNames.isEmpty()) {
+            return emptyList()
+        }
+        val packageManager = appContext.packageManager
+        return packageNames.mapNotNull { packageName ->
+            if (packageName == appContext.packageName) {
+                return@mapNotNull null
+            }
+            val launcherIntent = Intent(Intent.ACTION_MAIN)
+                .addCategory(Intent.CATEGORY_LAUNCHER)
+                .setPackage(packageName)
+            val activityInfo = queryLauncherActivities(packageManager, launcherIntent)
+                .firstOrNull()
+                ?.activityInfo
+                ?: return@mapNotNull null
+            LauncherAppRecord(
+                packageName = activityInfo.packageName,
+                appName = activityInfo.applicationInfo.loadLabel(packageManager).toString()
+            )
+        }
+    }
 
-
-
-    private data class InstalledAppRecord(
-        val packageName: String,
-        val appName: String
-    )
+    private fun queryLauncherActivities(
+        packageManager: PackageManager,
+        launcherIntent: Intent
+    ) = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+        packageManager.queryIntentActivities(
+            launcherIntent,
+            PackageManager.ResolveInfoFlags.of(0)
+        )
+    } else {
+        @Suppress("DEPRECATION")
+        packageManager.queryIntentActivities(launcherIntent, 0)
+    }
 }

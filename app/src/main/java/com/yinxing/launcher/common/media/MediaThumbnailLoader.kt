@@ -2,6 +2,7 @@ package com.yinxing.launcher.common.media
 
 import android.content.ContentResolver
 import android.content.Context
+import android.content.pm.PackageManager
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.graphics.Canvas
@@ -13,8 +14,13 @@ import android.util.Log
 import android.util.LruCache
 import androidx.core.graphics.createBitmap
 import androidx.core.graphics.scale
+import com.yinxing.launcher.common.perf.LauncherTraceNames
+import com.yinxing.launcher.common.perf.traceSection
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
+import java.io.File
+import java.io.FileOutputStream
+import java.security.MessageDigest
 import java.util.concurrent.ConcurrentHashMap
 
 object MediaThumbnailLoader {
@@ -26,19 +32,35 @@ object MediaThumbnailLoader {
     }
     private val failedUriLoads = ConcurrentHashMap<String, Long>()
     private const val FAILED_URI_TTL_MS = 60 * 1000L
+    private const val APP_ICON_CACHE_DIR = "app-icon-cache"
+    private const val APP_ICON_DISK_CACHE_LIMIT_BYTES = 16L * 1024L * 1024L
+    private const val APP_ICON_MIN_SIZE_PX = 48
+    private const val APP_ICON_MAX_SIZE_PX = 320
+    private const val APP_ICON_BUCKET_PX = 8
 
     suspend fun loadAppIcon(context: Context, packageName: String, sizePx: Int): Bitmap? {
         return withContext(Dispatchers.IO) {
-            val cacheKey = "app:$packageName:$sizePx"
+            val normalizedSizePx = normalizeAppIconSize(sizePx)
+            val cacheKey = buildAppIconCacheKey(context, packageName, normalizedSizePx)
             bitmapCache.get(cacheKey)?.let { return@withContext it }
 
-            val bitmap = runCatching {
-                val drawable = context.packageManager.getApplicationIcon(packageName)
-                drawableToBitmap(drawable, sizePx, sizePx)
-            }.getOrNull()
+            traceSection(LauncherTraceNames.HOME_ICON_LOAD) {
+                loadAppIconFromDisk(context, cacheKey)?.let { bitmap ->
+                    bitmapCache.put(cacheKey, bitmap)
+                    return@traceSection bitmap
+                }
 
-            bitmap?.let { bitmapCache.put(cacheKey, it) }
-            bitmap
+                val bitmap = runCatching {
+                    val drawable = context.packageManager.getApplicationIcon(packageName)
+                    drawableToBitmap(drawable, normalizedSizePx, normalizedSizePx)
+                }.getOrNull()
+
+                bitmap?.let {
+                    bitmapCache.put(cacheKey, it)
+                    saveAppIconToDisk(context, cacheKey, it)
+                }
+                bitmap
+            }
         }
     }
 
@@ -100,9 +122,10 @@ object MediaThumbnailLoader {
         return bitmap
     }
 
-    fun clearIconCache() {
+    fun clearIconCache(context: Context? = null) {
         bitmapCache.evictAll()
         failedUriLoads.clear()
+        context?.let(::clearAppIconDiskCache)
     }
 
     fun evictUri(uri: Uri, reqWidth: Int, reqHeight: Int) {
@@ -128,6 +151,87 @@ object MediaThumbnailLoader {
             .forEach(failedUriLoads::remove)
     }
 
+    private fun buildAppIconCacheKey(context: Context, packageName: String, sizePx: Int): String {
+        return "app:$packageName:$sizePx:${resolvePackageVersionStamp(context, packageName)}"
+    }
+
+    private fun resolvePackageVersionStamp(context: Context, packageName: String): Long {
+        return runCatching {
+            val packageInfo = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                context.packageManager.getPackageInfo(packageName, PackageManager.PackageInfoFlags.of(0))
+            } else {
+                @Suppress("DEPRECATION")
+                context.packageManager.getPackageInfo(packageName, 0)
+            }
+            packageInfo.lastUpdateTime.takeIf { it > 0L } ?: packageInfo.firstInstallTime
+        }.getOrDefault(0L)
+    }
+
+    private fun loadAppIconFromDisk(context: Context, cacheKey: String): Bitmap? {
+        val file = appIconCacheFile(context, cacheKey)
+        if (!file.exists()) {
+            return null
+        }
+        val bitmap = runCatching { BitmapFactory.decodeFile(file.absolutePath) }.getOrNull()
+        if (bitmap == null) {
+            file.delete()
+            return null
+        }
+        file.setLastModified(System.currentTimeMillis())
+        return bitmap
+    }
+
+    private fun saveAppIconToDisk(context: Context, cacheKey: String, bitmap: Bitmap) {
+        val file = appIconCacheFile(context, cacheKey)
+        val directory = file.parentFile ?: return
+        runCatching {
+            if (!directory.exists()) {
+                directory.mkdirs()
+            }
+            FileOutputStream(file).use { output ->
+                bitmap.compress(Bitmap.CompressFormat.PNG, 100, output)
+            }
+            trimAppIconDiskCache(directory)
+        }.onFailure {
+            file.delete()
+        }
+    }
+
+    private fun clearAppIconDiskCache(context: Context) {
+        appIconCacheDir(context).listFiles()?.forEach(File::delete)
+    }
+
+    private fun appIconCacheFile(context: Context, cacheKey: String): File {
+        return File(appIconCacheDir(context), cacheKey.sha256() + ".png")
+    }
+
+    private fun appIconCacheDir(context: Context): File = File(context.cacheDir, APP_ICON_CACHE_DIR)
+
+    private fun trimAppIconDiskCache(directory: File) {
+        val files = directory.listFiles()?.sortedBy { it.lastModified() } ?: return
+        var totalBytes = files.sumOf { it.length() }
+        files.forEach { file ->
+            if (totalBytes <= APP_ICON_DISK_CACHE_LIMIT_BYTES) {
+                return
+            }
+            totalBytes -= file.length()
+            file.delete()
+        }
+    }
+
+    private fun normalizeAppIconSize(sizePx: Int): Int {
+        val clamped = sizePx.coerceIn(APP_ICON_MIN_SIZE_PX, APP_ICON_MAX_SIZE_PX)
+        return ((clamped + APP_ICON_BUCKET_PX - 1) / APP_ICON_BUCKET_PX) * APP_ICON_BUCKET_PX
+    }
+
+    private fun String.sha256(): String {
+        val digest = MessageDigest.getInstance("SHA-256").digest(toByteArray())
+        return buildString(digest.size * 2) {
+            digest.forEach { byte ->
+                append("%02x".format(byte.toInt() and 0xff))
+            }
+        }
+    }
 
     private fun decodeSampledBitmap(
         contentResolver: ContentResolver,

@@ -2,6 +2,7 @@ package com.yinxing.launcher.data.home
 
 import org.junit.Assert.assertEquals
 import org.junit.Test
+import java.util.Locale
 
 class HomeAppOrderPolicyTest {
     @Test
@@ -62,5 +63,24 @@ class HomeAppOrderPolicyTest {
             listOf("pkg.alpha", "pkg.gamma"),
             retainedOrder
         )
+    }
+
+    @Test
+    fun orderApps_usesLocaleIndependentNameSort() {
+        val originalLocale = Locale.getDefault()
+        try {
+            Locale.setDefault(Locale.forLanguageTag("tr"))
+            val orderedPackages = HomeAppOrderPolicy.orderApps(
+                listOf(
+                    OrderedApp("pkg.zulu", "Zulu"),
+                    OrderedApp("pkg.ibis", "Ibis")
+                ),
+                emptyList()
+            ).map { it.packageName }
+
+            assertEquals(listOf("pkg.ibis", "pkg.zulu"), orderedPackages)
+        } finally {
+            Locale.setDefault(originalLocale)
+        }
     }
 }

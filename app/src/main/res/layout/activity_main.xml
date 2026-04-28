@@ -96,10 +96,75 @@
                 android:background="@color/launcher_outline" />
 
             <include
+                android:id="@+id/card_weather"
                 layout="@layout/item_home_weather"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="12dp" />
+
+        </LinearLayout>
+    </com.google.android.material.card.MaterialCardView>
+
+    <com.google.android.material.card.MaterialCardView
+        android:id="@+id/card_home_status"
+        style="@style/Widget.OldLauncher.PageHeroCard"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="12dp"
+        android:visibility="gone"
+        tools:visibility="visible">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:padding="16dp">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:gravity="center_vertical"
+                android:orientation="horizontal">
+
+                <ProgressBar
+                    android:id="@+id/progress_home_status"
+                    style="?android:attr/progressBarStyleSmall"
+                    android:layout_width="24dp"
+                    android:layout_height="24dp"
+                    android:layout_marginEnd="12dp"
+                    android:indeterminateTint="@color/launcher_action"
+                    android:visibility="gone"
+                    tools:visibility="visible" />
+
+                <TextView
+                    android:id="@+id/tv_home_status_title"
+                    style="@style/TextAppearance.OldLauncher.StateTitle"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    tools:text="正在整理首页" />
+
+            </LinearLayout>
+
+            <TextView
+                android:id="@+id/tv_home_status_message"
+                style="@style/TextAppearance.OldLauncher.StateBody"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="10dp"
+                tools:text="常用入口马上就好" />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btn_home_status_action"
+                style="@style/Widget.MaterialComponents.Button.TextButton"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                android:textAllCaps="false"
+                android:textColor="@color/launcher_action"
+                android:visibility="gone"
+                tools:text="重新加载"
+                tools:visibility="visible" />
 
         </LinearLayout>
     </com.google.android.material.card.MaterialCardView>

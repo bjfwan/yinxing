@@ -3,10 +3,20 @@ package com.yinxing.launcher.data.home
 import android.content.Context
 import android.content.SharedPreferences
 import androidx.core.content.edit
+import com.yinxing.launcher.data.settings.LauncherSettingsDataStore
+import com.yinxing.launcher.data.settings.LauncherSettingsMigration
 
 class LauncherPreferences(context: Context) {
-    private val prefs: SharedPreferences =
-        context.applicationContext.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+    private val appContext = context.applicationContext
+    private val legacyPrefs: SharedPreferences =
+        appContext.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+    private val homeAppConfig = HomeAppConfig(appContext)
+    private val settingsStore = LauncherSettingsDataStore.getInstance(appContext)
+    private val listeners = linkedSetOf<SharedPreferences.OnSharedPreferenceChangeListener>()
+
+    init {
+        migrateLegacyPreferences()
+    }
 
     companion object {
         private const val PREFS_NAME = "launcher_prefs"
@@ -27,6 +37,18 @@ class LauncherPreferences(context: Context) {
         const val DEFAULT_ICON_SCALE = 100
         const val MIN_ICON_SCALE = 60
         const val MAX_ICON_SCALE = 120
+        private val RESERVED_KEYS = setOf(
+            KEY_APP_ORDER,
+            KEY_LOW_PERFORMANCE_MODE,
+            KEY_AUTO_ANSWER_ENABLED,
+            KEY_AUTO_ANSWER_DELAY_SECONDS,
+            KEY_FULL_CARD_TAP_ENABLED,
+            KEY_DARK_MODE,
+            KEY_KIOSK_MODE_ENABLED,
+            KEY_AUTOSTART_CONFIRMED,
+            KEY_BACKGROUND_START_CONFIRMED,
+            KEY_ICON_SCALE
+        )
 
         @Volatile
         private var instance: LauncherPreferences? = null
@@ -39,100 +61,77 @@ class LauncherPreferences(context: Context) {
     }
 
     fun getSelectedPackages(): Set<String> {
-        return prefs.all
-            .filter { (key, value) -> isSelectionKey(key) && value == true }
-            .keys
+        return homeAppConfig.getSelectedPackages()
     }
 
     fun isPackageSelected(packageName: String): Boolean {
-        return prefs.getBoolean(packageName, false)
+        return homeAppConfig.isPackageSelected(packageName)
     }
 
     fun setPackageSelected(packageName: String, isSelected: Boolean) {
-        if (prefs.getBoolean(packageName, false) == isSelected) {
-            return
-        }
-        prefs.edit {
-            putBoolean(packageName, isSelected)
-        }
-        saveAppOrder(
-            HomeAppOrderPolicy.updateOrderForSelection(
-                getAppOrder(),
-                packageName,
-                isSelected
-            )
-        )
+        val orderBefore = getAppOrder()
+        if (!homeAppConfig.setPackageSelected(packageName, isSelected)) return
+        notifyPreferenceChanged(packageName)
+        if (orderBefore != getAppOrder()) notifyPreferenceChanged(KEY_APP_ORDER)
     }
 
     fun getAppOrder(): List<String> {
-        return HomeAppOrderPolicy.normalizeSavedOrder(
-            prefs.getString(KEY_APP_ORDER, null)
-                ?.split(",")
-                ?: emptyList()
-        )
+        return homeAppConfig.getAppOrder()
     }
 
     fun saveAppOrder(packageNames: List<String>) {
-        val normalized = HomeAppOrderPolicy.normalizeSavedOrder(packageNames).joinToString(",")
-        if (prefs.getString(KEY_APP_ORDER, null) == normalized) {
-            return
-        }
-        prefs.edit {
-            putString(KEY_APP_ORDER, normalized)
-        }
+        if (homeAppConfig.saveAppOrder(packageNames)) notifyPreferenceChanged(KEY_APP_ORDER)
     }
 
     fun syncAppOrder(selectedPackages: Collection<String>) {
-        saveAppOrder(
-            HomeAppOrderPolicy.retainSelectedPackages(
-                getAppOrder(),
-                selectedPackages
-            )
-        )
+        if (homeAppConfig.syncAppOrder(selectedPackages)) notifyPreferenceChanged(KEY_APP_ORDER)
     }
 
     fun isLowPerformanceModeEnabled(): Boolean {
-        return prefs.getBoolean(KEY_LOW_PERFORMANCE_MODE, false)
+        return settingsStore.snapshot().lowPerformanceModeEnabled
     }
 
     fun setLowPerformanceModeEnabled(enabled: Boolean) {
-        if (prefs.getBoolean(KEY_LOW_PERFORMANCE_MODE, false) == enabled) {
-            return
-        }
-        prefs.edit {
-            putBoolean(KEY_LOW_PERFORMANCE_MODE, enabled)
-        }
+        if (settingsStore.snapshot().lowPerformanceModeEnabled == enabled) return
+        settingsStore.setLowPerformanceModeEnabled(enabled)
+        notifyPreferenceChanged(KEY_LOW_PERFORMANCE_MODE)
     }
 
     fun isAutoAnswerEnabled(): Boolean {
-        return prefs.getBoolean(KEY_AUTO_ANSWER_ENABLED, true)
+        return settingsStore.snapshot().autoAnswerEnabled
     }
 
     fun setAutoAnswerEnabled(enabled: Boolean) {
-        prefs.edit { putBoolean(KEY_AUTO_ANSWER_ENABLED, enabled) }
+        if (settingsStore.snapshot().autoAnswerEnabled == enabled) return
+        settingsStore.setAutoAnswerEnabled(enabled)
+        notifyPreferenceChanged(KEY_AUTO_ANSWER_ENABLED)
     }
 
     fun getAutoAnswerDelaySeconds(): Int {
-        return prefs.getInt(KEY_AUTO_ANSWER_DELAY_SECONDS, DEFAULT_AUTO_ANSWER_DELAY_SECONDS)
+        return settingsStore.snapshot().autoAnswerDelaySeconds
     }
 
     fun setAutoAnswerDelaySeconds(seconds: Int) {
-        prefs.edit { putInt(KEY_AUTO_ANSWER_DELAY_SECONDS, seconds.coerceIn(1, 30)) }
+        val normalized = seconds.coerceIn(1, 30)
+        if (settingsStore.snapshot().autoAnswerDelaySeconds == normalized) return
+        settingsStore.setAutoAnswerDelaySeconds(normalized)
+        notifyPreferenceChanged(KEY_AUTO_ANSWER_DELAY_SECONDS)
     }
 
     fun isFullCardTapEnabled(): Boolean {
-        return prefs.getBoolean(KEY_FULL_CARD_TAP_ENABLED, false)
+        return settingsStore.snapshot().fullCardTapEnabled
     }
 
     fun setFullCardTapEnabled(enabled: Boolean) {
-        if (prefs.getBoolean(KEY_FULL_CARD_TAP_ENABLED, false) == enabled) return
-        prefs.edit { putBoolean(KEY_FULL_CARD_TAP_ENABLED, enabled) }
+        if (settingsStore.snapshot().fullCardTapEnabled == enabled) return
+        settingsStore.setFullCardTapEnabled(enabled)
+        notifyPreferenceChanged(KEY_FULL_CARD_TAP_ENABLED)
     }
 
     fun isFullCardTapKey(key: String?): Boolean = key == KEY_FULL_CARD_TAP_ENABLED
 
     fun getDarkMode(): String {
-        return prefs.getString(KEY_DARK_MODE, DARK_MODE_SYSTEM) ?: DARK_MODE_SYSTEM
+        return settingsStore.snapshot().darkMode
     }
 
     fun setDarkMode(value: String) {
@@ -141,52 +140,65 @@ class LauncherPreferences(context: Context) {
             else -> DARK_MODE_SYSTEM
         }
         if (getDarkMode() == normalized) return
-        prefs.edit { putString(KEY_DARK_MODE, normalized) }
+        settingsStore.setDarkMode(normalized)
+        notifyPreferenceChanged(KEY_DARK_MODE)
     }
 
     fun isDarkModeKey(key: String?): Boolean = key == KEY_DARK_MODE
 
     fun isKioskModeEnabled(): Boolean {
-        return prefs.getBoolean(KEY_KIOSK_MODE_ENABLED, false)
+        return settingsStore.snapshot().kioskModeEnabled
     }
 
     fun setKioskModeEnabled(enabled: Boolean) {
-        prefs.edit { putBoolean(KEY_KIOSK_MODE_ENABLED, enabled) }
+        if (settingsStore.snapshot().kioskModeEnabled == enabled) return
+        settingsStore.setKioskModeEnabled(enabled)
+        notifyPreferenceChanged(KEY_KIOSK_MODE_ENABLED)
     }
 
     fun isAutoStartConfirmed(): Boolean {
-        return prefs.getBoolean(KEY_AUTOSTART_CONFIRMED, false)
+        return settingsStore.snapshot().autoStartConfirmed
     }
 
     fun setAutoStartConfirmed(confirmed: Boolean) {
-        prefs.edit { putBoolean(KEY_AUTOSTART_CONFIRMED, confirmed) }
+        if (settingsStore.snapshot().autoStartConfirmed == confirmed) return
+        settingsStore.setAutoStartConfirmed(confirmed)
+        notifyPreferenceChanged(KEY_AUTOSTART_CONFIRMED)
     }
 
     fun isBackgroundStartConfirmed(): Boolean {
-        return prefs.getBoolean(KEY_BACKGROUND_START_CONFIRMED, false)
+        return settingsStore.snapshot().backgroundStartConfirmed
     }
 
     fun setBackgroundStartConfirmed(confirmed: Boolean) {
-        prefs.edit { putBoolean(KEY_BACKGROUND_START_CONFIRMED, confirmed) }
+        if (settingsStore.snapshot().backgroundStartConfirmed == confirmed) return
+        settingsStore.setBackgroundStartConfirmed(confirmed)
+        notifyPreferenceChanged(KEY_BACKGROUND_START_CONFIRMED)
     }
 
     fun getIconScale(): Int {
-        return prefs.getInt(KEY_ICON_SCALE, DEFAULT_ICON_SCALE)
-            .coerceIn(MIN_ICON_SCALE, MAX_ICON_SCALE)
+        return settingsStore.snapshot().iconScale
     }
 
     fun setIconScale(scale: Int) {
-        prefs.edit { putInt(KEY_ICON_SCALE, scale.coerceIn(MIN_ICON_SCALE, MAX_ICON_SCALE)) }
+        val normalized = scale.coerceIn(MIN_ICON_SCALE, MAX_ICON_SCALE)
+        if (settingsStore.snapshot().iconScale == normalized) return
+        settingsStore.setIconScale(normalized)
+        notifyPreferenceChanged(KEY_ICON_SCALE)
     }
 
     fun isIconScaleKey(key: String?) = key == KEY_ICON_SCALE
 
     fun registerListener(listener: SharedPreferences.OnSharedPreferenceChangeListener) {
-        prefs.registerOnSharedPreferenceChangeListener(listener)
+        synchronized(listeners) {
+            listeners += listener
+        }
     }
 
     fun unregisterListener(listener: SharedPreferences.OnSharedPreferenceChangeListener) {
-        prefs.unregisterOnSharedPreferenceChangeListener(listener)
+        synchronized(listeners) {
+            listeners -= listener
+        }
     }
 
     fun isLowPerformanceModeKey(key: String?): Boolean {
@@ -194,20 +206,53 @@ class LauncherPreferences(context: Context) {
     }
 
     fun isSelectionKey(key: String?): Boolean {
-        return !key.isNullOrBlank() &&
-            key != KEY_APP_ORDER &&
-            key != KEY_LOW_PERFORMANCE_MODE &&
-            key != KEY_AUTO_ANSWER_ENABLED &&
-            key != KEY_AUTO_ANSWER_DELAY_SECONDS &&
-            key != KEY_FULL_CARD_TAP_ENABLED &&
-            key != KEY_DARK_MODE &&
-            key != KEY_KIOSK_MODE_ENABLED &&
-            key != KEY_AUTOSTART_CONFIRMED &&
-            key != KEY_BACKGROUND_START_CONFIRMED &&
-            key != KEY_ICON_SCALE
+        return !key.isNullOrBlank() && key !in RESERVED_KEYS
     }
 
     fun isHomeAppConfigKey(key: String?): Boolean {
         return key == KEY_APP_ORDER || isSelectionKey(key)
+    }
+
+    private fun migrateLegacyPreferences() {
+        val legacy = legacyPrefs.all
+        if (legacy.isEmpty()) {
+            return
+        }
+        val selectedPackages = legacy
+            .filter { (key, value) -> isSelectionKey(key) && value == true }
+            .keys
+        val selectionKeys = legacy
+            .filter { (key, value) -> isSelectionKey(key) && value is Boolean }
+            .keys
+        val appOrder = (legacy[KEY_APP_ORDER] as? String)
+            ?.split(",")
+            ?: emptyList()
+
+        homeAppConfig.migrateFrom(selectedPackages, appOrder)
+        settingsStore.migrateFrom(
+            LauncherSettingsMigration(
+                lowPerformanceModeEnabled = legacy[KEY_LOW_PERFORMANCE_MODE] as? Boolean,
+                autoAnswerEnabled = legacy[KEY_AUTO_ANSWER_ENABLED] as? Boolean,
+                autoAnswerDelaySeconds = legacy[KEY_AUTO_ANSWER_DELAY_SECONDS] as? Int,
+                fullCardTapEnabled = legacy[KEY_FULL_CARD_TAP_ENABLED] as? Boolean,
+                darkMode = legacy[KEY_DARK_MODE] as? String,
+                kioskModeEnabled = legacy[KEY_KIOSK_MODE_ENABLED] as? Boolean,
+                autoStartConfirmed = legacy[KEY_AUTOSTART_CONFIRMED] as? Boolean,
+                backgroundStartConfirmed = legacy[KEY_BACKGROUND_START_CONFIRMED] as? Boolean,
+                iconScale = legacy[KEY_ICON_SCALE] as? Int
+            )
+        )
+
+        val keysToRemove = RESERVED_KEYS + selectionKeys
+        legacyPrefs.edit {
+            keysToRemove.forEach(::remove)
+        }
+    }
+
+    private fun notifyPreferenceChanged(key: String) {
+        val snapshot = synchronized(listeners) {
+            listeners.toList()
+        }
+        snapshot.forEach { it.onSharedPreferenceChanged(legacyPrefs, key) }
     }
 }

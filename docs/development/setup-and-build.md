@@ -1,13 +1,13 @@
 # 构建与环境说明
 
-更新时间：2026-04-25
+更新时间：2026-04-27
 
 ## 1. 基础环境
 
 - Android Studio 或可用的 Android Gradle 环境
 - JDK 17 及以上
 - Android SDK
-- Windows 环境优先使用 `gradlew.bat`
+- Windows 环境优先使用 `build.bat`
 - 建议显式设置 `JAVA_HOME`
 
 ## 2. 当前项目参数
@@ -24,7 +24,7 @@
 
 - Android SDK 通过 `local.properties` 中的 `sdk.dir` 指定
 - 运行 Gradle 前需要确保 `JAVA_HOME` 可用，或 `java` 已在 `PATH`
-- 当前工作区已在 `JAVA_HOME=D:\android\jbr` 条件下直接执行 `.\gradlew.bat` 验证可运行
+- 当前仓库提供 `build.bat`，会在 Windows 下设置 `JAVA_HOME=D:\Android\jbr` 后调用 `gradlew.bat`
 - 如需把 Gradle 缓存放到非系统盘，可额外设置 `GRADLE_USER_HOME`
 - 当前 `gradlew.bat` 在未显式设置 `GRADLE_USER_HOME` 时，会默认回退到工作区下的 `.gradle-user-home`
 - 当前 `gradle.properties` 已移除 `Windows-ROOT` trust store 强制配置，避免 JBR 下 SSL 依赖下载失败
@@ -32,9 +32,7 @@
 ## 4. 当前已验证命令
 
 ```powershell
-$env:JAVA_HOME="D:\android\jbr"
-$env:Path="$env:JAVA_HOME\bin;$env:Path"
-.\gradlew.bat :app:assembleDebugAndroidTest :app:testDebugUnitTest :app:assembleDebug :app:lintDebug
+.\build.bat :app:assembleDebugAndroidTest :app:testDebugUnitTest :app:assembleDebug :app:lintDebug
 ```
 
 ## 5. 常用命令
@@ -42,19 +40,19 @@ $env:Path="$env:JAVA_HOME\bin;$env:Path"
 ### 5.1 构建 Debug 包
 
 ```powershell
-.\gradlew.bat :app:assembleDebug
+.\build.bat :app:assembleDebug
 ```
 
 ### 5.2 运行单元测试
 
 ```powershell
-.\gradlew.bat :app:testDebugUnitTest
+.\build.bat :app:testDebugUnitTest
 ```
 
 ### 5.3 编译仪器测试 APK
 
 ```powershell
-.\gradlew.bat :app:assembleDebugAndroidTest
+.\build.bat :app:assembleDebugAndroidTest
 ```
 
 ### 5.4 检查设备连接
@@ -74,14 +72,14 @@ adb devices
 ### 5.5 执行设备级仪器测试
 
 ```powershell
-.\gradlew.bat :app:connectedDebugAndroidTest
+.\build.bat :app:connectedDebugAndroidTest
 ```
 
 ### 5.6 运行 Benchmark
 
 ```powershell
 # 完整冷启动基准（需真机或已启用 suppressErrors 的模拟器）
-.\gradlew.bat :benchmark:connectedAndroidTest `
+.\build.bat :benchmark:connectedAndroidTest `
   "-Pandroid.testInstrumentationRunnerArguments.class=com.yinxing.launcher.benchmark.HomeStartupBenchmark" `
   "-x" "uploadCrashlyticsMappingFileBenchmarkRelease"
 ```
@@ -90,28 +88,28 @@ adb devices
 
 ```powershell
 # 第一步：确认设备 UI 可操作
-.\gradlew.bat :benchmark:connectedNonMinifiedReleaseAndroidTest -Pandroid.testInstrumentationRunnerArguments.class=com.yinxing.launcher.benchmark.UiAutomationProbe#launcherUiSmoke
+.\build.bat :benchmark:connectedNonMinifiedReleaseAndroidTest -Pandroid.testInstrumentationRunnerArguments.class=com.yinxing.launcher.benchmark.UiAutomationProbe#launcherUiSmoke
 
 # 第二步：确认 MacrobenchmarkRule 可进入
-.\gradlew.bat :benchmark:connectedNonMinifiedReleaseAndroidTest -Pandroid.testInstrumentationRunnerArguments.class=com.yinxing.launcher.benchmark.MacrobenchmarkProbe#coldStartupProbe
+.\build.bat :benchmark:connectedNonMinifiedReleaseAndroidTest -Pandroid.testInstrumentationRunnerArguments.class=com.yinxing.launcher.benchmark.MacrobenchmarkProbe#coldStartupProbe
 
 # 第三步：确认 BaselineProfileRule 可进入 lambda
-.\gradlew.bat :benchmark:connectedNonMinifiedReleaseAndroidTest -Pandroid.testInstrumentationRunnerArguments.class=com.yinxing.launcher.benchmark.BaselineProfileFrameworkProbe#collectProbe
+.\build.bat :benchmark:connectedNonMinifiedReleaseAndroidTest -Pandroid.testInstrumentationRunnerArguments.class=com.yinxing.launcher.benchmark.BaselineProfileFrameworkProbe#collectProbe
 
 # 最后：完整基线采集
-.\gradlew.bat :benchmark:collectNonMinifiedReleaseBaselineProfile
+.\build.bat :benchmark:collectNonMinifiedReleaseBaselineProfile
 ```
 
 ### 5.7 运行 Lint
 
 ```powershell
-.\gradlew.bat :app:lintDebug
+.\build.bat :app:lintDebug
 ```
 
 ### 5.8 构建 Release 包
 
 ```powershell
-.\gradlew.bat :app:assembleRelease -x uploadCrashlyticsMappingFileReleaseRelease
+.\build.bat :app:assembleRelease -x uploadCrashlyticsMappingFileReleaseRelease
 ```
 
 ### 5.9 输出位置
@@ -122,6 +120,15 @@ app/build/outputs/apk/release/
 app/build/outputs/apk/androidTest/debug/
 benchmark/build/outputs/connected_android_test_additional_output/  （benchmark JSON 结果）
 ```
+
+### 5.10 发布页 APK 同步
+
+- Release 输出文件为 `app/build/outputs/apk/release/app-release.apk`
+- 下载页主文件为 `docs/app-release.apk`
+- 每次正式发布时，用本次 Release APK 覆盖 `docs/app-release.apk`
+- GitHub Release 上传同一个 `app-release.apk`
+- Cloudflare 域名托管的下载页使用 `docs/index.html` 和 `docs/app-release.apk`
+- 版本号、包体大小变化时，同步更新 `README.md`、`docs/index.html` 和 `docs/release/release-checklist.md`
 
 ## 6. Firebase Crashlytics 配置
 

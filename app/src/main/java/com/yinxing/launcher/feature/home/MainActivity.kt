@@ -4,174 +4,60 @@ import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
-import android.net.Uri
 import android.os.Build
 import android.os.Bundle
-import android.os.Handler
-import android.os.Looper
-import android.widget.TextView
+import android.view.animation.DecelerateInterpolator
 import android.widget.Toast
 import androidx.activity.OnBackPressedCallback
-import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
+import androidx.lifecycle.ViewModelProvider
+import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.DefaultItemAnimator
 import androidx.recyclerview.widget.GridLayoutManager
 import androidx.recyclerview.widget.ItemTouchHelper
-import androidx.recyclerview.widget.RecyclerView
 import com.yinxing.launcher.R
-import com.yinxing.launcher.data.home.LauncherAppRepository
-import com.yinxing.launcher.data.home.LauncherPreferences
-import com.yinxing.launcher.data.weather.WeatherPreferences
-import com.yinxing.launcher.data.weather.WeatherRepository
-import com.yinxing.launcher.data.weather.WeatherState
-import com.yinxing.launcher.feature.appmanage.AppManageActivity
-import com.yinxing.launcher.feature.phone.PhoneContactActivity
-import com.yinxing.launcher.feature.settings.SettingsActivity
-import com.yinxing.launcher.feature.videocall.VideoCallActivity
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
+import com.yinxing.launcher.databinding.ActivityMainBinding
 import kotlinx.coroutines.Job
-import kotlinx.coroutines.SupervisorJob
-import kotlinx.coroutines.cancel
 import kotlinx.coroutines.launch
-import java.text.SimpleDateFormat
-import java.util.Calendar
-import java.util.Locale
 
 class MainActivity : AppCompatActivity() {
-    companion object {
-        private val lunarMonthNames = arrayOf("", "正", "二", "三", "四", "五", "六", "七", "八", "九", "十", "冬", "腊")
-        private val lunarDayNames = arrayOf(
-            "", "初一", "初二", "初三", "初四", "初五", "初六", "初七", "初八", "初九", "初十",
-            "十一", "十二", "十三", "十四", "十五", "十六", "十七", "十八", "十九", "二十",
-            "廿一", "廿二", "廿三", "廿四", "廿五", "廿六", "廿七", "廿八", "廿九", "三十"
-        )
-    }
-
-    private lateinit var recyclerView: RecyclerView
+    private lateinit var binding: ActivityMainBinding
     private lateinit var adapter: HomeAppAdapter
-    private lateinit var tvTime: TextView
-    private lateinit var tvDate: TextView
-    private lateinit var tvWeatherCity: TextView
-    private lateinit var tvWeatherDesc: TextView
-    private lateinit var tvWeatherTemp: TextView
-    private lateinit var tvLunar: TextView
-    private lateinit var tvWeatherHighLow: TextView
-    private lateinit var tvWeatherUpdate: TextView
-    private lateinit var launcherPreferences: LauncherPreferences
-    private lateinit var weatherPreferences: WeatherPreferences
     private lateinit var itemMoveCallback: ItemMoveCallback
-    private val appRepository by lazy { LauncherAppRepository.getInstance(this) }
-    private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate)
-    private val handler = Handler(Looper.getMainLooper())
-    private val timeFormat = SimpleDateFormat("HH:mm", Locale.CHINA)
-    private val dateFormat = SimpleDateFormat("yyyy年MM月dd日 EEEE", Locale.CHINA)
-    private val weatherRefreshInterval = 8 * 60 * 60 * 1000L
+    private lateinit var headerController: WeatherHeaderController
+    private lateinit var statusController: HomeStatusController
+    private lateinit var navigator: HomeNavigator
+    private lateinit var viewModel: HomeViewModel
+    private val timeTicker = TimeTicker()
     private var packageReceiverRegistered = false
-    private var lastHeaderDayKey = Int.MIN_VALUE
-    private var lastTimeText: String? = null
-    private var weatherJob: Job? = null
-    private var weatherLoadingCity: String? = null
-    private var refreshAppsJob: Job? = null
-
-
-    private val updateTimeRunnable = object : Runnable {
-        override fun run() {
-            updateTime()
-            scheduleNextTimeUpdate()
-        }
-    }
-
-    private val weatherRefreshRunnable = Runnable {
-        refreshWeatherNow()
-    }
+    private var tickerJob: Job? = null
+    private var fullyDrawnReported = false
 
     private val packageChangeReceiver = object : BroadcastReceiver() {
         override fun onReceive(context: Context?, intent: Intent?) {
-            appRepository.invalidateInstalledApps()
-            refreshApps()
+            viewModel.onPackageChanged()
         }
     }
-
-    private val preferenceListener =
-        android.content.SharedPreferences.OnSharedPreferenceChangeListener { _, key ->
-            when {
-                launcherPreferences.isLowPerformanceModeKey(key) -> applyPerformanceMode()
-                launcherPreferences.isIconScaleKey(key) -> {
-                    val scale = launcherPreferences.getIconScale()
-                    adapter.setIconScale(scale)
-                    applyHeaderScale(scale)
-                }
-                launcherPreferences.isHomeAppConfigKey(key) -> {
-                    appRepository.invalidateSelections()
-                    refreshApps()
-                }
-            }
-        }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        setContentView(R.layout.activity_main)
-        launcherPreferences = LauncherPreferences.getInstance(this)
-        weatherPreferences = WeatherPreferences.getInstance(this)
-        launcherPreferences.registerListener(preferenceListener)
-        onBackPressedDispatcher.addCallback(this, object : OnBackPressedCallback(true) {
-            override fun handleOnBackPressed() {
-                Toast.makeText(
-                    this@MainActivity,
-                    getString(R.string.home_toast_already_here),
-                    Toast.LENGTH_SHORT
-                ).show()
-            }
-        })
-        tvTime = findViewById(R.id.tv_time)
-        tvDate = findViewById(R.id.tv_date)
-        tvLunar = findViewById(R.id.tv_lunar)
-        tvWeatherCity = findViewById(R.id.tv_weather_city)
-        tvWeatherDesc = findViewById(R.id.tv_weather_desc)
-        tvWeatherTemp = findViewById(R.id.tv_weather_temp)
-        tvWeatherHighLow = findViewById(R.id.tv_weather_high_low)
-        tvWeatherUpdate = findViewById(R.id.tv_weather_update)
-        findViewById<android.view.View>(R.id.card_weather).setOnClickListener { openWeatherEntry() }
-        findViewById<android.view.View>(R.id.btn_family_settings).setOnClickListener { showCaregiverEntryDialog() }
-        recyclerView = findViewById(R.id.recycler_home)
-        recyclerView.layoutManager = GridLayoutManager(this, 2)
-        recyclerView.setHasFixedSize(false)
-        adapter = HomeAppAdapter(
-            scope = scope,
-            lowPerformanceMode = launcherPreferences.isLowPerformanceModeEnabled(),
-            iconScale = launcherPreferences.getIconScale(),
-            onItemClick = { item -> handleAppClick(item) },
-            onOrderChanged = { items -> saveAppOrder(items) }
+        binding = ActivityMainBinding.inflate(layoutInflater)
+        setContentView(binding.root)
+        viewModel = ViewModelProvider(this, HomeViewModel.Factory(this))[HomeViewModel::class.java]
+        navigator = HomeNavigator(this)
+        headerController = WeatherHeaderController(binding)
+        statusController = HomeStatusController(
+            binding = binding,
+            onRetry = viewModel::refreshApps,
+            onOpenSettings = navigator::showCaregiverEntryDialog
         )
-        recyclerView.adapter = adapter
-        itemMoveCallback = ItemMoveCallback(adapter, !launcherPreferences.isLowPerformanceModeEnabled())
-        val touchHelper = ItemTouchHelper(itemMoveCallback)
-        touchHelper.attachToRecyclerView(recyclerView)
-        adapter.setTouchHelper(touchHelper)
-        adapter.submitList(appRepository.getStaticHomeItems())
+        setupBackPress()
+        setupRecycler()
+        setupActions()
+        observeViewModel()
         registerPackageReceiver()
-        applyPerformanceMode()
-        applyHeaderScale(launcherPreferences.getIconScale())
-        recyclerView.post { refreshApps() }
         playEntryAnimation()
-    }
-
-    private fun playEntryAnimation() {
-        if (launcherPreferences.isLowPerformanceModeEnabled()) {
-            return
-        }
-        val root = findViewById<android.view.View>(R.id.layout_home_root) ?: return
-        root.alpha = 0f
-        root.translationY = 18f
-        root.post {
-            root.animate()
-                .alpha(1f)
-                .translationY(0f)
-                .setDuration(240)
-                .setInterpolator(android.view.animation.DecelerateInterpolator())
-                .start()
-        }
+        binding.recyclerHome.post { viewModel.refreshApps() }
     }
 
     override fun onNewIntent(intent: Intent) {
@@ -181,26 +67,99 @@ class MainActivity : AppCompatActivity() {
 
     override fun onResume() {
         super.onResume()
-        updateTime()
-        scheduleNextTimeUpdate()
-        maybeRefreshWeather()
+        startTimeTicker()
+        viewModel.maybeRefreshWeather()
     }
 
     override fun onPause() {
+        tickerJob?.cancel()
+        tickerJob = null
+        viewModel.cancelPendingWeatherRefresh()
         super.onPause()
-        handler.removeCallbacks(updateTimeRunnable)
-        handler.removeCallbacks(weatherRefreshRunnable)
     }
 
     override fun onDestroy() {
-        handler.removeCallbacks(updateTimeRunnable)
-        handler.removeCallbacks(weatherRefreshRunnable)
         if (packageReceiverRegistered) {
             unregisterReceiver(packageChangeReceiver)
         }
-        launcherPreferences.unregisterListener(preferenceListener)
-        scope.cancel()
         super.onDestroy()
+    }
+
+    private fun setupBackPress() {
+        onBackPressedDispatcher.addCallback(this, object : OnBackPressedCallback(true) {
+            override fun handleOnBackPressed() {
+                Toast.makeText(
+                    this@MainActivity,
+                    getString(R.string.home_toast_already_here),
+                    Toast.LENGTH_SHORT
+                ).show()
+            }
+        })
+    }
+
+    private fun setupRecycler() {
+        val settings = viewModel.settings.value
+        adapter = HomeAppAdapter(
+            scope = lifecycleScope,
+            lowPerformanceMode = settings.lowPerformanceMode,
+            iconScale = settings.iconScale,
+            onItemClick = navigator::openHomeItem,
+            onOrderChanged = viewModel::saveAppOrder
+        )
+        binding.recyclerHome.layoutManager = GridLayoutManager(this, 2)
+        binding.recyclerHome.setHasFixedSize(false)
+        binding.recyclerHome.adapter = adapter
+        itemMoveCallback = ItemMoveCallback(adapter, !settings.lowPerformanceMode)
+        ItemTouchHelper(itemMoveCallback).also {
+            it.attachToRecyclerView(binding.recyclerHome)
+            adapter.setTouchHelper(it)
+        }
+        adapter.submitList(viewModel.homeUiState.value.items)
+        applySettings(settings)
+    }
+
+    private fun setupActions() {
+        binding.cardWeather.root.setOnClickListener { navigator.openWeatherEntry() }
+        binding.btnFamilySettings.setOnClickListener { navigator.showCaregiverEntryDialog() }
+    }
+
+    private fun observeViewModel() {
+        lifecycleScope.launch {
+            viewModel.homeUiState.collect(::renderHomeState)
+        }
+        lifecycleScope.launch {
+            viewModel.settings.collect(::applySettings)
+        }
+        lifecycleScope.launch {
+            viewModel.weatherState.collect { state ->
+                state?.let(headerController::renderWeather)
+            }
+        }
+    }
+
+    private fun renderHomeState(state: HomeUiState) {
+        adapter.submitList(state.items) {
+            maybeReportFullyDrawn(state)
+        }
+        statusController.render(state)
+    }
+
+    private fun applySettings(settings: HomeSettingsState) {
+        binding.recyclerHome.setItemViewCacheSize(if (settings.lowPerformanceMode) 4 else 10)
+        binding.recyclerHome.itemAnimator = if (settings.lowPerformanceMode) null else DefaultItemAnimator()
+        adapter.setLowPerformanceMode(settings.lowPerformanceMode)
+        adapter.setIconScale(settings.iconScale)
+        itemMoveCallback.setAnimateDrag(!settings.lowPerformanceMode)
+        headerController.applyScale(settings.iconScale)
+    }
+
+    private fun startTimeTicker() {
+        tickerJob?.cancel()
+        tickerJob = lifecycleScope.launch {
+            timeTicker.run { snapshot ->
+                headerController.renderTime(snapshot, viewModel.settings.value.lowPerformanceMode)
+            }
+        }
     }
 
     private fun registerPackageReceiver() {
@@ -220,233 +179,29 @@ class MainActivity : AppCompatActivity() {
         packageReceiverRegistered = true
     }
 
-    private fun applyPerformanceMode() {
-        val lowPerformanceMode = launcherPreferences.isLowPerformanceModeEnabled()
-        recyclerView.setItemViewCacheSize(if (lowPerformanceMode) 4 else 10)
-        recyclerView.itemAnimator = if (lowPerformanceMode) null else DefaultItemAnimator()
-        adapter.setLowPerformanceMode(lowPerformanceMode)
-        itemMoveCallback.setAnimateDrag(!lowPerformanceMode)
-    }
-
-    private fun applyHeaderScale(scale: Int) {
-        val ratio = scale / 100f
-        tvTime.textSize = (46f * ratio).coerceAtLeast(32f)
-        tvDate.textSize = (20f * ratio).coerceAtLeast(16f)
-        tvLunar.textSize = (16f * ratio).coerceAtLeast(12f)
-        tvWeatherTemp.textSize = (52f * ratio).coerceAtLeast(36f)
-        tvWeatherCity.textSize = (22f * ratio).coerceAtLeast(16f)
-        tvWeatherDesc.textSize = (18f * ratio).coerceAtLeast(14f)
-        tvWeatherHighLow.textSize = (18f * ratio).coerceAtLeast(14f)
-    }
-
-    private fun scheduleNextTimeUpdate() {
-        handler.removeCallbacks(updateTimeRunnable)
-        val interval = 60_000L
-        val now = System.currentTimeMillis()
-        val delay = interval - (now % interval)
-        handler.postDelayed(updateTimeRunnable, if (delay == 0L) interval else delay)
-    }
-
-    private fun updateTime() {
-        val now = Calendar.getInstance()
-        val timeText = timeFormat.format(now.time)
-        if (tvTime.text != timeText) {
-            val animateChange = lastTimeText != null && !launcherPreferences.isLowPerformanceModeEnabled()
-            if (animateChange) {
-                tvTime.animate().cancel()
-                tvTime.animate()
-                    .alpha(0.45f)
-                    .setDuration(90)
-                    .withEndAction {
-                        tvTime.text = timeText
-                        tvTime.animate()
-                            .alpha(1f)
-                            .setDuration(160)
-                            .setInterpolator(android.view.animation.DecelerateInterpolator())
-                            .start()
-                    }
-                    .start()
-            } else {
-                tvTime.text = timeText
-            }
-            lastTimeText = timeText
-        }
-        val dayKey = now.get(Calendar.YEAR) * 1000 + now.get(Calendar.DAY_OF_YEAR)
-        if (dayKey != lastHeaderDayKey) {
-            lastHeaderDayKey = dayKey
-            tvDate.text = dateFormat.format(now.time)
-            tvLunar.text = buildLunarDateString(now)
-        }
-    }
-
-    private fun buildLunarDateString(cal: Calendar): String {
-        return try {
-            if (Build.VERSION.SDK_INT < Build.VERSION_CODES.N) {
-                ""
-            } else {
-                val chinese = android.icu.util.ChineseCalendar().apply {
-                    timeInMillis = cal.timeInMillis
-                }
-                val lunarMonth = chinese.get(android.icu.util.ChineseCalendar.MONTH) + 1
-                val lunarDay = chinese.get(android.icu.util.ChineseCalendar.DAY_OF_MONTH)
-                val monthText = (if (chinese.get(android.icu.util.ChineseCalendar.IS_LEAP_MONTH) == 1) "闰" else "") +
-                    (lunarMonthNames.getOrNull(lunarMonth) ?: lunarMonth.toString()) + "月"
-                val dayText = lunarDayNames.getOrNull(lunarDay) ?: lunarDay.toString()
-                "农历 $monthText$dayText"
-            }
-        } catch (_: Exception) {
-            ""
-        }
-    }
-
-    private fun refreshApps() {
-        refreshAppsJob?.cancel()
-        refreshAppsJob = scope.launch {
-            adapter.submitList(appRepository.getHomeItems(launcherPreferences))
-        }
-    }
-
-    private fun maybeRefreshWeather() {
-        val city = weatherPreferences.getCityName()
-        val cached = WeatherRepository.getCached()
-        if (cached != null && cached.cityName == city) {
-            applyWeatherToHeader(cached)
-        }
-        if (weatherJob?.isActive == true && weatherLoadingCity == city) {
+    private fun maybeReportFullyDrawn(state: HomeUiState) {
+        if (fullyDrawnReported || state is HomeUiState.Loading) {
             return
         }
-        val expired = cached == null ||
-            cached.cityName != city ||
-            System.currentTimeMillis() - cached.lastFetchTime > weatherRefreshInterval
-        if (expired) {
-            handler.removeCallbacks(weatherRefreshRunnable)
-            handler.postDelayed(weatherRefreshRunnable, if (cached == null) 1_200L else 250L)
+        fullyDrawnReported = true
+        binding.recyclerHome.post {
+            reportFullyDrawn()
         }
     }
 
-    private fun refreshWeatherNow() {
-        val city = weatherPreferences.getCityName()
-        if (weatherJob?.isActive == true && weatherLoadingCity == city) {
+    private fun playEntryAnimation() {
+        if (viewModel.settings.value.lowPerformanceMode) {
             return
         }
-        weatherJob?.cancel()
-        weatherLoadingCity = city
-        weatherJob = scope.launch {
-            try {
-                applyWeatherToHeader(WeatherRepository.fetchWeather(city))
-            } finally {
-                if (weatherLoadingCity == city) {
-                    weatherLoadingCity = null
-                }
-            }
+        binding.layoutHomeRoot.alpha = 0f
+        binding.layoutHomeRoot.translationY = 18f
+        binding.layoutHomeRoot.post {
+            binding.layoutHomeRoot.animate()
+                .alpha(1f)
+                .translationY(0f)
+                .setDuration(240)
+                .setInterpolator(DecelerateInterpolator())
+                .start()
         }
     }
-
-    private fun applyWeatherToHeader(state: WeatherState) {
-        val now = state.now
-        val today = state.forecast.firstOrNull()
-        if (now != null) {
-            tvWeatherCity.text = now.cityName
-            val weatherText = if (today != null && today.textDay.isNotEmpty() && today.textDay != now.weather) {
-                getString(R.string.weather_summary_with_today, now.weather, today.textDay)
-            } else {
-                now.weather
-            }
-            tvWeatherDesc.text = listOf(weatherText, now.windDirection, now.windPower)
-                .filter { it.isNotBlank() }
-                .joinToString("  ")
-            tvWeatherTemp.text = getString(R.string.weather_temperature_format, now.temperature)
-            tvWeatherHighLow.text = if (today != null) {
-                getString(R.string.weather_high_low_format, today.high, today.low)
-            } else {
-                ""
-            }
-            tvWeatherUpdate.text = if (now.updateTime.isNotEmpty()) {
-                getString(R.string.weather_update_at, now.updateTime)
-            } else {
-                ""
-            }
-        } else {
-            tvWeatherCity.text = state.cityName.ifEmpty { getString(R.string.home_weather_placeholder_city) }
-            tvWeatherDesc.text = if (state.error != null) {
-                getString(R.string.weather_load_failed_short)
-            } else {
-                getString(R.string.weather_loading_short)
-            }
-            tvWeatherTemp.text = getString(R.string.weather_temperature_placeholder)
-            tvWeatherHighLow.text = ""
-            tvWeatherUpdate.text = ""
-        }
-    }
-
-
-    private fun openWeatherEntry() {
-        val vendorIntent = listOf(
-            "com.miui.weather2",
-            "com.huawei.android.totemweather",
-            "com.oppo.weather",
-            "com.vivo.weather"
-        ).asSequence().mapNotNull { packageManager.getLaunchIntentForPackage(it) }.firstOrNull()
-        if (vendorIntent != null) {
-            startActivity(vendorIntent)
-            return
-        }
-        val browserIntent = Intent(Intent.ACTION_VIEW, Uri.parse(getString(R.string.weather_fallback_url)))
-        runCatching { startActivity(browserIntent) }
-            .onSuccess {
-                Toast.makeText(this, getString(R.string.weather_fallback_notice), Toast.LENGTH_SHORT).show()
-            }
-            .onFailure {
-                Toast.makeText(this, getString(R.string.weather_not_available), Toast.LENGTH_SHORT).show()
-            }
-    }
-
-    private fun saveAppOrder(items: List<HomeAppItem>) {
-        launcherPreferences.saveAppOrder(
-            items.filter { it.type == HomeAppItem.Type.APP }.map { it.packageName }
-        )
-    }
-
-    private fun showCaregiverEntryDialog() {
-        val dialogView = layoutInflater.inflate(R.layout.dialog_accessibility_prompt, null)
-        dialogView.findViewById<TextView>(R.id.tv_dialog_title).text =
-            getString(R.string.home_caregiver_dialog_title)
-        dialogView.findViewById<TextView>(R.id.tv_dialog_message).text =
-            getString(R.string.home_caregiver_dialog_message)
-        dialogView.findViewById<TextView>(R.id.tv_cancel_label).text =
-            getString(R.string.home_caregiver_dialog_cancel)
-        dialogView.findViewById<TextView>(R.id.tv_primary_label).text =
-            getString(R.string.home_caregiver_dialog_confirm)
-        val dialog = AlertDialog.Builder(this)
-            .setView(dialogView)
-            .create()
-        dialog.window?.setBackgroundDrawableResource(android.R.color.transparent)
-        dialogView.findViewById<android.view.View>(R.id.btn_cancel).setOnClickListener { dialog.dismiss() }
-        dialogView.findViewById<android.view.View>(R.id.btn_open_settings).setOnClickListener {
-            dialog.dismiss()
-            startActivity(Intent(this, SettingsActivity::class.java))
-        }
-        dialog.show()
-    }
-
-    private fun handleAppClick(item: HomeAppItem) {
-        when (item.type) {
-            HomeAppItem.Type.APP -> {
-                val intent = packageManager.getLaunchIntentForPackage(item.packageName)
-                if (intent != null) {
-                    startActivity(intent)
-                } else {
-                    Toast.makeText(
-                        this,
-                        getString(R.string.open_app_failed, item.appName),
-                        Toast.LENGTH_SHORT
-                    ).show()
-                }
-            }
-            HomeAppItem.Type.PHONE -> startActivity(Intent(this, PhoneContactActivity::class.java))
-            HomeAppItem.Type.WECHAT_VIDEO -> startActivity(Intent(this, VideoCallActivity::class.java))
-            HomeAppItem.Type.ADD -> startActivity(Intent(this, AppManageActivity::class.java))
-        }
-    }
-
 }

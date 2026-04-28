@@ -9,8 +9,8 @@
 [![License](https://img.shields.io/badge/license-MIT-B8882A?labelColor=1C1914&style=flat-square)](#)
 [![Release](https://img.shields.io/badge/⬇︎%20下载%20APK-B8882A?labelColor=1C1914&style=flat-square)](https://yx.likeyou.qzz.io)
 [![Platform](https://img.shields.io/badge/Android%207%2B-0369A1?labelColor=1C1914&style=flat-square&logo=android&logoColor=white)](#)
-[![Size](https://img.shields.io/badge/2.88%20MB-555?labelColor=1C1914&style=flat-square)](#)
-[![Version](https://img.shields.io/badge/v1.5.0-B8882A?labelColor=1C1914&style=flat-square)](#)
+[![Size](https://img.shields.io/badge/2.93%20MB-555?labelColor=1C1914&style=flat-square)](#)
+[![Version](https://img.shields.io/badge/v1.6.0-B8882A?labelColor=1C1914&style=flat-square)](#)
 [![Stars](https://img.shields.io/github/stars/bjfwan/yinxing?color=B8882A&labelColor=1C1914&style=flat-square)](https://github.com/bjfwan/yinxing/stargazers)
 
 </div>
@@ -80,16 +80,16 @@ Fork → 修改 → 提 PR → 一起让更多老人用得上
 
 ```bash
 # Debug 构建
-.\gradlew.bat :app:assembleDebug
+.\build.bat :app:assembleDebug
 
 # Release 构建
-.\gradlew.bat :app:assembleRelease
+.\build.bat :app:assembleRelease
 
 # 单元测试
-.\gradlew.bat :app:testDebugUnitTest
+.\build.bat :app:testDebugUnitTest
 
 # Lint
-.\gradlew.bat :app:lintDebug
+.\build.bat :app:lintDebug
 ```
 
 ## 工程结构
@@ -105,6 +105,7 @@ docs/         产品、架构、开发文档
 - [产品需求](docs/product/product-requirements.md)
 - [当前架构](docs/architecture/current-architecture.md)
 - [构建说明](docs/development/setup-and-build.md)
+- [发布流程](docs/release.md)
 - [项目路线图](docs/roadmap/project-roadmap.md)
 
 ---

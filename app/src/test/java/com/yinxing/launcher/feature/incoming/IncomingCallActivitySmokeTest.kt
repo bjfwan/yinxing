@@ -9,6 +9,7 @@ import androidx.cardview.widget.CardView
 import androidx.test.core.app.ApplicationProvider
 import com.yinxing.launcher.R
 import com.yinxing.launcher.data.home.LauncherPreferences
+import com.yinxing.launcher.data.settings.LauncherSettingsDataStore
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertTrue
@@ -30,6 +31,7 @@ class IncomingCallActivitySmokeTest {
     fun setUp() {
         context = ApplicationProvider.getApplicationContext()
         context.getSharedPreferences("launcher_prefs", Context.MODE_PRIVATE).edit().clear().commit()
+        LauncherSettingsDataStore.getInstance(context).clear()
         IncomingCallDiagnostics.clear(context)
         resetLauncherPreferencesSingleton()
     }

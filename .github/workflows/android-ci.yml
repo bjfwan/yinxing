@@ -1,0 +1,80 @@
+name: Android CI
+
+on:
+  push:
+    branches:
+      - main
+      - master
+  pull_request:
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+          cache: gradle
+
+      - name: Make gradlew executable
+        run: chmod +x gradlew
+
+      - name: Prepare local.properties
+        run: |
+          cat > local.properties <<EOF
+          sdk.dir=${ANDROID_HOME}
+          RELEASE_STORE_FILE=release-key.jks
+          RELEASE_KEY_ALIAS=mykey
+          RELEASE_STORE_PASSWORD=
+          RELEASE_KEY_PASSWORD=
+          SENIVERSE_UID=
+          SENIVERSE_PK=
+          TENCENT_KEY=
+          EOF
+
+      - name: Prepare google-services.json
+        run: |
+          cat > app/google-services.json <<'EOF'
+          {
+            "project_info": {
+              "project_number": "1234567890",
+              "project_id": "oldlauncher-ci",
+              "storage_bucket": "oldlauncher-ci.appspot.com"
+            },
+            "client": [
+              {
+                "client_info": {
+                  "mobilesdk_app_id": "1:1234567890:android:abcdef123456",
+                  "android_client_info": {
+                    "package_name": "com.yinxing.launcher"
+                  }
+                },
+                "api_key": [
+                  {
+                    "current_key": "placeholder"
+                  }
+                ]
+              }
+            ],
+            "configuration_version": "1"
+          }
+          EOF
+
+      - name: Assemble debug
+        run: ./gradlew :app:assembleDebug
+
+      - name: Unit tests
+        run: ./gradlew :app:testDebugUnitTest
+
+      - name: Lint
+        run: ./gradlew :app:lintDebug
+
+      - name: Optional ktlint detekt
+        continue-on-error: true
+        run: ./gradlew ktlintCheck detekt --continue

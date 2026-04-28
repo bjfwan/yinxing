@@ -1,6 +1,6 @@
 # OldLauncher 产品需求说明
 
-更新时间：2026-04-25
+更新时间：2026-04-27
 状态：当前版本事实说明
 
 ## 1. 产品定位
@@ -78,7 +78,7 @@
 
 ## 6. 当前验收口径
 
-- `:app:testDebugUnitTest` 可以通过（当前 108 tests, 0 failed）
+- `:app:testDebugUnitTest` 可以通过（当前 113 tests, 0 failed）
 - `:app:assembleDebug` 可以通过
 - `:app:assembleDebugAndroidTest` 可以通过
 - `:app:lintDebug` 可以通过

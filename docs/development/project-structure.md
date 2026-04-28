@@ -1,6 +1,6 @@
 # 项目结构规范
 
-更新时间：2026-04-25
+更新时间：2026-04-27
 
 ## 1. 根目录结构
 
@@ -38,10 +38,12 @@ app/src/main/
 │   │   └── util/
 │   ├── data/
 │   │   ├── contact/
-│   │   └── home/
+│   │   ├── home/
+│   │   └── weather/
 │   └── feature/
 │       ├── appmanage/
 │       ├── home/
+│       ├── incoming/
 │       ├── phone/
 │       ├── settings/
 │       └── videocall/

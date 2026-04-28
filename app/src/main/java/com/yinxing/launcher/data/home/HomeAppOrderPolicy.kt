@@ -1,5 +1,7 @@
 package com.yinxing.launcher.data.home
 
+import java.util.Locale
+
 data class OrderedApp(
     val packageName: String,
     val appName: String
@@ -14,7 +16,7 @@ object HomeAppOrderPolicy {
             appsByPackage.remove(packageName)?.let(orderedApps::add)
         }
 
-        orderedApps += appsByPackage.values.sortedBy { it.appName.lowercase() }
+        orderedApps += appsByPackage.values.sortedBy { it.appName.lowercase(Locale.ROOT) }
         return orderedApps
     }
 

@@ -2,22 +2,13 @@ package com.yinxing.launcher.feature.phone
 
 import android.content.Context
 import com.yinxing.launcher.data.contact.Contact
-import com.yinxing.launcher.data.contact.ContactSqliteStore
-import kotlinx.coroutines.CoroutineDispatcher
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.withContext
+import com.yinxing.launcher.data.contact.ContactRepository
 
 class PhoneContactManager(
     context: Context,
-    private val currentTimeMillis: () -> Long = System::currentTimeMillis
+    currentTimeMillis: () -> Long = System::currentTimeMillis,
+    private val repository: ContactRepository = ContactRepository.phone(context, currentTimeMillis)
 ) {
-    private val store = ContactSqliteStore(
-        context.applicationContext,
-        groupKey = ContactSqliteStore.GROUP_PHONE
-    )
-    private val persistDispatcher: CoroutineDispatcher = Dispatchers.IO.limitedParallelism(1)
-    private var sortedCache: List<Contact>? = null
-
     companion object {
         @Volatile
         private var instance: PhoneContactManager? = null
@@ -29,67 +20,35 @@ class PhoneContactManager(
         }
     }
 
-    @Synchronized
     fun getContacts(): List<Contact> {
-        sortedCache?.let { return it }
-        val result = store.getContacts()
-        sortedCache = result
-        return result
+        return repository.getContacts()
     }
 
     fun getContactCount(): Int {
-        return sortedCache?.size ?: store.count()
+        return repository.getContactCount()
     }
 
     suspend fun addContact(contact: Contact) {
-        withContext(persistDispatcher) {
-            store.upsert(contact)
-        }
-        invalidateCache()
+        repository.addContact(contact)
     }
 
     suspend fun addContacts(contacts: Collection<Contact>) {
-        if (contacts.isEmpty()) {
-            return
-        }
-        withContext(persistDispatcher) {
-            store.upsertAll(contacts)
-        }
-        invalidateCache()
+        repository.addContacts(contacts)
     }
 
     suspend fun updateContact(contact: Contact) {
-        val updated = withContext(persistDispatcher) {
-            store.update(contact)
-        }
-        if (updated) {
-            invalidateCache()
-        }
+        repository.updateContact(contact)
     }
 
     suspend fun removeContact(contactId: String) {
-        withContext(persistDispatcher) {
-            store.remove(contactId)
-        }
-        invalidateCache()
+        repository.removeContact(contactId)
     }
 
     suspend fun incrementCallCount(contactId: String): Boolean {
-        val updated = withContext(persistDispatcher) {
-            store.incrementCallCount(contactId, currentTimeMillis())
-        }
-        if (updated) {
-            invalidateCache()
-        }
-        return updated
+        return repository.incrementCallCount(contactId)
     }
 
     fun close() {
-        store.close()
-    }
-
-    @Synchronized
-    private fun invalidateCache() {
-        sortedCache = null
+        repository.close()
     }
 }

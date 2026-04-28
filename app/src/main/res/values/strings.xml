@@ -17,6 +17,12 @@
     <string name="home_caregiver_dialog_message">这里用于管理联系人、桌面入口、权限和系统行为，老人平时不需要进入。</string>
     <string name="home_caregiver_dialog_confirm">继续设置</string>
     <string name="home_caregiver_dialog_cancel">返回首页</string>
+    <string name="home_status_loading_title">正在整理首页</string>
+    <string name="home_status_loading_message">常用入口马上就好</string>
+    <string name="home_status_empty_title">还没有添加首页应用</string>
+    <string name="home_status_empty_message">先到家属设置里选择要显示的应用，电话和微信视频会继续保留在首页。</string>
+    <string name="home_status_error_title">首页暂时没有准备好</string>
+    <string name="home_status_error_message">可以稍后再试，或先进入家属设置检查首页应用。</string>
 
 
     <string name="open_app_failed">无法打开%1$s</string>
@@ -62,6 +68,7 @@
     <string name="action_clear">清空</string>
     <string name="action_select_photo">选择照片</string>
     <string name="action_continue">继续</string>
+    <string name="action_retry">重新加载</string>
     <string name="label_name">姓名</string>
     <string name="hint_name">请输入姓名</string>
     <string name="label_phone">手机号</string>

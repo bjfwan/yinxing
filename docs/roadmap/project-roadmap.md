@@ -1,10 +1,10 @@
 # 项目路线图
 
-更新时间：2026-04-25
+更新时间：2026-04-27
 
-## 1. 当前状态（v1.5.0）
+## 1. 当前状态（v1.6.0）
 
-- 构建基线稳定：`assembleDebug` / `testDebugUnitTest`（108 tests, 0 failed）/ `lintDebug` 全部通过
+- 构建基线稳定：`assembleDebug` / `testDebugUnitTest`（113 tests, 0 failed）/ `lintDebug` 全部通过
 - 联系人、天气、桌面应用列表数据操作全面迁移至后台线程，消除主线程 IO 阻塞
 - 微信自动化主动拨号（视频）Phase 1 已完成并在真实设备验证通过
 - 无障碍服务已合并为单一服务 `SelectToSpeakService`，用户只需授权一次

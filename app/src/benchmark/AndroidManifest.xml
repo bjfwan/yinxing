@@ -2,5 +2,8 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
     <application>
         <profileable android:shell="true" />
+        <receiver
+            android:name="com.yinxing.launcher.benchmark.BenchmarkCommandReceiver"
+            android:exported="true" />
     </application>
 </manifest>

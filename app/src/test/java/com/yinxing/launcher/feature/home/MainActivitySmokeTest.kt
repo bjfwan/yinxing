@@ -45,6 +45,8 @@ class MainActivitySmokeTest {
         val activity = Robolectric.buildActivity(MainActivity::class.java).setup().get()
 
         val recyclerView = activity.findViewById<RecyclerView>(R.id.recycler_home)
+        val statusCard = activity.findViewById<View>(R.id.card_home_status)
+        val statusTitle = activity.findViewById<TextView>(R.id.tv_home_status_title)
         val timeView = activity.findViewById<TextView>(R.id.tv_time)
         repeat(20) {
             shadowOf(Looper.getMainLooper()).idle()
@@ -55,6 +57,7 @@ class MainActivitySmokeTest {
         }
 
         assertEquals(3, recyclerView.adapter?.itemCount)
+        assertEquals(View.GONE, statusCard.visibility)
         assertTrue(timeView.text.isNotBlank())
     }
 
@@ -70,6 +73,7 @@ class MainActivitySmokeTest {
 
         val activity = Robolectric.buildActivity(MainActivity::class.java).setup().get()
         val recyclerView = activity.findViewById<RecyclerView>(R.id.recycler_home)
+        val statusCard = activity.findViewById<View>(R.id.card_home_status)
         repeat(20) {
             shadowOf(Looper.getMainLooper()).idle()
             if ((recyclerView.adapter?.itemCount ?: 0) >= 5) {
@@ -83,6 +87,7 @@ class MainActivitySmokeTest {
             listOf("phone", "wechat_video", "pkg.browser", "pkg.camera", "add"),
             adapter.currentList.map { it.packageName }
         )
+        assertEquals(View.GONE, statusCard.visibility)
     }
 
     @Test

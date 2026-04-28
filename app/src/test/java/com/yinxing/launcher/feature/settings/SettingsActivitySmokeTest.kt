@@ -11,6 +11,7 @@ import android.widget.TextView
 import androidx.test.core.app.ApplicationProvider
 import com.yinxing.launcher.R
 import com.yinxing.launcher.data.home.LauncherPreferences
+import com.yinxing.launcher.data.settings.LauncherSettingsDataStore
 import com.yinxing.launcher.feature.incoming.IncomingCallDiagnostics
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNotNull
@@ -33,6 +34,7 @@ class SettingsActivitySmokeTest {
         context = ApplicationProvider.getApplicationContext()
         resetLauncherPreferencesSingleton()
         context.getSharedPreferences("launcher_prefs", Context.MODE_PRIVATE).edit().clear().commit()
+        LauncherSettingsDataStore.getInstance(context).clear()
         IncomingCallDiagnostics.clear(context)
         registerSettingsActivity()
         registerHomeActivity(packageName = "com.android.launcher3")

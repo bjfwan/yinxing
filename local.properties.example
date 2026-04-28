@@ -4,10 +4,12 @@
 # Android SDK 路径
 sdk.dir=D\:\\androidsdk
 
-# Java 运行时路径（可选，若 JAVA_HOME 已在系统环境变量中配置则无需填写）
-# JAVA_HOME=D\:\\android\\jbr
+# Java 运行时由系统环境变量或根目录 build.bat 设置
+# 当前本地 build.bat 使用 D:\Android\jbr
 
 # 签名配置（Release 构建需要）
+RELEASE_STORE_FILE=release-key.jks
+RELEASE_KEY_ALIAS=mykey
 RELEASE_STORE_PASSWORD=your_store_password_here
 RELEASE_KEY_PASSWORD=your_key_password_here
 

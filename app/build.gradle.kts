@@ -12,6 +12,26 @@ val localProps = Properties().apply {
     val f = rootProject.file("local.properties")
     if (f.exists()) load(f.inputStream())
 }
+val releaseStorePath = localProps.getProperty("RELEASE_STORE_FILE")?.takeIf { it.isNotBlank() } ?: "release-key.jks"
+val releaseStoreFile = rootProject.file(releaseStorePath)
+val releaseKeyAlias = localProps.getProperty("RELEASE_KEY_ALIAS")?.takeIf { it.isNotBlank() } ?: "mykey"
+val releaseStorePassword = localProps.getProperty("RELEASE_STORE_PASSWORD")
+val releaseKeyPassword = localProps.getProperty("RELEASE_KEY_PASSWORD")
+val hasReleaseSigning = releaseStoreFile.exists() &&
+    releaseKeyAlias.isNotBlank() &&
+    !releaseStorePassword.isNullOrBlank() &&
+    !releaseKeyPassword.isNullOrBlank()
+
+gradle.taskGraph.whenReady {
+    val releasePackageRequested = allTasks.any {
+        it.path == ":app:assembleRelease" || it.path == ":app:bundleRelease"
+    }
+    if (releasePackageRequested && !hasReleaseSigning) {
+        throw GradleException(
+            "Release signing requires RELEASE_STORE_FILE, RELEASE_KEY_ALIAS, RELEASE_STORE_PASSWORD and RELEASE_KEY_PASSWORD"
+        )
+    }
+}
 
 android {
     namespace = "com.yinxing.launcher"
@@ -19,14 +39,15 @@ android {
 
     buildFeatures {
         buildConfig = true
+        viewBinding = true
     }
 
     defaultConfig {
         applicationId = "com.yinxing.launcher"
         minSdk = 24
         targetSdk = 36
-        versionCode = 8
-        versionName = "1.5.0"
+        versionCode = 9
+        versionName = "1.6.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
 
@@ -37,10 +58,10 @@ android {
 
     signingConfigs {
         create("release") {
-            storeFile = file("../release-key.jks")
-            storePassword = localProps["RELEASE_STORE_PASSWORD"] as String
-            keyAlias = "mykey"
-            keyPassword = localProps["RELEASE_KEY_PASSWORD"] as String
+            storeFile = releaseStoreFile
+            storePassword = releaseStorePassword
+            keyAlias = releaseKeyAlias
+            keyPassword = releaseKeyPassword
         }
     }
 
@@ -48,7 +69,7 @@ android {
         release {
             isMinifyEnabled = true
             isShrinkResources = true
-            signingConfig = signingConfigs.getByName("release")
+            signingConfig = if (hasReleaseSigning) signingConfigs.getByName("release") else null
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
@@ -85,10 +106,12 @@ dependencies {
     implementation(libs.androidx.activity)
     implementation(libs.androidx.constraintlayout)
     implementation(libs.androidx.recyclerview)
+    implementation(libs.androidx.lifecycle.viewmodel.ktx)
     implementation(libs.androidx.profileinstaller)
     implementation(libs.kotlinx.coroutines.core)
     implementation(libs.kotlinx.coroutines.android)
     implementation(libs.androidx.localbroadcastmanager)
+    implementation(libs.androidx.datastore.preferences)
     implementation(platform(libs.firebase.bom))
     implementation(libs.firebase.crashlytics)
     implementation(libs.firebase.analytics)

@@ -13,8 +13,10 @@ out/
 .kiro/
 .codebuddy/
 *.apk
+!docs/app-release.apk
 *.aab
 *.jks
+release-key.jks
 *.keystore
 keystore.properties
 google-services.json

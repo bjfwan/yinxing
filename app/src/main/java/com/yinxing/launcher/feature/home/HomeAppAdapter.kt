@@ -28,6 +28,7 @@ class HomeAppAdapter(
     companion object {
         const val VIEW_TYPE_APP = 0
         private const val MAX_ANIMATED_ITEMS = 6
+        private const val PAYLOAD_UI = "payload_ui"
 
         private val DiffCallback = object : DiffUtil.ItemCallback<HomeAppItem>() {
             override fun areItemsTheSame(oldItem: HomeAppItem, newItem: HomeAppItem) =
@@ -54,13 +55,13 @@ class HomeAppAdapter(
     fun setLowPerformanceMode(enabled: Boolean) {
         if (lowPerformanceMode == enabled) return
         lowPerformanceMode = enabled
-        notifyItemRangeChanged(0, itemCount)
+        notifyItemRangeChanged(0, itemCount, PAYLOAD_UI)
     }
 
     fun setIconScale(scale: Int) {
         if (iconScale == scale) return
         iconScale = scale
-        notifyItemRangeChanged(0, itemCount)
+        notifyItemRangeChanged(0, itemCount, PAYLOAD_UI)
     }
 
     class AppViewHolder(view: View) : RecyclerView.ViewHolder(view) {
@@ -92,9 +93,32 @@ class HomeAppAdapter(
         }
     }
 
+    override fun onBindViewHolder(
+        holder: RecyclerView.ViewHolder,
+        position: Int,
+        payloads: MutableList<Any>
+    ) {
+        if (holder is AppViewHolder && payloads.contains(PAYLOAD_UI)) {
+            applyUi(holder)
+            return
+        }
+        super.onBindViewHolder(holder, position, payloads)
+    }
+
     override fun onViewRecycled(holder: RecyclerView.ViewHolder) {
-        if (holder is AppViewHolder) holder.iconJob?.cancel()
+        if (holder is AppViewHolder) {
+            holder.iconJob?.cancel()
+            holder.iconJob = null
+        }
         super.onViewRecycled(holder)
+    }
+
+    override fun onViewDetachedFromWindow(holder: RecyclerView.ViewHolder) {
+        if (holder is AppViewHolder) {
+            holder.iconJob?.cancel()
+            holder.iconJob = null
+        }
+        super.onViewDetachedFromWindow(holder)
     }
 
     private fun displayedItems(): List<HomeAppItem> = dragItems ?: currentList
@@ -150,6 +174,7 @@ class HomeAppAdapter(
             val iconSize = holder.icon.layoutParams.width.coerceAtLeast(1)
             holder.iconJob = scope.launch {
                 val bitmap = MediaThumbnailLoader.loadAppIcon(context, item.packageName, iconSize)
+                if (!holder.itemView.isAttachedToWindow) return@launch
                 val currentPosition = holder.bindingAdapterPosition
                 if (currentPosition == RecyclerView.NO_POSITION) return@launch
                 val currentItem = itemAtOrNull(currentPosition)
@@ -231,7 +256,7 @@ class HomeAppAdapter(
         }
         val finalItems = reordered.toList()
         dragChanged = false
-        maxAnimatedPosition = Int.MAX_VALUE  // 拖拽后不再触发入场动画
+        maxAnimatedPosition = Int.MAX_VALUE
         submitList(finalItems) {
             dragItems = null
             onOrderChanged(finalItems)

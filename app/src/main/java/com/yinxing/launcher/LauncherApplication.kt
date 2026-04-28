@@ -6,6 +6,8 @@ import android.os.Handler
 import android.os.Looper
 import androidx.appcompat.app.AppCompatDelegate
 import com.yinxing.launcher.common.media.MediaThumbnailLoader
+import com.yinxing.launcher.common.perf.LauncherTraceNames
+import com.yinxing.launcher.common.perf.traceSection
 import com.yinxing.launcher.data.home.LauncherAppRepository
 import com.yinxing.launcher.data.home.LauncherPreferences
 import com.yinxing.launcher.feature.incoming.IncomingCallForegroundService
@@ -19,18 +21,20 @@ class LauncherApplication : Application() {
 
     override fun onCreate() {
         super.onCreate()
-        applyDarkModePreference()
-        Handler(Looper.getMainLooper()).postDelayed(
-            {
-                IncomingCallForegroundService.ensureNotificationChannels(this)
-                appScope.launch {
-                    runCatching {
-                        LauncherAppRepository.getInstance(this@LauncherApplication).prewarmInstalledApps()
+        traceSection(LauncherTraceNames.APP_INIT) {
+            applyDarkModePreference()
+            Handler(Looper.getMainLooper()).postDelayed(
+                {
+                    IncomingCallForegroundService.ensureNotificationChannels(this)
+                    appScope.launch {
+                        runCatching {
+                            LauncherAppRepository.getInstance(this@LauncherApplication).prewarmInstalledApps()
+                        }
                     }
-                }
-            },
-            3_000L
-        )
+                },
+                3_000L
+            )
+        }
     }
 
     private fun applyDarkModePreference() {
