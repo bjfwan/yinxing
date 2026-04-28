@@ -1,5 +1,5 @@
-const deepseekUrl = "https://api.deepseek.com/chat/completions";
-const deepseekBalanceUrl = "https://api.deepseek.com/user/balance";
+const defaultAiBaseUrl = "https://api.deepseek.com";
+const aiConfigKey = "config:ai";
 const defaultModel = "deepseek-v4-flash";
 const maxBodyBytes = 32000;
 const wechatCacheTtl = 30 * 24 * 60 * 60;
@@ -40,6 +40,15 @@ export async function handleRequest(request, env) {
   if (request.method === "GET" && url.pathname === "/admin/api/ai") {
     return handleAdminAi(request, env);
   }
+  if (request.method === "GET" && url.pathname === "/admin/api/ai/models") {
+    return handleAdminAiModels(request, env);
+  }
+  if (request.method === "POST" && url.pathname === "/admin/api/ai/config") {
+    return handleAdminAiConfig(request, env);
+  }
+  if (request.method === "POST" && url.pathname === "/admin/api/ai/test") {
+    return handleAdminAiTest(request, env);
+  }
   if (request.method === "GET" && url.pathname === "/admin/api/devices") {
     return handleAdminDevices(request, env);
   }
@@ -59,11 +68,14 @@ export async function handleRequest(request, env) {
     return handleProRevoke(request, env);
   }
   if (request.method === "GET" && url.pathname === "/health") {
+    const ai = await readAiConfig(env);
     return send({
       ok: true,
       service: "oldlauncher-ai-gateway",
-      model: env.DEEPSEEK_MODEL || defaultModel,
-      deepseek_configured: Boolean(env.DEEPSEEK_API_KEY),
+      model: ai.model,
+      ai_base_url: ai.base_url,
+      ai_configured: Boolean(ai.api_key),
+      deepseek_configured: Boolean(ai.api_key),
       pro_configured: Boolean(env.PRO_DEVICES),
       endpoints: ["/health", "/admin", "/pro/status", "/pro/redeem", "/pro/code/create", "/pro/code/revoke", "/pro/activate", "/pro/revoke", "/ai/call-risk", "/ai/wechat-step"]
     });
@@ -105,17 +117,26 @@ export async function handleRequest(request, env) {
       }
       return handleWechatStep(request, env, guard);
     }
-    const guard = await authorizeFeature(request, env, feature);
+    const guard = await authorizeFeaturePlan(request, env, feature);
     if (!guard.available) {
       return send(guard, guard.error === "rate_limited" ? 429 : 200);
     }
-    if (!env.DEEPSEEK_API_KEY) {
-      return send({ available: false, error: "deepseek_not_configured" }, 503);
+    const rate = await consumeRate(env, guard.device.device_id, feature);
+    if (!rate.available) {
+      return send(rate, 429);
+    }
+    const ai = await readAiConfig(env);
+    if (!ai.api_key) {
+      return send({ available: false, error: "ai_not_configured" }, 503);
+    }
+    const quota = await consumeQuota(env, guard.device.device_id, feature);
+    if (!quota.available) {
+      return send(quota);
     }
     if (url.pathname === "/ai/call-risk") {
-      return handleCallRisk(request, env);
+      return handleCallRisk(request, env, ai);
     }
-    return handleWechatStep(request, env, guard);
+    return handleWechatStep(request, env, guard, ai);
   } catch (error) {
     return send({ available: false, error: "gateway_error" }, 500);
   }
@@ -154,13 +175,77 @@ async function handleAdminAi(request, env) {
   if (!admin.available) {
     return send(admin, admin.error === "admin_unauthorized" ? 401 : 503);
   }
+  const config = await readAiConfig(env);
   return send({
     available: true,
-    model: env.DEEPSEEK_MODEL || defaultModel,
-    key_configured: Boolean(env.DEEPSEEK_API_KEY),
-    balance: await readDeepseekBalance(env),
+    ...publicAiConfig(config),
+    balance: await readProviderBalance(config),
     usage: await readAiUsage(env)
   });
+}
+
+async function handleAdminAiModels(request, env) {
+  const admin = await authorizeAdmin(request, env);
+  if (!admin.available) {
+    return send(admin, admin.error === "admin_unauthorized" ? 401 : 503);
+  }
+  const result = await fetchAiModels(await readAiConfig(env));
+  return send(result, result.available ? 200 : 502);
+}
+
+async function handleAdminAiConfig(request, env) {
+  const admin = await authorizeAdmin(request, env);
+  if (!admin.available) {
+    return send(admin, admin.error === "admin_unauthorized" ? 401 : 503);
+  }
+  if (!env.PRO_DEVICES) {
+    return send({ available: false, error: "pro_store_not_configured" }, 503);
+  }
+  const body = await readJson(request);
+  const current = await readStoredAiConfig(env);
+  const baseUrl = normalizeAiBaseUrl(body.base_url || current.base_url || env.AI_BASE_URL || env.DEEPSEEK_BASE_URL || defaultAiBaseUrl);
+  if (!baseUrl) {
+    return send({ available: false, error: "invalid_ai_base_url" }, 400);
+  }
+  const apiKey = normalizeApiKey(body.api_key);
+  const next = {
+    base_url: baseUrl,
+    model: shortText(body.model || current.model || env.AI_MODEL || env.DEEPSEEK_MODEL || defaultModel, 100) || defaultModel,
+    updated_at: new Date().toISOString()
+  };
+  if (!body.clear_key && apiKey) {
+    next.api_key = apiKey;
+  } else if (!body.clear_key && current.api_key) {
+    next.api_key = current.api_key;
+  }
+  await env.PRO_DEVICES.put(aiConfigKey, JSON.stringify(next));
+  const config = await readAiConfig(env);
+  return send({
+    available: true,
+    ...publicAiConfig(config),
+    balance: await readProviderBalance(config)
+  });
+}
+
+async function handleAdminAiTest(request, env) {
+  const admin = await authorizeAdmin(request, env);
+  if (!admin.available) {
+    return send(admin, admin.error === "admin_unauthorized" ? 401 : 503);
+  }
+  const body = await readJson(request);
+  if (body.base_url && !normalizeAiBaseUrl(body.base_url)) {
+    return send({ available: false, error: "invalid_ai_base_url" }, 400);
+  }
+  const override = {
+    base_url: body.base_url,
+    model: body.model
+  };
+  const apiKey = normalizeApiKey(body.api_key);
+  if (apiKey) {
+    override.api_key = apiKey;
+  }
+  const result = await testAiConnection(await readAiConfig(env, override));
+  return send(result, result.available ? 200 : 502);
 }
 
 async function handleAdminDevices(request, env) {
@@ -236,12 +321,15 @@ async function handleProRedeem(request, env) {
     token_hash: await hashToken(deviceId, deviceToken),
     active: true,
     revoked: false,
+    device_name: shortText(body.device_name || body.name || existing?.device_name || "", 48),
     plan: shortText(activation.plan || "activation", 24),
     plan_code: activation.plan_code || "",
     note: shortText(activation.note || "activation_code", 80),
     features: normalizeFeatures(activation.features),
     activated_at: existing?.activated_at || now,
     updated_at: now,
+    last_active_at: existing?.last_active_at || "",
+    last_feature: existing?.last_feature || "",
     expires_at: normalizeOptionalIsoDate(activation.device_expires_at || "")
   };
   await writeDevice(env, device);
@@ -340,12 +428,15 @@ async function handleProActivate(request, env) {
     token_hash: await hashToken(deviceId, deviceToken),
     active: true,
     revoked: false,
+    device_name: shortText(body.device_name || body.name || existing?.device_name || "", 48),
     plan: planLabel(planCode),
     plan_code: planCode,
     note: shortText(body.note || existing?.note || "", 80),
     features: normalizeFeatures(body.features || existing?.features),
     activated_at: existing?.activated_at || now,
     updated_at: now,
+    last_active_at: existing?.last_active_at || "",
+    last_feature: existing?.last_feature || "",
     expires_at: normalizeOptionalIsoDate(body.expires_at || existing?.expires_at || "") || planDeviceExpiresAt(planCode, now)
   };
   await writeDevice(env, device);
@@ -388,17 +479,17 @@ async function handleProRevoke(request, env) {
   return send({ available: true, active: false, device_id: deviceId });
 }
 
-async function handleCallRisk(request, env) {
+async function handleCallRisk(request, env, aiConfig) {
   const body = await readJson(request);
   const input = buildCallRiskInput(body);
   const result = await askJson(env, [
     { role: "system", content: "你是老人手机的来电风险分析器。你不是号码库，不能编造归属地或精确机构。只能依据输入特征判断风险。只输出JSON。" },
     { role: "user", content: JSON.stringify({ task: "call_risk", schema: { risk_level: "low|medium|high", label: "short chinese label", should_silence: true, confidence: 0.8, reason: "short chinese reason" }, input }) }
-  ], 350, "call-risk");
+  ], 350, "call-risk", aiConfig);
   return send(normalizeCallRisk(result));
 }
 
-async function handleWechatStep(request, env, guard) {
+async function handleWechatStep(request, env, guard, aiConfig) {
   const body = await readJson(request);
   const input = buildWechatInput(body);
   const mode = body.mode === "cache_only" ? "cache_only" : "resolve";
@@ -410,6 +501,10 @@ async function handleWechatStep(request, env, guard) {
   if (mode === "cache_only") {
     return send({ available: false, error: "cache_miss", cache_hit: false, model_called: false });
   }
+  const config = aiConfig || await readAiConfig(env);
+  if (!config.api_key) {
+    return send({ available: false, error: "ai_not_configured" }, 503);
+  }
   const rate = await consumeRate(env, guard.device.device_id, "wechat-step");
   if (!rate.available) {
     return send(rate, 429);
@@ -418,13 +513,10 @@ async function handleWechatStep(request, env, guard) {
   if (!quota.available) {
     return send(quota);
   }
-  if (!env.DEEPSEEK_API_KEY) {
-    return send({ available: false, error: "deepseek_not_configured" }, 503);
-  }
   const result = await askJson(env, [
     { role: "system", content: "你是安卓微信无障碍流程分析器。你的任务是帮助老人手机的视频通话自动流程判断当前页面和下一步安全动作。禁止建议支付、转账、删除、授权、修改系统设置。只输出JSON。" },
     { role: "user", content: JSON.stringify({ task: "wechat_video_step", schema: { page: "unknown|wechat_home|search_page|search_result|contact_detail|video_options|permission_dialog|error_dialog|chat_page", next_action: "wait|tap_search|input_contact|tap_contact|tap_video_call|tap_video_option|fail", target_text: "visible text to act on", confidence: 0.8, reason: "short chinese reason" }, input }) }
-  ], 450, "wechat-step");
+  ], 450, "wechat-step", config);
   const normalized = normalizeWechatStep(result);
   if (normalized.available && normalized.next_action !== "fail") {
     await writeWechatCache(env, cacheKey, normalized);
@@ -513,8 +605,11 @@ async function buildStatusPayload(env, device) {
     available: true,
     active: Boolean(device.active && !device.revoked && !isExpired(device.expires_at)),
     device_id: device.device_id,
+    device_name: device.device_name || "",
     plan: device.plan || "pro",
+    plan_code: device.plan_code || "",
     expires_at: device.expires_at || "",
+    last_active_at: device.last_active_at || "",
     features: normalizeFeatures(device.features),
     quotas: await readQuotas(env, device)
   };
@@ -545,7 +640,20 @@ async function consumeQuota(env, deviceId, feature) {
     return { available: false, error: "quota_exceeded" };
   }
   await env.PRO_DEVICES.put(key, String(current + 1), { expirationTtl: 70 * 24 * 60 * 60 });
+  await touchDevice(env, deviceId, feature);
   return { available: true };
+}
+
+async function touchDevice(env, deviceId, feature) {
+  const device = await readDevice(env, deviceId);
+  if (!device) {
+    return;
+  }
+  await writeDevice(env, {
+    ...device,
+    last_active_at: new Date().toISOString(),
+    last_feature: feature
+  });
 }
 
 async function consumeRate(env, deviceId, feature) {
@@ -595,6 +703,7 @@ async function listDevices(env) {
       const device = JSON.parse(text);
       devices.push({
         device_id: device.device_id,
+        device_name: device.device_name || "",
         active: Boolean(device.active),
         revoked: Boolean(device.revoked),
         plan: device.plan || "activation",
@@ -603,6 +712,8 @@ async function listDevices(env) {
         features: normalizeFeatures(device.features),
         activated_at: device.activated_at || "",
         updated_at: device.updated_at || "",
+        last_active_at: device.last_active_at || "",
+        last_feature: device.last_feature || "",
         expires_at: device.expires_at || "",
         revoked_at: device.revoked_at || "",
         quotas: await readQuotas(env, device)
@@ -671,17 +782,66 @@ async function cleanupRevokedActivationCodes(env) {
   return { deleted, scanned };
 }
 
-async function readDeepseekBalance(env) {
-  if (!env.DEEPSEEK_API_KEY) {
-    return { available: false, error: "deepseek_not_configured", balances: [] };
+async function readStoredAiConfig(env) {
+  if (!env.PRO_DEVICES) {
+    return {};
+  }
+  const text = await env.PRO_DEVICES.get(aiConfigKey);
+  if (!text) {
+    return {};
   }
   try {
-    const response = await fetch(deepseekBalanceUrl, {
+    const data = JSON.parse(text);
+    return data && typeof data === "object" ? data : {};
+  } catch (error) {
+    return {};
+  }
+}
+
+async function readAiConfig(env, override = {}) {
+  const saved = await readStoredAiConfig(env);
+  const hasInputKey = Object.prototype.hasOwnProperty.call(override, "api_key") && normalizeApiKey(override.api_key);
+  const apiKey = hasInputKey ? normalizeApiKey(override.api_key) : normalizeApiKey(saved.api_key || env.AI_API_KEY || env.DEEPSEEK_API_KEY || "");
+  const baseUrl = normalizeAiBaseUrl(override.base_url || saved.base_url || env.AI_BASE_URL || env.DEEPSEEK_BASE_URL || defaultAiBaseUrl) || defaultAiBaseUrl;
+  const model = shortText(override.model || saved.model || env.AI_MODEL || env.DEEPSEEK_MODEL || defaultModel, 100) || defaultModel;
+  const keySource = apiKey ? hasInputKey ? "input" : saved.api_key ? "saved" : "env" : "none";
+  return {
+    base_url: baseUrl,
+    model,
+    api_key: apiKey,
+    key_source: keySource,
+    saved: Boolean(saved.base_url || saved.model || saved.api_key),
+    updated_at: saved.updated_at || ""
+  };
+}
+
+function publicAiConfig(config) {
+  return {
+    base_url: config.base_url,
+    model: config.model,
+    key_configured: Boolean(config.api_key),
+    key_source: config.key_source,
+    key_preview: maskSecret(config.api_key),
+    config_saved: Boolean(config.saved),
+    updated_at: config.updated_at || ""
+  };
+}
+
+async function readProviderBalance(config) {
+  if (!config.api_key) {
+    return { available: false, error: "ai_not_configured", balances: [] };
+  }
+  const url = providerBalanceUrl(config);
+  if (!url) {
+    return { available: false, error: "balance_unsupported", balances: [] };
+  }
+  try {
+    const response = await fetch(url, {
       method: "GET",
-      headers: { authorization: "Bearer " + env.DEEPSEEK_API_KEY, accept: "application/json" }
+      headers: { authorization: "Bearer " + config.api_key, accept: "application/json" }
     });
     if (!response.ok) {
-      return { available: false, error: "deepseek_balance_error", balances: [] };
+      return { available: false, error: "balance_error", balances: [] };
     }
     const data = await response.json();
     return {
@@ -694,7 +854,51 @@ async function readDeepseekBalance(env) {
       })) : []
     };
   } catch (error) {
-    return { available: false, error: "deepseek_balance_unavailable", balances: [] };
+    return { available: false, error: "balance_unavailable", balances: [] };
+  }
+}
+
+async function fetchAiModels(config) {
+  if (!config.api_key) {
+    return { available: false, error: "ai_not_configured", models: [] };
+  }
+  try {
+    const response = await fetch(aiApiUrl(config, "/models"), {
+      method: "GET",
+      headers: { authorization: "Bearer " + config.api_key, accept: "application/json" }
+    });
+    if (!response.ok) {
+      return { available: false, error: "models_error", status: response.status, models: [] };
+    }
+    const data = await response.json();
+    const raw = Array.isArray(data.data) ? data.data : Array.isArray(data.models) ? data.models : Array.isArray(data) ? data : [];
+    const models = raw.map((item) => typeof item === "string" ? { id: item } : { id: shortText(item.id || item.name || item.model, 100), owned_by: shortText(item.owned_by || item.owner || "", 60) }).filter((item) => item.id);
+    return { available: true, models };
+  } catch (error) {
+    return { available: false, error: "models_unavailable", models: [] };
+  }
+}
+
+async function testAiConnection(config) {
+  if (!config.api_key) {
+    return { available: false, error: "ai_not_configured", models: [] };
+  }
+  const models = await fetchAiModels(config);
+  const testedModel = config.model || models.models?.[0]?.id || defaultModel;
+  try {
+    const response = await fetch(aiApiUrl(config, "/chat/completions"), {
+      method: "POST",
+      headers: { authorization: "Bearer " + config.api_key, "content-type": "application/json" },
+      body: JSON.stringify({ model: testedModel, messages: [{ role: "user", content: "ping" }], temperature: 0, max_tokens: 8 })
+    });
+    const data = await response.json().catch(() => ({}));
+    if (!response.ok) {
+      return { available: false, error: "chat_error", status: response.status, models_available: models.available, model_count: models.models.length, tested_model: testedModel };
+    }
+    const content = data?.choices?.[0]?.message?.content || data?.choices?.[0]?.text || "";
+    return { available: true, models_available: models.available, model_count: models.models.length, tested_model: testedModel, reply: shortText(content, 80) };
+  } catch (error) {
+    return { available: false, error: "chat_unavailable", models_available: models.available, model_count: models.models.length, tested_model: testedModel };
   }
 }
 
@@ -765,14 +969,18 @@ async function readJson(request) {
   return JSON.parse(text || "{}");
 }
 
-async function askJson(env, messages, maxTokens, feature) {
-  const response = await fetch(deepseekUrl, {
+async function askJson(env, messages, maxTokens, feature, aiConfig) {
+  const config = aiConfig || await readAiConfig(env);
+  if (!config.api_key) {
+    return { available: false, error: "ai_not_configured" };
+  }
+  const response = await fetch(aiApiUrl(config, "/chat/completions"), {
     method: "POST",
-    headers: { authorization: "Bearer " + env.DEEPSEEK_API_KEY, "content-type": "application/json" },
-    body: JSON.stringify({ model: env.DEEPSEEK_MODEL || defaultModel, messages, response_format: { type: "json_object" }, temperature: 0, max_tokens: maxTokens })
+    headers: { authorization: "Bearer " + config.api_key, "content-type": "application/json" },
+    body: JSON.stringify({ model: config.model, messages, response_format: { type: "json_object" }, temperature: 0, max_tokens: maxTokens })
   });
   if (!response.ok) {
-    return { available: false, error: "deepseek_error" };
+    return { available: false, error: "ai_error" };
   }
   const data = await response.json();
   await recordAiUsage(env, feature, data.usage || {});
@@ -893,6 +1101,58 @@ function normalizeFeatures(value) {
     "call-risk": input["call-risk"] !== false,
     "wechat-step": input["wechat-step"] !== false
   };
+}
+
+function normalizeAiBaseUrl(value) {
+  const text = String(value || "").trim().replace(/\/+$/, "");
+  if (!text) {
+    return "";
+  }
+  try {
+    const url = new URL(text);
+    if (url.protocol !== "https:") {
+      return "";
+    }
+    url.hash = "";
+    url.search = "";
+    let path = url.pathname.replace(/\/+$/, "");
+    path = path.replace(/\/chat\/completions$/i, "").replace(/\/models$/i, "");
+    url.pathname = path || "";
+    return url.toString().replace(/\/+$/, "");
+  } catch (error) {
+    return "";
+  }
+}
+
+function normalizeApiKey(value) {
+  return String(value || "").trim().slice(0, 4096);
+}
+
+function aiApiUrl(config, path) {
+  return `${config.base_url}${path}`;
+}
+
+function providerBalanceUrl(config) {
+  try {
+    const url = new URL(config.base_url);
+    if (!/deepseek/i.test(url.hostname)) {
+      return "";
+    }
+    return `${url.origin}/user/balance`;
+  } catch (error) {
+    return "";
+  }
+}
+
+function maskSecret(value) {
+  const text = String(value || "");
+  if (!text) {
+    return "";
+  }
+  if (text.length <= 10) {
+    return `${text.slice(0, 2)}...${text.slice(-2)}`;
+  }
+  return `${text.slice(0, 4)}...${text.slice(-4)}`;
 }
 
 function normalizePlanCode(value) {
@@ -1079,14 +1339,23 @@ p{margin:7px 0 0;color:var(--muted);line-height:1.65}
 .density{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
 .insight{padding:13px;border:1px solid var(--line);border-radius:8px;background:var(--surface)}
 .insight b{display:block;margin-top:4px;font-size:18px}
+.aiConfig{display:grid;grid-template-columns:1.1fr 1fr 1fr;gap:10px;align-items:end;margin:14px 0}
+.aiButtons{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:14px}
+.deviceCard{display:block;cursor:pointer}
+.deviceMain{display:grid;grid-template-columns:1.15fr .76fr .9fr .9fr .9fr auto;gap:12px;align-items:center}
+.deviceDetail{margin-top:13px;padding-top:13px;border-top:1px solid var(--line);animation:pop .26s var(--slow) both}
+.detailGrid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px}
+.detailItem{padding:12px;border:1px solid var(--line);border-radius:8px;background:var(--surface)}
+.detailItem b{display:block;margin-top:4px;overflow-wrap:anywhere}
+.inlineStats{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px}
 @keyframes enter{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:none}}
 @keyframes rise{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:none}}
 @keyframes rowIn{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
 @keyframes pop{from{opacity:0;transform:scale(.98)}to{opacity:1;transform:scale(1)}}
 @keyframes spin{to{transform:rotate(360deg)}}
 @keyframes toastIn{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
-@media (max-width:1040px){main{padding:20px}.hero{grid-template-columns:1fr}.grid{grid-template-columns:repeat(3,minmax(0,1fr))}.formGrid{grid-template-columns:1fr 1fr}.formGrid button{grid-column:auto}.deviceRow,.codeRow{grid-template-columns:1fr 1fr}.sectionTools{justify-content:flex-start}}
-@media (max-width:680px){main{padding:12px}.topbar{align-items:flex-start;flex-direction:column}.statusLine{justify-content:flex-start}.hero{padding:16px}.authActions,.formGrid,.grid,.heroStats,.deviceRow,.codeRow,.density{grid-template-columns:1fr}.section{padding:14px}.sectionHead{flex-direction:column}.sectionTools input{width:100%}.result{grid-template-columns:1fr}.row{padding:12px}h1{font-size:24px}}
+@media (max-width:1040px){main{padding:20px}.hero{grid-template-columns:1fr}.grid{grid-template-columns:repeat(3,minmax(0,1fr))}.formGrid,.aiConfig{grid-template-columns:1fr 1fr}.formGrid button{grid-column:auto}.deviceRow,.codeRow,.deviceMain,.detailGrid{grid-template-columns:1fr 1fr}.sectionTools{justify-content:flex-start}}
+@media (max-width:680px){main{padding:12px}.topbar{align-items:flex-start;flex-direction:column}.statusLine{justify-content:flex-start}.hero{padding:16px}.authActions,.formGrid,.aiConfig,.grid,.heroStats,.deviceRow,.codeRow,.deviceMain,.density,.detailGrid{grid-template-columns:1fr}.section{padding:14px}.sectionHead{flex-direction:column}.sectionTools input{width:100%}.result{grid-template-columns:1fr}.row{padding:12px}h1{font-size:24px}}
 @media (prefers-reduced-motion:reduce){*,*:before,*:after{animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important;scroll-behavior:auto!important}}
 </style>
 </head>
@@ -1140,10 +1409,21 @@ p{margin:7px 0 0;color:var(--muted);line-height:1.65}
 <section class="section panel">
 <div class="sectionHead">
 <div>
-<h2>AI 状态</h2>
-<p>展示 DeepSeek API Key 配置、余额返回值，以及本月从网关记录到的调用次数和 token 用量。</p>
+<h2>AI 网关</h2>
+<p>OpenAI-compatible 地址、API Key、模型、余额和本月调用用量。</p>
 </div>
 <div class="sectionTools"><button class="secondary" id="refreshAi">刷新 AI</button></div>
+</div>
+<div class="aiConfig">
+<div class="field"><label for="aiBaseUrl">v1 地址</label><input id="aiBaseUrl" placeholder="https://api.example.com/v1"></div>
+<div class="field"><label for="aiApiKey">API Key</label><input id="aiApiKey" type="password" autocomplete="off" placeholder="留空保留当前密钥"></div>
+<div class="field"><label for="aiModelInput">模型</label><input id="aiModelInput" list="modelList" placeholder="选择或输入模型"><datalist id="modelList"></datalist></div>
+</div>
+<div class="aiButtons">
+<button class="primary" id="saveAiConfig">保存配置</button>
+<button class="secondary" id="loadModels">拉取模型</button>
+<button class="secondary" id="testAi">测试连接</button>
+<button class="secondary" id="toggleAiKey">显示 Key</button>
 </div>
 <div class="density">
 <div class="insight"><span class="metaLabel">API Key</span><b id="aiKeyState">-</b></div>
@@ -1151,7 +1431,7 @@ p{margin:7px 0 0;color:var(--muted);line-height:1.65}
 <div class="insight"><span class="metaLabel">余额状态</span><b id="aiBalanceState">-</b></div>
 <div class="insight"><span class="metaLabel">本月请求</span><b id="aiRequests">-</b></div>
 <div class="insight"><span class="metaLabel">本月 tokens</span><b id="aiTokens">-</b></div>
-<div class="insight"><span class="metaLabel">缓存命中 tokens</span><b id="aiCacheTokens">-</b></div>
+<div class="insight"><span class="metaLabel">连接测试</span><b id="aiTestState">未测试</b></div>
 </div>
 <div id="aiBalance" class="table"></div>
 </section>
@@ -1219,10 +1499,10 @@ p{margin:7px 0 0;color:var(--muted);line-height:1.65}
 <script>
 const tokenInput=document.getElementById("token");
 const saved=localStorage.getItem("oldlauncher_admin_token")||"";
-const state={devices:[],codes:[],ai:null,deviceFilter:"all",codeFilter:"all",loading:false};
+const state={devices:[],codes:[],ai:null,models:[],aiTest:null,openDevice:"",deviceFilter:"all",codeFilter:"all",loading:false};
 tokenInput.value=saved;
 document.getElementById("saveToken").onclick=()=>{localStorage.setItem("oldlauncher_admin_token",tokenInput.value.trim());toast("密钥已保存");loadAll()};
-document.getElementById("clearToken").onclick=()=>{localStorage.removeItem("oldlauncher_admin_token");tokenInput.value="";state.devices=[];state.codes=[];state.ai=null;renderAll();setConnection(false,"密钥已清除")};
+document.getElementById("clearToken").onclick=()=>{localStorage.removeItem("oldlauncher_admin_token");tokenInput.value="";state.devices=[];state.codes=[];state.ai=null;state.models=[];state.aiTest=null;renderAll();setConnection(false,"密钥已清除")};
 document.getElementById("toggleToken").onclick=()=>{const visible=tokenInput.type==="text";tokenInput.type=visible?"password":"text";document.getElementById("toggleToken").textContent=visible?"显示":"隐藏"};
 function token(){return tokenInput.value.trim()}
 async function api(path,options){
@@ -1260,6 +1540,17 @@ function featureHtml(features){
   items.push(pill(enabled["wechat-step"]!==false?"ok":"bad","视频辅助"));
   return "<div class='featureList'>"+items.join("")+"</div>";
 }
+function deviceName(device){return device.device_name||device.note||"未命名设备"}
+function planState(device){
+  if(device.revoked||!device.active)return "已停用";
+  if(!device.expires_at)return "长期有效";
+  const time=Date.parse(device.expires_at);
+  if(!Number.isFinite(time))return "-";
+  const days=Math.ceil((time-Date.now())/86400000);
+  return days>0?"剩余 "+days+" 天":"已过期";
+}
+function totalCalls(device){return quotaValue(device,"call-risk").used+quotaValue(device,"wechat-step").used}
+function featureName(value){return value==="wechat-step"?"微信视频辅助":value==="call-risk"?"来电风险":value||"-"}
 function setConnection(ok,label){
   $("connectionState").className="pill "+(ok?"ok":"bad");
   $("connectionState").textContent=ok?"已连接":"未连接";
@@ -1280,7 +1571,7 @@ function filteredDevices(){
   return state.devices.filter((device)=>{
     const ready=readyDevice(device);
     const inFilter=state.deviceFilter==="all"||state.deviceFilter==="active"&&ready||state.deviceFilter==="inactive"&&!ready;
-    const hay=[device.device_id,device.note,device.plan,device.expires_at].join(" ").toLowerCase();
+    const hay=[device.device_id,device.device_name,device.note,device.plan,device.expires_at,device.last_active_at].join(" ").toLowerCase();
     return inFilter&&(!q||hay.includes(q));
   });
 }
@@ -1318,12 +1609,17 @@ function renderAi(){
   const data=state.ai;
   const usage=data&&data.usage?data.usage:{totals:{requests:0,total_tokens:0,cache_hit_tokens:0,prompt_tokens:0,completion_tokens:0},features:{}};
   const balance=data&&data.balance?data.balance:{available:false,balances:[]};
-  $("aiKeyState").textContent=data&&data.key_configured?"已配置":"未配置";
+  if(data){
+    if(document.activeElement!==$("aiBaseUrl"))$("aiBaseUrl").value=data.base_url||"";
+    if(document.activeElement!==$("aiModelInput"))$("aiModelInput").value=data.model||"";
+  }
+  $("aiKeyState").textContent=data&&data.key_configured?(data.key_source==="saved"?"已配置 "+(data.key_preview||""):"已配置 环境变量"):"未配置";
   $("aiModel").textContent=data&&data.model?data.model:"-";
   $("aiBalanceState").textContent=balance.available?"可用":"无法查询";
   $("aiRequests").textContent=numberText(usage.totals.requests);
   $("aiTokens").textContent=numberText(usage.totals.total_tokens);
-  $("aiCacheTokens").textContent=numberText(usage.totals.cache_hit_tokens);
+  $("aiTestState").textContent=state.aiTest?state.aiTest.available?"正常":"失败":"未测试";
+  renderModels();
   const box=$("aiBalance");
   box.innerHTML="";
   if(balance.balances&&balance.balances.length){
@@ -1334,8 +1630,19 @@ function renderAi(){
       box.appendChild(row);
     });
   }else{
-    box.innerHTML="<div class='empty'>余额接口没有返回可展示数据，本月用量仍会按网关请求持续记录。</div>";
+    const reason=balance.error==="balance_unsupported"?"当前供应商没有统一余额接口，本月用量仍会按网关请求记录。":"余额接口没有返回可展示数据，本月用量仍会按网关请求记录。";
+    box.innerHTML="<div class='empty'>"+html(reason)+"</div>";
   }
+}
+function renderModels(){
+  const list=$("modelList");
+  list.innerHTML="";
+  state.models.forEach((model)=>{
+    const option=document.createElement("option");
+    option.value=model.id;
+    option.label=model.owned_by?model.id+" · "+model.owned_by:model.id;
+    list.appendChild(option);
+  });
 }
 function renderDevices(){
   const box=$("devices");
@@ -1346,15 +1653,24 @@ function renderDevices(){
   data.forEach((device,index)=>{
     const row=document.createElement("div");
     const ready=readyDevice(device);
-    row.className="row deviceRow";
+    const opened=state.openDevice===device.device_id;
+    const calls=totalCalls(device);
+    row.className="row deviceCard";
     row.style.animationDelay=Math.min(index*32,260)+"ms";
-    row.innerHTML="<div class='titleCell'><b>"+html(device.device_id)+"</b><small>"+html(device.note||"无备注")+" · "+html(device.plan||"activation")+"</small>"+featureHtml(device.features)+"</div><div class='cell'>"+pill(ready?"ok":"bad",ready?"可用":"停用")+"</div><div class='cell'>"+quotaHtml(device,"call-risk","来电")+"</div><div class='cell'>"+quotaHtml(device,"wechat-step","视频")+"</div><div class='cell'><span class='muted'>更新</span><br>"+html(compactDate(device.updated_at))+"<br><span class='muted'>到期</span> "+html(compactDate(device.expires_at))+"</div>";
+    row.innerHTML="<div class='deviceMain'><div class='titleCell'><b>"+html(deviceName(device))+"</b><small>"+html(device.device_id)+"</small>"+featureHtml(device.features)+"</div><div class='cell'>"+pill(ready?"ok":"bad",ready?"可用":"停用")+"<div class='inlineStats'>"+pill(ready?"ok":"bad",device.plan||"月套餐")+" "+pill(ready?"ok":"bad",planState(device))+"</div></div><div class='cell'>"+quotaHtml(device,"call-risk","来电")+"</div><div class='cell'>"+quotaHtml(device,"wechat-step","视频")+"</div><div class='cell'><span class='muted'>最后活跃</span><br>"+html(dateText(device.last_active_at||device.updated_at))+"<br><span class='muted'>调用</span> "+numberText(calls)+" 次</div></div>";
     const action=document.createElement("button");
     action.className="danger";
     action.textContent="吊销";
     action.disabled=!ready;
     action.onclick=async()=>{if(confirm("确定吊销这个设备？")){await revokeDevice(device.device_id)}};
-    row.appendChild(action);
+    row.querySelector(".deviceMain").appendChild(action);
+    if(opened){
+      const detail=document.createElement("div");
+      detail.className="deviceDetail";
+      detail.innerHTML="<div class='detailGrid'><div class='detailItem'><span class='metaLabel'>设备名</span><b>"+html(deviceName(device))+"</b></div><div class='detailItem'><span class='metaLabel'>设备 ID</span><b>"+html(device.device_id)+"</b></div><div class='detailItem'><span class='metaLabel'>套餐</span><b>"+html(device.plan||"-")+"</b></div><div class='detailItem'><span class='metaLabel'>套餐状态</span><b>"+html(planState(device))+"</b></div><div class='detailItem'><span class='metaLabel'>来电额度</span><b>"+quotaValue(device,"call-risk").remaining+"/"+quotaValue(device,"call-risk").limit+"</b></div><div class='detailItem'><span class='metaLabel'>视频额度</span><b>"+quotaValue(device,"wechat-step").remaining+"/"+quotaValue(device,"wechat-step").limit+"</b></div><div class='detailItem'><span class='metaLabel'>最后活跃</span><b>"+html(dateText(device.last_active_at||device.updated_at))+"</b></div><div class='detailItem'><span class='metaLabel'>最近功能</span><b>"+html(featureName(device.last_feature))+"</b></div><div class='detailItem'><span class='metaLabel'>创建时间</span><b>"+html(dateText(device.activated_at))+"</b></div><div class='detailItem'><span class='metaLabel'>到期时间</span><b>"+html(dateText(device.expires_at))+"</b></div><div class='detailItem'><span class='metaLabel'>本月调用</span><b>"+numberText(calls)+" 次</b></div><div class='detailItem'><span class='metaLabel'>备注</span><b>"+html(device.note||"-")+"</b></div></div>";
+      row.appendChild(detail);
+    }
+    row.onclick=(event)=>{if(event.target.closest("button"))return;state.openDevice=opened?"":device.device_id;renderDevices()};
     box.appendChild(row);
   });
 }
@@ -1370,7 +1686,7 @@ function renderCodes(){
     const status=code.redeemed?pill("ok","已兑换"):code.revoked?pill("bad","已吊销"):pill(ready?"ok":"bad",ready?"可用":"不可用");
     row.className="row codeRow";
     row.style.animationDelay=Math.min(index*32,260)+"ms";
-    row.innerHTML="<div class='titleCell'><b>"+html(code.code_hash)+"</b><small>"+html(code.note||"无备注")+" · "+html(code.plan||"activation")+"</small></div><div class='cell'>"+status+"</div><div class='cell'><span class='muted'>创建</span><br>"+html(compactDate(code.created_at))+"</div><div class='cell'><span class='muted'>码过期</span><br>"+html(dateText(code.expires_at))+"</div><div class='cell'><span class='muted'>设备</span><br>"+html(code.redeemed_device_id||"-")+"<br><span class='muted'>设备到期</span> "+html(compactDate(code.device_expires_at))+"</div>";
+    row.innerHTML="<div class='titleCell'><b>"+html(code.code_hash)+"</b><small>"+html(code.note||"无备注")+" · "+html(code.plan||"月套餐")+"</small></div><div class='cell'>"+status+"</div><div class='cell'><span class='muted'>创建</span><br>"+html(dateText(code.created_at))+"</div><div class='cell'><span class='muted'>兑换</span><br>"+html(code.redeemed_at?dateText(code.redeemed_at):"-")+"<br><span class='muted'>绑定</span> "+html(code.redeemed_device_id||"-")+"</div><div class='cell'><span class='muted'>码过期</span><br>"+html(dateText(code.expires_at))+"<br><span class='muted'>设备到期</span> "+html(compactDate(code.device_expires_at))+"</div>";
     const action=document.createElement("button");
     action.className="danger";
     action.textContent="吊销";
@@ -1389,6 +1705,37 @@ function renderAll(summary){
 async function loadAi(){
   state.ai=await api("/admin/api/ai");
   renderAi();
+}
+async function loadModels(){
+  const data=await api("/admin/api/ai/models");
+  state.models=data.models||[];
+  renderModels();
+  toast("已拉取 "+state.models.length+" 个模型");
+}
+async function saveAiConfig(){
+  const body={
+    base_url:$("aiBaseUrl").value.trim(),
+    model:$("aiModelInput").value.trim()
+  };
+  const key=$("aiApiKey").value.trim();
+  if(key)body.api_key=key;
+  state.ai=await api("/admin/api/ai/config",{method:"POST",body:JSON.stringify(body)});
+  $("aiApiKey").value="";
+  renderAi();
+  toast("AI 配置已保存");
+}
+async function testAi(){
+  state.aiTest=null;
+  renderAi();
+  const body={
+    base_url:$("aiBaseUrl").value.trim(),
+    model:$("aiModelInput").value.trim()
+  };
+  const key=$("aiApiKey").value.trim();
+  if(key)body.api_key=key;
+  state.aiTest=await api("/admin/api/ai/test",{method:"POST",body:JSON.stringify(body)});
+  renderAi();
+  toast("连接正常，模型 "+state.aiTest.tested_model);
 }
 async function loadDevices(){
   const data=await api("/admin/api/devices");
@@ -1472,6 +1819,10 @@ $("createCode").onclick=async()=>{
 $("refreshDevices").onclick=async()=>{try{setLoading("devices");await loadDevices();toast("设备已刷新")}catch(error){toast(error.message)}};
 $("refreshCodes").onclick=async()=>{try{setLoading("codes");await loadCodes();toast("激活码已刷新")}catch(error){toast(error.message)}};
 $("refreshAi").onclick=async()=>{try{state.ai=null;renderAi();await loadAi();toast("AI 状态已刷新")}catch(error){toast(error.message)}};
+$("loadModels").onclick=async()=>{try{await loadModels()}catch(error){toast(error.message)}};
+$("saveAiConfig").onclick=async()=>{try{$("saveAiConfig").disabled=true;await saveAiConfig()}catch(error){toast(error.message)}finally{$("saveAiConfig").disabled=false}};
+$("testAi").onclick=async()=>{try{$("testAi").disabled=true;await testAi()}catch(error){state.aiTest={available:false};renderAi();toast(error.message)}finally{$("testAi").disabled=false}};
+$("toggleAiKey").onclick=()=>{const input=$("aiApiKey");const visible=input.type==="text";input.type=visible?"password":"text";$("toggleAiKey").textContent=visible?"显示 Key":"隐藏 Key"};
 $("cleanupCodes").onclick=cleanupCodes;
 $("deviceSearch").oninput=renderDevices;
 $("codeSearch").oninput=renderCodes;

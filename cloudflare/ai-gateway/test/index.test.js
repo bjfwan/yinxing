@@ -103,7 +103,11 @@ test("admin renders enhanced dashboard", async () => {
   const html = await response.text();
   assert.equal(response.status, 200);
   assert.match(html, /授权运营看板/);
-  assert.match(html, /AI 状态/);
+  assert.match(html, /AI 网关/);
+  assert.match(html, /v1 地址/);
+  assert.match(html, /拉取模型/);
+  assert.match(html, /测试连接/);
+  assert.match(html, /deviceDetail/);
   assert.match(html, /月套餐/);
   assert.match(html, /清理吊销码/);
   assert.match(html, /设备可用率/);
@@ -168,7 +172,8 @@ test("activation code can be created and redeemed once", async () => {
       "x-oldlauncher-device-token": "token-1234567890"
     },
     body: JSON.stringify({
-      activation_code: codeBody.activation_code
+      activation_code: codeBody.activation_code,
+      device_name: "客厅手机"
     })
   }), runtime);
   const redeemBody = await json(redeemed);
@@ -182,7 +187,8 @@ test("activation code can be created and redeemed once", async () => {
       "x-oldlauncher-device-token": "token-1234567890"
     },
     body: JSON.stringify({
-      activation_code: codeBody.activation_code
+      activation_code: codeBody.activation_code,
+      device_name: "客厅手机"
     })
   }), runtime);
   const reuseBody = await json(reused);
@@ -285,7 +291,8 @@ test("admin lists generated codes and redeemed devices", async () => {
       "x-oldlauncher-device-token": "token-1234567890"
     },
     body: JSON.stringify({
-      activation_code: codeBody.activation_code
+      activation_code: codeBody.activation_code,
+      device_name: "客厅手机"
     })
   }), runtime);
   const devices = await handleRequest(request("/admin/api/devices", {
@@ -296,6 +303,8 @@ test("admin lists generated codes and redeemed devices", async () => {
   const deviceBody = await json(devices);
   assert.equal(deviceBody.available, true);
   assert.equal(deviceBody.devices[0].device_id, "device-admin");
+  assert.equal(deviceBody.devices[0].device_name, "客厅手机");
+  assert.equal(deviceBody.devices[0].plan, "月套餐");
   const codes = await handleRequest(request("/admin/api/codes", {
     headers: {
       "x-oldlauncher-admin-token": "admin-secret"
@@ -304,6 +313,9 @@ test("admin lists generated codes and redeemed devices", async () => {
   const codesBody = await json(codes);
   assert.equal(codesBody.available, true);
   assert.equal(codesBody.codes[0].redeemed, true);
+  assert.equal(codesBody.codes[0].redeemed_device_id, "device-admin");
+  assert.ok(codesBody.codes[0].created_at);
+  assert.ok(codesBody.codes[0].redeemed_at);
 });
 
 test("admin ai overview returns balance and recorded usage", async () => {
@@ -338,6 +350,145 @@ test("admin ai overview returns balance and recorded usage", async () => {
     assert.equal(body.balance.balances[0].total_balance, "9.80");
     assert.equal(body.usage.totals.requests, 5);
     assert.equal(body.usage.totals.total_tokens, 579);
+  } finally {
+    globalThis.fetch = originalFetch;
+  }
+});
+
+test("admin can configure ai provider and test models", async () => {
+  const runtime = env({ DEEPSEEK_API_KEY: "" });
+  const saved = await handleRequest(request("/admin/api/ai/config", {
+    method: "POST",
+    headers: {
+      "content-type": "application/json",
+      "x-oldlauncher-admin-token": "admin-secret"
+    },
+    body: JSON.stringify({
+      base_url: "https://relay.example.com/v1",
+      api_key: "relay-key",
+      model: "relay-chat"
+    })
+  }), runtime);
+  const savedBody = await json(saved);
+  assert.equal(savedBody.available, true);
+  assert.equal(savedBody.base_url, "https://relay.example.com/v1");
+  assert.equal(savedBody.model, "relay-chat");
+  assert.equal(savedBody.key_source, "saved");
+  const originalFetch = globalThis.fetch;
+  const calls = [];
+  globalThis.fetch = async (url, init = {}) => {
+    calls.push({ url: String(url), init });
+    if (String(url).endsWith("/models")) {
+      return new Response(JSON.stringify({
+        data: [
+          { id: "relay-chat", owned_by: "relay" },
+          { id: "relay-fast", owned_by: "relay" }
+        ]
+      }), { status: 200, headers: { "content-type": "application/json" } });
+    }
+    return new Response(JSON.stringify({
+      choices: [
+        {
+          message: {
+            content: "pong"
+          }
+        }
+      ]
+    }), { status: 200, headers: { "content-type": "application/json" } });
+  };
+  try {
+    const models = await handleRequest(request("/admin/api/ai/models", {
+      headers: {
+        "x-oldlauncher-admin-token": "admin-secret"
+      }
+    }), runtime);
+    const modelsBody = await json(models);
+    assert.equal(modelsBody.available, true);
+    assert.equal(modelsBody.models.length, 2);
+    const tested = await handleRequest(request("/admin/api/ai/test", {
+      method: "POST",
+      headers: {
+        "content-type": "application/json",
+        "x-oldlauncher-admin-token": "admin-secret"
+      },
+      body: JSON.stringify({
+        base_url: "https://relay.example.com/v1",
+        model: "relay-fast"
+      })
+    }), runtime);
+    const testedBody = await json(tested);
+    assert.equal(testedBody.available, true);
+    assert.equal(testedBody.tested_model, "relay-fast");
+    assert.ok(calls.some((call) => call.url === "https://relay.example.com/v1/models"));
+    assert.ok(calls.some((call) => call.url === "https://relay.example.com/v1/chat/completions"));
+  } finally {
+    globalThis.fetch = originalFetch;
+  }
+});
+
+test("ai calls use saved provider config and update device activity", async () => {
+  const runtime = env({ DEEPSEEK_API_KEY: "" });
+  const headers = await activate(runtime, "device-provider", "token-1234567890");
+  await handleRequest(request("/admin/api/ai/config", {
+    method: "POST",
+    headers: {
+      "content-type": "application/json",
+      "x-oldlauncher-admin-token": "admin-secret"
+    },
+    body: JSON.stringify({
+      base_url: "https://relay.example.com/v1",
+      api_key: "relay-key",
+      model: "relay-chat"
+    })
+  }), runtime);
+  const originalFetch = globalThis.fetch;
+  let calledUrl = "";
+  let calledModel = "";
+  globalThis.fetch = async (url, init = {}) => {
+    calledUrl = String(url);
+    calledModel = JSON.parse(init.body).model;
+    return new Response(JSON.stringify({
+      choices: [
+        {
+          message: {
+            content: JSON.stringify({
+              risk_level: "low",
+              label: "风险较低",
+              should_silence: false,
+              confidence: 0.9,
+              reason: "测试"
+            })
+          }
+        }
+      ],
+      usage: {
+        prompt_tokens: 11,
+        completion_tokens: 7,
+        total_tokens: 18
+      }
+    }), { status: 200, headers: { "content-type": "application/json" } });
+  };
+  try {
+    const result = await handleRequest(request("/ai/call-risk", {
+      method: "POST",
+      headers,
+      body: JSON.stringify({
+        incoming_number: "13800138000"
+      })
+    }), runtime);
+    const body = await json(result);
+    assert.equal(body.available, true);
+    assert.equal(calledUrl, "https://relay.example.com/v1/chat/completions");
+    assert.equal(calledModel, "relay-chat");
+    const devices = await handleRequest(request("/admin/api/devices", {
+      headers: {
+        "x-oldlauncher-admin-token": "admin-secret"
+      }
+    }), runtime);
+    const deviceBody = await json(devices);
+    assert.ok(deviceBody.devices[0].last_active_at);
+    assert.equal(deviceBody.devices[0].last_feature, "call-risk");
+    assert.equal(deviceBody.devices[0].quotas["call-risk"].used, 1);
   } finally {
     globalThis.fetch = originalFetch;
   }
