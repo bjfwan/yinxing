@@ -8,6 +8,8 @@ import android.widget.TextView
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
 import com.yinxing.launcher.R
+import com.yinxing.launcher.common.ai.AiDeviceCredentials
+import com.yinxing.launcher.common.ai.AiProStatusClient
 import com.yinxing.launcher.data.home.LauncherPreferences
 import com.yinxing.launcher.data.weather.WeatherPreferences
 import com.yinxing.launcher.feature.incoming.IncomingGuardReadiness
@@ -17,6 +19,8 @@ class SettingsActivity : AppCompatActivity() {
 
     internal lateinit var launcherPreferences: LauncherPreferences
     internal lateinit var weatherPreferences: WeatherPreferences
+    internal lateinit var aiDeviceCredentials: AiDeviceCredentials
+    internal lateinit var aiProStatusClient: AiProStatusClient
 
     internal lateinit var tvIncomingGuardStatus: TextView
     internal lateinit var tvIncomingGuardProgress: TextView
@@ -25,6 +29,8 @@ class SettingsActivity : AppCompatActivity() {
     internal lateinit var btnIncomingGuardAction: View
 
     internal lateinit var tvContactsHubSummary: TextView
+    internal lateinit var tvAiProHubStatus: TextView
+    internal lateinit var tvAiProHubSummary: TextView
     internal lateinit var tvAutoAnswerHubStatus: TextView
     internal lateinit var tvAutoAnswerHubSummary: TextView
     internal lateinit var tvPermissionHubStatus: TextView
@@ -36,6 +42,7 @@ class SettingsActivity : AppCompatActivity() {
     internal var incomingGuardReadiness = IncomingGuardReadiness(emptyList())
     internal var permissionEntryStates = emptyMap<PermissionEntry, PermissionEntryState>()
     internal var contactsSummaryJob: Job? = null
+    internal var aiProStatusJob: Job? = null
     internal val mainHandler = Handler(Looper.getMainLooper())
     internal var overviewRefreshQueued = false
     internal val overviewRefreshRunnable = Runnable {
@@ -65,6 +72,8 @@ class SettingsActivity : AppCompatActivity() {
 
         launcherPreferences = LauncherPreferences.getInstance(this)
         weatherPreferences = WeatherPreferences.getInstance(this)
+        aiDeviceCredentials = AiDeviceCredentials.getInstance(this)
+        aiProStatusClient = AiProStatusClient(this)
 
         overviewController = SettingsOverviewController(this)
         actionController = SettingsActionController(this)
@@ -75,6 +84,7 @@ class SettingsActivity : AppCompatActivity() {
             onBack = ::finish,
             onShowIncomingGuardSheet = sheetController::showIncomingGuardSheet,
             onShowContactsSheet = sheetController::showContactsSheet,
+            onShowAiProSheet = sheetController::showAiProSheet,
             onShowAutoAnswerSheet = sheetController::showAutoAnswerSheet,
             onShowPermissionGroupsSheet = sheetController::showPermissionGroupsSheet,
             onShowDeviceSettingsSheet = sheetController::showDeviceSettingsSheet,

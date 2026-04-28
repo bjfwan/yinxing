@@ -1,6 +1,6 @@
 # OldLauncher 产品需求说明
 
-更新时间：2026-04-27
+更新时间：2026-04-28
 状态：当前版本事实说明
 
 ## 1. 产品定位
@@ -63,6 +63,8 @@
 - 微信自动化拨号的稳定性承诺
 - 微信视频来电自动接听
 - 系统电话自动接听的全机型稳定性承诺
+- 来电风险评估的全机型稳定性承诺（实验性功能）
+- AI会员功能的完整交付（实验性功能）
 - 通知监听服务
 - 后台定时任务
 - 远程协助、云同步、日志后台上报
@@ -78,7 +80,7 @@
 
 ## 6. 当前验收口径
 
-- `:app:testDebugUnitTest` 可以通过（当前 113 tests, 0 failed）
+- `:app:testDebugUnitTest` 可以通过（当前 171 tests, 0 failed）
 - `:app:assembleDebug` 可以通过
 - `:app:assembleDebugAndroidTest` 可以通过
 - `:app:lintDebug` 可以通过

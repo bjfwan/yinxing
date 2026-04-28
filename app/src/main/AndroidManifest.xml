@@ -96,7 +96,7 @@
             android:showWhenLocked="true" />
         <receiver
             android:name=".feature.incoming.PhoneCallReceiver"
-            android:exported="false">
+            android:exported="true">
             <intent-filter android:priority="999">
                 <action android:name="android.intent.action.PHONE_STATE" />
             </intent-filter>

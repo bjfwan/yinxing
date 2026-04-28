@@ -6,6 +6,7 @@ import android.content.Intent
 import android.telephony.TelephonyManager
 import android.util.Log
 import com.yinxing.launcher.common.util.CallAudioStrategy
+import com.yinxing.launcher.data.home.LauncherPreferences
 import com.yinxing.launcher.feature.phone.PhoneContactManager
 import java.util.concurrent.atomic.AtomicLong
 import java.util.concurrent.atomic.AtomicReference
@@ -63,7 +64,8 @@ class PhoneCallReceiver : BroadcastReceiver() {
                     return@launch
                 }
                 callerLabel = matchedContact?.name ?: callerLabel
-                val autoAnswer = matchedContact?.autoAnswer == true
+                val globalAutoAnswer = LauncherPreferences.getInstance(appContext).isAutoAnswerEnabled()
+                val autoAnswer = globalAutoAnswer || matchedContact?.autoAnswer == true
                 runCatching { CallAudioStrategy.maximizeIncomingRingVolume(appContext) }
                     .onFailure { Log.w(TAG, "maximizeIncomingRingVolume failed", it) }
                 IncomingCallDiagnostics.recordBroadcastReceived(
@@ -76,7 +78,9 @@ class PhoneCallReceiver : BroadcastReceiver() {
                     IncomingCallForegroundService.start(
                         context = appContext,
                         callerName = callerLabel,
-                        autoAnswer = autoAnswer
+                        autoAnswer = autoAnswer,
+                        incomingNumber = incomingNumber,
+                        knownContact = matchedContact != null
                     )
                 }.onFailure { failure ->
                     IncomingCallDiagnostics.recordServiceStartFailure(

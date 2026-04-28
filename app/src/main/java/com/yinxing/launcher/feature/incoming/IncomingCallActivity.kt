@@ -17,20 +17,26 @@ import android.widget.TextView
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.cardview.widget.CardView
+import androidx.core.content.ContextCompat
 import androidx.core.view.isVisible
+import androidx.lifecycle.lifecycleScope
 import com.yinxing.launcher.R
 import com.yinxing.launcher.common.util.CallAudioStrategy
 import com.yinxing.launcher.data.home.LauncherPreferences
 import java.util.Locale
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.launch
 
 class IncomingCallActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
 
     private lateinit var tvCaller: TextView
+    private lateinit var tvRisk: TextView
     private lateinit var tvCountdown: TextView
     private lateinit var btnAccept: CardView
     private lateinit var btnDecline: CardView
 
     private var countDownTimer: CountDownTimer? = null
+    private var riskJob: Job? = null
     private var actionInProgress = false
     private var textToSpeech: TextToSpeech? = null
     private var ttsReady = false
@@ -43,6 +49,8 @@ class IncomingCallActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
 
         const val EXTRA_CALLER_NAME = "extra_caller_name"
         const val EXTRA_AUTO_ANSWER = "extra_auto_answer"
+        const val EXTRA_INCOMING_NUMBER = "extra_incoming_number"
+        const val EXTRA_KNOWN_CONTACT = "extra_known_contact"
         const val EXTRA_TRIGGER_ACTION = "extra_trigger_action"
 
         const val TRIGGER_ACTION_ACCEPT = "trigger_accept"
@@ -52,10 +60,14 @@ class IncomingCallActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
             context: Context,
             callerName: String?,
             autoAnswer: Boolean = false,
+            incomingNumber: String? = null,
+            knownContact: Boolean = false,
             triggerAction: String? = null
         ): Intent = Intent(context, IncomingCallActivity::class.java).apply {
             callerName?.let { putExtra(EXTRA_CALLER_NAME, it) }
             putExtra(EXTRA_AUTO_ANSWER, autoAnswer)
+            incomingNumber?.let { putExtra(EXTRA_INCOMING_NUMBER, it) }
+            putExtra(EXTRA_KNOWN_CONTACT, knownContact)
             triggerAction?.let { putExtra(EXTRA_TRIGGER_ACTION, it) }
             addFlags(
                 Intent.FLAG_ACTIVITY_NEW_TASK or
@@ -72,6 +84,7 @@ class IncomingCallActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
         initializeVoiceAnnouncement()
 
         tvCaller = findViewById(R.id.tv_incoming_caller)
+        tvRisk = findViewById(R.id.tv_incoming_risk)
         tvCountdown = findViewById(R.id.tv_incoming_countdown)
         btnAccept = findViewById(R.id.btn_incoming_accept)
         btnDecline = findViewById(R.id.btn_incoming_decline)
@@ -90,6 +103,7 @@ class IncomingCallActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
     }
 
     override fun onDestroy() {
+        riskJob?.cancel()
         hideCountdown()
         releaseVoiceAnnouncement()
         super.onDestroy()
@@ -121,6 +135,8 @@ class IncomingCallActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
 
     private fun applyIntent(intent: Intent) {
         val callerName = resolveCallerName(intent.getStringExtra(EXTRA_CALLER_NAME))
+        val incomingNumber = intent.getStringExtra(EXTRA_INCOMING_NUMBER).orEmpty()
+        val knownContact = intent.getBooleanExtra(EXTRA_KNOWN_CONTACT, false)
         val preferences = LauncherPreferences.getInstance(this)
         val triggerAction = intent.getStringExtra(EXTRA_TRIGGER_ACTION)
         val autoAnswer =
@@ -132,6 +148,7 @@ class IncomingCallActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
         )
 
         tvCaller.text = callerName
+        renderRisk(null)
         IncomingCallDiagnostics.recordActivityShown(this, callerName)
         announceCallerIfNeeded(callerName, triggerAction)
 
@@ -146,6 +163,8 @@ class IncomingCallActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
             }
         }
 
+        maybeAssessIncomingRisk(incomingNumber, knownContact)
+
         when (state) {
             is IncomingCallState.WaitingAutoAnswer -> startCountdown(state.delaySeconds)
             else -> hideCountdown()
@@ -154,8 +173,10 @@ class IncomingCallActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
 
     private fun resetUiState() {
         actionInProgress = false
+        riskJob?.cancel()
         setActionButtonsEnabled(true)
         hideCountdown()
+        renderRisk(null)
     }
 
     private fun startCountdown(seconds: Int) {
@@ -427,6 +448,37 @@ class IncomingCallActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
     private fun resolveCallerName(rawCallerName: String?): String {
         return rawCallerName?.trim()?.takeIf { it.isNotEmpty() }
             ?: getString(R.string.incoming_call_unknown_caller)
+    }
+
+    private fun maybeAssessIncomingRisk(incomingNumber: String, knownContact: Boolean) {
+        riskJob?.cancel()
+        val assessor = IncomingCallRiskAssessor(this)
+        if (!assessor.isConfigured() || knownContact || incomingNumber.isBlank()) {
+            return
+        }
+        riskJob = lifecycleScope.launch {
+            val assessment = assessor.assess(incomingNumber, knownContact) ?: return@launch
+            if (isFinishing || isDestroyed) {
+                return@launch
+            }
+            renderRisk(assessment)
+        }
+    }
+
+    private fun renderRisk(assessment: IncomingCallRiskAssessment?) {
+        if (assessment == null || !assessment.shouldShowWarning) {
+            tvRisk.isVisible = false
+            tvRisk.text = ""
+            return
+        }
+        tvRisk.isVisible = true
+        tvRisk.text = assessment.label
+        val colorRes = if (assessment.level == IncomingCallRiskLevel.High) {
+            R.color.launcher_danger
+        } else {
+            R.color.launcher_warning
+        }
+        tvRisk.setTextColor(ContextCompat.getColor(this, colorRes))
     }
 
     private data class CallActionResult(

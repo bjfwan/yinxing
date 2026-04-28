@@ -1,0 +1,32 @@
+{
+  "$schema": "./node_modules/wrangler/config-schema.json",
+  "name": "oldlauncher-ai-gateway",
+  "main": "src/index.js",
+  "compatibility_date": "2026-04-28",
+  "compatibility_flags": [
+    "nodejs_compat"
+  ],
+  "routes": [
+    {
+      "pattern": "oldlauncher-ai.likeyou.qzz.io",
+      "custom_domain": true
+    },
+    {
+      "pattern": "oldlauncher-ai.bajianfeng.dpdns.org",
+      "custom_domain": true
+    }
+  ],
+  "observability": {
+    "enabled": true,
+    "head_sampling_rate": 1
+  },
+  "kv_namespaces": [
+    {
+      "binding": "PRO_DEVICES",
+      "id": "70a8feed63bc485aa89dfe860a1a066b"
+    }
+  ],
+  "vars": {
+    "DEEPSEEK_MODEL": "deepseek-v4-flash"
+  }
+}

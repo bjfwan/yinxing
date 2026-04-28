@@ -32,4 +32,22 @@
     <color name="launcher_success">#2B7A5C</color>
     <color name="launcher_success_soft">#DCFCE7</color>
     <color name="launcher_success_line">#86EFAC</color>
+
+    <color name="launcher_pro">#C69026</color>
+    <color name="launcher_pro_deep">#6F4B13</color>
+    <color name="launcher_pro_surface">#FFF7E8</color>
+    <color name="launcher_pro_surface_end">#F4E1BB</color>
+    <color name="launcher_pro_soft">#FBEBCB</color>
+    <color name="launcher_pro_chip">#FFFFFF</color>
+    <color name="launcher_pro_line">#D9B86E</color>
+    <color name="launcher_contacts">#2563EB</color>
+    <color name="launcher_contacts_soft">#DBEAFE</color>
+    <color name="launcher_call">#059669</color>
+    <color name="launcher_call_soft">#D1FAE5</color>
+    <color name="launcher_permissions">#7C3AED</color>
+    <color name="launcher_permissions_soft">#EDE9FE</color>
+    <color name="launcher_device">#0F766E</color>
+    <color name="launcher_device_soft">#CCFBF1</color>
+    <color name="launcher_system">#475569</color>
+    <color name="launcher_system_soft">#E2E8F0</color>
 </resources>

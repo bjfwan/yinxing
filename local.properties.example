@@ -22,6 +22,9 @@ SENIVERSE_PK=your_seniverse_private_key_here
 # 注册后在控制台创建应用并获取 Key
 TENCENT_KEY=your_tencent_lbs_key_here
 
+# AI 网关（可选，用于来电风险提醒与后续视频流程增强）
+AI_GATEWAY_BASE_URL=https\://oldlauncher-ai.likeyou.qzz.io
+
 # 本地代理（可选，按需填写）
 # systemProp.http.proxyHost=127.0.0.1
 # systemProp.http.proxyPort=7897

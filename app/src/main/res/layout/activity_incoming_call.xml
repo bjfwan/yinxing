@@ -49,6 +49,22 @@
             android:textStyle="bold" />
 
         <TextView
+            android:id="@+id/tv_incoming_risk"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="18dp"
+            android:background="@drawable/bg_incoming_risk_chip"
+            android:gravity="center"
+            android:paddingStart="18dp"
+            android:paddingTop="10dp"
+            android:paddingEnd="18dp"
+            android:paddingBottom="10dp"
+            android:textColor="@color/launcher_warning"
+            android:textSize="22sp"
+            android:textStyle="bold"
+            android:visibility="gone" />
+
+        <TextView
             android:id="@+id/tv_incoming_countdown"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"

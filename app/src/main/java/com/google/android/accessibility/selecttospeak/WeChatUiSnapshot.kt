@@ -8,6 +8,7 @@ internal data class WeChatUiSnapshot(
     val contentDescription: String? = null,
     val viewIdResourceName: String? = null,
     val className: String? = null,
+    val clickable: Boolean = false,
     val editable: Boolean = false,
     val children: List<WeChatUiSnapshot> = emptyList()
 ) {
@@ -49,6 +50,7 @@ internal data class WeChatUiSnapshot(
                     contentDescription = node.contentDescription?.toString(),
                     viewIdResourceName = node.viewIdResourceName,
                     className = node.className?.toString(),
+                    clickable = node.isClickable,
                     editable = node.isEditable || node.className == "android.widget.EditText",
                     children = children
                 )

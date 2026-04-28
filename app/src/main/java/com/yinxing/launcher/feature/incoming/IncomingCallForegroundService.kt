@@ -26,12 +26,22 @@ class IncomingCallForegroundService : Service() {
 
         internal const val EXTRA_CALLER_NAME = "extra_caller_name"
         internal const val EXTRA_AUTO_ANSWER = "extra_auto_answer"
+        internal const val EXTRA_INCOMING_NUMBER = "extra_incoming_number"
+        internal const val EXTRA_KNOWN_CONTACT = "extra_known_contact"
 
-        fun start(context: Context, callerName: String?, autoAnswer: Boolean) {
+        fun start(
+            context: Context,
+            callerName: String?,
+            autoAnswer: Boolean,
+            incomingNumber: String? = null,
+            knownContact: Boolean = false
+        ) {
             val intent = Intent(context, IncomingCallForegroundService::class.java).apply {
                 action = ACTION_SHOW_INCOMING_CALL
                 putExtra(EXTRA_CALLER_NAME, callerName)
                 putExtra(EXTRA_AUTO_ANSWER, autoAnswer)
+                putExtra(EXTRA_INCOMING_NUMBER, incomingNumber)
+                putExtra(EXTRA_KNOWN_CONTACT, knownContact)
             }
             ContextCompat.startForegroundService(context, intent)
         }
@@ -67,7 +77,9 @@ class IncomingCallForegroundService : Service() {
         if (intent?.action == ACTION_SHOW_INCOMING_CALL) {
             showIncomingCall(
                 callerName = intent.getStringExtra(EXTRA_CALLER_NAME),
-                autoAnswer = intent.getBooleanExtra(EXTRA_AUTO_ANSWER, false)
+                autoAnswer = intent.getBooleanExtra(EXTRA_AUTO_ANSWER, false),
+                incomingNumber = intent.getStringExtra(EXTRA_INCOMING_NUMBER),
+                knownContact = intent.getBooleanExtra(EXTRA_KNOWN_CONTACT, false)
             )
         } else {
             stopSelf()
@@ -85,7 +97,12 @@ class IncomingCallForegroundService : Service() {
         super.onDestroy()
     }
 
-    private fun showIncomingCall(callerName: String?, autoAnswer: Boolean) {
+    private fun showIncomingCall(
+        callerName: String?,
+        autoAnswer: Boolean,
+        incomingNumber: String?,
+        knownContact: Boolean
+    ) {
         ensureNotificationChannels(this, platformCompat)
         IncomingCallDiagnostics.recordServiceStarted(this, callerName, autoAnswer)
         val callerLabel = callerName?.trim()?.takeIf { it.isNotEmpty() }
@@ -94,18 +111,24 @@ class IncomingCallForegroundService : Service() {
         val openIntent = IncomingCallActivity.buildLaunchIntent(
             context = this,
             callerName = callerName,
-            autoAnswer = autoAnswer
+            autoAnswer = autoAnswer,
+            incomingNumber = incomingNumber,
+            knownContact = knownContact
         )
         val acceptIntent = IncomingCallActivity.buildLaunchIntent(
             context = this,
             callerName = callerName,
             autoAnswer = autoAnswer,
+            incomingNumber = incomingNumber,
+            knownContact = knownContact,
             triggerAction = IncomingCallActivity.TRIGGER_ACTION_ACCEPT
         )
         val declineIntent = IncomingCallActivity.buildLaunchIntent(
             context = this,
             callerName = callerName,
             autoAnswer = autoAnswer,
+            incomingNumber = incomingNumber,
+            knownContact = knownContact,
             triggerAction = IncomingCallActivity.TRIGGER_ACTION_DECLINE
         )
 

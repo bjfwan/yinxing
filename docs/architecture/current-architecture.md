@@ -1,6 +1,6 @@
 # 当前架构说明
 
-更新时间：2026-04-27
+更新时间：2026-04-28
 
 ## 1. 架构概览
 
@@ -31,6 +31,7 @@
 - `feature.incoming`
   - 系统电话来电页（实验性）
   - `PhoneCallReceiver`、`IncomingCallForegroundService`、`IncomingNumberMatcher`
+  - `IncomingCallRiskAssessor`：来电风险评估（实验性）
 
 ### 2.2 data
 
@@ -59,17 +60,22 @@
   - `PermissionUtil`
   - `NetworkUtil`
   - `AccessibilityServiceMatcher`
+- `common.ai`
+  - `AiGatewayClient`：AI网关客户端
+  - `AiProStatusClient`：AI会员状态客户端
+  - `AiDeviceCredentials`：AI设备凭据管理
 
 ### 2.4 automation
 
 - `automation.wechat`
   - 实验性微信自动化能力
   - 包含状态模型、状态检测、超时管理、无障碍服务和辅助工具
+  - `WeChatStepAssistClient`：微信步骤辅助客户端（实验性）
 
 ### 2.5 testing
 
 - `app/src/test`
-  - 单元测试（113 tests, 0 failed）与 Robolectric UI 冒烟
+  - 单元测试（171 tests, 0 failed）与 Robolectric UI 冒烟
 - `app/src/androidTest`
   - 设备级仪器测试
 - `benchmark`

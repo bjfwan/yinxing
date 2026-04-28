@@ -1,0 +1,31 @@
+- main [ref=e2]:
+  - generic [ref=e4]:
+    - heading "银杏 Pro 后台" [level=1] [ref=e5]
+    - paragraph [ref=e6]: 生成激活码，查看已激活设备，必要时吊销设备或未使用激活码。
+    - generic [ref=e7]:
+      - textbox "PRO_ADMIN_SECRET" [ref=e8]
+      - button "保存密钥" [ref=e9] [cursor=pointer]
+  - generic [ref=e10]:
+    - generic [ref=e11]:
+      - text: 全部设备
+      - generic [ref=e12]: "-"
+    - generic [ref=e13]:
+      - text: 可用设备
+      - generic [ref=e14]: "-"
+    - generic [ref=e15]:
+      - text: 激活码
+      - generic [ref=e16]: "-"
+    - generic [ref=e17]:
+      - text: 未使用码
+      - generic [ref=e18]: "-"
+  - generic [ref=e20]:
+    - heading "生成激活码" [level=2] [ref=e21]
+    - generic [ref=e22]:
+      - textbox "备注，可选" [ref=e23]
+      - button "生成" [ref=e24] [cursor=pointer]
+  - generic [ref=e26]:
+    - heading "设备" [level=2] [ref=e27]
+    - button "刷新" [ref=e29] [cursor=pointer]
+  - generic [ref=e31]:
+    - heading "激活码记录" [level=2] [ref=e32]
+    - button "刷新" [ref=e34] [cursor=pointer]

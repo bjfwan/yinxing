@@ -13,7 +13,8 @@ object IncomingAutoAnswerDecisionMaker {
     fun decide(
         contacts: List<Contact>,
         incomingNumber: String,
-        delaySeconds: Int
+        delaySeconds: Int,
+        globalAutoAnswer: Boolean = false
     ): IncomingAutoAnswerDecision {
         val matchedContact = IncomingNumberMatcher.findBestMatch(
             contacts = contacts,
@@ -22,7 +23,7 @@ object IncomingAutoAnswerDecisionMaker {
         return IncomingAutoAnswerDecision(
             callerLabel = matchedContact?.name ?: incomingNumber.trim().takeIf { it.isNotEmpty() },
             matchedContact = matchedContact,
-            autoAnswer = matchedContact?.autoAnswer == true,
+            autoAnswer = globalAutoAnswer || matchedContact?.autoAnswer == true,
             delaySeconds = delaySeconds.coerceIn(1, 30)
         )
     }

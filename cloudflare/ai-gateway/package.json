@@ -1,0 +1,17 @@
+{
+  "name": "oldlauncher-ai-gateway",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "test": "node --test",
+    "deploy": "wrangler deploy",
+    "check": "wrangler check",
+    "pro:code": "node scripts/create-activation-code.js",
+    "pro:code:revoke": "node scripts/revoke-activation-code.js",
+    "pro:revoke": "node scripts/revoke-pro.js"
+  },
+  "devDependencies": {
+    "wrangler": "^4.14.0"
+  }
+}

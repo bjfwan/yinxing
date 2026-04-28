@@ -5,6 +5,9 @@ local.properties
 .idea/
 .DS_Store
 build/
+node_modules/
+.wrangler/
+.dev.vars
 captures/
 .externalNativeBuild/
 .cxx/

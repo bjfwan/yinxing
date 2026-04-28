@@ -1,0 +1,28 @@
+[    1042ms] [VERBOSE] [DOM] Password field is not contained in a form: (More info: https://goo.gl/9p2vKq) %o @ https://oldlauncher-ai.likeyou.qzz.io/admin:0
+[    1238ms] [ERROR] Failed to load resource: the server responded with a status of 404 () @ https://oldlauncher-ai.likeyou.qzz.io/favicon.ico:0
+[   10744ms] [ERROR] Failed to load resource: the server responded with a status of 401 () @ https://oldlauncher-ai.likeyou.qzz.io/admin/api/devices:0
+[   10744ms] Error: admin_unauthorized
+    at api (https://oldlauncher-ai.likeyou.qzz.io/admin:64:44)
+    at async HTMLButtonElement.loadDevices (https://oldlauncher-ai.likeyou.qzz.io/admin:77:14)
+[   11191ms] [ERROR] Failed to load resource: the server responded with a status of 401 () @ https://oldlauncher-ai.likeyou.qzz.io/admin/api/codes:0
+[   11191ms] Error: admin_unauthorized
+    at api (https://oldlauncher-ai.likeyou.qzz.io/admin:64:44)
+    at async HTMLButtonElement.loadCodes (https://oldlauncher-ai.likeyou.qzz.io/admin:95:14)
+[   11542ms] [ERROR] Failed to load resource: the server responded with a status of 401 () @ https://oldlauncher-ai.likeyou.qzz.io/admin/api/codes:0
+[   11541ms] Error: admin_unauthorized
+    at api (https://oldlauncher-ai.likeyou.qzz.io/admin:64:44)
+    at async HTMLButtonElement.loadCodes (https://oldlauncher-ai.likeyou.qzz.io/admin:95:14)
+[   11881ms] [ERROR] Failed to load resource: the server responded with a status of 401 () @ https://oldlauncher-ai.likeyou.qzz.io/admin/api/devices:0
+[   11882ms] Error: admin_unauthorized
+    at api (https://oldlauncher-ai.likeyou.qzz.io/admin:64:44)
+    at async HTMLButtonElement.loadDevices (https://oldlauncher-ai.likeyou.qzz.io/admin:77:14)
+[   16614ms] [ERROR] Failed to load resource: the server responded with a status of 401 () @ https://oldlauncher-ai.likeyou.qzz.io/admin/api/summary:0
+[   16615ms] [ERROR] Failed to load resource: the server responded with a status of 401 () @ https://oldlauncher-ai.likeyou.qzz.io/admin/api/devices:0
+[   16615ms] [ERROR] Failed to load resource: the server responded with a status of 401 () @ https://oldlauncher-ai.likeyou.qzz.io/admin/api/codes:0
+[   21064ms] [ERROR] Failed to load resource: the server responded with a status of 401 () @ https://oldlauncher-ai.likeyou.qzz.io/admin/api/codes:0
+[  366494ms] [INFO] Loading the script 'https://static.cloudflareinsights.com/beacon.min.js/v8c78df7c7c0f484497ecbca7046644da1771523124516' violates the following Content Security Policy directive: "script-src 'unsafe-inline' 'unsafe-eval'". Note that 'script-src-elem' was not explicitly set, so 'script-src' is used as a fallback. The policy is report-only, so the violation has been logged but no further action has been taken. @ https://oldlauncher-ai.likeyou.qzz.io/admin:0
+[  366498ms] [VERBOSE] [DOM] Password field is not contained in a form: (More info: https://goo.gl/9p2vKq) %o @ https://oldlauncher-ai.likeyou.qzz.io/admin:0
+[  366499ms] [INFO] Connecting to 'https://oldlauncher-ai.likeyou.qzz.io/cdn-cgi/rum?' violates the following Content Security Policy directive: "connect-src 'none'". The policy is report-only, so the violation has been logged but no further action has been taken. @ https://static.cloudflareinsights.com/beacon.min.js/v8c78df7c7c0f484497ecbca7046644da1771523124516:0
+[ 1122799ms] [INFO] Connecting to 'https://oldlauncher-ai.likeyou.qzz.io/cdn-cgi/rum?' violates the following Content Security Policy directive: "connect-src 'none'". The policy is report-only, so the violation has been logged but no further action has been taken. @ https://static.cloudflareinsights.com/beacon.min.js/v8c78df7c7c0f484497ecbca7046644da1771523124516:0
+[ 1122799ms] [INFO] Connecting to 'https://oldlauncher-ai.likeyou.qzz.io/cdn-cgi/rum?' violates the following Content Security Policy directive: "connect-src 'none'". The policy is report-only, so the violation has been logged but no further action has been taken. @ https://static.cloudflareinsights.com/beacon.min.js/v8c78df7c7c0f484497ecbca7046644da1771523124516:0
+[ 1122811ms] [VERBOSE] [DOM] Password field is not contained in a form: (More info: https://goo.gl/9p2vKq) %o @ https://oldlauncher-ai.likeyou.qzz.io/admin:0

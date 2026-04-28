@@ -140,6 +140,12 @@ class IncomingCallActivitySmokeTest {
     }
 
     @Test
+    fun riskTextViewExists() {
+        val activity = buildActivity("测试人")
+        assertNotNull(activity.tv_risk)
+    }
+
+    @Test
     fun acceptButtonIsVisible() {
         val activity = buildActivity("测试人")
         idle()
@@ -373,10 +379,14 @@ class IncomingCallActivitySmokeTest {
         val intent = IncomingCallActivity.buildLaunchIntent(
             context = context,
             callerName = "测试",
-            autoAnswer = true
+            autoAnswer = true,
+            incomingNumber = "13800000000",
+            knownContact = true
         )
         assertEquals("测试", intent.getStringExtra(IncomingCallActivity.EXTRA_CALLER_NAME))
         assertEquals(true, intent.getBooleanExtra(IncomingCallActivity.EXTRA_AUTO_ANSWER, false))
+        assertEquals("13800000000", intent.getStringExtra(IncomingCallActivity.EXTRA_INCOMING_NUMBER))
+        assertEquals(true, intent.getBooleanExtra(IncomingCallActivity.EXTRA_KNOWN_CONTACT, false))
     }
 
     @Test
@@ -509,6 +519,8 @@ class IncomingCallActivitySmokeTest {
         get() = findViewById<TextView>(R.id.tv_incoming_caller)
     private val android.app.Activity.tv_countdown
         get() = findViewById<TextView>(R.id.tv_incoming_countdown)
+    private val android.app.Activity.tv_risk
+        get() = findViewById<TextView>(R.id.tv_incoming_risk)
     private val android.app.Activity.btn_accept
         get() = findViewById<CardView>(R.id.btn_incoming_accept)
     private val android.app.Activity.btn_decline

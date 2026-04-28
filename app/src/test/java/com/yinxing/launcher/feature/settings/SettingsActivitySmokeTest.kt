@@ -34,6 +34,8 @@ class SettingsActivitySmokeTest {
         context = ApplicationProvider.getApplicationContext()
         resetLauncherPreferencesSingleton()
         context.getSharedPreferences("launcher_prefs", Context.MODE_PRIVATE).edit().clear().commit()
+        context.getSharedPreferences("ai_device_credentials", Context.MODE_PRIVATE).edit().clear().commit()
+        context.getSharedPreferences("ai_pro_status", Context.MODE_PRIVATE).edit().clear().commit()
         LauncherSettingsDataStore.getInstance(context).clear()
         IncomingCallDiagnostics.clear(context)
         registerSettingsActivity()
@@ -63,6 +65,13 @@ class SettingsActivitySmokeTest {
         val activity = buildActivity()
         idle()
         assertNotNull(activity.findViewById(R.id.btn_card_contacts))
+    }
+
+    @Test
+    fun aiProCardExists() {
+        val activity = buildActivity()
+        idle()
+        assertNotNull(activity.findViewById(R.id.btn_card_ai_pro))
     }
 
     @Test
@@ -203,6 +212,15 @@ class SettingsActivitySmokeTest {
         val statusView = activity.findViewById<TextView>(R.id.tv_permission_hub_status)
         assertNotNull(statusView)
         assertTrue("权限状态徽章不应为空", statusView.text.isNotEmpty())
+    }
+
+    @Test
+    fun aiProHubSummaryIsNotEmpty() {
+        val activity = buildActivity()
+        idle()
+        val summaryView = activity.findViewById<TextView>(R.id.tv_ai_pro_hub_summary)
+        assertNotNull(summaryView)
+        assertTrue("Pro 摘要不应为空", summaryView.text.isNotEmpty())
     }
 
     // ═══════════════════════════════════════════════════════════════════════

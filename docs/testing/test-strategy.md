@@ -1,6 +1,6 @@
 # 测试策略
 
-更新时间：2026-04-27
+更新时间：2026-04-28
 
 ## 1. 当前测试现状
 
@@ -11,7 +11,7 @@
 
 ## 2. 当前已验证结果
 
-- 2026-04-27：`testDebugUnitTest` **113 tests, 0 failed**，BUILD SUCCESSFUL
+- 2026-04-28：`testDebugUnitTest` **171 tests, 0 failed**，BUILD SUCCESSFUL
 - 2026-04-25：`assembleDebug` 通过
 - 2026-04-25：`assembleDebugAndroidTest` 通过
 - 2026-04-25：`lintDebug` 通过，`No issues found.`
