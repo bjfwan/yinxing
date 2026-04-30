@@ -46,15 +46,16 @@ android {
         applicationId = "com.yinxing.launcher"
         minSdk = 24
         targetSdk = 36
-        versionCode = 10
-        versionName = "1.7.0"
+        versionCode = 12
+        versionName = "1.7.1"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
 
         buildConfigField("String", "SENIVERSE_UID", "\"${localProps["SENIVERSE_UID"] ?: ""}\"")
         buildConfigField("String", "SENIVERSE_PK",  "\"${localProps["SENIVERSE_PK"]  ?: ""}\"")
         buildConfigField("String", "TENCENT_KEY",   "\"${localProps["TENCENT_KEY"]   ?: ""}\"")
-        buildConfigField("String", "AI_GATEWAY_BASE_URL", "\"${localProps["AI_GATEWAY_BASE_URL"] ?: ""}\"")
+        buildConfigField("String", "LOBSTER_UPLOAD_URL",   "\"${localProps["LOBSTER_UPLOAD_URL"]   ?: ""}\"")
+        buildConfigField("String", "LOBSTER_UPLOAD_TOKEN", "\"${localProps["LOBSTER_UPLOAD_TOKEN"] ?: ""}\"")
     }
 
     signingConfigs {

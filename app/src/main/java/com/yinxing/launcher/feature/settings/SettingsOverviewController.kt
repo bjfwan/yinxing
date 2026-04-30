@@ -23,7 +23,6 @@ internal class SettingsOverviewController(
         onBack: () -> Unit,
         onShowIncomingGuardSheet: () -> Unit,
         onShowContactsSheet: () -> Unit,
-        onShowAiProSheet: () -> Unit,
         onShowAutoAnswerSheet: () -> Unit,
         onShowPermissionGroupsSheet: () -> Unit,
         onShowDeviceSettingsSheet: () -> Unit,
@@ -34,7 +33,6 @@ internal class SettingsOverviewController(
             findViewById<View>(R.id.btn_card_incoming_guard).setOnClickListener { onShowIncomingGuardSheet() }
             btnIncomingGuardAction.setOnClickListener { onShowIncomingGuardSheet() }
             findViewById<View>(R.id.btn_card_contacts).setOnClickListener { onShowContactsSheet() }
-            findViewById<View>(R.id.btn_card_ai_pro).setOnClickListener { onShowAiProSheet() }
             findViewById<View>(R.id.btn_card_auto_answer).setOnClickListener { onShowAutoAnswerSheet() }
             findViewById<View>(R.id.btn_card_permissions).setOnClickListener { onShowPermissionGroupsSheet() }
             findViewById<View>(R.id.btn_card_device).setOnClickListener { onShowDeviceSettingsSheet() }
@@ -49,8 +47,6 @@ internal class SettingsOverviewController(
     fun updateAutoAnswerHubCard() = activity.updateAutoAnswerHubCard()
 
     fun updateSystemHubCard() = activity.updateSystemHubCard()
-
-    fun updateAiProHubCard() = activity.updateAiProHubCard()
 
     fun refreshDeviceHubCard() = activity.refreshDeviceHubCard()
 
@@ -87,7 +83,6 @@ internal class SettingsOverviewController(
     fun onDestroy() {
         activity.mainHandler.removeCallbacks(activity.overviewRefreshRunnable)
         activity.contactsSummaryJob?.cancel()
-        activity.aiProStatusJob?.cancel()
     }
 }
 
@@ -99,8 +94,6 @@ internal fun SettingsActivity.bindOverviewViews() {
     btnIncomingGuardAction = findViewById(R.id.btn_incoming_guard_action)
 
     tvContactsHubSummary = findViewById(R.id.tv_contacts_hub_summary)
-    tvAiProHubStatus = findViewById(R.id.tv_ai_pro_hub_status)
-    tvAiProHubSummary = findViewById(R.id.tv_ai_pro_hub_summary)
     tvAutoAnswerHubStatus = findViewById(R.id.tv_auto_answer_hub_status)
     tvAutoAnswerHubSummary = findViewById(R.id.tv_auto_answer_hub_summary)
     tvPermissionHubStatus = findViewById(R.id.tv_permission_hub_status)
@@ -115,7 +108,6 @@ internal fun SettingsActivity.bindOverviewActions() {
     findViewById<View>(R.id.btn_card_incoming_guard).setOnClickListener { showIncomingGuardSheet() }
     btnIncomingGuardAction.setOnClickListener { showIncomingGuardSheet() }
     findViewById<View>(R.id.btn_card_contacts).setOnClickListener { showContactsSheet() }
-    findViewById<View>(R.id.btn_card_ai_pro).setOnClickListener { showAiProSheet() }
     findViewById<View>(R.id.btn_card_auto_answer).setOnClickListener { showAutoAnswerSheet() }
     findViewById<View>(R.id.btn_card_permissions).setOnClickListener { showPermissionGroupsSheet() }
     findViewById<View>(R.id.btn_card_device).setOnClickListener { showDeviceSettingsSheet() }
@@ -132,7 +124,6 @@ internal fun SettingsActivity.refreshOverviewUi() {
 
 internal fun SettingsActivity.performOverviewRefresh() {
     updateContactsHubSummary()
-    updateAiProHubCard()
     updateAutoAnswerHubCard()
     updateSystemHubCard()
     refreshAllPermissionUi()
@@ -158,44 +149,6 @@ internal fun SettingsActivity.updateContactsHubSummary() {
                 0,
                 0,
                 homeAppCount
-            )
-        }
-    }
-}
-
-internal fun SettingsActivity.updateAiProHubCard() {
-    val status = aiProStatusClient.cachedStatus()
-    val deviceIdTail = aiDeviceCredentials.snapshot().deviceId.takeLast(8)
-    when {
-        !aiProStatusClient.isConfigured() -> {
-            tvAiProHubSummary.text = getString(R.string.settings_ai_pro_summary_not_configured, deviceIdTail)
-            applyInfoBadge(
-                tv = tvAiProHubStatus,
-                text = getString(R.string.settings_ai_pro_status_not_configured),
-                textColorResId = R.color.launcher_warning,
-                backgroundColorResId = R.color.launcher_warning_soft
-            )
-        }
-        status.available && status.active -> {
-            tvAiProHubSummary.text = getString(
-                R.string.settings_ai_pro_summary_active,
-                status.callRisk.remaining,
-                status.wechatStep.remaining
-            )
-            applyInfoBadge(
-                tv = tvAiProHubStatus,
-                text = getString(R.string.settings_ai_pro_status_active),
-                textColorResId = R.color.launcher_pro_deep,
-                backgroundColorResId = R.color.launcher_pro_soft
-            )
-        }
-        else -> {
-            tvAiProHubSummary.text = getString(R.string.settings_ai_pro_summary_pending, deviceIdTail)
-            applyInfoBadge(
-                tv = tvAiProHubStatus,
-                text = getString(R.string.settings_ai_pro_status_pending),
-                textColorResId = R.color.launcher_warning,
-                backgroundColorResId = R.color.launcher_warning_soft
             )
         }
     }

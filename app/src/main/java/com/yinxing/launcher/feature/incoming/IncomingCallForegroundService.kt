@@ -10,8 +10,8 @@ import android.os.IBinder
 import android.util.Log
 import androidx.core.app.NotificationCompat
 import androidx.core.content.ContextCompat
-import com.google.firebase.crashlytics.FirebaseCrashlytics
 import com.yinxing.launcher.R
+import com.yinxing.launcher.common.firebase.FirebaseTelemetry
 
 class IncomingCallForegroundService : Service() {
 
@@ -103,6 +103,20 @@ class IncomingCallForegroundService : Service() {
         incomingNumber: String?,
         knownContact: Boolean
     ) {
+        Log.i("INCOMING_SERVICE", "╔══════════════════════════════════════════════════════")
+        Log.i("INCOMING_SERVICE", "║ [来电服务] 准备显示来电界面")
+        Log.i("INCOMING_SERVICE", "║ ├─ 姓名: $callerName")
+        Log.i("INCOMING_SERVICE", "║ ├─ 号码: $incomingNumber")
+        Log.i("INCOMING_SERVICE", "║ ├─ 自动接听(广播传参): $autoAnswer")
+        Log.i("INCOMING_SERVICE", "║ └─ 已知联系人: $knownContact")
+        Log.i("INCOMING_SERVICE", "╚══════════════════════════════════════════════════════")
+
+        FirebaseTelemetry.withCrashlytics {
+            log("[来电服务] 启动: Caller=$callerName, Number=$incomingNumber, Auto=$autoAnswer")
+            setCustomKey("service_last_caller", callerName ?: "unknown")
+            setCustomKey("service_last_number", incomingNumber ?: "unknown")
+        }
+
         ensureNotificationChannels(this, platformCompat)
         IncomingCallDiagnostics.recordServiceStarted(this, callerName, autoAnswer)
         val callerLabel = callerName?.trim()?.takeIf { it.isNotEmpty() }
@@ -161,12 +175,10 @@ class IncomingCallForegroundService : Service() {
             true
         }.getOrElse { error ->
             Log.e(TAG, "startForeground failed, fallback to regular notification", error)
-            runCatching {
-                FirebaseCrashlytics.getInstance().apply {
-                    setCustomKey("fgs_subtype", "incoming_call_alert")
-                    setCustomKey("android_sdk", platformCompat.sdkInt)
-                    recordException(error)
-                }
+            FirebaseTelemetry.withCrashlytics {
+                setCustomKey("fgs_subtype", "incoming_call_alert")
+                setCustomKey("android_sdk", platformCompat.sdkInt)
+                recordException(error)
             }
             getSystemService(NotificationManager::class.java)?.notify(NOTIFICATION_ID, notification)
             false

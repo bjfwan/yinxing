@@ -5,6 +5,7 @@ import android.accessibilityservice.GestureDescription
 import android.graphics.Path
 import android.graphics.Rect
 import android.os.Bundle
+import android.util.Log
 import android.view.accessibility.AccessibilityNodeInfo
 
 /**
@@ -153,10 +154,15 @@ object AccessibilityUtil {
     }
 
     fun clickNode(node: AccessibilityNodeInfo?): Boolean {
-        if (node == null) return false
+        if (node == null) {
+            Log.w("WECHAT_ACTION", "║ [微信动作] 失败: 点击 | 原因: 节点为空")
+            return false
+        }
 
         if (node.isClickable) {
-            return node.performAction(AccessibilityNodeInfo.ACTION_CLICK)
+            val success = node.performAction(AccessibilityNodeInfo.ACTION_CLICK)
+            Log.d("WECHAT_ACTION", "║ [微信动作] 成功: 直接点击 | 结果: $success | 节点: ${summarizeNode(node)}")
+            return success
         }
 
         // 微信层级通常 ≤ 5，限制向上查找深度为 6 即可
@@ -164,12 +170,15 @@ object AccessibilityUtil {
         var depth = 0
         while (parent != null && depth < 6) {
             if (parent.isClickable) {
-                return parent.performAction(AccessibilityNodeInfo.ACTION_CLICK)
+                val success = parent.performAction(AccessibilityNodeInfo.ACTION_CLICK)
+                Log.d("WECHAT_ACTION", "║ [微信动作] 成功: 父节点点击 (深度=$depth) | 结果: $success | 节点: ${summarizeNode(parent)}")
+                return success
             }
             parent = parent.parent
             depth++
         }
 
+        Log.w("WECHAT_ACTION", "║ [微信动作] 失败: 点击 | 原因: 未找到可点击的父节点 | 节点: ${summarizeNode(node)}")
         return false
     }
 
@@ -186,6 +195,7 @@ object AccessibilityUtil {
     }
 
     fun clickByCoordinate(service: AccessibilityService, x: Float, y: Float): Boolean {
+        Log.d("WECHAT_ACTION", "║ [微信动作] 成功: 坐标点击 | 坐标: x=$x, y=$y")
         val path = Path().apply { moveTo(x, y) }
         val gesture = GestureDescription.Builder()
             .addStroke(GestureDescription.StrokeDescription(path, 0, TAP_DURATION_MS))
@@ -217,7 +227,11 @@ object AccessibilityUtil {
     }
 
     fun setText(node: AccessibilityNodeInfo?, text: String): Boolean {
-        if (node == null) return false
+        if (node == null) {
+            Log.w("WECHAT_ACTION", "║ [微信动作] 失败: 输入文字 | 原因: 节点为空")
+            return false
+        }
+        Log.i("WECHAT_ACTION", "║ [微信动作] 执行: 输入文字 | 内容: '$text' | 节点: ${summarizeNode(node)}")
         node.performAction(AccessibilityNodeInfo.ACTION_FOCUS)
         val arguments = Bundle().apply {
             putCharSequence(AccessibilityNodeInfo.ACTION_ARGUMENT_SET_TEXT_CHARSEQUENCE, text)

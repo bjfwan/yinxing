@@ -4,8 +4,11 @@ import android.util.Log
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.lifecycleScope
-
+import com.google.firebase.analytics.FirebaseAnalytics
+import com.google.firebase.analytics.logEvent
 import com.yinxing.launcher.R
+import com.yinxing.launcher.common.lobster.LobsterClient
+import com.yinxing.launcher.common.firebase.FirebaseTelemetry
 import com.yinxing.launcher.automation.wechat.model.AutomationState
 import com.yinxing.launcher.common.service.TTSService
 import com.yinxing.launcher.common.util.NetworkUtil
@@ -31,6 +34,7 @@ class VideoCallCoordinator(
 
     private var activeRequestId: String? = null
     private var activeRequestToken = 0L
+    private val firebaseAnalytics: FirebaseAnalytics? = FirebaseTelemetry.analyticsOrNull(activity)
 
     fun start(contact: Contact) {
         if (!NetworkUtil.isNetworkAvailable(activity)) {
@@ -71,6 +75,24 @@ class VideoCallCoordinator(
         }
 
         speakAndToast(R.string.starting_video_call_detail, R.string.starting_video_call)
+        
+        Log.i("WECHAT_FLOW", "╔══════════════════════════════════════════════════════")
+        Log.i("WECHAT_FLOW", "║ [微信视频] 开始自动化流程")
+        Log.i("WECHAT_FLOW", "║ ├─ 联系人: ${contact.displayName}")
+        Log.i("WECHAT_FLOW", "║ └─ 搜索名: ${contact.wechatSearchName ?: "无"}")
+        Log.i("WECHAT_FLOW", "╚══════════════════════════════════════════════════════")
+
+        LobsterClient.log("[微信视频] 开始流程: 联系人=${contact.displayName}")
+
+        FirebaseTelemetry.withCrashlytics {
+            log("[微信视频] 流程: 开始 | 联系人: ${contact.displayName}")
+            setCustomKey("wechat_target", contact.displayName)
+        }
+
+        firebaseAnalytics?.logEvent("wechat_video_start") {
+            param("contact_name", contact.displayName)
+            param("has_search_name", (contact.wechatSearchName?.isNotBlank() == true).toString())
+        }
 
         val requestToken = ++activeRequestToken
         var requestId: String? = null
@@ -95,6 +117,31 @@ class VideoCallCoordinator(
                     return@launch
                 }
                 val ttsMessage = buildTtsMessage(update)
+                
+                Log.i("WECHAT_FLOW", "║ [微信视频] 更新 | 步骤: ${update.step} | 消息: ${update.message}")
+                
+                LobsterClient.log("[微信视频] 更新: 步骤=${update.step} | 消息=${update.message}")
+                
+                FirebaseTelemetry.withCrashlytics {
+                    log("[微信视频] 更新: 步骤=${update.step} | 消息=${update.message} | 成功=${update.success}")
+                }
+                
+                if (update.terminal && !update.success) {
+                    Log.e("WECHAT_FLOW", "║ [微信视频] 终端失败 | ${update.message}")
+                    LobsterClient.report(activity, "微信视频失败: ${update.message}")
+                    FirebaseTelemetry.withCrashlytics {
+                        recordException(Exception("微信视频通话失败: ${update.message}"))
+                    }
+                }
+                
+                firebaseAnalytics?.logEvent("wechat_video_step") {
+                    param("request_id", requestId ?: "unknown")
+                    param("step", update.step.name)
+                    param("message", update.message)
+                    param("success", update.success.toString())
+                    param("terminal", update.terminal.toString())
+                }
+
                 ttsService.speak(ttsMessage)
                 Toast.makeText(activity, update.message, Toast.LENGTH_SHORT).show()
                 if (!update.terminal) {

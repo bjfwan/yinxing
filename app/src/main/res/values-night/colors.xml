@@ -33,13 +33,6 @@
     <color name="launcher_success_soft">#0F2A1B</color>
     <color name="launcher_success_line">#1F4A33</color>
 
-    <color name="launcher_pro">#F4C96B</color>
-    <color name="launcher_pro_deep">#FFE8A3</color>
-    <color name="launcher_pro_surface">#2A2418</color>
-    <color name="launcher_pro_surface_end">#18150F</color>
-    <color name="launcher_pro_soft">#3A2B13</color>
-    <color name="launcher_pro_chip">#1E1A12</color>
-    <color name="launcher_pro_line">#6A5122</color>
     <color name="launcher_contacts">#93C5FD</color>
     <color name="launcher_contacts_soft">#10243F</color>
     <color name="launcher_call">#6EE7B7</color>

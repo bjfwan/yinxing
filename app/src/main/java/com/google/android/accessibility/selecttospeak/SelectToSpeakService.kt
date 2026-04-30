@@ -14,9 +14,14 @@ import android.view.accessibility.AccessibilityEvent
 import android.view.accessibility.AccessibilityNodeInfo
 import android.view.accessibility.AccessibilityWindowInfo
 import com.google.firebase.crashlytics.FirebaseCrashlytics
+import com.google.firebase.analytics.FirebaseAnalytics
+import com.google.firebase.analytics.logEvent
+import com.google.firebase.analytics.ktx.analytics
+import com.google.firebase.ktx.Firebase
 import com.yinxing.launcher.automation.wechat.manager.TimeoutManager
 import com.yinxing.launcher.automation.wechat.model.AutomationState
 import com.yinxing.launcher.automation.wechat.util.AccessibilityUtil
+import com.yinxing.launcher.common.lobster.LobsterClient
 import com.yinxing.launcher.common.util.CallAudioStrategy
 import com.yinxing.launcher.common.ui.FloatingStatusView
 import com.yinxing.launcher.data.home.LauncherPreferences
@@ -34,6 +39,7 @@ import java.util.concurrent.atomic.AtomicLong
 
 
 class SelectToSpeakService : AccessibilityService() {
+    private lateinit var firebaseAnalytics: FirebaseAnalytics
 
     companion object {
         @Volatile
@@ -58,14 +64,6 @@ class SelectToSpeakService : AccessibilityService() {
         private const val MAX_CONTACT_DETAIL_ATTEMPTS = 4
         private const val MAX_VIDEO_OPTION_ATTEMPTS = 3
         private const val MAX_STEP_RECOVERY_ATTEMPTS = 5
-        private const val MAX_AI_ASSIST_REQUESTS = 3
-        private const val AI_GUARD_STABLE_DELAY_MS = 250L
-        private const val AI_GUARD_RESOLVE_DELAY_MS = 650L
-        private const val AI_GUARD_UNKNOWN_STEP_AGE_MS = 450L
-        private const val AI_GUARD_RETRY_STEP_AGE_MS = 700L
-        private const val AI_GUARD_VIDEO_STEP_AGE_MS = 650L
-        private const val AI_GUARD_CONFIDENCE = 0.75f
-        private const val AI_RECOVERY_CONFIDENCE = 0.7f
         private const val HOME_ACTION_SETTLE_DELAY_MS = 500L
         private const val LAUNCHER_STATE_SETTLE_DELAY_MS = 450L
         private const val HIBOARD_OVERVIEW_SUPPRESS_WINDOW_MS = 1500L
@@ -175,13 +173,9 @@ class SelectToSpeakService : AccessibilityService() {
 
     private val serviceScope = CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate)
     private var processJob: Job? = null
-    private var assistJob: Job? = null
-    private var aiGuardJob: Job? = null
     private var timeoutJob: Job? = null
     private var totalTimeoutJob: Job? = null
     private var wechatWaitJob: Job? = null
-    private val weChatStepAssistClient by lazy { WeChatStepAssistClient(this) }
-
     private lateinit var timeoutManager: TimeoutManager
     private var floatingView: FloatingStatusView? = null
     private var currentSession: VideoCallSession? = null
@@ -201,9 +195,14 @@ class SelectToSpeakService : AccessibilityService() {
 
 
 
+    override fun onCreate() {
+        super.onCreate()
+        instance = this
+        firebaseAnalytics = Firebase.analytics
+    }
+
     override fun onServiceConnected() {
         super.onServiceConnected()
-        instance = this
         timeoutManager = TimeoutManager.getInstance(this)
         floatingView = FloatingStatusView(this)
         systemLauncherPackages = resolveSystemLauncherPackages()
@@ -216,6 +215,7 @@ class SelectToSpeakService : AccessibilityService() {
         val className = event?.className?.toString()
 
         if (event?.eventType == AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED && pkg != null) {
+            Log.d("WECHAT_AUTO", "[EVENT] WindowStateChanged: pkg=$pkg, class=$className")
             if (shouldObserveLauncherForeground(pkg)) {
                 scheduleLauncherBringBackConfirmation(triggerPkg = pkg, triggerClassName = className)
                 return
@@ -241,7 +241,7 @@ class SelectToSpeakService : AccessibilityService() {
                 when (className) {
                     CLASS_LAUNCHER_UI -> {
                         if (session.step == Step.WAITING_HOME) {
-                            Log.d(TAG, "onEvent: LauncherUI -> WAITING_LAUNCHER_UI")
+                            Log.i("WECHAT_AUTO", "[STEP] LauncherUI detected -> Moving to WAITING_LAUNCHER_UI")
                             wechatWaitJob?.cancel()
                             session.launcherPrepared = false
                             session.searchTextApplied = false
@@ -252,7 +252,10 @@ class SelectToSpeakService : AccessibilityService() {
                     }
                     CLASS_CHATTING_UI,
                     CLASS_CONTACT_INFO,
-                    CLASS_SEARCH_UI -> scheduleAdaptiveProcess(session, DelayProfile.STABLE)
+                    CLASS_SEARCH_UI -> {
+                        Log.d("WECHAT_AUTO", "[EVENT] Meaningful class detected: $className")
+                        scheduleAdaptiveProcess(session, DelayProfile.STABLE)
+                    }
                     else -> scheduleAdaptiveProcess(session, DelayProfile.TRANSITION)
                 }
             }
@@ -268,7 +271,6 @@ class SelectToSpeakService : AccessibilityService() {
         cancelSession(false)
     }
 
-
     override fun onDestroy() {
         instance = null
         launcherBringBackConfirmJob?.cancel()
@@ -279,8 +281,6 @@ class SelectToSpeakService : AccessibilityService() {
         serviceScope.cancel()
         super.onDestroy()
     }
-
-
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         if (intent?.action == ACTION_START_VIDEO_CALL) {
@@ -352,9 +352,6 @@ class SelectToSpeakService : AccessibilityService() {
         )
         return result
     }
-
-
-
 
     private fun resolveSystemLauncherPackages(): Set<String> {
         val intent = android.content.Intent(android.content.Intent.ACTION_MAIN).apply {
@@ -544,7 +541,6 @@ class SelectToSpeakService : AccessibilityService() {
         AutomationState.FAILED -> "已失败"
     }
 
-
     private fun hasActiveSession(): Boolean {
         return currentSession != null
     }
@@ -566,6 +562,22 @@ class SelectToSpeakService : AccessibilityService() {
     }
 
     private fun startVideoCall(requestId: String, contactName: String) {
+        Log.i("WECHAT_AUTO", "╔══════════════════════════════════════════════════════")
+        Log.i("WECHAT_AUTO", "║ [微信自动] 开始请求")
+        Log.i("WECHAT_AUTO", "║ ├─ 联系人: $contactName")
+        Log.i("WECHAT_AUTO", "║ └─ 任务ID: $requestId")
+        Log.i("WECHAT_AUTO", "╚══════════════════════════════════════════════════════")
+        
+        LobsterClient.log("[微信自动] 请求开始: 联系人=$contactName, ID=$requestId")
+
+        FirebaseCrashlytics.getInstance().apply {
+            log("[微信自动] 请求: 开始 | 联系人: $contactName | 任务ID: $requestId")
+            setCustomKey("active_automation_contact", contactName)
+        }
+
+        FirebaseCrashlytics.getInstance().log("wechat_auto_start")
+        FirebaseCrashlytics.getInstance().setCustomKey("contact_name", contactName)
+
         if (hasActiveSession()) {
             deliverProgress(
                 requestId,
@@ -628,8 +640,6 @@ class SelectToSpeakService : AccessibilityService() {
                 }
                 val currentClass = resolveCurrentWeChatClass(root)
                 val page = detectWeChatPage(root, currentClass)
-                scheduleAiGuard(session, root, currentClass, page)
-
                 Log.d(
                     TAG,
                     "waitLoop[$attempts]: root class=$currentClass childCount=${root.childCount} page=$page"
@@ -1003,9 +1013,6 @@ class SelectToSpeakService : AccessibilityService() {
         val attempt = incrementActionAttempt(session, key)
         Log.d(TAG, "attempt[$key]=$attempt/$maxAttempts step=${session.step}")
         if (attempt > maxAttempts) {
-            if (requestAiStepAssist(session, root, "attempt_$key")) {
-                return false
-            }
             failAndHide(failureMessage, root)
             return false
         }
@@ -1185,7 +1192,6 @@ class SelectToSpeakService : AccessibilityService() {
         }
 
         val currentClass = resolveCurrentWeChatClass(root)
-        scheduleAiGuard(session, root, currentClass)
         Log.d(TAG, "processCurrentWindow: step=${session.step} class=$currentClass rawClass=${root.className} lastUiClass=$lastWeChatClassName")
 
         when (session.step) {
@@ -1200,392 +1206,6 @@ class SelectToSpeakService : AccessibilityService() {
 
     private fun snapshotOf(root: AccessibilityNodeInfo?): WeChatUiSnapshot? {
         return WeChatUiSnapshot.fromNode(root)
-    }
-
-    private fun scheduleAiGuard(
-        session: VideoCallSession,
-        root: AccessibilityNodeInfo,
-        currentClass: String?,
-        page: WeChatPage = detectWeChatPage(root, currentClass)
-    ) {
-        if (session.aiAssistInFlight) {
-            return
-        }
-        if (!weChatStepAssistClient.isConfigured() || hasSensitiveWechatText(root)) {
-            return
-        }
-        val guardReason = aiGuardReason(session, page) ?: return
-        val snapshot = snapshotOf(root) ?: return
-        val key = buildAiGuardKey(session, currentClass, page, snapshot)
-        val cacheKey = "cache:$key"
-        val resolveKey = "resolve:$key"
-        if (session.aiGuardPendingKey != null || session.aiAssistKeys.contains(cacheKey) || session.aiAssistKeys.contains(resolveKey)) {
-            return
-        }
-        val stepAtSchedule = session.step
-        session.aiGuardPendingKey = key
-        Log.d(TAG, "aiGuard schedule step=$stepAtSchedule page=$page class=${currentClass.orEmpty()} reason=$guardReason")
-        aiGuardJob = serviceScope.launch {
-            delay(AI_GUARD_STABLE_DELAY_MS)
-            if (currentSession !== session) {
-                return@launch
-            }
-            if (session.step != stepAtSchedule) {
-                session.aiGuardPendingKey = null
-                return@launch
-            }
-            if (session.aiAssistInFlight) {
-                session.aiGuardPendingKey = null
-                return@launch
-            }
-            if (!session.aiAssistKeys.add(cacheKey)) {
-                session.aiGuardPendingKey = null
-                return@launch
-            }
-            val stepAtRequest = session.step
-            val requestRoot = getWeChatRoot()
-            if (requestRoot == null || hasSensitiveWechatText(requestRoot)) {
-                session.aiGuardPendingKey = null
-                return@launch
-            }
-            val latestClass = resolveCurrentWeChatClass(requestRoot)
-            val latestPage = detectWeChatPage(requestRoot, latestClass)
-            val latestReason = aiGuardReason(session, latestPage)
-            if (latestReason == null) {
-                session.aiGuardPendingKey = null
-                return@launch
-            }
-            val latestSnapshot = snapshotOf(requestRoot)
-            if (latestSnapshot == null) {
-                session.aiGuardPendingKey = null
-                return@launch
-            }
-            Log.d(TAG, "aiGuard cache step=$stepAtRequest page=$latestPage class=${latestClass.orEmpty()} reason=$latestReason")
-            val cachedDecision = weChatStepAssistClient.decide(
-                step = stepAtRequest.name,
-                currentClass = latestClass,
-                targetAlias = session.contactName,
-                failureReason = latestReason,
-                snapshot = latestSnapshot,
-                mode = "cache_only"
-            )
-            if (currentSession !== session) {
-                return@launch
-            }
-            val cachedRoot = getWeChatRoot()
-            val cachedApplied = if (
-                cachedDecision != null &&
-                cachedDecision.confidence >= AI_GUARD_CONFIDENCE &&
-                session.step == stepAtRequest &&
-                cachedRoot != null &&
-                !hasSensitiveWechatText(cachedRoot) &&
-                isAiGuardActionAllowed(session.step, cachedDecision.action)
-            ) {
-                applyAiStepAssistDecision(session, cachedRoot, cachedDecision)
-            } else {
-                false
-            }
-            if (cachedDecision != null) {
-                logStep(
-                    session,
-                    "aiGuardCache",
-                    if (cachedApplied) cachedDecision?.action?.value else "skip",
-                    "confidence=${cachedDecision?.confidence ?: 0f} page=${cachedDecision?.page} msg=${cachedDecision?.reason} stepAtRequest=$stepAtRequest currentStep=${session.step}"
-                )
-            }
-            if (cachedApplied) {
-                session.aiGuardPendingKey = null
-                return@launch
-            }
-            if (session.aiAssistRequests >= MAX_AI_ASSIST_REQUESTS) {
-                session.aiGuardPendingKey = null
-                return@launch
-            }
-            delay(AI_GUARD_RESOLVE_DELAY_MS)
-            if (currentSession !== session || session.step != stepAtRequest) {
-                session.aiGuardPendingKey = null
-                return@launch
-            }
-            val resolveRoot = getWeChatRoot()
-            if (resolveRoot == null || hasSensitiveWechatText(resolveRoot)) {
-                session.aiGuardPendingKey = null
-                return@launch
-            }
-            val resolveClass = resolveCurrentWeChatClass(resolveRoot)
-            val resolvePage = detectWeChatPage(resolveRoot, resolveClass)
-            val resolveReason = aiGuardReason(session, resolvePage)
-            if (resolveReason == null) {
-                session.aiGuardPendingKey = null
-                return@launch
-            }
-            val resolveSnapshot = snapshotOf(resolveRoot)
-            if (resolveSnapshot == null) {
-                session.aiGuardPendingKey = null
-                return@launch
-            }
-            if (session.aiAssistRequests >= MAX_AI_ASSIST_REQUESTS || !session.aiAssistKeys.add(resolveKey)) {
-                session.aiGuardPendingKey = null
-                return@launch
-            }
-            session.aiAssistRequests++
-            session.aiAssistInFlight = true
-            Log.d(TAG, "aiGuard resolve step=$stepAtRequest page=$resolvePage class=${resolveClass.orEmpty()} count=${session.aiAssistRequests} reason=$resolveReason")
-            val decision = weChatStepAssistClient.decide(
-                step = stepAtRequest.name,
-                currentClass = resolveClass,
-                targetAlias = session.contactName,
-                failureReason = resolveReason,
-                snapshot = resolveSnapshot,
-                mode = "resolve"
-            )
-            if (currentSession !== session) {
-                return@launch
-            }
-            session.aiAssistInFlight = false
-            session.aiGuardPendingKey = null
-            val latestRoot = getWeChatRoot()
-            val applied = if (
-                decision != null &&
-                decision.confidence >= AI_GUARD_CONFIDENCE &&
-                session.step == stepAtRequest &&
-                latestRoot != null &&
-                !hasSensitiveWechatText(latestRoot) &&
-                isAiGuardActionAllowed(session.step, decision.action)
-            ) {
-                applyAiStepAssistDecision(session, latestRoot, decision)
-            } else {
-                false
-            }
-            logStep(
-                session,
-                "aiGuard",
-                if (applied) decision?.action?.value else "skip",
-                "confidence=${decision?.confidence ?: 0f} page=${decision?.page} msg=${decision?.reason} stepAtRequest=$stepAtRequest currentStep=${session.step}"
-            )
-        }
-    }
-
-    private fun aiGuardReason(session: VideoCallSession, page: WeChatPage): String? {
-        val stepAge = System.currentTimeMillis() - session.stepStartedAt
-        if (session.step == Step.WAITING_HOME) {
-            return null
-        }
-        val retrying = session.actionAttempts.values.any { it > 1 } || session.stepFailCount.isNotEmpty()
-        return when {
-            page == WeChatPage.UNKNOWN && stepAge >= AI_GUARD_UNKNOWN_STEP_AGE_MS -> "guard_unknown_${session.step}"
-            session.step == Step.WAITING_VIDEO_OPTIONS && stepAge >= AI_GUARD_VIDEO_STEP_AGE_MS -> "guard_video_options"
-            retrying && stepAge >= AI_GUARD_RETRY_STEP_AGE_MS -> "guard_retry_${session.step}"
-            else -> null
-        }
-    }
-
-    private fun buildAiGuardKey(
-        session: VideoCallSession,
-        currentClass: String?,
-        page: WeChatPage,
-        snapshot: WeChatUiSnapshot
-    ): String {
-        val signal = snapshot.flatten()
-            .filter {
-                !it.text.isNullOrBlank() ||
-                    !it.contentDescription.isNullOrBlank() ||
-                    !it.viewIdResourceName.isNullOrBlank() ||
-                    it.editable ||
-                    it.clickable
-            }
-            .take(24)
-            .joinToString("|") {
-                listOf(
-                    it.text.orEmpty().take(20),
-                    it.contentDescription.orEmpty().take(20),
-                    it.viewIdResourceName.orEmpty().take(40),
-                    it.className.orEmpty().take(40),
-                    it.clickable.toString(),
-                    it.editable.toString()
-                ).joinToString("#")
-            }
-        return "guard:${session.step}:${currentClass.orEmpty()}:$page:${signal.hashCode()}"
-    }
-
-    private fun isAiGuardActionAllowed(step: Step, action: WeChatStepAssistAction): Boolean {
-        return when (step) {
-            Step.WAITING_HOME -> action in setOf(
-                WeChatStepAssistAction.Wait,
-                WeChatStepAssistAction.TapSearch,
-                WeChatStepAssistAction.TapContact,
-                WeChatStepAssistAction.TapVideoCall,
-                WeChatStepAssistAction.TapVideoOption
-            )
-            Step.WAITING_LAUNCHER_UI -> action in setOf(
-                WeChatStepAssistAction.Wait,
-                WeChatStepAssistAction.TapSearch,
-                WeChatStepAssistAction.TapContact,
-                WeChatStepAssistAction.TapVideoCall,
-                WeChatStepAssistAction.TapVideoOption
-            )
-            Step.WAITING_SEARCH_FALLBACK -> action in setOf(
-                WeChatStepAssistAction.Wait,
-                WeChatStepAssistAction.InputContact,
-                WeChatStepAssistAction.TapContact,
-                WeChatStepAssistAction.TapVideoCall,
-                WeChatStepAssistAction.TapVideoOption
-            )
-            Step.WAITING_CONTACT_RESULT -> action in setOf(
-                WeChatStepAssistAction.Wait,
-                WeChatStepAssistAction.TapContact,
-                WeChatStepAssistAction.TapVideoCall,
-                WeChatStepAssistAction.TapVideoOption
-            )
-            Step.WAITING_CONTACT_DETAIL -> action in setOf(
-                WeChatStepAssistAction.Wait,
-                WeChatStepAssistAction.TapVideoCall,
-                WeChatStepAssistAction.TapVideoOption
-            )
-            Step.WAITING_VIDEO_OPTIONS -> action in setOf(
-                WeChatStepAssistAction.Wait,
-                WeChatStepAssistAction.TapVideoOption
-            )
-        }
-    }
-
-    private fun requestAiStepAssist(
-        session: VideoCallSession,
-        root: AccessibilityNodeInfo?,
-        reason: String
-    ): Boolean {
-        if (root == null) {
-            Log.d(TAG, "aiStepAssist skip reason=$reason cause=no_root")
-            return false
-        }
-        if (!weChatStepAssistClient.isConfigured()) {
-            Log.d(TAG, "aiStepAssist skip reason=$reason cause=not_configured")
-            return false
-        }
-        if (hasSensitiveWechatText(root)) {
-            Log.d(TAG, "aiStepAssist skip reason=$reason cause=sensitive_text")
-            return false
-        }
-        if (!session.aiAssistInFlight) {
-            aiGuardJob?.cancel()
-            session.aiGuardPendingKey = null
-        }
-        if (session.aiAssistInFlight) {
-            Log.d(TAG, "aiStepAssist wait reason=$reason cause=in_flight")
-            scheduleAdaptiveProcess(session, DelayProfile.STABLE)
-            return true
-        }
-        if (session.aiAssistRequests >= MAX_AI_ASSIST_REQUESTS) {
-            Log.d(TAG, "aiStepAssist skip reason=$reason cause=request_limit count=${session.aiAssistRequests}")
-            return false
-        }
-        val key = "${session.step}:$reason"
-        if (!session.aiAssistKeys.add(key)) {
-            Log.d(TAG, "aiStepAssist skip reason=$reason cause=duplicate key=$key")
-            return false
-        }
-        val snapshot = snapshotOf(root) ?: run {
-            Log.d(TAG, "aiStepAssist skip reason=$reason cause=snapshot_failed")
-            return false
-        }
-        val currentClass = resolveCurrentWeChatClass(root)
-        session.aiAssistRequests++
-        session.aiAssistInFlight = true
-        session.stateOverride = AutomationState.RECOVERING
-        updateProgress(session, "正在识别页面")
-        val stepAtRequest = session.step
-        Log.d(TAG, "aiStepAssist request reason=$reason step=$stepAtRequest class=$currentClass count=${session.aiAssistRequests}")
-        assistJob?.cancel()
-        assistJob = serviceScope.launch {
-            val decision = weChatStepAssistClient.decide(
-                step = stepAtRequest.name,
-                currentClass = currentClass,
-                targetAlias = session.contactName,
-                failureReason = reason,
-                snapshot = snapshot
-            )
-            if (currentSession !== session) {
-                return@launch
-            }
-            session.aiAssistInFlight = false
-            val latestRoot = getWeChatRoot()
-            val applied = if (
-                decision != null &&
-                decision.confidence >= AI_RECOVERY_CONFIDENCE &&
-                session.step == stepAtRequest &&
-                isAiGuardActionAllowed(session.step, decision.action) &&
-                latestRoot != null &&
-                !hasSensitiveWechatText(latestRoot)
-            ) {
-                applyAiStepAssistDecision(session, latestRoot, decision)
-            } else {
-                false
-            }
-            logStep(
-                session,
-                "aiStepAssist",
-                if (applied) decision?.action?.value else "skip",
-                "reason=$reason confidence=${decision?.confidence ?: 0f} page=${decision?.page} msg=${decision?.reason}"
-            )
-            if (!applied && currentSession === session) {
-                session.stateOverride = null
-                scheduleAdaptiveProcess(session, DelayProfile.RECOVER)
-            }
-        }
-        return true
-    }
-
-    private fun applyAiStepAssistDecision(
-        session: VideoCallSession,
-        root: AccessibilityNodeInfo,
-        decision: WeChatStepAssistDecision
-    ): Boolean {
-        return when (decision.action) {
-            WeChatStepAssistAction.Wait -> {
-                scheduleAdaptiveProcess(session, DelayProfile.STABLE, attemptKey = "ai_wait", actionSucceeded = true)
-                true
-            }
-            WeChatStepAssistAction.TapSearch -> {
-                val clicked = clickTopSearchBar(root)
-                if (clicked) {
-                    session.searchTextApplied = false
-                    transitionTo(session, Step.WAITING_SEARCH_FALLBACK, "正在打开搜索")
-                }
-                clicked
-            }
-            WeChatStepAssistAction.InputContact -> {
-                val filled = fillSearchInput(root, session.contactName)
-                if (filled) {
-                    session.searchTextApplied = true
-                    transitionTo(session, Step.WAITING_CONTACT_RESULT, "正在查找联系人")
-                }
-                filled
-            }
-            WeChatStepAssistAction.TapContact -> {
-                val clicked = clickContactResult(root, session.contactName) || clickMessageListContact(root, session.contactName)
-                if (clicked) {
-                    transitionTo(session, Step.WAITING_CONTACT_DETAIL, "正在打开联系人")
-                }
-                clicked
-            }
-            WeChatStepAssistAction.TapVideoCall -> {
-                if (!canStartVideoCallOnCurrentPage(session, root)) {
-                    return false
-                }
-                val clicked = clickVideoCallEntry(root) || clickVideoCallOption(root)
-                if (clicked) {
-                    transitionTo(session, Step.WAITING_VIDEO_OPTIONS, "正在发起视频通话")
-                }
-                clicked
-            }
-            WeChatStepAssistAction.TapVideoOption -> {
-                val clicked = clickVideoCallSheetOption(root) || clickVideoCallOption(root)
-                if (clicked) {
-                    finishVideoCallStarted(session)
-                }
-                clicked
-            }
-            WeChatStepAssistAction.Fail -> false
-        }
     }
 
     private fun clickMessageListContact(root: AccessibilityNodeInfo?, contactName: String): Boolean {
@@ -1770,9 +1390,6 @@ class SelectToSpeakService : AccessibilityService() {
                     scheduleAdaptiveProcess(session, DelayProfile.STABLE, attemptKey = "home_observe")
                     return
                 }
-                if (requestAiStepAssist(session, root, "home_unknown")) {
-                    return
-                }
                 recoverToHome(
                     session = session,
                     root = root,
@@ -1797,9 +1414,6 @@ class SelectToSpeakService : AccessibilityService() {
 
         if (page != WeChatPage.HOME) {
             logStep(session, "detectPage", page, "非首页，重新归一化")
-            if (page == WeChatPage.UNKNOWN && requestAiStepAssist(session, root, "launcher_unknown")) {
-                return
-            }
             session.launcherPrepared = false
             session.searchTextApplied = false
             rerouteTo(session, Step.WAITING_HOME, "正在返回微信首页")
@@ -1863,9 +1477,6 @@ class SelectToSpeakService : AccessibilityService() {
             WeChatPage.SEARCH -> Unit
             else -> {
                 logStep(session, "detectPage", "UNEXPECTED:$currentClass", "异常页面，归一化回首页")
-                if (requestAiStepAssist(session, root, "search_unexpected")) {
-                    return
-                }
                 session.searchTextApplied = false
                 session.launcherPrepared = false
                 rerouteTo(session, Step.WAITING_HOME, "正在返回微信首页")
@@ -1917,9 +1528,6 @@ class SelectToSpeakService : AccessibilityService() {
             }
             WeChatPage.UNKNOWN -> {
                 logStep(session, "detectPage", "UNKNOWN", "页面未知，回首页归一化")
-                if (requestAiStepAssist(session, root, "contact_result_unknown")) {
-                    return
-                }
                 session.searchTextApplied = false
                 session.launcherPrepared = false
                 rerouteTo(session, Step.WAITING_HOME, "正在返回微信首页")
@@ -1972,9 +1580,6 @@ class SelectToSpeakService : AccessibilityService() {
             }
             WeChatPage.UNKNOWN -> {
                 logStep(session, "detectPage", "UNKNOWN", "页面未知，触发步骤恢复")
-                if (requestAiStepAssist(session, root, "contact_detail_unknown")) {
-                    return
-                }
                 resolveAndRerouteTo(session, session.step, "WAITING_CONTACT_DETAIL: unknownPage")
                 return
             }
@@ -2066,17 +1671,28 @@ class SelectToSpeakService : AccessibilityService() {
     }
 
     private fun transitionTo(session: VideoCallSession, nextStep: Step, message: String) {
-        recordStepSuccess(session.step, System.currentTimeMillis() - session.stepStartedAt)
-        recordStepHistory(session, nextStep)
+        val oldStep = session.step
         session.step = nextStep
         session.stepStartedAt = System.currentTimeMillis()
+        
+        Log.i(TAG, "║ [微信自动] 状态流转: $oldStep -> $nextStep | 消息: $message")
+        
+        LobsterClient.log("[微信自动] 流转: $oldStep -> $nextStep ($message)")
+
+        FirebaseCrashlytics.getInstance().log("[微信自动] 流转: $oldStep -> $nextStep | 消息: $message")
+        
+        // 关键埋点：记录每一步跳转
+        firebaseAnalytics.logEvent("wechat_auto_transition") {
+            param("from_step", oldStep.name)
+            param("to_step", nextStep.name)
+            param("contact", session.contactName)
+        }
+
+        recordStepSuccess(session.step, System.currentTimeMillis() - session.stepStartedAt)
+        recordStepHistory(session, nextStep)
         session.moreButtonClickedAt = 0L
         session.stateOverride = null
         session.stepFailCount.remove(nextStep)
-        if (!session.aiAssistInFlight) {
-            aiGuardJob?.cancel()
-            session.aiGuardPendingKey = null
-        }
         if (nextStep != Step.WAITING_HOME) {
             wechatWaitJob?.cancel()
             wechatWaitJob = null
@@ -2091,6 +1707,21 @@ class SelectToSpeakService : AccessibilityService() {
     private fun finishVideoCallStarted(session: VideoCallSession) {
         recordStepSuccess(session.step, System.currentTimeMillis() - session.stepStartedAt)
         session.moreButtonClickedAt = 0L
+        
+        Log.i(TAG, "╔══════════════════════════════════════════════════════")
+        Log.i(TAG, "║ [微信自动] 流程成功完成 ✅")
+        Log.i(TAG, "║ └─ 总耗时: ${System.currentTimeMillis() - session.startedAt}ms")
+        Log.i(TAG, "╚══════════════════════════════════════════════════════")
+        
+        LobsterClient.log("[微信自动] 流程成功 ✅")
+        LobsterClient.report(this, "微信视频成功")
+
+        FirebaseCrashlytics.getInstance().log("[微信自动] 流程终点: 成功发起视频通话")
+        firebaseAnalytics.logEvent("wechat_auto_success") {
+            param("contact", session.contactName)
+            param("duration_ms", System.currentTimeMillis() - session.startedAt)
+        }
+
         logStep(session, "COMPLETED", "视频通话已发起", "totalElapsed=${System.currentTimeMillis() - session.startedAt}ms")
         applyWeChatCallAudioStrategy()
         floatingView?.updateMessage("视频通话已发起")
@@ -2099,8 +1730,6 @@ class SelectToSpeakService : AccessibilityService() {
         timeoutJob?.cancel()
         totalTimeoutJob?.cancel()
         processJob?.cancel()
-        assistJob?.cancel()
-        aiGuardJob?.cancel()
         wechatWaitJob?.cancel()
         serviceScope.launch {
             delay(1200)
@@ -2194,9 +1823,7 @@ class SelectToSpeakService : AccessibilityService() {
             val session = currentSession
             if (session != null && session.step == step) {
                 val root = getWeChatRoot()
-                if (!requestAiStepAssist(session, root, "timeout_$step")) {
-                    failAndHide(failureMessage, root)
-                }
+                failAndHide(failureMessage, root)
             }
         }
     }
@@ -2216,15 +1843,11 @@ class SelectToSpeakService : AccessibilityService() {
     private fun cancelSession(notifyFailure: Boolean) {
         val session = currentSession
         processJob?.cancel()
-        assistJob?.cancel()
-        aiGuardJob?.cancel()
         timeoutJob?.cancel()
         totalTimeoutJob?.cancel()
         wechatWaitJob?.cancel()
         launcherBringBackConfirmJob?.cancel()
         processJob = null
-        assistJob = null
-        aiGuardJob = null
         timeoutJob = null
         totalTimeoutJob = null
         wechatWaitJob = null
@@ -2688,10 +2311,6 @@ class SelectToSpeakService : AccessibilityService() {
         val actionAttempts: MutableMap<String, Int> = mutableMapOf(),
         val stepHistory: ArrayDeque<Step> = ArrayDeque(),
         val stepFailCount: MutableMap<Step, Int> = mutableMapOf(),
-        val aiAssistKeys: MutableSet<String> = mutableSetOf(),
-        var aiAssistRequests: Int = 0,
-        var aiAssistInFlight: Boolean = false,
-        var aiGuardPendingKey: String? = null,
         // 弹窗处理：时间戳冷却（自动过期，不依赖手动重置）
         var dismissingUntil: Long = 0L,
         // 弹窗处理：本次 Step 内累计处理次数上限

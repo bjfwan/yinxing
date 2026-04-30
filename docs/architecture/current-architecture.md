@@ -60,17 +60,11 @@
   - `PermissionUtil`
   - `NetworkUtil`
   - `AccessibilityServiceMatcher`
-- `common.ai`
-  - `AiGatewayClient`：AI网关客户端
-  - `AiProStatusClient`：AI会员状态客户端
-  - `AiDeviceCredentials`：AI设备凭据管理
-
 ### 2.4 automation
 
 - `automation.wechat`
   - 实验性微信自动化能力
   - 包含状态模型、状态检测、超时管理、无障碍服务和辅助工具
-  - `WeChatStepAssistClient`：微信步骤辅助客户端（实验性）
 
 ### 2.5 testing
 

@@ -4,10 +4,6 @@ import android.Manifest
 import android.content.Context
 import android.provider.CallLog
 import androidx.core.content.ContextCompat
-import com.yinxing.launcher.common.ai.AiGatewayClient
-import java.util.Locale
-import kotlinx.coroutines.withTimeoutOrNull
-import org.json.JSONObject
 
 enum class IncomingCallRiskLevel {
     Low,
@@ -49,17 +45,12 @@ object IncomingCallRiskHeuristics {
 
 class IncomingCallRiskAssessor(
     context: Context,
-    private val aiGatewayClient: AiGatewayClient = AiGatewayClient(context),
     private val nowProvider: () -> Long = System::currentTimeMillis
 ) {
     private val appContext = context.applicationContext
 
-    fun isConfigured(): Boolean {
-        return aiGatewayClient.isConfigured()
-    }
-
-    suspend fun assess(incomingNumber: String, knownContact: Boolean): IncomingCallRiskAssessment? {
-        if (knownContact || incomingNumber.isBlank() || !isConfigured()) {
+    fun assess(incomingNumber: String, knownContact: Boolean): IncomingCallRiskAssessment? {
+        if (knownContact || incomingNumber.isBlank()) {
             return null
         }
         val recentSameNumberCount = readRecentSameNumberCount(incomingNumber)
@@ -70,40 +61,32 @@ class IncomingCallRiskAssessor(
             recentSameNumberCount = recentSameNumberCount,
             hourOfDay = hourOfDay
         )
-        val body = JSONObject().apply {
-            put("incoming_number", incomingNumber)
-            put("known_contact", false)
-            put("recent_same_number_count", recentSameNumberCount)
-            put("recent_unknown_count", recentSameNumberCount)
-            put("hour_of_day", hourOfDay)
-            put("local_rule_label", localSignal.label)
-            put("local_rule_score", localSignal.score)
-            put("device_locale", Locale.getDefault().toLanguageTag())
-        }
-        val response = withTimeoutOrNull(3800) {
-            aiGatewayClient.post("/ai/call-risk", body)
-        } ?: return null
-        if (!response.optBoolean("available")) {
-            return null
-        }
-        val level = when (response.optString("risk_level")) {
-            "high" -> IncomingCallRiskLevel.High
-            "medium" -> IncomingCallRiskLevel.Medium
+        val level = when {
+            localSignal.score >= 0.7f -> IncomingCallRiskLevel.High
+            localSignal.score >= 0.56f -> IncomingCallRiskLevel.Medium
             else -> IncomingCallRiskLevel.Low
         }
-        val label = response.optString("label").trim().ifEmpty {
-            when (level) {
-                IncomingCallRiskLevel.High -> "疑似骚扰电话"
-                IncomingCallRiskLevel.Medium -> "来电风险提醒"
-                IncomingCallRiskLevel.Low -> ""
-            }
+        val label = when (level) {
+            IncomingCallRiskLevel.High -> "疑似骚扰电话"
+            IncomingCallRiskLevel.Medium -> "来电风险提醒"
+            IncomingCallRiskLevel.Low -> ""
+        }
+        val reason = when (localSignal.label) {
+            "missing_number" -> "号码异常"
+            "repeated_unknown" -> "近期重复来电"
+            "short_code" -> "短号来电"
+            "service_hotline" -> "客服热线来电"
+            "enterprise_hotline" -> "企业热线来电"
+            "overseas_or_masked" -> "疑似境外或隐藏号码"
+            "late_hour_unknown" -> "夜间陌生来电"
+            else -> "陌生号码"
         }
         return IncomingCallRiskAssessment(
             level = level,
             label = label,
-            shouldSilence = response.optBoolean("should_silence"),
-            confidence = response.optDouble("confidence", 0.0).toFloat().coerceIn(0f, 1f),
-            reason = response.optString("reason").trim()
+            shouldSilence = level == IncomingCallRiskLevel.High,
+            confidence = localSignal.score.coerceIn(0f, 1f),
+            reason = reason
         )
     }
 

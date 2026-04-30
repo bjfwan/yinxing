@@ -20,7 +20,11 @@ import androidx.cardview.widget.CardView
 import androidx.core.content.ContextCompat
 import androidx.core.view.isVisible
 import androidx.lifecycle.lifecycleScope
+import com.google.firebase.analytics.FirebaseAnalytics
+import com.google.firebase.analytics.logEvent
 import com.yinxing.launcher.R
+import com.yinxing.launcher.common.firebase.FirebaseTelemetry
+import com.yinxing.launcher.common.lobster.LobsterClient
 import com.yinxing.launcher.common.util.CallAudioStrategy
 import com.yinxing.launcher.data.home.LauncherPreferences
 import java.util.Locale
@@ -28,6 +32,8 @@ import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
 
 class IncomingCallActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
+
+    private var firebaseAnalytics: FirebaseAnalytics? = null
 
     private lateinit var tvCaller: TextView
     private lateinit var tvRisk: TextView
@@ -79,6 +85,7 @@ class IncomingCallActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        firebaseAnalytics = FirebaseTelemetry.analyticsOrNull(this)
         configureWindowForIncomingCall()
         setContentView(R.layout.activity_incoming_call)
         initializeVoiceAnnouncement()
@@ -139,8 +146,35 @@ class IncomingCallActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
         val knownContact = intent.getBooleanExtra(EXTRA_KNOWN_CONTACT, false)
         val preferences = LauncherPreferences.getInstance(this)
         val triggerAction = intent.getStringExtra(EXTRA_TRIGGER_ACTION)
-        val autoAnswer =
-            intent.getBooleanExtra(EXTRA_AUTO_ANSWER, false) && preferences.isAutoAnswerEnabled()
+        
+        val intentAutoAnswer = intent.getBooleanExtra(EXTRA_AUTO_ANSWER, false)
+        val prefAutoAnswerEnabled = preferences.isAutoAnswerEnabled()
+        val autoAnswer = intentAutoAnswer && prefAutoAnswerEnabled
+        
+        Log.i("INCOMING_FLOW", "╔══════════════════════════════════════════════════════")
+        Log.i("INCOMING_FLOW", "║ [来电处理] 执行 applyIntent")
+        Log.i("INCOMING_FLOW", "║ ├─ 来电者: $callerName")
+        Log.i("INCOMING_FLOW", "║ ├─ 最终决定: ${if (autoAnswer) "开启自动接听" else "关闭自动接听"}")
+        Log.i("INCOMING_FLOW", "║ └─ 判定逻辑: 意图参数=$intentAutoAnswer && 设置开关=$prefAutoAnswerEnabled")
+        Log.i("INCOMING_FLOW", "╚══════════════════════════════════════════════════════")
+
+        val logContent = "[来电处理] applyIntent | 来电者: $callerName | 决定: $autoAnswer (意图: $intentAutoAnswer, 设置: $prefAutoAnswerEnabled)"
+        LobsterClient.log(logContent)
+        
+        FirebaseTelemetry.withCrashlytics {
+            log("[来电处理] 信息: applyIntent | 来电者: $callerName | 决定: $autoAnswer (意图: $intentAutoAnswer, 设置: $prefAutoAnswerEnabled)")
+            setCustomKey("last_caller", callerName)
+            setCustomKey("auto_answer_decision", autoAnswer)
+        }
+
+        firebaseAnalytics?.logEvent("incoming_call_logic") {
+            param("caller_name", callerName)
+            param("intent_auto_answer", intentAutoAnswer.toString())
+            param("pref_auto_answer_enabled", prefAutoAnswerEnabled.toString())
+            param("final_auto_answer", autoAnswer.toString())
+            param("trigger_action", triggerAction ?: "none")
+        }
+
         val state = IncomingCallSessionState.uiShown(
             callerLabel = callerName,
             autoAnswer = autoAnswer,
@@ -216,6 +250,7 @@ class IncomingCallActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
             IncomingCallDiagnostics.recordAcceptSuccess(this, result.detail)
             applyAnsweredCallAudioStrategy()
             IncomingCallForegroundService.stop(this)
+            LobsterClient.report(this, "来电已接听")
             finish()
             return
         }
@@ -238,6 +273,7 @@ class IncomingCallActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
             IncomingCallSessionState.rejected()
             IncomingCallDiagnostics.recordDeclineSuccess(this, result.detail)
             IncomingCallForegroundService.stop(this)
+            LobsterClient.report(this, "来电已挂断")
             finish()
             return
         }
@@ -453,7 +489,7 @@ class IncomingCallActivity : AppCompatActivity(), TextToSpeech.OnInitListener {
     private fun maybeAssessIncomingRisk(incomingNumber: String, knownContact: Boolean) {
         riskJob?.cancel()
         val assessor = IncomingCallRiskAssessor(this)
-        if (!assessor.isConfigured() || knownContact || incomingNumber.isBlank()) {
+        if (knownContact || incomingNumber.isBlank()) {
             return
         }
         riskJob = lifecycleScope.launch {

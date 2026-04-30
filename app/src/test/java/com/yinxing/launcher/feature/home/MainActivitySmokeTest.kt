@@ -46,14 +46,9 @@ class MainActivitySmokeTest {
 
         val recyclerView = activity.findViewById<RecyclerView>(R.id.recycler_home)
         val statusCard = activity.findViewById<View>(R.id.card_home_status)
-        val statusTitle = activity.findViewById<TextView>(R.id.tv_home_status_title)
         val timeView = activity.findViewById<TextView>(R.id.tv_time)
-        repeat(20) {
-            shadowOf(Looper.getMainLooper()).idle()
-            if ((recyclerView.adapter?.itemCount ?: 0) >= 5) {
-                return@repeat
-            }
-            Thread.sleep(50)
+        waitUntil {
+            recyclerView.adapter?.itemCount == 3 && statusCard.visibility == View.GONE
         }
 
         assertEquals(3, recyclerView.adapter?.itemCount)
@@ -74,12 +69,8 @@ class MainActivitySmokeTest {
         val activity = Robolectric.buildActivity(MainActivity::class.java).setup().get()
         val recyclerView = activity.findViewById<RecyclerView>(R.id.recycler_home)
         val statusCard = activity.findViewById<View>(R.id.card_home_status)
-        repeat(20) {
-            shadowOf(Looper.getMainLooper()).idle()
-            if ((recyclerView.adapter?.itemCount ?: 0) >= 5) {
-                return@repeat
-            }
-            Thread.sleep(50)
+        waitUntil {
+            recyclerView.adapter?.itemCount == 5 && statusCard.visibility == View.GONE
         }
 
         val adapter = recyclerView.adapter as HomeAppAdapter
@@ -145,5 +136,17 @@ class MainActivitySmokeTest {
         val field = Class.forName("com.yinxing.launcher.data.home.LauncherPreferences").getDeclaredField("instance")
         field.isAccessible = true
         field.set(null, null)
+    }
+
+    private fun waitUntil(timeoutMs: Long = 2_000L, predicate: () -> Boolean) {
+        val deadline = System.currentTimeMillis() + timeoutMs
+        while (System.currentTimeMillis() < deadline) {
+            shadowOf(Looper.getMainLooper()).idle()
+            if (predicate()) {
+                return
+            }
+            Thread.sleep(50)
+        }
+        shadowOf(Looper.getMainLooper()).idle()
     }
 }

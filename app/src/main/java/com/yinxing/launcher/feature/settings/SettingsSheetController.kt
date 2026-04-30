@@ -1,7 +1,5 @@
 package com.yinxing.launcher.feature.settings
 
-import android.content.ClipData
-import android.content.ClipboardManager
 import android.content.Context
 import android.content.Intent
 import android.view.View
@@ -19,7 +17,6 @@ import androidx.lifecycle.lifecycleScope
 import com.google.android.material.bottomsheet.BottomSheetDialog
 import com.google.android.material.card.MaterialCardView
 import com.yinxing.launcher.R
-import com.yinxing.launcher.common.ai.AiProStatusSnapshot
 import com.yinxing.launcher.data.home.LauncherPreferences
 import com.yinxing.launcher.data.weather.WeatherRepository
 import com.yinxing.launcher.feature.appmanage.AppManageActivity
@@ -36,8 +33,6 @@ internal class SettingsSheetController(
     fun showIncomingGuardSheet() = activity.showIncomingGuardSheet()
 
     fun showContactsSheet() = activity.showContactsSheet()
-
-    fun showAiProSheet() = activity.showAiProSheet()
 
     fun showAutoAnswerSheet() = activity.showAutoAnswerSheet()
 
@@ -98,215 +93,6 @@ internal fun SettingsActivity.showIncomingGuardSheet() {
         }
     }
     sheet.dialog.show()
-}
-
-internal fun SettingsActivity.showAiProSheet() {
-    val sheet = createListSheet(
-        title = getString(R.string.settings_section_ai_pro_title),
-        message = getString(R.string.settings_sheet_ai_pro_message)
-    )
-    fun render(status: AiProStatusSnapshot, refreshing: Boolean) {
-        sheet.container.removeAllViews()
-        val credentials = aiDeviceCredentials.snapshot()
-        addSheetEntry(
-            context = sheet,
-            title = getString(R.string.settings_ai_pro_device_code_title),
-            summary = getString(R.string.settings_ai_pro_device_code_summary, credentials.deviceId),
-            badge = actionBadge(getString(R.string.settings_ai_pro_copy_action))
-        ) {
-            val clipboard = getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
-            clipboard.setPrimaryClip(
-                ClipData.newPlainText(
-                    getString(R.string.settings_ai_pro_device_code_title),
-                    credentials.activationCode
-                )
-            )
-            Toast.makeText(this, getString(R.string.settings_ai_pro_copied), Toast.LENGTH_SHORT).show()
-        }
-        addSheetEntry(
-            context = sheet,
-            title = getString(R.string.settings_ai_pro_activation_title),
-            summary = getString(R.string.settings_ai_pro_activation_summary),
-            badge = actionBadge(getString(R.string.settings_ai_pro_activation_action))
-        ) {
-            showAiProActivationDialog { updated ->
-                render(updated, false)
-                overviewController.updateAiProHubCard()
-            }
-        }
-        addSheetEntry(
-            context = sheet,
-            title = getString(R.string.settings_ai_pro_status_title),
-            summary = aiProStatusSummary(status, refreshing),
-            badge = aiProStatusBadge(status, refreshing)
-        ) {
-            render(status, true)
-            aiProStatusJob?.cancel()
-            aiProStatusJob = lifecycleScope.launch {
-                val updated = try {
-                    aiProStatusClient.refreshStatus()
-                } catch (cancelled: CancellationException) {
-                    throw cancelled
-                } catch (_: Throwable) {
-                    AiProStatusSnapshot.Empty.copy(
-                        checkedAt = System.currentTimeMillis(),
-                        error = "status_unavailable"
-                    )
-                }
-                render(updated, false)
-                overviewController.updateAiProHubCard()
-            }
-        }
-        addSheetEntry(
-            context = sheet,
-            title = getString(R.string.settings_ai_pro_call_risk_title),
-            summary = getString(
-                R.string.settings_ai_pro_quota_summary,
-                status.callRisk.remaining,
-                status.callRisk.limit
-            ),
-            badge = aiProFeatureBadge(status.callRisk.enabled)
-        ) {}
-        addSheetEntry(
-            context = sheet,
-            title = getString(R.string.settings_ai_pro_wechat_step_title),
-            summary = getString(
-                R.string.settings_ai_pro_quota_summary,
-                status.wechatStep.remaining,
-                status.wechatStep.limit
-            ),
-            badge = aiProFeatureBadge(status.wechatStep.enabled)
-        ) {}
-    }
-    render(aiProStatusClient.cachedStatus(), false)
-    sheet.dialog.setOnDismissListener {
-        aiProStatusJob?.cancel()
-        aiProStatusJob = null
-    }
-    sheet.dialog.show()
-}
-
-internal fun SettingsActivity.showAiProActivationDialog(onFinished: (AiProStatusSnapshot) -> Unit) {
-    val dialogView = layoutInflater.inflate(R.layout.dialog_ai_pro_activation, null)
-    val etCode = dialogView.findViewById<EditText>(R.id.et_ai_pro_activation_code)
-    val btnConfirm = dialogView.findViewById<View>(R.id.btn_confirm_ai_pro_activation)
-
-    val dialog = AlertDialog.Builder(this)
-        .setView(dialogView)
-        .create()
-    dialog.window?.setBackgroundDrawableResource(android.R.color.transparent)
-
-    dialogView.findViewById<View>(R.id.btn_cancel_ai_pro_activation)
-        .setOnClickListener { dialog.dismiss() }
-
-    var submitting = false
-    val submit = {
-        val code = etCode.text.toString().trim()
-        if (code.isBlank()) {
-            Toast.makeText(this, getString(R.string.settings_ai_pro_activation_empty), Toast.LENGTH_SHORT).show()
-        } else if (!submitting) {
-            submitting = true
-            btnConfirm.isEnabled = false
-            btnConfirm.alpha = 0.55f
-            lifecycleScope.launch {
-                val status = try {
-                    aiProStatusClient.redeemActivationCode(code)
-                } catch (cancelled: CancellationException) {
-                    throw cancelled
-                } catch (_: Throwable) {
-                    AiProStatusSnapshot.Empty.copy(
-                        checkedAt = System.currentTimeMillis(),
-                        error = "status_unavailable"
-                    )
-                }
-                submitting = false
-                btnConfirm.isEnabled = true
-                btnConfirm.alpha = 1f
-                if (status.available && status.active) {
-                    dialog.dismiss()
-                    onFinished(status)
-                    Toast.makeText(this@showAiProActivationDialog, getString(R.string.settings_ai_pro_activation_success), Toast.LENGTH_SHORT).show()
-                } else {
-                    Toast.makeText(this@showAiProActivationDialog, aiProActivationErrorMessage(status.error), Toast.LENGTH_LONG).show()
-                }
-            }
-        }
-    }
-
-    btnConfirm.setOnClickListener { submit() }
-    etCode.setOnEditorActionListener { _, actionId, _ ->
-        if (actionId == EditorInfo.IME_ACTION_DONE) {
-            submit()
-            true
-        } else {
-            false
-        }
-    }
-
-    dialog.show()
-    etCode.postDelayed({
-        etCode.requestFocus()
-        val imm = getSystemService(Context.INPUT_METHOD_SERVICE) as InputMethodManager
-        imm.showSoftInput(etCode, InputMethodManager.SHOW_IMPLICIT)
-    }, 100)
-}
-
-internal fun SettingsActivity.aiProActivationErrorMessage(error: String): String {
-    return getString(
-        when (error) {
-            "activation_code_used" -> R.string.settings_ai_pro_activation_used
-            "activation_code_expired" -> R.string.settings_ai_pro_activation_expired
-            "invalid_activation_code" -> R.string.settings_ai_pro_activation_invalid
-            "gateway_not_configured" -> R.string.settings_ai_pro_status_summary_not_configured
-            else -> R.string.settings_ai_pro_activation_failed
-        }
-    )
-}
-
-internal fun SettingsActivity.aiProStatusSummary(status: AiProStatusSnapshot, refreshing: Boolean): String {
-    return when {
-        refreshing -> getString(R.string.settings_ai_pro_status_summary_checking)
-        !aiProStatusClient.isConfigured() -> getString(R.string.settings_ai_pro_status_summary_not_configured)
-        status.available && status.active -> getString(R.string.settings_ai_pro_status_summary_active)
-        status.error == "quota_exceeded" -> getString(R.string.settings_ai_pro_status_summary_quota_exceeded)
-        else -> getString(R.string.settings_ai_pro_status_summary_pending)
-    }
-}
-
-internal fun SettingsActivity.aiProStatusBadge(status: AiProStatusSnapshot, refreshing: Boolean): BadgeStyle {
-    return when {
-        refreshing -> BadgeStyle(
-            text = getString(R.string.settings_ai_pro_status_checking),
-            textColorResId = R.color.launcher_action,
-            backgroundColorResId = R.color.launcher_surface_muted
-        )
-        status.available && status.active -> BadgeStyle(
-            text = getString(R.string.settings_ai_pro_status_active),
-            textColorResId = R.color.launcher_pro_deep,
-            backgroundColorResId = R.color.launcher_pro_soft
-        )
-        else -> BadgeStyle(
-            text = getString(R.string.settings_ai_pro_status_pending),
-            textColorResId = R.color.launcher_warning,
-            backgroundColorResId = R.color.launcher_warning_soft
-        )
-    }
-}
-
-internal fun SettingsActivity.aiProFeatureBadge(enabled: Boolean): BadgeStyle {
-    return if (enabled) {
-        BadgeStyle(
-            text = getString(R.string.settings_ai_pro_feature_on),
-            textColorResId = R.color.launcher_pro_deep,
-            backgroundColorResId = R.color.launcher_pro_soft
-        )
-    } else {
-        BadgeStyle(
-            text = getString(R.string.settings_ai_pro_feature_off),
-            textColorResId = R.color.launcher_warning,
-            backgroundColorResId = R.color.launcher_warning_soft
-        )
-    }
 }
 
 internal fun SettingsActivity.showContactsSheet() {

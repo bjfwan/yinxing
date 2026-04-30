@@ -170,6 +170,7 @@ class VideoCallActivity : AppCompatActivity() {
             switchToManageMode()
         } else {
             updateModeUi()
+            renderContacts()
         }
     }
 
