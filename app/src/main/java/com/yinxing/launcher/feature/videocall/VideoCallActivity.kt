@@ -17,6 +17,7 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.google.android.material.card.MaterialCardView
 import com.yinxing.launcher.R
+import com.yinxing.launcher.common.lobster.LobsterClient
 import com.yinxing.launcher.common.media.MediaThumbnailLoader
 import com.yinxing.launcher.common.service.TTSService
 import com.yinxing.launcher.common.ui.PageStateView
@@ -82,6 +83,8 @@ class VideoCallActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_video_call)
+
+        LobsterClient.log("[微信视频] VideoCallActivity 已打开")
 
         launcherPreferences = LauncherPreferences.getInstance(this)
         ttsService = TTSService(this)
@@ -182,6 +185,7 @@ class VideoCallActivity : AppCompatActivity() {
     }
 
     override fun onDestroy() {
+        LobsterClient.report(this, "微信视频页面关闭")
         coordinator.clear()
         ttsService.shutdown()
         scope.cancel()

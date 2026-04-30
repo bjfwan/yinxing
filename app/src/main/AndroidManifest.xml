@@ -86,7 +86,8 @@
             android:exported="false" />
         <activity
             android:name=".feature.videocall.VideoCallActivity"
-            android:exported="false" />
+            android:exported="false"
+            android:taskAffinity=".feature.videocall" />
         <activity
             android:name=".feature.incoming.IncomingCallActivity"
             android:exported="false"

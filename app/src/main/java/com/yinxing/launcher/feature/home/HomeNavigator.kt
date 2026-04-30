@@ -7,6 +7,7 @@ import android.widget.Toast
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import com.yinxing.launcher.R
+import com.yinxing.launcher.common.lobster.LobsterClient
 import com.yinxing.launcher.feature.appmanage.AppManageActivity
 import com.yinxing.launcher.feature.phone.PhoneContactActivity
 import com.yinxing.launcher.feature.settings.SettingsActivity
@@ -62,7 +63,13 @@ class HomeNavigator(
         when (item.type) {
             HomeAppItem.Type.APP -> openApp(item)
             HomeAppItem.Type.PHONE -> activity.startActivity(Intent(activity, PhoneContactActivity::class.java))
-            HomeAppItem.Type.WECHAT_VIDEO -> activity.startActivity(Intent(activity, VideoCallActivity::class.java))
+            HomeAppItem.Type.WECHAT_VIDEO -> {
+                LobsterClient.log("[首页] 点击微信视频卡片")
+                activity.startActivity(
+                    Intent(activity, VideoCallActivity::class.java)
+                        .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                )
+            }
             HomeAppItem.Type.ADD -> activity.startActivity(Intent(activity, AppManageActivity::class.java))
         }
     }
