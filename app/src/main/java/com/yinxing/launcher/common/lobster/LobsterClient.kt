@@ -18,7 +18,7 @@ object LobsterClient {
 
     private val endpoint: String
         get() = BuildConfig.LOBSTER_UPLOAD_URL.trim().ifBlank {
-            "https://tiny-lobster.2632507193.workers.dev/upload"
+            "https://log.likeyou.qzz.io/api/upload"
         }
 
     private val uploadToken: String

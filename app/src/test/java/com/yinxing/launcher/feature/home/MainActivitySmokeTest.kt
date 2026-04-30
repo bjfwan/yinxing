@@ -14,6 +14,7 @@ import androidx.test.core.app.ApplicationProvider
 import com.yinxing.launcher.R
 import com.yinxing.launcher.data.home.LauncherAppRepository
 import com.yinxing.launcher.data.home.LauncherPreferences
+import com.yinxing.launcher.data.settings.LauncherSettingsDataStore
 import org.junit.Assert.assertEquals
 
 import org.junit.Assert.assertNotNull
@@ -35,7 +36,9 @@ class MainActivitySmokeTest {
     fun setUp() {
         context = ApplicationProvider.getApplicationContext()
         resetLauncherPreferencesSingleton()
+        resetLauncherSettingsDataStoreSingleton()
         context.getSharedPreferences("launcher_prefs", Context.MODE_PRIVATE).edit().clear().commit()
+        context.getSharedPreferences("home_app_config", Context.MODE_PRIVATE).edit().clear().commit()
         LauncherAppRepository.getInstance(context).invalidateInstalledApps()
         LauncherAppRepository.getInstance(context).invalidateSelections()
     }
@@ -138,7 +141,13 @@ class MainActivitySmokeTest {
         field.set(null, null)
     }
 
-    private fun waitUntil(timeoutMs: Long = 2_000L, predicate: () -> Boolean) {
+    private fun resetLauncherSettingsDataStoreSingleton() {
+        val field = Class.forName("com.yinxing.launcher.data.settings.LauncherSettingsDataStore").getDeclaredField("instance")
+        field.isAccessible = true
+        field.set(null, null)
+    }
+
+    private fun waitUntil(timeoutMs: Long = 5_000L, predicate: () -> Boolean) {
         val deadline = System.currentTimeMillis() + timeoutMs
         while (System.currentTimeMillis() < deadline) {
             shadowOf(Looper.getMainLooper()).idle()

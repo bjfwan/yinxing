@@ -10,10 +10,10 @@ object LauncherTraceNames {
 }
 
 inline fun <T> traceSection(name: String, block: () -> T): T {
-    Trace.beginSection(name)
+    try { Trace.beginSection(name) } catch (_: Throwable) {}
     return try {
         block()
     } finally {
-        Trace.endSection()
+        try { Trace.endSection() } catch (_: Throwable) {}
     }
 }
