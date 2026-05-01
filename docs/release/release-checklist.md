@@ -1,10 +1,10 @@
 # 发布检查清单
 
-更新时间：2026-04-28
+更新时间：2026-05-01
 
 ## 1. 版本信息
 
-- 版本号已更新（当前 `versionCode = 12`，`versionName = "1.7.1"`）
+- 版本号已更新（当前 `versionCode = 13`，`versionName = "1.7.2"`）
 - 变更范围已确认
 - 发布说明已准备
 
@@ -16,7 +16,7 @@
 - `:app:testDebugUnitTest` 通过（171 tests, 0 failed）
 - `:app:assembleDebugAndroidTest` 通过
 - `:app:lintDebug` 没有阻断错误
-- `:app:assembleRelease` 通过（输出 `app/build/outputs/apk/release/app-release.apk`，约 2.97 MB）
+- `:app:assembleRelease` 通过（输出 `app/build/outputs/apk/release/app-release.apk`，约 2.95 MB）
 - `:app:lintVitalRelease` 通过
 - `docs/app-release.apk` 已用本次 Release APK 覆盖
 - GitHub Release 已上传同一个 `app-release.apk`
