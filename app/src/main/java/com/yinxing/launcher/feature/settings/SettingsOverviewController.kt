@@ -17,8 +17,6 @@ import kotlinx.coroutines.withContext
 internal class SettingsOverviewController(
     private val activity: SettingsActivity
 ) {
-    fun bindViews() = activity.bindOverviewViews()
-
     fun bindActions(
         onBack: () -> Unit,
         onShowIncomingGuardSheet: () -> Unit,
@@ -81,45 +79,12 @@ internal class SettingsOverviewController(
     }
 
     fun onDestroy() {
-        activity.mainHandler.removeCallbacks(activity.overviewRefreshRunnable)
         activity.contactsSummaryJob?.cancel()
     }
 }
 
-internal fun SettingsActivity.bindOverviewViews() {
-    tvIncomingGuardStatus = findViewById(R.id.tv_incoming_guard_status)
-    tvIncomingGuardProgress = findViewById(R.id.tv_incoming_guard_progress)
-    tvIncomingGuardSummary = findViewById(R.id.tv_incoming_guard_summary)
-    tvIncomingGuardAction = findViewById(R.id.tv_incoming_guard_action)
-    btnIncomingGuardAction = findViewById(R.id.btn_incoming_guard_action)
-
-    tvContactsHubSummary = findViewById(R.id.tv_contacts_hub_summary)
-    tvAutoAnswerHubStatus = findViewById(R.id.tv_auto_answer_hub_status)
-    tvAutoAnswerHubSummary = findViewById(R.id.tv_auto_answer_hub_summary)
-    tvPermissionHubStatus = findViewById(R.id.tv_permission_hub_status)
-    tvPermissionHubSummary = findViewById(R.id.tv_permission_hub_summary)
-    tvDeviceHubStatus = findViewById(R.id.tv_device_hub_status)
-    tvDeviceHubSummary = findViewById(R.id.tv_device_hub_summary)
-    tvSystemHubSummary = findViewById(R.id.tv_system_hub_summary)
-}
-
-internal fun SettingsActivity.bindOverviewActions() {
-    findViewById<View>(R.id.btn_back).setOnClickListener { finish() }
-    findViewById<View>(R.id.btn_card_incoming_guard).setOnClickListener { showIncomingGuardSheet() }
-    btnIncomingGuardAction.setOnClickListener { showIncomingGuardSheet() }
-    findViewById<View>(R.id.btn_card_contacts).setOnClickListener { showContactsSheet() }
-    findViewById<View>(R.id.btn_card_auto_answer).setOnClickListener { showAutoAnswerSheet() }
-    findViewById<View>(R.id.btn_card_permissions).setOnClickListener { showPermissionGroupsSheet() }
-    findViewById<View>(R.id.btn_card_device).setOnClickListener { showDeviceSettingsSheet() }
-    findViewById<View>(R.id.btn_card_system).setOnClickListener { showSystemSheet() }
-}
-
 internal fun SettingsActivity.refreshOverviewUi() {
-    if (overviewRefreshQueued) {
-        return
-    }
-    overviewRefreshQueued = true
-    mainHandler.post(overviewRefreshRunnable)
+    postOverviewRefresh()
 }
 
 internal fun SettingsActivity.performOverviewRefresh() {

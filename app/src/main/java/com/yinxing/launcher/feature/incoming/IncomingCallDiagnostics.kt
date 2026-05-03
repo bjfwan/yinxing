@@ -1,9 +1,9 @@
 package com.yinxing.launcher.feature.incoming
 
 import android.content.Context
-import android.util.Log
 import androidx.core.content.edit
 import com.yinxing.launcher.R
+import com.yinxing.launcher.common.util.DebugLog
 import com.yinxing.launcher.common.util.PermissionUtil
 import com.yinxing.launcher.data.home.LauncherPreferences
 
@@ -418,9 +418,9 @@ object IncomingCallDiagnostics {
     ) {
         val fullDetail = joinDetail(detail, failureReason?.displayText())
         if (throwable != null) {
-            Log.e(TAG, "${step.code}: $fullDetail", throwable)
+            DebugLog.e(TAG, "${step.code}: $fullDetail", throwable)
         } else {
-            Log.i(TAG, "${step.code}: $fullDetail")
+            DebugLog.i(TAG) { "${step.code}: $fullDetail" }
         }
     }
 }

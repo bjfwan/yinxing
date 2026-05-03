@@ -3,9 +3,6 @@ import java.util.Properties
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.androidx.baselineprofile)
-    alias(libs.plugins.google.services)
-    alias(libs.plugins.firebase.crashlytics)
-    alias(libs.plugins.firebase.perf)
 }
 
 val localProps = Properties().apply {
@@ -46,8 +43,8 @@ android {
         applicationId = "com.yinxing.launcher"
         minSdk = 24
         targetSdk = 36
-        versionCode = 13
-        versionName = "1.7.2"
+        versionCode = 14
+        versionName = "1.8.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
 
@@ -76,18 +73,11 @@ android {
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
             )
-            // 本地构建时不上传 Crashlytics mapping，避免连不上 Google 服务导致失败
-            configure<com.google.firebase.crashlytics.buildtools.gradle.CrashlyticsExtension> {
-                mappingFileUploadEnabled = false
-            }
         }
         create("benchmark") {
             initWith(getByName("release"))
             signingConfig = signingConfigs.getByName("debug")
             matchingFallbacks += listOf("release")
-            configure<com.google.firebase.crashlytics.buildtools.gradle.CrashlyticsExtension> {
-                mappingFileUploadEnabled = false
-            }
         }
     }
     compileOptions {
@@ -114,10 +104,6 @@ dependencies {
     implementation(libs.kotlinx.coroutines.android)
     implementation(libs.androidx.localbroadcastmanager)
     implementation(libs.androidx.datastore.preferences)
-    implementation(platform(libs.firebase.bom))
-    implementation(libs.firebase.crashlytics)
-    implementation(libs.firebase.analytics)
-    implementation(libs.firebase.perf)
     baselineProfile(project(":benchmark"))
     testImplementation(libs.junit)
     testImplementation(libs.json)

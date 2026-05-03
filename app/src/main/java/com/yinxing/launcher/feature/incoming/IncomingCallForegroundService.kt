@@ -7,11 +7,13 @@ import android.app.Service
 import android.content.Context
 import android.content.Intent
 import android.os.IBinder
-import android.util.Log
 import androidx.core.app.NotificationCompat
 import androidx.core.content.ContextCompat
 import com.yinxing.launcher.R
-import com.yinxing.launcher.common.firebase.FirebaseTelemetry
+import com.yinxing.launcher.common.lobster.LobsterClient
+import com.yinxing.launcher.common.perf.LauncherTraceNames
+import com.yinxing.launcher.common.perf.traceBegin
+import com.yinxing.launcher.common.util.DebugLog
 
 class IncomingCallForegroundService : Service() {
 
@@ -103,19 +105,19 @@ class IncomingCallForegroundService : Service() {
         incomingNumber: String?,
         knownContact: Boolean
     ) {
-        Log.i("INCOMING_SERVICE", "╔══════════════════════════════════════════════════════")
-        Log.i("INCOMING_SERVICE", "║ [来电服务] 准备显示来电界面")
-        Log.i("INCOMING_SERVICE", "║ ├─ 姓名: $callerName")
-        Log.i("INCOMING_SERVICE", "║ ├─ 号码: $incomingNumber")
-        Log.i("INCOMING_SERVICE", "║ ├─ 自动接听(广播传参): $autoAnswer")
-        Log.i("INCOMING_SERVICE", "║ └─ 已知联系人: $knownContact")
-        Log.i("INCOMING_SERVICE", "╚══════════════════════════════════════════════════════")
+        DebugLog.banner(
+            "INCOMING_SERVICE",
+            listOf(
+                "[来电服务] 准备显示来电界面",
+                "├─ 姓名: $callerName",
+                "├─ 号码: $incomingNumber",
+                "├─ 自动接听(广播传参): $autoAnswer",
+                "└─ 已知联系人: $knownContact"
+            )
+        )
 
-        FirebaseTelemetry.withCrashlytics {
-            log("[来电服务] 启动: Caller=$callerName, Number=$incomingNumber, Auto=$autoAnswer")
-            setCustomKey("service_last_caller", callerName ?: "unknown")
-            setCustomKey("service_last_number", incomingNumber ?: "unknown")
-        }
+        LobsterClient.log("[来电服务] 启动: Caller=$callerName, Number=$incomingNumber, Auto=$autoAnswer")
+        traceBegin(LauncherTraceNames.INCOMING_CALL_RESPONSE)
 
         ensureNotificationChannels(this, platformCompat)
         IncomingCallDiagnostics.recordServiceStarted(this, callerName, autoAnswer)
@@ -174,12 +176,7 @@ class IncomingCallForegroundService : Service() {
             startForeground(NOTIFICATION_ID, notification)
             true
         }.getOrElse { error ->
-            Log.e(TAG, "startForeground failed, fallback to regular notification", error)
-            FirebaseTelemetry.withCrashlytics {
-                setCustomKey("fgs_subtype", "incoming_call_alert")
-                setCustomKey("android_sdk", platformCompat.sdkInt)
-                recordException(error)
-            }
+            DebugLog.e(TAG, "startForeground failed, sdk=${platformCompat.sdkInt}", error)
             getSystemService(NotificationManager::class.java)?.notify(NOTIFICATION_ID, notification)
             false
         }
@@ -203,7 +200,7 @@ class IncomingCallForegroundService : Service() {
         runCatching {
             startActivity(Intent(intent).addFlags(Intent.FLAG_ACTIVITY_NO_ANIMATION))
         }.onFailure {
-            Log.w(TAG, "launchIncomingCallUi failed: ${it.message}")
+            DebugLog.w(TAG, "launchIncomingCallUi failed: ${it.message}")
         }
     }
 

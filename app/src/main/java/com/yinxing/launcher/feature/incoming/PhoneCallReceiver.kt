@@ -4,8 +4,8 @@ import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
 import android.telephony.TelephonyManager
-import android.util.Log
 import com.yinxing.launcher.common.util.CallAudioStrategy
+import com.yinxing.launcher.common.util.DebugLog
 import com.yinxing.launcher.data.home.LauncherPreferences
 import com.yinxing.launcher.feature.phone.PhoneContactManager
 import java.util.concurrent.atomic.AtomicLong
@@ -29,14 +29,14 @@ class PhoneCallReceiver : BroadcastReceiver() {
         val appContext = context.applicationContext
         val state = intent.getStringExtra(TelephonyManager.EXTRA_STATE)
         if (state == null) {
-            Log.w(TAG, "Received PHONE_STATE_CHANGED without EXTRA_STATE; intent=$intent")
+            DebugLog.w(TAG, "Received PHONE_STATE_CHANGED without EXTRA_STATE; intent=$intent")
             return
         }
         val token = stateToken.incrementAndGet()
         latestEvent.set(token to state)
         if (state != TelephonyManager.EXTRA_STATE_RINGING) {
             runCatching { IncomingCallForegroundService.stop(appContext) }
-                .onFailure { Log.w(TAG, "Failed to stop foreground service for state=$state", it) }
+                .onFailure { DebugLog.w(TAG, "Failed to stop foreground service for state=$state", it) }
             return
         }
         @Suppress("DEPRECATION")
@@ -48,7 +48,7 @@ class PhoneCallReceiver : BroadcastReceiver() {
                 val contacts = runCatching {
                     PhoneContactManager.getInstance(appContext).getContacts()
                 }.getOrElse {
-                    Log.e(TAG, "Failed to load phone contacts for incoming match", it)
+                    DebugLog.e(TAG, "Failed to load phone contacts for incoming match", it)
                     emptyList()
                 }
                 val matchedContact = IncomingNumberMatcher.findBestMatch(
@@ -57,17 +57,16 @@ class PhoneCallReceiver : BroadcastReceiver() {
                 )
                 val event = latestEvent.get()
                 if (event == null || event.first != token || event.second != TelephonyManager.EXTRA_STATE_RINGING) {
-                    Log.i(
-                        TAG,
+                    DebugLog.i(TAG) {
                         "Skip stale ringing token=$token current=${event?.first}/${event?.second}"
-                    )
+                    }
                     return@launch
                 }
                 callerLabel = matchedContact?.name ?: callerLabel
                 val globalAutoAnswer = LauncherPreferences.getInstance(appContext).isAutoAnswerEnabled()
                 val autoAnswer = globalAutoAnswer || matchedContact?.autoAnswer == true
                 runCatching { CallAudioStrategy.maximizeIncomingRingVolume(appContext) }
-                    .onFailure { Log.w(TAG, "maximizeIncomingRingVolume failed", it) }
+                    .onFailure { DebugLog.w(TAG, "maximizeIncomingRingVolume failed", it) }
                 IncomingCallDiagnostics.recordBroadcastReceived(
                     context = appContext,
                     callerLabel = callerLabel,
@@ -100,7 +99,7 @@ class PhoneCallReceiver : BroadcastReceiver() {
                 )
             } finally {
                 runCatching { pendingResult.finish() }
-                    .onFailure { Log.w(TAG, "pendingResult.finish failed", it) }
+                    .onFailure { DebugLog.w(TAG, "pendingResult.finish failed", it) }
             }
         }
     }

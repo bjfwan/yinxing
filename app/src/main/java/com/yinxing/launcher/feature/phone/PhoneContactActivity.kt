@@ -23,7 +23,10 @@ import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import androidx.core.view.isVisible
 import androidx.core.widget.doAfterTextChanged
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.lifecycleScope
+import androidx.lifecycle.repeatOnLifecycle
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.google.android.material.card.MaterialCardView
@@ -32,26 +35,13 @@ import com.yinxing.launcher.common.media.MediaThumbnailLoader
 import com.yinxing.launcher.common.ui.PageStateView
 
 import com.yinxing.launcher.data.contact.Contact
-import com.yinxing.launcher.data.contact.ContactAvatarStore
-import com.yinxing.launcher.data.contact.ContactStorage
 import com.yinxing.launcher.data.home.LauncherPreferences
-import java.util.UUID
-import kotlinx.coroutines.CancellationException
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
-import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
 
-
-private data class ImportCandidate(
-    val name: String,
-    val phone: String,
-    val alreadyImported: Boolean
-)
 
 private class ImportCandidateAdapter(
-    private val candidates: List<ImportCandidate>
+    private val candidates: List<PhoneImportCandidate>
 ) : RecyclerView.Adapter<ImportCandidateAdapter.ViewHolder>() {
     var onSelectionChanged: (() -> Unit)? = null
 
@@ -130,7 +120,7 @@ private class ImportCandidateAdapter(
 
     }
 
-    fun selectedCandidates(): List<ImportCandidate> {
+    fun selectedCandidates(): List<PhoneImportCandidate> {
         return buildList {
             candidates.indices.forEach { index ->
                 if (!candidates[index].alreadyImported && checked[index]) {
@@ -154,8 +144,8 @@ class PhoneContactActivity : AppCompatActivity() {
     private lateinit var recyclerView: RecyclerView
     private lateinit var adapter: PhoneContactAdapter
     private lateinit var stateView: PageStateView
-    private lateinit var manager: PhoneContactManager
     private lateinit var launcherPreferences: LauncherPreferences
+    private lateinit var viewModel: PhoneContactViewModel
     private lateinit var pageTitleText: TextView
     private lateinit var modeActionButton: MaterialCardView
     private lateinit var modeActionText: TextView
@@ -165,15 +155,11 @@ class PhoneContactActivity : AppCompatActivity() {
     private lateinit var clearSearchButton: MaterialCardView
 
     private var launchedFromManageEntry = false
-    private var isManageMode = false
-    private var searchQuery = ""
-    private var allContacts: List<Contact> = emptyList()
     private var dialogPhotoPreview: ImageView? = null
     private var dialogPhotoJob: Job? = null
     private var selectedAvatarUri: String? = null
     private var pendingCallContact: Contact? = null
-    private var loadJob: Job? = null
-    private var importJob: Job? = null
+    private var searchInputUpdating = false
 
 
     private val pickImageLauncher = registerForActivityResult(
@@ -201,8 +187,8 @@ class PhoneContactActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_phone_contact)
 
-        manager = PhoneContactManager.getInstance(this)
         launcherPreferences = LauncherPreferences.getInstance(this)
+        viewModel = ViewModelProvider(this, PhoneContactViewModel.Factory(this))[PhoneContactViewModel::class.java]
 
         recyclerView = findViewById(R.id.recycler_phone_contacts)
         recyclerView.layoutManager = LinearLayoutManager(this)
@@ -228,33 +214,95 @@ class PhoneContactActivity : AppCompatActivity() {
         launchedFromManageEntry = intent.getBooleanExtra(EXTRA_START_IN_MANAGE_MODE, false)
 
         findViewById<MaterialCardView>(R.id.btn_back).setOnClickListener {
-            if (isManageMode && !launchedFromManageEntry) {
-                switchToCallMode()
+            if (viewModel.isManageMode.value && !launchedFromManageEntry) {
+                viewModel.setManageMode(false)
             } else {
                 finish()
             }
         }
         modeActionButton.setOnClickListener {
-            if (isManageMode) {
+            if (viewModel.isManageMode.value) {
                 showContactDialog(null)
             } else {
-                switchToManageMode()
+                viewModel.setManageMode(true)
             }
         }
 
         searchInput.doAfterTextChanged { editable ->
-            searchQuery = editable?.toString().orEmpty()
-            clearSearchButton.isVisible = isManageMode && searchQuery.isNotBlank()
-            renderContacts()
+            if (searchInputUpdating) return@doAfterTextChanged
+            viewModel.setSearchQuery(editable?.toString().orEmpty())
         }
         clearSearchButton.setOnClickListener {
             searchInput.text?.clear()
         }
 
+        observeViewModel()
+
         if (launchedFromManageEntry) {
-            switchToManageMode()
-        } else {
-            updateModeUi()
+            viewModel.setManageMode(true)
+        }
+    }
+
+    private fun observeViewModel() {
+        lifecycleScope.launch {
+            repeatOnLifecycle(Lifecycle.State.STARTED) {
+                launch {
+                    viewModel.isManageMode.collect { manageMode ->
+                        adapter.setManageMode(manageMode)
+                        updateModeUi(manageMode)
+                    }
+                }
+                launch {
+                    viewModel.searchQuery.collect { query ->
+                        if (searchInput.text?.toString().orEmpty() != query) {
+                            searchInputUpdating = true
+                            searchInput.setText(query)
+                            searchInput.setSelection(query.length)
+                            searchInputUpdating = false
+                        }
+                        clearSearchButton.isVisible =
+                            viewModel.isManageMode.value && query.isNotBlank()
+                    }
+                }
+                launch {
+                    viewModel.visibleContacts.collect { contacts ->
+                        adapter.submitList(contacts)
+                        updateState(contacts)
+                    }
+                }
+                launch {
+                    viewModel.events.collect(::handleEvent)
+                }
+            }
+        }
+    }
+
+    private fun handleEvent(event: PhoneContactViewModel.Event) {
+        when (event) {
+            is PhoneContactViewModel.Event.LoadError ->
+                showToast(getString(R.string.contact_load_failed, event.throwable.message.orEmpty()))
+            is PhoneContactViewModel.Event.ContactAdded ->
+                showToast(getString(R.string.contact_added_named, event.name))
+            is PhoneContactViewModel.Event.ContactUpdated ->
+                showToast(getString(R.string.contact_updated))
+            is PhoneContactViewModel.Event.ContactDeleted ->
+                showToast(getString(R.string.contact_deleted))
+            is PhoneContactViewModel.Event.SaveError -> {
+                val msg = if (event.isAdd) R.string.contact_add_failed else R.string.contact_update_failed
+                showToast(getString(msg, event.throwable.message.orEmpty()))
+            }
+            is PhoneContactViewModel.Event.DeleteError ->
+                showToast(getString(R.string.contact_delete_failed, event.throwable.message.orEmpty()))
+            is PhoneContactViewModel.Event.ImportLoading ->
+                showToast(getString(R.string.contacts_loading))
+            is PhoneContactViewModel.Event.ImportCandidatesReady -> when {
+                event.candidates.isEmpty() -> showToast(getString(R.string.contacts_empty))
+                event.candidates.all { it.alreadyImported } ->
+                    showToast(getString(R.string.contacts_all_imported))
+                else -> showImportDialog(event.candidates)
+            }
+            is PhoneContactViewModel.Event.ImportCompleted ->
+                showToast(getString(R.string.contacts_imported, event.count))
         }
     }
 
@@ -262,28 +310,10 @@ class PhoneContactActivity : AppCompatActivity() {
         super.onResume()
         adapter.setFullCardTapEnabled(launcherPreferences.isFullCardTapEnabled())
         adapter.setAnimationsEnabled(!launcherPreferences.isLowPerformanceModeEnabled())
-        refreshContacts()
+        viewModel.refresh()
     }
 
-    private fun switchToManageMode() {
-        isManageMode = true
-        adapter.setManageMode(true)
-        updateModeUi()
-        renderContacts()
-    }
-
-    private fun switchToCallMode() {
-        isManageMode = false
-        adapter.setManageMode(false)
-        updateModeUi()
-        if (searchQuery.isNotBlank()) {
-            searchInput.text?.clear()
-        } else {
-            renderContacts()
-        }
-    }
-
-    private fun updateModeUi() {
+    private fun updateModeUi(isManageMode: Boolean) {
         pageTitleText.text = getString(
             if (isManageMode) R.string.phone_contact_manage_title else R.string.phone_contact_title
         )
@@ -295,37 +325,7 @@ class PhoneContactActivity : AppCompatActivity() {
             if (isManageMode) R.string.phone_contact_manage_summary else R.string.phone_contact_call_summary
         )
         searchLayout.isVisible = isManageMode
-        clearSearchButton.isVisible = isManageMode && searchQuery.isNotBlank()
-    }
-
-    private fun refreshContacts() {
-        loadJob?.cancel()
-        loadJob = lifecycleScope.launch {
-            try {
-                val contacts = withContext(Dispatchers.IO) { manager.getContacts() }
-                allContacts = contacts
-                contacts.forEach { contact ->
-                    contact.avatarUri
-                        ?.takeIf { it.isNotBlank() }
-                        ?.let { runCatching { MediaThumbnailLoader.evictFailedUri(Uri.parse(it)) } }
-                }
-                renderContacts()
-            } catch (cancelled: CancellationException) {
-                throw cancelled
-            } catch (throwable: Throwable) {
-                showToast(getString(R.string.contact_load_failed, throwable.message.orEmpty()))
-            }
-        }
-    }
-
-    private fun renderContacts() {
-        val contacts = if (isManageMode && searchQuery.isNotBlank()) {
-            ContactStorage.filter(allContacts, searchQuery)
-        } else {
-            allContacts
-        }
-        adapter.submitList(contacts)
-        updateState(contacts)
+        clearSearchButton.isVisible = isManageMode && viewModel.searchQuery.value.isNotBlank()
     }
 
     private fun updateState(contacts: List<Contact>) {
@@ -333,7 +333,10 @@ class PhoneContactActivity : AppCompatActivity() {
             stateView.hide()
             return
         }
-        if (isManageMode && searchQuery.isNotBlank() && allContacts.isNotEmpty()) {
+        val isManageMode = viewModel.isManageMode.value
+        val searchQuery = viewModel.searchQuery.value
+        val totalCount = viewModel.totalContactsCount.value
+        if (isManageMode && searchQuery.isNotBlank() && totalCount > 0) {
             stateView.show(
                 title = getString(R.string.state_video_search_empty_title),
                 message = getString(R.string.state_video_search_empty_message, searchQuery.trim()),
@@ -368,9 +371,7 @@ class PhoneContactActivity : AppCompatActivity() {
         runCatching { startActivity(intent) }.onFailure {
             showToast(getString(R.string.dial_failed, it.message ?: ""))
         }.onSuccess {
-            lifecycleScope.launch(Dispatchers.Default) {
-                runCatching { manager.incrementCallCount(contact.id) }
-            }
+            viewModel.incrementCallCountAsync(contact.id)
         }
     }
 
@@ -382,69 +383,10 @@ class PhoneContactActivity : AppCompatActivity() {
             ActivityCompat.requestPermissions(this, arrayOf(Manifest.permission.READ_CONTACTS), 101)
             return
         }
-        importJob?.cancel()
-        showToast(getString(R.string.contacts_loading))
-        importJob = lifecycleScope.launch {
-            try {
-                val candidates = withContext(Dispatchers.IO) { loadImportCandidates() }
-                when {
-                    candidates.isEmpty() -> showToast(getString(R.string.contacts_empty))
-                    candidates.all { it.alreadyImported } -> {
-                        showToast(getString(R.string.contacts_all_imported))
-                    }
-                    else -> showImportDialog(candidates)
-                }
-            } catch (cancelled: CancellationException) {
-                throw cancelled
-            } catch (throwable: Throwable) {
-                showToast(getString(R.string.contact_load_failed, throwable.message.orEmpty()))
-            }
-        }
+        viewModel.loadImportCandidates()
     }
 
-    private fun loadImportCandidates(): List<ImportCandidate> {
-        val entries = mutableListOf<Pair<String, String>>()
-        contentResolver.query(
-            ContactsContract.CommonDataKinds.Phone.CONTENT_URI,
-            arrayOf(
-                ContactsContract.CommonDataKinds.Phone.DISPLAY_NAME,
-                ContactsContract.CommonDataKinds.Phone.NUMBER
-            ),
-            null,
-            null,
-            ContactsContract.CommonDataKinds.Phone.DISPLAY_NAME + " ASC"
-        )?.use { cursor ->
-            val nameIdx = cursor.getColumnIndex(ContactsContract.CommonDataKinds.Phone.DISPLAY_NAME)
-            val phoneIdx = cursor.getColumnIndex(ContactsContract.CommonDataKinds.Phone.NUMBER)
-            val seen = hashSetOf<String>()
-            while (cursor.moveToNext()) {
-                val name = cursor.getString(nameIdx)?.trim() ?: continue
-                val phone = cursor.getString(phoneIdx)?.trim() ?: continue
-                if (name.isBlank() || phone.isBlank()) continue
-                val digits = phone.filter(Char::isDigit)
-                if (digits.isEmpty()) continue
-                if (seen.add("${name}_$digits")) {
-
-                    entries += name to phone
-                }
-            }
-        }
-        if (entries.isEmpty()) {
-            return emptyList()
-        }
-        val existingPhones = manager.getContacts()
-            .mapNotNull { it.phoneNumber?.filter(Char::isDigit) }
-            .toHashSet()
-        return entries.map { (name, phone) ->
-            ImportCandidate(
-                name = name,
-                phone = phone,
-                alreadyImported = phone.filter(Char::isDigit) in existingPhones
-            )
-        }
-    }
-
-    private fun showImportDialog(candidates: List<ImportCandidate>) {
+    private fun showImportDialog(candidates: List<PhoneImportCandidate>) {
         val dialogView = layoutInflater.inflate(R.layout.dialog_import_contacts, null)
         val dialog = AlertDialog.Builder(this)
             .setView(dialogView)
@@ -485,29 +427,7 @@ class PhoneContactActivity : AppCompatActivity() {
                 return@setOnClickListener
             }
             dialog.dismiss()
-
-            lifecycleScope.launch {
-                try {
-                    val count = withContext(Dispatchers.IO) {
-                        val contacts = selected.map { candidate ->
-                            Contact(
-                                id = UUID.randomUUID().toString(),
-                                name = candidate.name,
-                                phoneNumber = candidate.phone,
-                                preferredAction = Contact.PreferredAction.PHONE
-                            )
-                        }
-                        manager.addContacts(contacts)
-                        contacts.size
-                    }
-                    refreshContacts()
-                    showToast(getString(R.string.contacts_imported, count))
-                } catch (cancelled: CancellationException) {
-                    throw cancelled
-                } catch (throwable: Throwable) {
-                    showToast(getString(R.string.contact_add_failed, throwable.message.orEmpty()))
-                }
-            }
+            viewModel.importContacts(selected)
         }
 
         dialog.show()
@@ -586,7 +506,8 @@ class PhoneContactActivity : AppCompatActivity() {
                 showToast(getString(R.string.contact_phone_required_simple))
                 return@setOnClickListener
             }
-            saveContact(initial, name, phone, autoAnswerSwitch.isChecked)
+            viewModel.pendingAvatarUri = selectedAvatarUri
+            viewModel.saveContact(initial, name, phone, autoAnswerSwitch.isChecked)
             dialog.dismiss()
         }
 
@@ -611,83 +532,11 @@ class PhoneContactActivity : AppCompatActivity() {
             .setOnClickListener { dialog.dismiss() }
         dialogView.findViewById<MaterialCardView>(R.id.btn_delete)
             .setOnClickListener {
-                lifecycleScope.launch {
-                    try {
-                        withContext(Dispatchers.IO) {
-                            ContactAvatarStore.deleteOwnedAvatar(this@PhoneContactActivity, contact.avatarUri)
-                            manager.removeContact(contact.id)
-                        }
-                        refreshContacts()
-                        showToast(getString(R.string.contact_deleted))
-                    } catch (cancelled: CancellationException) {
-                        throw cancelled
-                    } catch (throwable: Throwable) {
-                        showToast(getString(R.string.contact_delete_failed, throwable.message.orEmpty()))
-                    }
-                }
+                viewModel.deleteContact(contact)
                 dialog.dismiss()
             }
         dialog.show()
     }
-
-    private fun saveContact(original: Contact?, name: String, phone: String, autoAnswer: Boolean) {
-        lifecycleScope.launch {
-            val action = if (original == null) R.string.contact_added_named else R.string.contact_updated
-            val failure = if (original == null) R.string.contact_add_failed else R.string.contact_update_failed
-            try {
-                withContext(Dispatchers.IO + NonCancellable) {
-                    val previousAvatar = original?.avatarUri
-                    val selectedAvatar = selectedAvatarUri
-                    val contactId = original?.id ?: UUID.randomUUID().toString()
-                    var createdAvatar: String? = null
-                    val resolvedAvatar = when {
-                        selectedAvatar.isNullOrBlank() -> previousAvatar
-                        selectedAvatar == previousAvatar -> previousAvatar
-                        else -> ContactAvatarStore.saveFromUri(this@PhoneContactActivity, Uri.parse(selectedAvatar), contactId)
-                            ?.also { if (it != previousAvatar) createdAvatar = it }
-                            ?: previousAvatar
-                    }
-                    try {
-                        val contact = Contact(
-                            id = contactId,
-                            name = name,
-                            phoneNumber = phone,
-                            avatarUri = resolvedAvatar,
-                            preferredAction = Contact.PreferredAction.PHONE,
-                            isPinned = original?.isPinned ?: false,
-                            callCount = original?.callCount ?: 0,
-                            lastCallTime = original?.lastCallTime ?: 0,
-                            autoAnswer = autoAnswer
-                        )
-                        if (original == null) {
-                            manager.addContact(contact)
-                        } else {
-                            manager.updateContact(contact)
-                        }
-                        if (!previousAvatar.isNullOrBlank() && previousAvatar != resolvedAvatar) {
-                            ContactAvatarStore.deleteOwnedAvatar(this@PhoneContactActivity, previousAvatar)
-                        }
-                    } catch (throwable: Throwable) {
-                        if (!createdAvatar.isNullOrBlank()) {
-                            ContactAvatarStore.deleteOwnedAvatar(this@PhoneContactActivity, createdAvatar)
-                        }
-                        throw throwable
-                    }
-                }
-                refreshContacts()
-                if (original == null) {
-                    showToast(getString(action, name))
-                } else {
-                    showToast(getString(action))
-                }
-            } catch (cancelled: CancellationException) {
-                throw cancelled
-            } catch (throwable: Throwable) {
-                showToast(getString(failure, throwable.message.orEmpty()))
-            }
-        }
-    }
-
 
     private fun renderDialogPhoto() {
         val preview = dialogPhotoPreview ?: return

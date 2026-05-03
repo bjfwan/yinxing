@@ -7,6 +7,7 @@ import android.view.animation.DecelerateInterpolator
 import android.widget.ImageView
 import android.widget.TextView
 import androidx.cardview.widget.CardView
+import androidx.lifecycle.LifecycleCoroutineScope
 import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.ItemTouchHelper
 import androidx.recyclerview.widget.ListAdapter
@@ -14,12 +15,11 @@ import androidx.recyclerview.widget.RecyclerView
 import com.yinxing.launcher.R
 import com.yinxing.launcher.common.media.MediaThumbnailLoader
 import java.util.Collections
-import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
 
 class HomeAppAdapter(
-    private val scope: CoroutineScope,
+    private val scope: LifecycleCoroutineScope,
     private var lowPerformanceMode: Boolean,
     private var iconScale: Int = 100,
     private val onItemClick: (HomeAppItem) -> Unit,

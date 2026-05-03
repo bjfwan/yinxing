@@ -81,4 +81,65 @@ class ContactStorageTest {
         assertTrue(AccessibilityServiceMatcher.contains(enabledServices, "com.example/.BetaService"))
         assertFalse(AccessibilityServiceMatcher.contains(enabledServices, "com.example/.Beta"))
     }
+
+    @Test
+    fun decodeNullReturnsEmptyList() {
+        val contacts = ContactStorage.decode(null)
+        assertTrue(contacts.isEmpty())
+    }
+
+    @Test
+    fun decodeBlankReturnsEmptyList() {
+        val contacts = ContactStorage.decode("   ")
+        assertTrue(contacts.isEmpty())
+    }
+
+    @Test
+    fun encodeEmptyListReturnsEmptyArray() {
+        val json = ContactStorage.encode(emptyList())
+        assertEquals("[]", json)
+    }
+
+    @Test
+    fun decodeEmptyArrayReturnsEmptyList() {
+        val contacts = ContactStorage.decode("[]")
+        assertTrue(contacts.isEmpty())
+    }
+
+    @Test
+    fun filterWithEmptyQueryReturnsAllContacts() {
+        val contacts = listOf(
+            ContactStorage.normalize(Contact(id = "1", name = "张三")),
+            ContactStorage.normalize(Contact(id = "2", name = "李四"))
+        )
+
+        assertEquals(2, ContactStorage.filter(contacts, "").size)
+    }
+
+    @Test
+    fun filterWithBlankQueryReturnsAllContacts() {
+        val contacts = listOf(
+            ContactStorage.normalize(Contact(id = "1", name = "张三"))
+        )
+
+        assertEquals(1, ContactStorage.filter(contacts, "   ").size)
+    }
+
+    @Test
+    fun sortEmptyListReturnsEmpty() {
+        val sorted = ContactStorage.sort(emptyList())
+        assertTrue(sorted.isEmpty())
+    }
+
+    @Test
+    fun encodeAndDecodeRoundTripPreservesAutoAnswer() {
+        val contacts = listOf(
+            Contact(id = "1", name = "张阿姨", phoneNumber = "13800138000", autoAnswer = true)
+        )
+        val json = ContactStorage.encode(contacts)
+        val decoded = ContactStorage.decode(json)
+
+        assertEquals(1, decoded.size)
+        assertTrue(decoded.first().autoAnswer)
+    }
 }

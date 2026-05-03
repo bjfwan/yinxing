@@ -10,12 +10,12 @@ import android.graphics.ImageDecoder
 import android.graphics.drawable.Drawable
 import android.net.Uri
 import android.os.Build
-import android.util.Log
 import android.util.LruCache
 import androidx.core.graphics.createBitmap
 import androidx.core.graphics.scale
 import com.yinxing.launcher.common.perf.LauncherTraceNames
 import com.yinxing.launcher.common.perf.traceSection
+import com.yinxing.launcher.common.util.DebugLog
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import java.io.File
@@ -106,11 +106,11 @@ object MediaThumbnailLoader {
                 reqHeight.coerceAtLeast(1)
             )
         } catch (oom: OutOfMemoryError) {
-            Log.w(TAG, "OOM decoding $uri; clearing bitmap cache")
+            DebugLog.w(TAG, "OOM decoding $uri; clearing bitmap cache")
             bitmapCache.evictAll()
             null
         } catch (throwable: Throwable) {
-            Log.w(TAG, "Failed to decode $uri: ${throwable.message}")
+            DebugLog.w(TAG, "Failed to decode $uri: ${throwable.message}")
             null
         } ?: run {
             failedUriLoads[cacheKey] = System.currentTimeMillis()

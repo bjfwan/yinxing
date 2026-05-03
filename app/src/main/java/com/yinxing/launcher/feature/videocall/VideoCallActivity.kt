@@ -2,7 +2,6 @@
 
 import android.content.Context
 import android.content.Intent
-import android.net.Uri
 import android.os.Bundle
 import android.widget.EditText
 import android.widget.TextView
@@ -12,31 +11,25 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.isVisible
 import androidx.core.widget.doAfterTextChanged
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.ViewModelProvider
+import androidx.lifecycle.lifecycleScope
+import androidx.lifecycle.repeatOnLifecycle
 import androidx.recyclerview.widget.DefaultItemAnimator
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.google.android.material.card.MaterialCardView
 import com.yinxing.launcher.R
 import com.yinxing.launcher.common.lobster.LobsterClient
-import com.yinxing.launcher.common.media.MediaThumbnailLoader
+import com.yinxing.launcher.common.lobster.LobsterReportStatus
 import com.yinxing.launcher.common.service.TTSService
 import com.yinxing.launcher.common.ui.PageStateView
 import com.yinxing.launcher.common.util.PermissionUtil
 import com.yinxing.launcher.data.contact.Contact
-import com.yinxing.launcher.data.contact.ContactAvatarStore
 import com.yinxing.launcher.data.contact.ContactManager
-import com.yinxing.launcher.data.contact.ContactStorage
 import com.yinxing.launcher.data.home.LauncherPreferences
-import java.util.UUID
-import kotlinx.coroutines.CancellationException
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.Job
-import kotlinx.coroutines.NonCancellable
-import kotlinx.coroutines.SupervisorJob
-import kotlinx.coroutines.cancel
+import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
 
 
 class VideoCallActivity : AppCompatActivity() {
@@ -61,16 +54,12 @@ class VideoCallActivity : AppCompatActivity() {
     private lateinit var clearSearchButton: MaterialCardView
     private lateinit var stateView: PageStateView
     private lateinit var ttsService: TTSService
-    private lateinit var contactManager: ContactManager
     private lateinit var launcherPreferences: LauncherPreferences
     private lateinit var dialogController: VideoContactDialogController
     private lateinit var coordinator: VideoCallCoordinator
-    private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate)
-    private var isManageMode = false
+    private lateinit var viewModel: VideoCallViewModel
     private var launchedFromManageEntry = false
-    private var searchQuery = ""
-    private var allContacts: List<Contact> = emptyList()
-    private var loadJob: Job? = null
+    private var searchInputUpdating = false
 
     private val pickImageLauncher = registerForActivityResult(
         ActivityResultContracts.PickVisualMedia()
@@ -89,7 +78,7 @@ class VideoCallActivity : AppCompatActivity() {
         launcherPreferences = LauncherPreferences.getInstance(this)
         ttsService = TTSService(this)
         ttsService.initialize()
-        contactManager = ContactManager.getInstance(this)
+        viewModel = ViewModelProvider(this, VideoCallViewModel.Factory(this))[VideoCallViewModel::class.java]
 
         recyclerView = findViewById(R.id.recycler_video_contacts)
         recyclerView.layoutManager = LinearLayoutManager(this)
@@ -107,7 +96,7 @@ class VideoCallActivity : AppCompatActivity() {
         stateView.attachContent(recyclerView)
 
         adapter = VideoCallContactAdapter(
-            scope = scope,
+            scope = lifecycleScope,
             lowPerformanceMode = launcherPreferences.isLowPerformanceModeEnabled(),
             onContactClick = { contact -> coordinator.start(contact) },
             onWechatVideoClick = { contact -> coordinator.start(contact) }
@@ -122,20 +111,20 @@ class VideoCallActivity : AppCompatActivity() {
         coordinator = VideoCallCoordinator(
             activity = this,
             ttsService = ttsService,
-            contactManager = contactManager,
+            contactManager = ContactManager.getInstance(this),
             automationGateway = SelectToSpeakAutomationGateway,
             onNeedAccessibilityPermission = { dialogController.showAccessibilityDialog() },
             onNeedOverlayPermission = { contact -> dialogController.showOverlayPermissionDialog(contact) },
-            onCallCompleted = { refreshContacts() }
+            onCallCompleted = { viewModel.refresh() }
         )
 
         dialogController = VideoContactDialogController(
             activity = this,
             onPickPhoto = { openImagePicker() },
             onSaveContact = { original, name, wechatId, avatarUri ->
-                saveContact(original, name, wechatId, avatarUri)
+                viewModel.saveContact(original, name, wechatId, avatarUri)
             },
-            onDeleteContact = { contact -> deleteContact(contact) },
+            onDeleteContact = { contact -> viewModel.deleteContact(contact) },
             onOpenAccessibilitySettings = { PermissionUtil.openAccessibilitySettings(this) },
             onOpenOverlaySettings = { PermissionUtil.openOverlaySettings(this) },
             onContinueWithoutOverlayPermission = { contact -> coordinator.continueWithVideoCall(contact) }
@@ -147,33 +136,89 @@ class VideoCallActivity : AppCompatActivity() {
         launchedFromManageEntry = intent.getBooleanExtra(EXTRA_START_IN_MANAGE_MODE, false)
 
         searchInput.doAfterTextChanged { editable ->
-            searchQuery = editable?.toString().orEmpty()
-            updateSearchUi()
-            renderContacts()
+            if (searchInputUpdating) return@doAfterTextChanged
+            viewModel.setSearchQuery(editable?.toString().orEmpty())
         }
         clearSearchButton.setOnClickListener {
             searchInput.text?.clear()
         }
         findViewById<MaterialCardView>(R.id.btn_back).setOnClickListener {
-            if (isManageMode && !launchedFromManageEntry) {
-                switchToCallMode()
+            if (viewModel.isManageMode.value && !launchedFromManageEntry) {
+                viewModel.setManageMode(false)
             } else {
                 finish()
             }
         }
         modeActionButton.setOnClickListener {
-            if (isManageMode) {
+            if (viewModel.isManageMode.value) {
                 dialogController.showAddContactDialog()
             } else {
-                switchToManageMode()
+                viewModel.setManageMode(true)
             }
         }
 
+        observeViewModel()
+
         if (launchedFromManageEntry) {
-            switchToManageMode()
-        } else {
-            updateModeUi()
-            renderContacts()
+            viewModel.setManageMode(true)
+        }
+    }
+
+    private fun observeViewModel() {
+        lifecycleScope.launch {
+            repeatOnLifecycle(Lifecycle.State.STARTED) {
+                launch {
+                    viewModel.isManageMode.collect { manageMode ->
+                        recyclerView.layoutManager = LinearLayoutManager(this@VideoCallActivity)
+                        recyclerView.adapter = if (manageMode) manageAdapter else adapter
+                        updateModeUi(manageMode)
+                    }
+                }
+                launch {
+                    viewModel.searchQuery.collect { query ->
+                        if (searchInput.text?.toString().orEmpty() != query) {
+                            searchInputUpdating = true
+                            searchInput.setText(query)
+                            searchInput.setSelection(query.length)
+                            searchInputUpdating = false
+                        }
+                        clearSearchButton.isVisible =
+                            viewModel.isManageMode.value && query.isNotBlank()
+                    }
+                }
+                launch {
+                    viewModel.visibleContacts.collect { contacts ->
+                        if (viewModel.isManageMode.value) {
+                            manageAdapter.submitList(contacts)
+                        } else {
+                            adapter.submitList(contacts)
+                        }
+                        updateState(contacts)
+                    }
+                }
+                launch {
+                    viewModel.events.collect(::handleEvent)
+                }
+            }
+        }
+    }
+
+    private fun handleEvent(event: VideoCallViewModel.Event) {
+        when (event) {
+            is VideoCallViewModel.Event.LoadError ->
+                showToast(getString(R.string.contact_load_failed, event.throwable.message.orEmpty()))
+            is VideoCallViewModel.Event.ContactAdded ->
+                showToast(getString(R.string.contact_added_named, event.name))
+            is VideoCallViewModel.Event.ContactUpdated ->
+                showToast(getString(R.string.contact_updated))
+            is VideoCallViewModel.Event.ContactDeleted ->
+                showToast(getString(R.string.contact_deleted))
+            is VideoCallViewModel.Event.SaveError -> {
+                val msg = if (event.isAdd) R.string.contact_add_failed else R.string.contact_update_failed
+                showToast(getString(msg, event.throwable.message.orEmpty()))
+            }
+            is VideoCallViewModel.Event.DeleteError ->
+                showToast(getString(R.string.contact_delete_failed, event.throwable.message.orEmpty()))
         }
     }
 
@@ -181,14 +226,13 @@ class VideoCallActivity : AppCompatActivity() {
         super.onResume()
         applyPerformanceMode()
         adapter.setFullCardTapEnabled(launcherPreferences.isFullCardTapEnabled())
-        refreshContacts()
+        viewModel.refresh()
     }
 
     override fun onDestroy() {
-        LobsterClient.report(this, "微信视频页面关闭")
+        LobsterClient.report(this, "微信视频页面", LobsterReportStatus.REPORTED, "微信视频页面关闭")
         coordinator.clear()
         ttsService.shutdown()
-        scope.cancel()
         super.onDestroy()
     }
 
@@ -200,27 +244,7 @@ class VideoCallActivity : AppCompatActivity() {
         manageAdapter.setLowPerformanceMode(lowPerformanceMode)
     }
 
-    private fun switchToManageMode() {
-        isManageMode = true
-        recyclerView.layoutManager = LinearLayoutManager(this)
-        recyclerView.adapter = manageAdapter
-        updateModeUi()
-        renderContacts()
-    }
-
-    private fun switchToCallMode() {
-        isManageMode = false
-        recyclerView.layoutManager = LinearLayoutManager(this)
-        recyclerView.adapter = adapter
-        updateModeUi()
-        if (searchQuery.isNotBlank()) {
-            searchInput.text?.clear()
-        } else {
-            renderContacts()
-        }
-    }
-
-    private fun updateModeUi() {
+    private fun updateModeUi(isManageMode: Boolean) {
         pageTitleText.text = getString(
             if (isManageMode) R.string.video_manage_title else R.string.video_title
         )
@@ -232,129 +256,11 @@ class VideoCallActivity : AppCompatActivity() {
             if (isManageMode) R.string.video_mode_manage_summary else R.string.video_mode_call_summary
         )
         searchLayout.isVisible = isManageMode
-        updateSearchUi()
-    }
-
-    private fun updateSearchUi() {
-        clearSearchButton.isVisible = isManageMode && searchQuery.isNotBlank()
+        clearSearchButton.isVisible = isManageMode && viewModel.searchQuery.value.isNotBlank()
     }
 
     private fun openImagePicker() {
         pickImageLauncher.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly))
-    }
-
-    private fun saveContact(
-        original: Contact?,
-        name: String,
-        wechatId: String,
-        avatarUri: String?
-    ) {
-        scope.launch {
-            val failure = if (original == null) R.string.contact_add_failed else R.string.contact_update_failed
-            try {
-                withContext(Dispatchers.IO + NonCancellable) {
-                    val previousAvatar = original?.avatarUri
-                    val selectedAvatar = avatarUri
-                    val contactId = original?.id ?: UUID.randomUUID().toString()
-                    var createdAvatar: String? = null
-                    val resolvedAvatarUri = when {
-                        selectedAvatar.isNullOrBlank() -> previousAvatar
-                        selectedAvatar == previousAvatar -> previousAvatar
-                        else -> ContactAvatarStore.saveFromUri(this@VideoCallActivity, Uri.parse(selectedAvatar), contactId)
-                            ?.also { if (it != previousAvatar) createdAvatar = it }
-                            ?: previousAvatar
-                    }
-                    try {
-                        val contact = Contact(
-                            id = contactId,
-                            name = name,
-                            wechatId = wechatId.trim().takeIf { it.isNotBlank() },
-                            avatarUri = resolvedAvatarUri,
-                            preferredAction = Contact.PreferredAction.WECHAT_VIDEO,
-                            isPinned = original?.isPinned ?: false,
-                            callCount = original?.callCount ?: 0,
-                            lastCallTime = original?.lastCallTime ?: 0,
-                            searchKeywords = original?.searchKeywords ?: emptyList()
-                        )
-                        if (original == null) {
-                            contactManager.addContact(contact)
-                        } else {
-                            contactManager.updateContact(contact)
-                        }
-                        if (!previousAvatar.isNullOrBlank() && previousAvatar != resolvedAvatarUri) {
-                            ContactAvatarStore.deleteOwnedAvatar(this@VideoCallActivity, previousAvatar)
-                        }
-                    } catch (throwable: Throwable) {
-                        if (!createdAvatar.isNullOrBlank()) {
-                            ContactAvatarStore.deleteOwnedAvatar(this@VideoCallActivity, createdAvatar)
-                        }
-                        throw throwable
-                    }
-                }
-                refreshContacts()
-                if (original == null) {
-                    showToast(getString(R.string.contact_added_named, name))
-                } else {
-                    showToast(getString(R.string.contact_updated))
-                }
-            } catch (cancelled: CancellationException) {
-                throw cancelled
-            } catch (throwable: Throwable) {
-                showToast(getString(failure, throwable.message.orEmpty()))
-            }
-        }
-    }
-
-    private fun deleteContact(contact: Contact) {
-        scope.launch {
-            try {
-                withContext(Dispatchers.IO + NonCancellable) {
-                    contactManager.removeContact(contact.id)
-                    ContactAvatarStore.deleteOwnedAvatar(this@VideoCallActivity, contact.avatarUri)
-                }
-                refreshContacts()
-                showToast(getString(R.string.contact_deleted))
-            } catch (cancelled: CancellationException) {
-                throw cancelled
-            } catch (throwable: Throwable) {
-                showToast(getString(R.string.contact_delete_failed, throwable.message.orEmpty()))
-            }
-        }
-    }
-
-
-    private fun refreshContacts() {
-        loadJob?.cancel()
-        loadJob = scope.launch {
-            try {
-                val contacts = withContext(Dispatchers.IO) { contactManager.getContacts() }
-                allContacts = contacts
-                contacts.forEach { contact ->
-                    contact.avatarUri
-                        ?.takeIf { it.isNotBlank() }
-                        ?.let { runCatching { MediaThumbnailLoader.evictFailedUri(Uri.parse(it)) } }
-                }
-                renderContacts()
-            } catch (cancelled: CancellationException) {
-                throw cancelled
-            } catch (throwable: Throwable) {
-                showToast(getString(R.string.contact_load_failed, throwable.message.orEmpty()))
-            }
-        }
-    }
-
-    private fun renderContacts() {
-        val contacts = if (isManageMode && searchQuery.isNotBlank()) {
-            ContactStorage.filter(allContacts, searchQuery)
-        } else {
-            allContacts
-        }
-        if (isManageMode) {
-            manageAdapter.submitList(contacts)
-        } else {
-            adapter.submitList(contacts)
-        }
-        updateState(contacts)
     }
 
     private fun updateState(contacts: List<Contact>) {
@@ -363,7 +269,11 @@ class VideoCallActivity : AppCompatActivity() {
             return
         }
 
-        if (isManageMode && searchQuery.isNotBlank() && allContacts.isNotEmpty()) {
+        val isManageMode = viewModel.isManageMode.value
+        val searchQuery = viewModel.searchQuery.value
+        val totalCount = viewModel.totalContactsCount.value
+
+        if (isManageMode && searchQuery.isNotBlank() && totalCount > 0) {
             stateView.show(
                 title = getString(R.string.state_video_search_empty_title),
                 message = getString(R.string.state_video_search_empty_message, searchQuery.trim()),

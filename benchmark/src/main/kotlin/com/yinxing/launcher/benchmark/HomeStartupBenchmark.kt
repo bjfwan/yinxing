@@ -24,6 +24,7 @@ class HomeStartupBenchmark {
     @Test
     fun coldStartupWithoutProfile() {
         measureColdStartup(
+            metricName = "benchmark.cold_startup",
             caseName = "冷启动（无 Baseline Profile）",
             compilationMode = CompilationMode.None()
         )
@@ -32,15 +33,17 @@ class HomeStartupBenchmark {
     @Test
     fun coldStartupWithBaselineProfile() {
         measureColdStartup(
+            metricName = "benchmark.cold_startup_baseline",
             caseName = "冷启动（使用 Baseline Profile）",
             compilationMode = CompilationMode.Partial(BaselineProfileMode.UseIfAvailable)
         )
     }
 
-    private fun measureColdStartup(caseName: String, compilationMode: CompilationMode) {
+    private fun measureColdStartup(metricName: String, caseName: String, compilationMode: CompilationMode) {
         val iterations = 5
         var currentIteration = 0
         logStep("开始执行 $caseName")
+        val startMs = System.currentTimeMillis()
         benchmarkRule.measureRepeated(
             packageName = PACKAGE_NAME,
             metrics = listOf(
@@ -71,7 +74,9 @@ class HomeStartupBenchmark {
             )
             logStep("$caseName 第 $currentIteration/$iterations 次完成")
         }
-        logStep("$caseName 执行完成")
+        val durationMs = System.currentTimeMillis() - startMs
+        BenchmarkReporter.report(metricName, listOf(metricName to durationMs))
+        logStep("$caseName 执行完成，总耗时 ${durationMs}ms")
     }
 }
 

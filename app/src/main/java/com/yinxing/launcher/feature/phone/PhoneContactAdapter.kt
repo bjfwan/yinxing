@@ -7,6 +7,7 @@ import android.view.animation.DecelerateInterpolator
 import android.widget.ImageView
 import android.widget.TextView
 import androidx.core.view.isVisible
+import androidx.lifecycle.LifecycleCoroutineScope
 import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
@@ -14,12 +15,11 @@ import com.yinxing.launcher.R
 import com.yinxing.launcher.common.media.MediaThumbnailLoader
 import com.yinxing.launcher.data.contact.Contact
 import kotlinx.coroutines.CancellationException
-import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
 
 class PhoneContactAdapter(
-    private val scope: CoroutineScope,
+    private val scope: LifecycleCoroutineScope,
     private val onCallClick: (Contact) -> Unit,
     private val onEditClick: (Contact) -> Unit
 ) : ListAdapter<Contact, PhoneContactAdapter.ViewHolder>(DIFF) {

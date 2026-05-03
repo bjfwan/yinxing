@@ -1,7 +1,7 @@
 package com.yinxing.launcher.feature.incoming
 
-import android.util.Log
-import com.yinxing.launcher.common.firebase.FirebaseTelemetry
+import com.yinxing.launcher.common.lobster.LobsterClient
+import com.yinxing.launcher.common.util.DebugLog
 
 sealed class IncomingCallState {
     object Idle : IncomingCallState()
@@ -87,30 +87,30 @@ class IncomingCallStateMachine(
         autoAnswer: Boolean,
         autoAnswerDelaySeconds: Int
     ): IncomingCallState {
-        Log.i("INCOMING_STATE", "╔══════════════════════════════════════════════════════")
-        Log.i("INCOMING_STATE", "║ [来电状态机] 计算 UI 状态")
-        Log.i("INCOMING_STATE", "║ ├─ 自动接听开关: $autoAnswer")
-        Log.i("INCOMING_STATE", "║ ├─ 延迟秒数: $autoAnswerDelaySeconds")
-        
         currentState = if (autoAnswer) {
-            Log.i("INCOMING_STATE", "║ └─ 最终状态: WaitingAutoAnswer (等待自动接听)")
             IncomingCallState.WaitingAutoAnswer(
                 callerLabel = callerLabel,
                 delaySeconds = autoAnswerDelaySeconds.coerceIn(1, 30)
             )
         } else {
-            Log.i("INCOMING_STATE", "║ └─ 最终状态: ShowingUi (仅显示界面)")
             IncomingCallState.ShowingUi(
                 callerLabel = callerLabel,
                 autoAnswer = false
             )
         }
-        Log.i("INCOMING_STATE", "╚══════════════════════════════════════════════════════")
-        
-        FirebaseTelemetry.withCrashlytics {
-            log("[来电状态] uiShown: Auto=$autoAnswer, Delay=$autoAnswerDelaySeconds, State=${currentState.javaClass.simpleName}")
-        }
-        
+
+        DebugLog.banner(
+            "INCOMING_STATE",
+            listOf(
+                "[来电状态机] 计算 UI 状态",
+                "├─ 自动接听开关: $autoAnswer",
+                "├─ 延迟秒数: $autoAnswerDelaySeconds",
+                "└─ 最终状态: ${currentState.javaClass.simpleName}"
+            )
+        )
+
+        LobsterClient.log("[来电状态] uiShown: Auto=$autoAnswer, Delay=$autoAnswerDelaySeconds, State=${currentState.javaClass.simpleName}")
+
         return currentState
     }
 

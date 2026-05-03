@@ -5,29 +5,15 @@ import android.accessibilityservice.GestureDescription
 import android.graphics.Path
 import android.graphics.Rect
 import android.os.Bundle
-import android.util.Log
 import android.view.accessibility.AccessibilityNodeInfo
+import com.yinxing.launcher.common.util.DebugLog
 
-/**
- * 无障碍节点操作工具类（升级版）。
- *
- * 优化：
- * - findBestTextNode：contentDescription 遍历加入深度上限 + 早退策略
- * - findFirstEditableNode：非叶子节点优先检查 className 剪枝，减少无效递归
- * - clickNode：父节点向上遍历深度限制从 10 降至 6（微信层级通常不超过 5 层）
- */
 object AccessibilityUtil {
 
-    /** 递归遍历最大深度（微信 UI 树通常不超过此深度） */
+    private const val TAG = "WeChatAccessibility"
     private const val MAX_TRAVERSE_DEPTH = 12
-
-    /** dispatchGesture 单击时长，避开系统 tapTimeout 边界 */
     private const val TAP_DURATION_MS = 60L
-
-    fun findNodeByText(root: AccessibilityNodeInfo?, text: String): AccessibilityNodeInfo? {
-        if (root == null) return null
-        return root.findAccessibilityNodeInfosByText(text).firstOrNull()
-    }
+    private const val MAX_CLICK_PARENT_DEPTH = 6
 
     fun findNodeById(root: AccessibilityNodeInfo?, id: String): AccessibilityNodeInfo? {
         if (root == null) return null
@@ -87,13 +73,6 @@ object AccessibilityUtil {
         return target
     }
 
-    /**
-     * 递归遍历节点树，收集 contentDescription 匹配的节点。
-     *
-     * 升级：
-     * - 加入深度上限（MAX_TRAVERSE_DEPTH），避免深层无用节点的递归开销
-     * - 找到第一个精确匹配后不立即返回（可能有多个同名节点），但在非精确匹配时找到即可提前退出
-     */
     fun findNodesByContentDescription(
         root: AccessibilityNodeInfo?,
         text: String,
@@ -102,30 +81,28 @@ object AccessibilityUtil {
         if (root == null) return emptyList()
         val result = mutableListOf<AccessibilityNodeInfo>()
 
-        fun traverse(node: AccessibilityNodeInfo, depth: Int) {
-            if (depth > MAX_TRAVERSE_DEPTH) return
+        fun traverse(node: AccessibilityNodeInfo, depth: Int): Boolean {
+            if (depth > MAX_TRAVERSE_DEPTH) return false
             val desc = node.contentDescription?.toString()
-            val matches = if (exactMatch) desc == text else desc?.contains(text) == true
-            if (matches) result.add(node)
-            // 叶子节点不需要继续递归
+            val matched = if (exactMatch) desc == text else desc?.contains(text) == true
+            if (matched) result.add(node)
             val childCount = node.childCount
-            if (childCount == 0) return
-            for (i in 0 until childCount) {
-                val child = node.getChild(i) ?: continue
-                traverse(child, depth + 1)
+            if (childCount > 0) {
+                for (i in 0 until childCount) {
+                    val child = node.getChild(i) ?: continue
+                    val keep = traverse(child, depth + 1)
+                    if (!keep) {
+                        safeRecycle(child)
+                    }
+                }
             }
+            return matched
         }
 
         traverse(root, 0)
         return result
     }
 
-    /**
-     * 查找第一个可编辑节点。
-     *
-     * 升级：优先检查 isEditable 和 className 剪枝（容器节点通常不会是 EditText），
-     * 减少对布局容器的无效递归。
-     */
     fun findFirstEditableNode(root: AccessibilityNodeInfo?): AccessibilityNodeInfo? {
         if (root == null) return null
         return findFirstEditableNodeInternal(root, 0)
@@ -145,9 +122,11 @@ object AccessibilityUtil {
             val child = node.getChild(index) ?: continue
             val match = findFirstEditableNodeInternal(child, depth + 1)
             if (match != null) {
+                if (match !== child) {
+                    safeRecycle(child)
+                }
                 return match
             }
-            // child 不是目标，提前回收（除非 match == child 本身）
             safeRecycle(child)
         }
         return null
@@ -155,30 +134,31 @@ object AccessibilityUtil {
 
     fun clickNode(node: AccessibilityNodeInfo?): Boolean {
         if (node == null) {
-            Log.w("WECHAT_ACTION", "║ [微信动作] 失败: 点击 | 原因: 节点为空")
+            DebugLog.w(TAG, "clickNode: node is null")
             return false
         }
 
         if (node.isClickable) {
             val success = node.performAction(AccessibilityNodeInfo.ACTION_CLICK)
-            Log.d("WECHAT_ACTION", "║ [微信动作] 成功: 直接点击 | 结果: $success | 节点: ${summarizeNode(node)}")
+            DebugLog.d(TAG) { "clickNode: direct click result=$success node=${summarizeNode(node)}" }
             return success
         }
 
-        // 微信层级通常 ≤ 5，限制向上查找深度为 6 即可
         var parent = node.parent
         var depth = 0
-        while (parent != null && depth < 6) {
+        while (parent != null && depth < MAX_CLICK_PARENT_DEPTH) {
             if (parent.isClickable) {
                 val success = parent.performAction(AccessibilityNodeInfo.ACTION_CLICK)
-                Log.d("WECHAT_ACTION", "║ [微信动作] 成功: 父节点点击 (深度=$depth) | 结果: $success | 节点: ${summarizeNode(parent)}")
+                DebugLog.d(TAG) {
+                    "clickNode: parent click depth=$depth result=$success node=${summarizeNode(parent)}"
+                }
                 return success
             }
             parent = parent.parent
             depth++
         }
 
-        Log.w("WECHAT_ACTION", "║ [微信动作] 失败: 点击 | 原因: 未找到可点击的父节点 | 节点: ${summarizeNode(node)}")
+        DebugLog.w(TAG, "clickNode: no clickable ancestor for ${summarizeNode(node)}")
         return false
     }
 
@@ -195,7 +175,7 @@ object AccessibilityUtil {
     }
 
     fun clickByCoordinate(service: AccessibilityService, x: Float, y: Float): Boolean {
-        Log.d("WECHAT_ACTION", "║ [微信动作] 成功: 坐标点击 | 坐标: x=$x, y=$y")
+        DebugLog.d(TAG) { "clickByCoordinate: x=$x y=$y" }
         val path = Path().apply { moveTo(x, y) }
         val gesture = GestureDescription.Builder()
             .addStroke(GestureDescription.StrokeDescription(path, 0, TAP_DURATION_MS))
@@ -204,34 +184,12 @@ object AccessibilityUtil {
         return service.dispatchGesture(gesture, null, null)
     }
 
-    fun scrollDown(service: AccessibilityService, screenWidth: Int, screenHeight: Int): Boolean {
-        val centerX = screenWidth / 2f
-        val startY = screenHeight * 0.7f
-        val endY = screenHeight * 0.3f
-
-        val path = Path().apply {
-            moveTo(centerX, startY)
-            lineTo(centerX, endY)
-        }
-        val gesture = GestureDescription.Builder()
-            .addStroke(GestureDescription.StrokeDescription(path, 0, 300))
-            .build()
-
-        service.dispatchGesture(gesture, null, null)
-        return true
-    }
-
-    fun scrollNodeDown(node: AccessibilityNodeInfo?): Boolean {
-        if (node == null) return false
-        return node.performAction(AccessibilityNodeInfo.ACTION_SCROLL_FORWARD)
-    }
-
     fun setText(node: AccessibilityNodeInfo?, text: String): Boolean {
         if (node == null) {
-            Log.w("WECHAT_ACTION", "║ [微信动作] 失败: 输入文字 | 原因: 节点为空")
+            DebugLog.w(TAG, "setText: node is null")
             return false
         }
-        Log.i("WECHAT_ACTION", "║ [微信动作] 执行: 输入文字 | 内容: '$text' | 节点: ${summarizeNode(node)}")
+        DebugLog.i(TAG) { "setText: '$text' on ${summarizeNode(node)}" }
         node.performAction(AccessibilityNodeInfo.ACTION_FOCUS)
         val arguments = Bundle().apply {
             putCharSequence(AccessibilityNodeInfo.ACTION_ARGUMENT_SET_TEXT_CHARSEQUENCE, text)
@@ -245,21 +203,6 @@ object AccessibilityUtil {
             node?.recycle()
         } catch (_: IllegalStateException) {
         }
-    }
-
-    fun recycleNodes(vararg nodes: AccessibilityNodeInfo?) {
-        nodes.forEach { safeRecycle(it) }
-    }
-
-    fun findScrollableNode(root: AccessibilityNodeInfo?, depth: Int = 0): AccessibilityNodeInfo? {
-        if (root == null || depth > MAX_TRAVERSE_DEPTH) return null
-        if (root.isScrollable) return root
-        for (i in 0 until root.childCount) {
-            val child = root.getChild(i) ?: continue
-            val scrollable = findScrollableNode(child, depth + 1)
-            if (scrollable != null) return scrollable
-        }
-        return null
     }
 
     fun summarizeNode(node: AccessibilityNodeInfo?): String {

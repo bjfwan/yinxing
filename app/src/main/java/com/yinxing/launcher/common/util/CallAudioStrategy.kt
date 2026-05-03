@@ -2,7 +2,6 @@ package com.yinxing.launcher.common.util
 
 import android.content.Context
 import android.media.AudioManager
-import android.util.Log
 
 object CallAudioStrategy {
 
@@ -17,9 +16,9 @@ object CallAudioStrategy {
         val audioManager = audioManager(context) ?: return
         runCatching {
             setStreamToMax(audioManager, AudioManager.STREAM_RING)
-            Log.i(TAG, "maximizeIncomingRingVolume: ring volume=max")
+            DebugLog.i(TAG) { "maximizeIncomingRingVolume: ring volume=max" }
         }.onFailure { throwable ->
-            Log.e(
+            DebugLog.e(
                 TAG,
                 "maximizeIncomingRingVolume: FAILED - ${throwable::class.simpleName}: ${throwable.message}"
             )
@@ -32,7 +31,7 @@ object CallAudioStrategy {
             setStreamToMax(audioManager, AudioManager.STREAM_VOICE_CALL)
             enableSpeakerphone(audioManager, AudioManager.MODE_IN_CALL)
         }.getOrElse { throwable ->
-            Log.e(
+            DebugLog.e(
                 TAG,
                 "prepareSystemCall: FAILED - ${throwable::class.simpleName}: ${throwable.message}"
             )
@@ -46,7 +45,7 @@ object CallAudioStrategy {
             setStreamToMax(audioManager, AudioManager.STREAM_VOICE_CALL)
             enableSpeakerphone(audioManager, AudioManager.MODE_IN_COMMUNICATION)
         }.getOrElse { throwable ->
-            Log.e(
+            DebugLog.e(
                 TAG,
                 "prepareVoipCall: FAILED - ${throwable::class.simpleName}: ${throwable.message}"
             )

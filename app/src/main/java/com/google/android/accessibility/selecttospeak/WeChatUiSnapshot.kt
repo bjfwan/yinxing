@@ -1,6 +1,7 @@
 package com.google.android.accessibility.selecttospeak
 
 import android.view.accessibility.AccessibilityNodeInfo
+import com.yinxing.launcher.automation.wechat.WeChatViewIds
 import com.yinxing.launcher.automation.wechat.util.AccessibilityUtil
 
 internal data class WeChatUiSnapshot(
@@ -71,6 +72,8 @@ internal enum class WeChatDismissAction {
 internal object WeChatUiSnapshotAnalyzer {
     private val noSearchResultTexts = listOf("无搜索结果", "没有找到", "无结果")
     private val closeDialogTexts = listOf("关闭", "我知道了", "稍后再说", "以后再说", "暂不")
+    private val contactResultTitleIds = WeChatViewIds.CONTACT_RESULT_TITLE_IDS
+    private val contactSecondaryFieldLabels = listOf("昵称", "微信号", "微信昵称", "账号")
 
     fun isSearchPage(snapshot: WeChatUiSnapshot): Boolean {
         return hasEditableNode(snapshot) && (
@@ -100,9 +103,42 @@ internal object WeChatUiSnapshotAnalyzer {
     }
 
     fun containsContactName(snapshot: WeChatUiSnapshot, contactName: String): Boolean {
-        return snapshot.flatten().any { node ->
-            node.text == contactName || node.contentDescription == contactName
+        return containsAnyContactName(snapshot, listOf(contactName))
+    }
+
+    fun containsAnyContactName(snapshot: WeChatUiSnapshot, contactNames: Collection<String>): Boolean {
+        val normalizedNames = contactNames.map { it.trim() }.filter { it.isNotEmpty() }.toSet()
+        if (normalizedNames.isEmpty()) {
+            return false
         }
+        return snapshot.flatten().any { node ->
+            val text = node.text?.trim()
+            val description = node.contentDescription?.trim()
+            normalizedNames.any { name -> text == name || description == name }
+        }
+    }
+
+    fun findContactSearchResultDisplayName(snapshot: WeChatUiSnapshot, contactName: String): String? {
+        val normalizedName = contactName.trim()
+        if (normalizedName.isEmpty()) {
+            return null
+        }
+        val displayName = snapshot.flatten()
+            .firstNotNullOfOrNull { node ->
+                if (node.viewIdResourceName !in contactResultTitleIds) {
+                    return@firstNotNullOfOrNull null
+                }
+                node.text?.trim()?.takeIf { it.isNotEmpty() }
+                    ?: node.contentDescription?.trim()?.takeIf { it.isNotEmpty() }
+            }
+            ?: return null
+        if (displayName == normalizedName) {
+            return displayName
+        }
+        val texts = snapshot.flatten()
+            .flatMap { node -> sequenceOf(node.text, node.contentDescription) }
+            .mapNotNull { value -> value?.trim()?.takeIf { it.isNotEmpty() } }
+        return if (texts.any { matchesContactSecondaryField(it, normalizedName) }) displayName else null
     }
 
     fun isVideoCallSheetVisible(snapshot: WeChatUiSnapshot): Boolean {
@@ -124,13 +160,20 @@ internal object WeChatUiSnapshotAnalyzer {
         }
     }
 
+    private fun matchesContactSecondaryField(text: String, contactName: String): Boolean {
+        val compactText = text.trim().replace(" ", "")
+        val compactName = contactName.trim().replace(" ", "")
+        if (compactName.isEmpty()) {
+            return false
+        }
+        return contactSecondaryFieldLabels.any { label ->
+            (compactText.startsWith("$label:") || compactText.startsWith("$label：")) &&
+                compactText.substring(label.length + 1).contains(compactName)
+        }
+    }
+
     private fun hasConversationChrome(snapshot: WeChatUiSnapshot): Boolean {
-        val ids = setOf(
-            "com.tencent.mm:id/bjz",
-            "com.tencent.mm:id/j7s",
-            "com.tencent.mm:id/more_options",
-            "com.tencent.mm:id/icon_tv"
-        )
+        val ids = WeChatViewIds.MORE_BUTTON_BASE_IDS + WeChatViewIds.MESSAGE_TAB_ICON
         if (snapshot.flatten().any { node -> node.viewIdResourceName in ids }) {
             return true
         }

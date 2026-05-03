@@ -29,3 +29,4 @@ launcher_prefs*.xml
 app/google-services .json
 .windsurf
 .tmp_preview/
+update_release.py

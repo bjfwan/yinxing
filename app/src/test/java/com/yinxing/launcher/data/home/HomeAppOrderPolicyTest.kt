@@ -1,6 +1,7 @@
 package com.yinxing.launcher.data.home
 
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertTrue
 import org.junit.Test
 import java.util.Locale
 
@@ -82,5 +83,41 @@ class HomeAppOrderPolicyTest {
         } finally {
             Locale.setDefault(originalLocale)
         }
+    }
+
+    @Test
+    fun orderApps_emptyAppsReturnsEmpty() {
+        val result = HomeAppOrderPolicy.orderApps(emptyList(), listOf("pkg.a"))
+        assertTrue(result.isEmpty())
+    }
+
+    @Test
+    fun retainSelectedPackages_preservesSavedOrder() {
+        val result = HomeAppOrderPolicy.retainSelectedPackages(
+            listOf("pkg.c", "pkg.a", "pkg.b"),
+            listOf("pkg.a", "pkg.c")
+        )
+        assertEquals(listOf("pkg.c", "pkg.a"), result)
+    }
+
+    @Test
+    fun retainSelectedPackages_emptySelectionReturnsEmpty() {
+        val result = HomeAppOrderPolicy.retainSelectedPackages(
+            listOf("pkg.a", "pkg.b"),
+            emptyList()
+        )
+        assertTrue(result.isEmpty())
+    }
+
+    @Test
+    fun normalizeSavedOrder_trimsFiltersEmptyAndDeduplicates() {
+        val result = HomeAppOrderPolicy.normalizeSavedOrder(listOf("  pkg.a  ", "", "  ", "pkg.a", "pkg.b"))
+        assertEquals(listOf("pkg.a", "pkg.b"), result)
+    }
+
+    @Test
+    fun normalizeSavedOrder_emptyInputReturnsEmpty() {
+        val result = HomeAppOrderPolicy.normalizeSavedOrder(emptyList())
+        assertTrue(result.isEmpty())
     }
 }

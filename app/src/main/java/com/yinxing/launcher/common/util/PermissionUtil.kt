@@ -11,15 +11,10 @@ import android.os.Build
 import android.os.Environment
 import android.os.PowerManager
 import android.provider.Settings
-import android.util.Log
 
 object PermissionUtil {
 
     private const val TAG = "PermissionUtil"
-
-    /** 壳服务完整类名，微信会检测该服务是否运行以决定是否开放节点树 */
-    const val SELECT_TO_SPEAK_SERVICE =
-        "com.yinxing.launcher/com.google.android.accessibility.selecttospeak.SelectToSpeakService"
 
     fun isAccessibilityServiceEnabled(context: Context, serviceName: String): Boolean {
         return isAccessibilityServiceEnabled(
@@ -41,20 +36,6 @@ object PermissionUtil {
             Settings.Secure.ENABLED_ACCESSIBILITY_SERVICES
         )
         return !enabled.isNullOrBlank()
-    }
-
-    /**
-     * 检查微信视频通话所需的两个无障碍服务是否都已开启：
-     * 1. 主服务（WeChatAccessibilityService）
-     * 2. 壳服务（SelectToSpeakService）——触发微信白名单开放节点树
-     */
-    fun isWeChatCallAccessibilityReady(context: Context, mainServiceName: String): Boolean {
-        val enabled = Settings.Secure.getString(
-            context.contentResolver,
-            Settings.Secure.ENABLED_ACCESSIBILITY_SERVICES
-        )
-        return isAccessibilityServiceEnabled(enabled, mainServiceName) &&
-            isAccessibilityServiceEnabled(enabled, SELECT_TO_SPEAK_SERVICE)
     }
 
     fun openAccessibilitySettings(context: Context) {
@@ -146,7 +127,7 @@ object PermissionUtil {
                 fallback.flags = Intent.FLAG_ACTIVITY_NEW_TASK
                 context.startActivity(fallback)
             }.onFailure { e ->
-                Log.w(TAG, "无法打开电池优化设置: ${e.message}")
+                DebugLog.w(TAG, "无法打开电池优化设置: ${e.message}")
             }
         }
     }
@@ -294,7 +275,7 @@ object PermissionUtil {
             intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK
             context.startActivity(intent)
         }.onFailure { e ->
-            Log.w(TAG, "无法打开应用详情页: ${e.message}")
+            DebugLog.w(TAG, "无法打开应用详情页: ${e.message}")
         }
     }
 }

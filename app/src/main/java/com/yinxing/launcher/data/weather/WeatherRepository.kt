@@ -1,9 +1,10 @@
 package com.yinxing.launcher.data.weather
 
 import android.content.Context
-import android.util.Log
 import com.yinxing.launcher.common.perf.LauncherTraceNames
-import com.yinxing.launcher.common.perf.traceSection
+import com.yinxing.launcher.common.perf.traceAndReport
+import com.yinxing.launcher.common.perf.traceBegin
+import com.yinxing.launcher.common.util.DebugLog
 import com.yinxing.launcher.data.weather.source.SeniverseWeatherDataSource
 import com.yinxing.launcher.data.weather.source.SeniverseWeatherSource
 import com.yinxing.launcher.data.weather.source.TencentWeatherDataSource
@@ -56,37 +57,40 @@ object WeatherRepository {
         }
     }
 
-    suspend fun fetchWeather(cityName: String): WeatherState = withContext(Dispatchers.IO) {
-        traceSection(LauncherTraceNames.HOME_WEATHER_REQUEST) {
-            val normalizedCityName = normalizeCityName(cityName)
-            cacheMutex.withLock {
-                freshCached(normalizedCityName)?.let { cached ->
-                    return@traceSection cached.copy(fromCache = true)
-                }
+    suspend fun fetchWeather(cityName: String, context: Context? = null): WeatherState = withContext(Dispatchers.IO) {
+        traceBegin(LauncherTraceNames.HOME_WEATHER_REQUEST)
+        val normalizedCityName = normalizeCityName(cityName)
+        cacheMutex.withLock {
+            freshCached(normalizedCityName)?.let { cached ->
+                context?.let { traceAndReport(it, LauncherTraceNames.HOME_WEATHER_REQUEST) }
+                return@withContext cached.copy(fromCache = true)
             }
+        }
 
-            backoffState(normalizedCityName)?.let { state ->
-                return@traceSection state
-            }
+        backoffState(normalizedCityName)?.let { state ->
+            context?.let { traceAndReport(it, LauncherTraceNames.HOME_WEATHER_REQUEST) }
+            return@withContext state
+        }
 
-            val deferred = inFlightMutex.withLock {
-                inFlightRequests[normalizedCityName]?.takeIf { it.isActive } ?: requestScope.async {
-                    fetchWeatherInternal(normalizedCityName)
-                }.also { request ->
-                    inFlightRequests[normalizedCityName] = request
-                    request.invokeOnCompletion {
-                        requestScope.launch {
-                            inFlightMutex.withLock {
-                                if (inFlightRequests[normalizedCityName] === request) {
-                                    inFlightRequests.remove(normalizedCityName)
-                                }
+        val deferred = inFlightMutex.withLock {
+            inFlightRequests[normalizedCityName]?.takeIf { it.isActive } ?: requestScope.async {
+                fetchWeatherInternal(normalizedCityName)
+            }.also { request ->
+                inFlightRequests[normalizedCityName] = request
+                request.invokeOnCompletion {
+                    requestScope.launch {
+                        inFlightMutex.withLock {
+                            if (inFlightRequests[normalizedCityName] === request) {
+                                inFlightRequests.remove(normalizedCityName)
                             }
                         }
                     }
                 }
             }
-            deferred.await()
         }
+        val result = deferred.await()
+        context?.let { traceAndReport(it, LauncherTraceNames.HOME_WEATHER_REQUEST) }
+        result
     }
 
     fun clearCache() {
@@ -163,7 +167,7 @@ object WeatherRepository {
         } catch (e: CancellationException) {
             throw e
         } catch (e: Exception) {
-            Log.w(TAG, "fetchWeatherInternal failed for $cityName", e)
+            DebugLog.w(TAG, "fetchWeatherInternal failed for $cityName", e)
             val reason = classifyFailure(e)
             val message = e.message ?: "网络请求失败"
             recordFailure(cityName)

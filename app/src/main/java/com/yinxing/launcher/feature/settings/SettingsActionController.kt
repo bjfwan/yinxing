@@ -5,15 +5,17 @@ import android.app.role.RoleManager
 import android.content.Intent
 import android.os.Build
 import android.provider.Settings
-import android.util.Log
 import android.view.View
 import android.widget.TextView
 import android.widget.Toast
 import androidx.annotation.RequiresApi
 import androidx.appcompat.app.AlertDialog
 import com.yinxing.launcher.R
+import com.yinxing.launcher.common.util.DebugLog
 import com.yinxing.launcher.common.util.PermissionUtil
 import com.yinxing.launcher.feature.incoming.IncomingGuardItem
+
+private const val TAG = "SettingsActionController"
 
 internal class SettingsActionController(
     private val activity: SettingsActivity
@@ -268,7 +270,7 @@ internal fun SettingsActivity.openDefaultLauncherSettings() {
             startActivity(intent)
             return
         } catch (_: Exception) {
-            Log.w("SettingsActivity", "openDefaultLauncherSettings failed for ${intent.action}")
+            DebugLog.w(TAG, "openDefaultLauncherSettings failed for ${intent.action}")
         }
     }
     Toast.makeText(this, getString(R.string.open_settings_failed), Toast.LENGTH_SHORT).show()

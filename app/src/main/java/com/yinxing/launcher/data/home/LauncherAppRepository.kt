@@ -7,7 +7,8 @@ import android.os.Build
 import com.yinxing.launcher.R
 import com.yinxing.launcher.common.media.MediaThumbnailLoader
 import com.yinxing.launcher.common.perf.LauncherTraceNames
-import com.yinxing.launcher.common.perf.traceSection
+import com.yinxing.launcher.common.perf.traceAndReport
+import com.yinxing.launcher.common.perf.traceBegin
 import com.yinxing.launcher.feature.appmanage.AppInfo
 import com.yinxing.launcher.feature.home.HomeAppItem
 import java.util.concurrent.atomic.AtomicInteger
@@ -63,45 +64,48 @@ class LauncherAppRepository(
     }
 
     suspend fun getHomeItems(preferences: LauncherPreferences): List<HomeAppItem> = withContext(Dispatchers.IO) {
-        traceSection(LauncherTraceNames.HOME_APP_LIST_LOAD) {
-            homeMutex.withLock {
-                if (!homeItemsDirty) {
-                    homeItemsCache?.let { return@traceSection it }
+        traceBegin(LauncherTraceNames.HOME_APP_LIST_LOAD)
+        homeMutex.withLock {
+            if (!homeItemsDirty) {
+                homeItemsCache?.let {
+                    traceAndReport(appContext, LauncherTraceNames.HOME_APP_LIST_LOAD)
+                    return@withContext it
                 }
-
-                val requestVersion = homeItemsVersion.get()
-                val selectedPackages = preferences.getSelectedPackages()
-                val selectedApps = loadSelectedHomeApps(selectedPackages)
-                    .map { app ->
-                        HomeAppItem(
-                            packageName = app.packageName,
-                            appName = app.appName,
-                            type = HomeAppItem.Type.APP
-                        )
-                    }
-
-                val selectedAppsByPackage = selectedApps.associateBy { it.packageName }
-                val orderedApps = HomeAppOrderPolicy.orderApps(
-                    selectedApps.map { OrderedApp(it.packageName, it.appName) },
-                    preferences.getAppOrder()
-                )
-
-                val items = buildList {
-                    addPrimaryBuiltInItems()
-                    orderedApps.forEach { app ->
-                        selectedAppsByPackage[app.packageName]?.let(::add)
-                    }
-                    addSecondaryBuiltInItems()
-                }
-
-                preferences.syncAppOrder(orderedApps.map { it.packageName })
-
-                if (requestVersion == homeItemsVersion.get()) {
-                    homeItemsCache = items
-                    homeItemsDirty = false
-                }
-                items
             }
+
+            val requestVersion = homeItemsVersion.get()
+            val selectedPackages = preferences.getSelectedPackages()
+            val selectedApps = loadSelectedHomeApps(selectedPackages)
+                .map { app ->
+                    HomeAppItem(
+                        packageName = app.packageName,
+                        appName = app.appName,
+                        type = HomeAppItem.Type.APP
+                    )
+                }
+
+            val selectedAppsByPackage = selectedApps.associateBy { it.packageName }
+            val orderedApps = HomeAppOrderPolicy.orderApps(
+                selectedApps.map { OrderedApp(it.packageName, it.appName) },
+                preferences.getAppOrder()
+            )
+
+            val items = buildList {
+                addPrimaryBuiltInItems()
+                orderedApps.forEach { app ->
+                    selectedAppsByPackage[app.packageName]?.let(::add)
+                }
+                addSecondaryBuiltInItems()
+            }
+
+            preferences.syncAppOrder(orderedApps.map { it.packageName })
+
+            if (requestVersion == homeItemsVersion.get()) {
+                homeItemsCache = items
+                homeItemsDirty = false
+            }
+            traceAndReport(appContext, LauncherTraceNames.HOME_APP_LIST_LOAD)
+            items
         }
     }
 

@@ -10,6 +10,7 @@ import android.widget.TextView
 import androidx.cardview.widget.CardView
 import androidx.core.content.ContextCompat
 import androidx.core.view.isVisible
+import androidx.lifecycle.LifecycleCoroutineScope
 import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
@@ -17,12 +18,11 @@ import com.yinxing.launcher.R
 import com.yinxing.launcher.common.media.MediaThumbnailLoader
 import com.yinxing.launcher.data.contact.Contact
 import kotlinx.coroutines.CancellationException
-import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
 
 class VideoCallContactAdapter(
-    private val scope: CoroutineScope,
+    private val scope: LifecycleCoroutineScope,
     private var lowPerformanceMode: Boolean,
     private val onContactClick: (Contact) -> Unit,
     private val onWechatVideoClick: (Contact) -> Unit

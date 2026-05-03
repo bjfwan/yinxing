@@ -1,10 +1,10 @@
 # 发布检查清单
 
-更新时间：2026-05-01
+更新时间：2026-05-04
 
 ## 1. 版本信息
 
-- 版本号已更新（当前 `versionCode = 13`，`versionName = "1.7.2"`）
+- 版本号已更新（当前 `versionCode = 14`，`versionName = "1.8.0"`）
 - 变更范围已确认
 - 发布说明已准备
 
@@ -13,10 +13,10 @@
 - `JAVA_HOME` 已确认可用（本地 `build.bat` 使用 `D:\Android\jbr`）
 - `GRADLE_USER_HOME` 已确认使用稳定路径
 - `:app:assembleDebug` 通过
-- `:app:testDebugUnitTest` 通过（171 tests, 0 failed）
+- `:app:testDebugUnitTest` 通过（288 tests, 0 failed）
 - `:app:assembleDebugAndroidTest` 通过
 - `:app:lintDebug` 没有阻断错误
-- `:app:assembleRelease` 通过（输出 `app/build/outputs/apk/release/app-release.apk`，约 2.95 MB）
+- `:app:assembleRelease` 通过（输出 `app/build/outputs/apk/release/app-release.apk`，约 2.14 MB）
 - `:app:lintVitalRelease` 通过
 - `docs/app-release.apk` 已用本次 Release APK 覆盖
 - GitHub Release 已上传同一个 `app-release.apk`

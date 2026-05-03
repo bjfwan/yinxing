@@ -89,11 +89,82 @@ class WeChatUiSnapshotAnalyzerTest {
         assertEquals(WeChatDismissAction.SEARCH_CANCEL, WeChatUiSnapshotAnalyzer.suggestDismissAction(noResultSnapshot))
     }
 
+    @Test
+    fun matchesRemarkedContactResultByNicknameOrWechatId() {
+        val remarkResultSnapshot = node(
+            clickable = true,
+            children = listOf(
+                node(text = "挑战自我", viewIdResourceName = "com.tencent.mm:id/odf"),
+                node(text = "昵称: wan.")
+            )
+        )
+        val wechatIdResultSnapshot = node(
+            clickable = true,
+            children = listOf(
+                node(text = "王二", viewIdResourceName = "com.tencent.mm:id/kbq"),
+                node(text = "微信号：wxid_wanan")
+            )
+        )
+
+        assertEquals("挑战自我", WeChatUiSnapshotAnalyzer.findContactSearchResultDisplayName(remarkResultSnapshot, "wan."))
+        assertEquals("王二", WeChatUiSnapshotAnalyzer.findContactSearchResultDisplayName(wechatIdResultSnapshot, "wxid_wanan"))
+    }
+
+    @Test
+    fun ignoresPlainNetworkResultRowsAndSupportsResolvedAliasDetection() {
+        val networkResultSnapshot = node(
+            clickable = true,
+            children = listOf(
+                node(text = "wan.")
+            )
+        )
+        val conversationSnapshot = node(
+            children = listOf(
+                node(text = "挑战自我"),
+                node(text = "发消息")
+            )
+        )
+
+        assertEquals(null, WeChatUiSnapshotAnalyzer.findContactSearchResultDisplayName(networkResultSnapshot, "wan."))
+        assertTrue(WeChatUiSnapshotAnalyzer.containsAnyContactName(conversationSnapshot, listOf("wan.", "挑战自我")))
+        assertFalse(WeChatUiSnapshotAnalyzer.containsContactName(conversationSnapshot, "wan."))
+    }
+
+    @Test
+    fun requiresKnownTitleOrSecondaryFieldForSearchResultDisplayName() {
+        val genericExactTextSnapshot = node(
+            clickable = true,
+            children = listOf(
+                node(text = "wan."),
+                node(text = "搜索网络结果")
+            )
+        )
+        val unlabeledAliasSnapshot = node(
+            clickable = true,
+            children = listOf(
+                node(text = "挑战自我", viewIdResourceName = "com.tencent.mm:id/odf"),
+                node(text = "wan.")
+            )
+        )
+        val labeledAliasSnapshot = node(
+            clickable = true,
+            children = listOf(
+                node(text = "挑战自我", viewIdResourceName = "com.tencent.mm:id/odf"),
+                node(text = "昵称：wan.")
+            )
+        )
+
+        assertEquals(null, WeChatUiSnapshotAnalyzer.findContactSearchResultDisplayName(genericExactTextSnapshot, "wan."))
+        assertEquals(null, WeChatUiSnapshotAnalyzer.findContactSearchResultDisplayName(unlabeledAliasSnapshot, "wan."))
+        assertEquals("挑战自我", WeChatUiSnapshotAnalyzer.findContactSearchResultDisplayName(labeledAliasSnapshot, "wan."))
+    }
+
     private fun node(
         text: String? = null,
         contentDescription: String? = null,
         viewIdResourceName: String? = null,
         className: String? = null,
+        clickable: Boolean = false,
         editable: Boolean = false,
         children: List<WeChatUiSnapshot> = emptyList()
     ): WeChatUiSnapshot {
@@ -102,6 +173,7 @@ class WeChatUiSnapshotAnalyzerTest {
             contentDescription = contentDescription,
             viewIdResourceName = viewIdResourceName,
             className = className,
+            clickable = clickable,
             editable = editable,
             children = children
         )

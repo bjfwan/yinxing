@@ -7,9 +7,16 @@ import androidx.datastore.preferences.core.emptyPreferences
 import androidx.datastore.preferences.core.intPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 
 data class LauncherSettings(
@@ -53,9 +60,10 @@ private val Context.launcherSettingsDataStore by preferencesDataStore(name = "la
 
 class LauncherSettingsDataStore private constructor(context: Context) {
     private val dataStore = context.applicationContext.launcherSettingsDataStore
+    private val ioScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
 
-    @Volatile
-    private var cachedSettings = readSettings()
+    private val _settings = MutableStateFlow(readSettings())
+    val settings: StateFlow<LauncherSettings> = _settings.asStateFlow()
 
     companion object {
         const val DEFAULT_AUTO_ANSWER_DELAY_SECONDS = 5
@@ -86,73 +94,139 @@ class LauncherSettingsDataStore private constructor(context: Context) {
         }
     }
 
-    fun snapshot(): LauncherSettings = cachedSettings
+    fun snapshot(): LauncherSettings = _settings.value
 
     fun setLowPerformanceModeEnabled(enabled: Boolean) {
-        update { it[KEY_LOW_PERFORMANCE_MODE] = enabled }
+        mutate(
+            update = { it.copy(lowPerformanceModeEnabled = enabled) },
+            persist = { it[KEY_LOW_PERFORMANCE_MODE] = enabled }
+        )
     }
 
     fun setAutoAnswerEnabled(enabled: Boolean) {
-        update { it[KEY_AUTO_ANSWER_ENABLED] = enabled }
+        mutate(
+            update = { it.copy(autoAnswerEnabled = enabled) },
+            persist = { it[KEY_AUTO_ANSWER_ENABLED] = enabled }
+        )
     }
 
     fun setAutoAnswerDelaySeconds(seconds: Int) {
-        update { it[KEY_AUTO_ANSWER_DELAY_SECONDS] = seconds.coerceIn(1, 30) }
+        val normalized = seconds.coerceIn(1, 30)
+        mutate(
+            update = { it.copy(autoAnswerDelaySeconds = normalized) },
+            persist = { it[KEY_AUTO_ANSWER_DELAY_SECONDS] = normalized }
+        )
     }
 
     fun setFullCardTapEnabled(enabled: Boolean) {
-        update { it[KEY_FULL_CARD_TAP_ENABLED] = enabled }
+        mutate(
+            update = { it.copy(fullCardTapEnabled = enabled) },
+            persist = { it[KEY_FULL_CARD_TAP_ENABLED] = enabled }
+        )
     }
 
     fun setDarkMode(value: String) {
-        update { it[KEY_DARK_MODE] = normalizeDarkMode(value) }
+        val normalized = normalizeDarkMode(value)
+        mutate(
+            update = { it.copy(darkMode = normalized) },
+            persist = { it[KEY_DARK_MODE] = normalized }
+        )
     }
 
     fun setKioskModeEnabled(enabled: Boolean) {
-        update { it[KEY_KIOSK_MODE_ENABLED] = enabled }
+        mutate(
+            update = { it.copy(kioskModeEnabled = enabled) },
+            persist = { it[KEY_KIOSK_MODE_ENABLED] = enabled }
+        )
     }
 
     fun setAutoStartConfirmed(confirmed: Boolean) {
-        update { it[KEY_AUTOSTART_CONFIRMED] = confirmed }
+        mutate(
+            update = { it.copy(autoStartConfirmed = confirmed) },
+            persist = { it[KEY_AUTOSTART_CONFIRMED] = confirmed }
+        )
     }
 
     fun setBackgroundStartConfirmed(confirmed: Boolean) {
-        update { it[KEY_BACKGROUND_START_CONFIRMED] = confirmed }
+        mutate(
+            update = { it.copy(backgroundStartConfirmed = confirmed) },
+            persist = { it[KEY_BACKGROUND_START_CONFIRMED] = confirmed }
+        )
     }
 
     fun setIconScale(scale: Int) {
-        update { it[KEY_ICON_SCALE] = scale.coerceIn(MIN_ICON_SCALE, MAX_ICON_SCALE) }
+        val normalized = scale.coerceIn(MIN_ICON_SCALE, MAX_ICON_SCALE)
+        mutate(
+            update = { it.copy(iconScale = normalized) },
+            persist = { it[KEY_ICON_SCALE] = normalized }
+        )
     }
 
     fun migrateFrom(migration: LauncherSettingsMigration) {
         if (!migration.hasValues) {
             return
         }
-        update { preferences ->
-            migration.lowPerformanceModeEnabled?.let { preferences[KEY_LOW_PERFORMANCE_MODE] = it }
-            migration.autoAnswerEnabled?.let { preferences[KEY_AUTO_ANSWER_ENABLED] = it }
-            migration.autoAnswerDelaySeconds?.let {
-                preferences[KEY_AUTO_ANSWER_DELAY_SECONDS] = it.coerceIn(1, 30)
+        mutate(
+            update = { current ->
+                current.copy(
+                    lowPerformanceModeEnabled = migration.lowPerformanceModeEnabled
+                        ?: current.lowPerformanceModeEnabled,
+                    autoAnswerEnabled = migration.autoAnswerEnabled ?: current.autoAnswerEnabled,
+                    autoAnswerDelaySeconds = (migration.autoAnswerDelaySeconds
+                        ?: current.autoAnswerDelaySeconds).coerceIn(1, 30),
+                    fullCardTapEnabled = migration.fullCardTapEnabled ?: current.fullCardTapEnabled,
+                    darkMode = migration.darkMode?.let(::normalizeDarkMode) ?: current.darkMode,
+                    kioskModeEnabled = migration.kioskModeEnabled ?: current.kioskModeEnabled,
+                    autoStartConfirmed = migration.autoStartConfirmed ?: current.autoStartConfirmed,
+                    backgroundStartConfirmed = migration.backgroundStartConfirmed
+                        ?: current.backgroundStartConfirmed,
+                    iconScale = (migration.iconScale ?: current.iconScale)
+                        .coerceIn(MIN_ICON_SCALE, MAX_ICON_SCALE)
+                )
+            },
+            persist = { preferences ->
+                migration.lowPerformanceModeEnabled?.let { preferences[KEY_LOW_PERFORMANCE_MODE] = it }
+                migration.autoAnswerEnabled?.let { preferences[KEY_AUTO_ANSWER_ENABLED] = it }
+                migration.autoAnswerDelaySeconds?.let {
+                    preferences[KEY_AUTO_ANSWER_DELAY_SECONDS] = it.coerceIn(1, 30)
+                }
+                migration.fullCardTapEnabled?.let { preferences[KEY_FULL_CARD_TAP_ENABLED] = it }
+                migration.darkMode?.let { preferences[KEY_DARK_MODE] = normalizeDarkMode(it) }
+                migration.kioskModeEnabled?.let { preferences[KEY_KIOSK_MODE_ENABLED] = it }
+                migration.autoStartConfirmed?.let { preferences[KEY_AUTOSTART_CONFIRMED] = it }
+                migration.backgroundStartConfirmed?.let { preferences[KEY_BACKGROUND_START_CONFIRMED] = it }
+                migration.iconScale?.let {
+                    preferences[KEY_ICON_SCALE] = it.coerceIn(MIN_ICON_SCALE, MAX_ICON_SCALE)
+                }
             }
-            migration.fullCardTapEnabled?.let { preferences[KEY_FULL_CARD_TAP_ENABLED] = it }
-            migration.darkMode?.let { preferences[KEY_DARK_MODE] = normalizeDarkMode(it) }
-            migration.kioskModeEnabled?.let { preferences[KEY_KIOSK_MODE_ENABLED] = it }
-            migration.autoStartConfirmed?.let { preferences[KEY_AUTOSTART_CONFIRMED] = it }
-            migration.backgroundStartConfirmed?.let { preferences[KEY_BACKGROUND_START_CONFIRMED] = it }
-            migration.iconScale?.let { preferences[KEY_ICON_SCALE] = it.coerceIn(MIN_ICON_SCALE, MAX_ICON_SCALE) }
-        }
+        )
     }
 
     fun clear() {
-        update { it.clear() }
+        mutate(
+            update = { LauncherSettings() },
+            persist = { it.clear() }
+        )
     }
 
-    private fun update(block: (androidx.datastore.preferences.core.MutablePreferences) -> Unit) {
-        cachedSettings = runBlocking(Dispatchers.IO) {
-            dataStore.edit { preferences -> block(preferences) }.toLauncherSettings()
+    /**
+     * Write-through update: 指定内存中如何增量更新缓存，同时在 IO 协程里异步营造 DataStore。
+     * 调用方会立即看到新值（不阻塞主线程）；磁盘写入在后台完成。
+     */
+    private fun mutate(
+        update: (LauncherSettings) -> LauncherSettings,
+        persist: (androidx.datastore.preferences.core.MutablePreferences) -> Unit
+    ) {
+        _settings.update(update)
+        ioScope.launch {
+            dataStore.edit(persist)
         }
     }
 
+    /**
+     * 启动期同步读一次，以保证后续同步 [snapshot] 语义与原实现一致。
+     * 后续读写都走 [_settings] 内存缓存，不再阻塞主线。
+     */
     private fun readSettings(): LauncherSettings {
         return runBlocking(Dispatchers.IO) {
             dataStore.data

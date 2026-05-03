@@ -9,7 +9,8 @@ import android.telephony.TelephonyManager
 import androidx.appcompat.app.AppCompatDelegate
 import com.yinxing.launcher.common.media.MediaThumbnailLoader
 import com.yinxing.launcher.common.perf.LauncherTraceNames
-import com.yinxing.launcher.common.perf.traceSection
+import com.yinxing.launcher.common.perf.traceAndReport
+import com.yinxing.launcher.common.perf.traceBegin
 import com.yinxing.launcher.data.home.LauncherAppRepository
 import com.yinxing.launcher.data.home.LauncherPreferences
 import com.yinxing.launcher.feature.incoming.IncomingCallForegroundService
@@ -26,21 +27,21 @@ class LauncherApplication : Application() {
 
     override fun onCreate() {
         super.onCreate()
-        traceSection(LauncherTraceNames.APP_INIT) {
-            applyDarkModePreference()
-            registerPhoneCallReceiver()
-            Handler(Looper.getMainLooper()).postDelayed(
-                {
-                    IncomingCallForegroundService.ensureNotificationChannels(this)
-                    appScope.launch {
-                        runCatching {
-                            LauncherAppRepository.getInstance(this@LauncherApplication).prewarmInstalledApps()
-                        }
+        traceBegin(LauncherTraceNames.APP_INIT)
+        applyDarkModePreference()
+        registerPhoneCallReceiver()
+        Handler(Looper.getMainLooper()).postDelayed(
+            {
+                IncomingCallForegroundService.ensureNotificationChannels(this)
+                appScope.launch {
+                    runCatching {
+                        LauncherAppRepository.getInstance(this@LauncherApplication).prewarmInstalledApps()
                     }
-                },
-                3_000L
-            )
-        }
+                }
+            },
+            3_000L
+        )
+        traceAndReport(this, LauncherTraceNames.APP_INIT)
     }
 
     private fun registerPhoneCallReceiver() {

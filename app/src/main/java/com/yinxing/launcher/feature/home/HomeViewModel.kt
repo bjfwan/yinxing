@@ -149,7 +149,7 @@ class HomeViewModel(
             return HomeViewModel(
                 appSource = AndroidHomeAppSource(appRepository, preferences),
                 settingsSource = AndroidHomeSettingsSource(preferences),
-                weatherSource = AndroidHomeWeatherSource(weatherPreferences)
+                weatherSource = AndroidHomeWeatherSource(weatherPreferences, appContext)
             ) as T
         }
     }
@@ -222,11 +222,12 @@ private class AndroidHomeSettingsSource(
 }
 
 private class AndroidHomeWeatherSource(
-    private val preferences: WeatherPreferences
+    private val preferences: WeatherPreferences,
+    private val appContext: Context
 ) : HomeWeatherSource {
     override fun getCityName() = preferences.getCityName()
 
     override fun getCached() = WeatherRepository.getCached()
 
-    override suspend fun fetchWeather(cityName: String) = WeatherRepository.fetchWeather(cityName)
+    override suspend fun fetchWeather(cityName: String) = WeatherRepository.fetchWeather(cityName, appContext)
 }
