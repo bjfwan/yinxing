@@ -4,6 +4,7 @@ import android.content.SharedPreferences
 import com.yinxing.launcher.data.weather.WeatherForecastDay
 import com.yinxing.launcher.data.weather.WeatherNow
 import com.yinxing.launcher.data.weather.WeatherState
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.StandardTestDispatcher
@@ -83,6 +84,22 @@ class HomeViewModelTest {
         state as HomeUiState.Error
         assertEquals(staticItems, state.items)
         assertEquals("boom", state.message)
+    }
+
+    @Test
+    fun refreshAppsDoesNotEmitErrorForCancellation() = runTest {
+        val staticItems = builtInItems()
+        val viewModel = createViewModel(
+            appSource = FakeHomeAppSource(
+                staticItems = staticItems,
+                homeItemsResult = Result.failure(CancellationException("cancelled"))
+            )
+        )
+
+        viewModel.refreshApps()
+        dispatcher.scheduler.runCurrent()
+
+        assertEquals(HomeUiState.Loading(staticItems), viewModel.homeUiState.value)
     }
 
     @Test

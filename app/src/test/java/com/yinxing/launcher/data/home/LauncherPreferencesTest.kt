@@ -46,6 +46,20 @@ class LauncherPreferencesTest {
         assertEquals(listOf("pkg.alpha", "pkg.gamma"), preferences.getAppOrder())
     }
 
+    @Test
+    fun syncAppOrderDoesNotNotifyWhenOrderIsAlreadyEmpty() {
+        var notificationCount = 0
+        preferences.registerListener { _, key ->
+            if (key == "app_order") {
+                notificationCount += 1
+            }
+        }
+
+        preferences.syncAppOrder(emptyList())
+
+        assertEquals(emptyList<String>(), preferences.getAppOrder())
+        assertEquals(0, notificationCount)
+    }
 
     @Test
     fun autoAnswerDefaultIsTrue() {

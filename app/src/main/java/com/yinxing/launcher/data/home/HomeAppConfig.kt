@@ -57,12 +57,17 @@ class HomeAppConfig(context: Context) {
     }
 
     fun saveAppOrder(packageNames: List<String>): Boolean {
-        val normalized = HomeAppOrderPolicy.normalizeSavedOrder(packageNames).joinToString(",")
-        if (prefs.getString(KEY_APP_ORDER, null) == normalized) {
+        val normalizedOrder = HomeAppOrderPolicy.normalizeSavedOrder(packageNames)
+        if (getAppOrder() == normalizedOrder) {
             return false
         }
+        val normalized = normalizedOrder.joinToString(",")
         prefs.edit {
-            putString(KEY_APP_ORDER, normalized)
+            if (normalized.isEmpty()) {
+                remove(KEY_APP_ORDER)
+            } else {
+                putString(KEY_APP_ORDER, normalized)
+            }
         }
         return true
     }

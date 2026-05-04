@@ -10,6 +10,7 @@ import com.yinxing.launcher.data.home.LauncherPreferences
 import com.yinxing.launcher.data.weather.WeatherPreferences
 import com.yinxing.launcher.data.weather.WeatherRepository
 import com.yinxing.launcher.data.weather.WeatherState
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -70,6 +71,9 @@ class HomeViewModel(
                     }
                 }
                 .onFailure { error ->
+                    if (error is CancellationException) {
+                        throw error
+                    }
                     _homeUiState.value = HomeUiState.Error(
                         fallbackItems,
                         error.message ?: error.javaClass.simpleName
