@@ -11,6 +11,10 @@ internal data class WeChatFailureSnapshot(
     val startedAt: Long,
     val stepStartedAt: Long,
     val actionAttempts: Map<String, Int>,
+    val stepHistory: List<String>,
+    val stepDurations: Map<String, Long>,
+    val lastDetectedPage: String?,
+    val lastProgressAt: Long,
     val lastAnnouncedMessage: String?
 )
 
@@ -31,6 +35,10 @@ internal object WeChatFailureDiagnostics {
                 append(", stepStartedAt=").append(session.stepStartedAt)
                 append(", now=").append(System.currentTimeMillis())
                 append(", actionAttempts=").append(session.actionAttempts)
+                append(", stepHistory=").append(session.stepHistory)
+                append(", stepDurations=").append(session.stepDurations)
+                append(", lastDetectedPage=").append(session.lastDetectedPage)
+                append(", lastProgressAt=").append(session.lastProgressAt)
                 append(", lastAnnouncedMessage=").append(session.lastAnnouncedMessage)
             }
             append("\nroot=").append(AccessibilityUtil.summarizeNode(root))

@@ -82,7 +82,8 @@ class SelectToSpeakService : AccessibilityService(), WeChatRequestHost {
         val success: Boolean,
         val terminal: Boolean,
         val step: AutomationState = AutomationState.IDLE,
-        val page: String? = null
+        val page: String? = null,
+        val reported: Boolean = false
     )
 
 
@@ -184,13 +185,13 @@ class SelectToSpeakService : AccessibilityService(), WeChatRequestHost {
     }
 
     override fun onInterrupt() {
-        cancelSession(false)
+        cancelSession(true, "无障碍服务已中断，请重新开启后再试")
     }
 
     override fun onDestroy() {
         instance = null
         if (::kioskGuard.isInitialized) kioskGuard.shutdown()
-        cancelSession(false)
+        cancelSession(true, "无障碍服务已关闭，请重新开启后再试")
         floatingView?.hide()
         floatingView = null
         serviceScope.cancel()
@@ -211,8 +212,10 @@ class SelectToSpeakService : AccessibilityService(), WeChatRequestHost {
         state: String,
         success: Boolean,
         terminal: Boolean,
-        page: WeChatPage? = session.lastDetectedPage
+        page: WeChatPage? = session.lastDetectedPage,
+        reported: Boolean = false
     ) {
+        session.lastProgressAt = System.currentTimeMillis()
         deliverProgress(
             session.requestId,
             VideoCallProgress(
@@ -220,7 +223,8 @@ class SelectToSpeakService : AccessibilityService(), WeChatRequestHost {
                 success = success,
                 terminal = terminal,
                 step = session.toProgressState(success = success, terminal = terminal),
-                page = page?.name
+                page = page?.name,
+                reported = reported
             )
         )
     }
@@ -1226,6 +1230,7 @@ class SelectToSpeakService : AccessibilityService(), WeChatRequestHost {
     private fun transitionTo(session: VideoCallSession, nextStep: Step, message: String) {
         val oldStep = session.step
         val duration = System.currentTimeMillis() - session.stepStartedAt
+        session.stepDurations[oldStep.name.lowercase()] = duration
         recordStepSuccess(oldStep, duration)
         recordStepHistory(session, nextStep)
         session.step = nextStep
@@ -1251,7 +1256,9 @@ class SelectToSpeakService : AccessibilityService(), WeChatRequestHost {
 
 
     private fun finishVideoCallStarted(session: VideoCallSession) {
-        recordStepSuccess(session.step, System.currentTimeMillis() - session.stepStartedAt)
+        val stepElapsed = System.currentTimeMillis() - session.stepStartedAt
+        session.stepDurations[session.step.name.lowercase()] = stepElapsed
+        recordStepSuccess(session.step, stepElapsed)
         session.moreButtonClickedAt = 0L
         
         val totalElapsed = System.currentTimeMillis() - session.startedAt
@@ -1265,7 +1272,7 @@ class SelectToSpeakService : AccessibilityService(), WeChatRequestHost {
         LobsterClient.log("[微信自动] 流程成功 ✅")
         LobsterClient.log("[微信自动] 流程终点: 成功发起视频通话 | 耗时=${totalElapsed}ms")
         LobsterClient.report(this, "微信视频", LobsterReportStatus.SUCCESS, "视频通话已发起")
-        LobsterClient.reportMetrics(this, listOf(LauncherTraceNames.WECHAT_VIDEO_TOTAL to totalElapsed))
+        reportTerminalMetrics(session, success = true)
 
         logStep(session, "COMPLETED", "视频通话已发起", "totalElapsed=${totalElapsed}ms")
         applyWeChatCallAudioStrategy()
@@ -1278,6 +1285,19 @@ class SelectToSpeakService : AccessibilityService(), WeChatRequestHost {
             delay(1200)
             floatingView?.hide()
         }
+    }
+
+    private fun reportTerminalMetrics(session: VideoCallSession, success: Boolean) {
+        val totalName = if (success) {
+            LauncherTraceNames.WECHAT_VIDEO_TOTAL
+        } else {
+            LauncherTraceNames.WECHAT_VIDEO_FAILURE_TOTAL
+        }
+        val metrics = mutableListOf(totalName to (System.currentTimeMillis() - session.startedAt))
+        session.stepDurations.forEach { (step, duration) ->
+            metrics += "oldlauncher.wechat.video.step.$step" to duration
+        }
+        LobsterClient.reportMetrics(this, metrics)
     }
 
     private fun applyWeChatCallAudioStrategy() {
@@ -1378,7 +1398,11 @@ class SelectToSpeakService : AccessibilityService(), WeChatRequestHost {
         }
     }
 
-    private fun cancelSession(notifyFailure: Boolean) {
+    private fun cancelSession(
+        notifyFailure: Boolean,
+        message: String = "操作已取消",
+        restoreLauncher: Boolean = notifyFailure
+    ) {
         val session = currentSession
         stepClock.cancelAll()
         wechatWaitJob?.cancel()
@@ -1391,7 +1415,13 @@ class SelectToSpeakService : AccessibilityService(), WeChatRequestHost {
         floatingView?.hide()
         if (notifyFailure && session != null) {
             session.stateOverride = AutomationState.FAILED
-            notifyState(session, "操作已取消", success = false, terminal = true)
+            session.stepDurations["${session.step.name.lowercase()}.cancelled"] =
+                System.currentTimeMillis() - session.stepStartedAt
+            reportTerminalMetrics(session, success = false)
+            notifyState(session, message, success = false, terminal = true, reported = false)
+        }
+        if (restoreLauncher && session != null) {
+            bringLauncherBackToForeground()
         }
     }
 
@@ -1399,6 +1429,8 @@ class SelectToSpeakService : AccessibilityService(), WeChatRequestHost {
     private fun failAndHide(message: String, root: AccessibilityNodeInfo? = getWeChatRoot()) {
         val session = currentSession
         if (session != null) {
+            session.stepDurations["${session.step.name.lowercase()}.failed"] =
+                System.currentTimeMillis() - session.stepStartedAt
             logStep(session, "FAILED", message)
         }
         val diagnostics = WeChatFailureDiagnostics.build(
@@ -1409,9 +1441,34 @@ class SelectToSpeakService : AccessibilityService(), WeChatRequestHost {
         )
         WeChatFailureDiagnostics.logErrorLong(TAG, diagnostics)
         LobsterClient.log("[微信自动] 失败诊断:\n$diagnostics")
+        if (session != null) {
+            reportTerminalMetrics(session, success = false)
+            LobsterClient.report(this, "微信视频", LobsterReportStatus.ERROR, message)
+        }
         cancelSession(false)
         if (session != null) {
-            notifyState(session, message, success = false, terminal = true)
+            notifyState(session, message, success = false, terminal = true, reported = true)
+            bringLauncherBackToForeground()
+        }
+    }
+
+    private fun bringLauncherBackToForeground() {
+        val intent = Intent(this, MainActivity::class.java).apply {
+            addFlags(
+                Intent.FLAG_ACTIVITY_NEW_TASK or
+                    Intent.FLAG_ACTIVITY_REORDER_TO_FRONT or
+                    Intent.FLAG_ACTIVITY_RESET_TASK_IF_NEEDED
+            )
+        }
+        val started = try {
+            startActivity(intent)
+            true
+        } catch (e: Exception) {
+            DebugLog.w(TAG, "bringLauncherBackToForeground failed: ${e.message}")
+            false
+        }
+        if (!started) {
+            performGlobalAction(AccessibilityService.GLOBAL_ACTION_HOME)
         }
     }
 
@@ -1523,6 +1580,10 @@ class SelectToSpeakService : AccessibilityService(), WeChatRequestHost {
             startedAt = startedAt,
             stepStartedAt = stepStartedAt,
             actionAttempts = actionAttempts.toMap(),
+            stepHistory = stepHistory.map { it.name },
+            stepDurations = stepDurations.toMap(),
+            lastDetectedPage = lastDetectedPage?.name,
+            lastProgressAt = lastProgressAt,
             lastAnnouncedMessage = lastAnnouncedMessage
         )
     }
@@ -1544,9 +1605,9 @@ class SelectToSpeakService : AccessibilityService(), WeChatRequestHost {
         val actionAttempts: MutableMap<String, Int> = mutableMapOf(),
         val stepHistory: ArrayDeque<Step> = ArrayDeque(),
         val stepFailCount: MutableMap<Step, Int> = mutableMapOf(),
-        // 弹窗处理：时间戳冷却（自动过期，不依赖手动重置）
+        val stepDurations: MutableMap<String, Long> = mutableMapOf(),
+        var lastProgressAt: Long = System.currentTimeMillis(),
         var dismissingUntil: Long = 0L,
-        // 弹窗处理：本次 Step 内累计处理次数上限
         var dismissAttempts: Int = 0
     )
 

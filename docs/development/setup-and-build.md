@@ -1,6 +1,6 @@
 # 构建与环境说明
 
-更新时间：2026-04-28
+更新时间：2026-05-07
 
 ## 1. 基础环境
 
@@ -80,8 +80,7 @@ adb devices
 ```powershell
 # 完整冷启动基准（需真机或已启用 suppressErrors 的模拟器）
 .\build.bat :benchmark:connectedAndroidTest `
-  "-Pandroid.testInstrumentationRunnerArguments.class=com.yinxing.launcher.benchmark.HomeStartupBenchmark" `
-  "-x" "uploadCrashlyticsMappingFileBenchmarkRelease"
+  "-Pandroid.testInstrumentationRunnerArguments.class=com.yinxing.launcher.benchmark.HomeStartupBenchmark"
 ```
 
 #### Benchmark 分层探针（当采集卡住时按此顺序执行）
@@ -109,7 +108,7 @@ adb devices
 ### 5.8 构建 Release 包
 
 ```powershell
-.\build.bat :app:assembleRelease -x uploadCrashlyticsMappingFileReleaseRelease
+.\build.bat :app:assembleRelease
 ```
 
 ### 5.9 输出位置
@@ -128,19 +127,17 @@ benchmark/build/outputs/connected_android_test_additional_output/  （benchmark 
 - 每次正式发布时，用本次 Release APK 覆盖 `docs/app-release.apk`
 - GitHub Release 上传同一个 `app-release.apk`
 - Cloudflare 域名托管的下载页使用 `docs/index.html` 和 `docs/app-release.apk`
-- 版本号、包体大小变化时，同步更新 `README.md`、`docs/index.html` 和 `docs/release/release-checklist.md`
+- 版本号、包体大小变化时，同步更新 `README.md`、`docs/index.html`、`docs/update.json` 和 `docs/release/release-checklist.md`
 
-## 6. Firebase Crashlytics 配置
+## 6. Lobster 日志与性能上报配置
 
-项目已接入 Firebase Crashlytics，用于自动捕获崩溃日志。
+项目使用自有 Lobster 接口上报日志、诊断与性能指标，不依赖 Firebase。
 
-- Firebase 项目：`launcher-d4690a2f`
-- 应用包名：`com.yinxing.launcher`
-- `google-services.json` 需放在 `app/` 目录下（已加入 `.gitignore`，不提交到仓库）
-- 无需任何额外代码，App 崩溃后下次启动自动上传日志
-- 查看崩溃报告：[console.firebase.google.com](https://console.firebase.google.com) → 项目 → Crashlytics
-
-> 注意：从 GitHub clone 项目后需自行在 Firebase Console 下载 `google-services.json` 并放到 `app/` 目录，否则构建会失败。
+- `LOBSTER_UPLOAD_URL`：日志上报地址
+- `LOBSTER_UPLOAD_TOKEN`：日志上报 token
+- 上述字段从 `local.properties` 注入到 `BuildConfig`
+- 未配置时应用仍可构建和运行，只是不进行线上日志上报
+- Release 包会关闭普通 logcat 输出，诊断数据走 Lobster 上报链路
 
 ## 7. 推荐协作方式
 

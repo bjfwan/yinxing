@@ -2,7 +2,6 @@ package com.yinxing.launcher.common.lobster
 
 import android.content.Context
 import android.os.Build
-import android.provider.Settings
 import com.yinxing.launcher.BuildConfig
 import com.yinxing.launcher.common.util.DebugLog
 import kotlinx.coroutines.CoroutineScope
@@ -13,6 +12,7 @@ import org.json.JSONArray
 import org.json.JSONObject
 import java.net.HttpURLConnection
 import java.net.URL
+import java.util.UUID
 
 enum class LobsterReportStatus(val wireValue: String) {
     SUCCESS("success"),
@@ -22,6 +22,8 @@ enum class LobsterReportStatus(val wireValue: String) {
 
 object LobsterClient {
     private const val TAG = "LobsterClient"
+    private const val PREFS_NAME = "lobster_client"
+    private const val KEY_INSTALL_ID = "install_id"
     private const val MAX_LOG_BUFFER_CHARS = 60_000
     private const val MAX_LOG_ENTRY_CHARS = 8_000
 
@@ -69,18 +71,14 @@ object LobsterClient {
 
         if (logsToReport.isBlank()) return
 
-        val deviceId = try {
-            Settings.Secure.getString(context.contentResolver, Settings.Secure.ANDROID_ID)
-        } catch (_: Exception) {
-            null
-        }
+        val deviceId = installId(context)
 
         scope.launch {
             try {
                 val deviceName = "${Build.MANUFACTURER} ${Build.MODEL} (Android ${Build.VERSION.RELEASE})"
                 val body = JSONObject().apply {
                     put("device", deviceName)
-                    put("device_id", deviceId ?: "")
+                    put("device_id", deviceId)
                     put("scene", scene)
                     put("status", status.wireValue)
                     summary?.trim()?.takeIf { it.isNotEmpty() }?.let { put("summary", it) }
@@ -101,11 +99,7 @@ object LobsterClient {
     fun reportMetrics(context: Context, metrics: List<Pair<String, Long>>) {
         if (metrics.isEmpty()) return
 
-        val deviceId = try {
-            Settings.Secure.getString(context.contentResolver, Settings.Secure.ANDROID_ID)
-        } catch (_: Exception) {
-            null
-        }
+        val deviceId = installId(context)
 
         scope.launch {
             try {
@@ -120,7 +114,7 @@ object LobsterClient {
 
                 val body = JSONObject().apply {
                     put("device", deviceName)
-                    put("device_id", deviceId ?: "")
+                    put("device_id", deviceId)
                     put("metrics", metricsArray)
                 }
 
@@ -245,5 +239,14 @@ object LobsterClient {
         return runCatching {
             JSONObject(response).optBoolean("success", false)
         }.getOrDefault(false)
+    }
+
+    @Synchronized
+    private fun installId(context: Context): String {
+        val prefs = context.applicationContext.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+        prefs.getString(KEY_INSTALL_ID, null)?.takeIf { it.isNotBlank() }?.let { return it }
+        val id = UUID.randomUUID().toString()
+        prefs.edit().putString(KEY_INSTALL_ID, id).apply()
+        return id
     }
 }

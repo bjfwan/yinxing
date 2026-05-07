@@ -1,16 +1,17 @@
 # 项目路线图
 
-更新时间：2026-05-04
+更新时间：2026-05-07
 
-## 1. 当前状态（v1.8.0）
+## 1. 当前状态（v1.8.1）
 
-- 构建基线稳定：`assembleDebug` / `testDebugUnitTest`（171 tests, 0 failed）/ `lintDebug` 全部通过
+- 构建基线稳定：`testDebugUnitTest`（290 tests, 0 failed）/ `lintDebug` / `assembleRelease` 全部通过
 - 联系人、天气、桌面应用列表数据操作全面迁移至后台线程，消除主线程 IO 阻塞
-- 微信自动化主动拨号（视频）Phase 1 已完成并在真实设备验证通过
+- 微信自动化主动拨号（视频）Phase 1 已完成并在真实设备验证通过，已补服务中断、请求超时、失败回桌面和步骤指标上报
 - 无障碍服务已合并为单一服务 `SelectToSpeakService`，用户只需授权一次
 - 微信来电自动接听代码已清除（技术天花板明确，无障碍事件节流导致连续来电成功率低）
 - 包名已从 `com.bajianfeng.launcher` 迁移至 `com.yinxing.launcher`
-- 已接入 Firebase Crashlytics，崩溃日志自动上报
+- 已接入 Lobster 日志与性能指标上报；Release 构建不再向 logcat 输出诊断日志
+- 家属设置页已接入静态 `update.json` 版本检查，不打扰老人首页
 - Baseline Profile 已嵌入包体，有 Profile 时 P90 帧时间相比无 Profile 降低约 46%
 
 ## 2. 下一阶段

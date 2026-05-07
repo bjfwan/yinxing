@@ -329,7 +329,6 @@
                 android:layout_height="wrap_content"
                 android:layout_marginTop="12dp"
                 android:max="60"
-                android:min="0"
                 android:progress="40"
                 android:thumbTint="@color/launcher_primary_dark"
                 android:progressTint="@color/launcher_primary_dark" />

@@ -15,11 +15,11 @@ class WeatherDiskCache(context: Context) {
     }
 
     fun write(state: WeatherState.Success) {
-        prefs.edit().putString(KEY_PAYLOAD, serialize(state)).commit()
+        prefs.edit().putString(KEY_PAYLOAD, serialize(state)).apply()
     }
 
     fun clear() {
-        prefs.edit().clear().commit()
+        prefs.edit().clear().apply()
     }
 
     private fun serialize(state: WeatherState.Success): String {

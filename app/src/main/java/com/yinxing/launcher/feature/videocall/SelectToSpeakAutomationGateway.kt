@@ -11,7 +11,8 @@ object SelectToSpeakAutomationGateway : VideoCallAutomationGateway {
                     success = update.success,
                     terminal = update.terminal,
                     step = update.step,
-                    page = update.page
+                    page = update.page,
+                    reported = update.reported
                 )
             )
         }

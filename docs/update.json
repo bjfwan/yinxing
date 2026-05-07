@@ -1,0 +1,6 @@
+{
+  "versionCode": 15,
+  "versionName": "1.8.1",
+  "apkUrl": "https://yx.likeyou.qzz.io/app-release.apk",
+  "releaseNotes": "微信视频稳定性增强：增加服务中断兜底、请求级超时保护、失败后回到银杏桌面和更完整的步骤诊断。家属设置页新增版本更新检查。"
+}

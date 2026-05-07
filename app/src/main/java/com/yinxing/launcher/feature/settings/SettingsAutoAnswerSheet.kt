@@ -1,6 +1,7 @@
 package com.yinxing.launcher.feature.settings
 
 import android.view.View
+import android.widget.FrameLayout
 import android.widget.TextView
 import androidx.appcompat.widget.SwitchCompat
 import com.google.android.material.bottomsheet.BottomSheetDialog
@@ -9,7 +10,7 @@ import com.yinxing.launcher.feature.incoming.IncomingCallDiagnostics
 
 internal fun SettingsActivity.showAutoAnswerSheet() {
     val dialog = BottomSheetDialog(this)
-    val view = layoutInflater.inflate(R.layout.sheet_settings_auto_answer, null)
+    val view = layoutInflater.inflate(R.layout.sheet_settings_auto_answer, FrameLayout(this), false)
     dialog.setContentView(view)
 
     val autoAnswerSwitch = view.findViewById<SwitchCompat>(R.id.switch_auto_answer_sheet)

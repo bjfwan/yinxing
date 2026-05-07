@@ -41,8 +41,9 @@
 
 1. 在 GitHub Releases 创建新版本并上传 release APK。
 2. 用新 APK 覆盖 `docs/app-release.apk`。
-3. 检查 `docs/index.html` 下载入口是否仍指向最新 APK。
-4. 校验静态下载页与 GitHub Releases 备用下载链接都可访问。
+3. 更新 `docs/update.json` 的 `versionCode`、`versionName`、`apkUrl` 与 `releaseNotes`。
+4. 检查 `docs/index.html` 下载入口是否仍指向最新 APK。
+5. 校验静态下载页与 GitHub Releases 备用下载链接都可访问。
 
 ## 回滚
 

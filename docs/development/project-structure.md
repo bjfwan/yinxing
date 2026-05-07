@@ -1,6 +1,6 @@
 # 项目结构规范
 
-更新时间：2026-04-28
+更新时间：2026-05-07
 
 ## 1. 根目录结构
 
@@ -19,7 +19,7 @@ OldLauncher/
 └── README.md
 ```
 
-> `app/google-services.json` 已加入 `.gitignore`，需从 Firebase Console 单独下载。
+> 私有密钥、日志 token 和签名配置通过 `local.properties` 注入，不提交到仓库。
 
 ## 2. 主应用源码结构
 

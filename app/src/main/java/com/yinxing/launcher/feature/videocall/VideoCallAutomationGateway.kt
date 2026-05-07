@@ -11,7 +11,8 @@ data class VideoCallStateUpdate(
     val success: Boolean,
     val terminal: Boolean,
     val step: AutomationState = AutomationState.IDLE,
-    val page: String? = null
+    val page: String? = null,
+    val reported: Boolean = false
 )
 
 interface VideoCallAutomationGateway {

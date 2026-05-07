@@ -1,6 +1,7 @@
 package com.yinxing.launcher.feature.settings
 
 import android.view.View
+import android.widget.FrameLayout
 import android.widget.LinearLayout
 import android.widget.TextView
 import com.google.android.material.bottomsheet.BottomSheetDialog
@@ -40,7 +41,7 @@ internal fun SettingsActivity.playEntryAnimation() {
 
 internal fun SettingsActivity.createListSheet(title: String, message: String): ListSheetContext {
     val dialog = BottomSheetDialog(this)
-    val contentView = layoutInflater.inflate(R.layout.dialog_permission_group, null)
+    val contentView = layoutInflater.inflate(R.layout.dialog_permission_group, FrameLayout(this), false)
     contentView.findViewById<TextView>(R.id.tv_dialog_title).text = title
     contentView.findViewById<TextView>(R.id.tv_dialog_message).text = message
     contentView.findViewById<View>(R.id.btn_close).setOnClickListener { dialog.dismiss() }

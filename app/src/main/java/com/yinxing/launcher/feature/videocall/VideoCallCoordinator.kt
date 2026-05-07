@@ -16,6 +16,8 @@ import com.yinxing.launcher.common.util.PermissionUtil
 import com.yinxing.launcher.data.contact.Contact
 import com.yinxing.launcher.data.contact.ContactManager
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
@@ -30,10 +32,13 @@ class VideoCallCoordinator(
 ) {
     companion object {
         private const val TAG = "VideoCallCoordinator"
+        private const val REQUEST_TIMEOUT_MS = 130_000L
+        private const val USER_CANCEL_MESSAGE = "操作已取消"
     }
 
     private var activeRequestId: String? = null
     private var activeRequestToken = 0L
+    private var requestWatchdogJob: Job? = null
 
     fun start(contact: Contact) {
         if (!NetworkUtil.isNetworkAvailable(activity)) {
@@ -44,6 +49,12 @@ class VideoCallCoordinator(
         val serviceName = SelectToSpeakService.SHELL_SERVICE_COMPONENT
         if (!PermissionUtil.isAccessibilityServiceEnabled(activity, serviceName)) {
             speakAndToast(R.string.accessibility_required, R.string.accessibility_required)
+            onNeedAccessibilityPermission()
+            return
+        }
+
+        if (SelectToSpeakService.getInstance() == null) {
+            speakAndToast(R.string.accessibility_service_not_running)
             onNeedAccessibilityPermission()
             return
         }
@@ -97,6 +108,8 @@ class VideoCallCoordinator(
             }
             terminalHandled = true
             activeRequestId = null
+            requestWatchdogJob?.cancel()
+            requestWatchdogJob = null
             requestId?.let(automationGateway::clearRequestListener)
             if (update.success) {
                 persistSuccessfulCall(contact.id)
@@ -116,7 +129,7 @@ class VideoCallCoordinator(
 
                 LobsterClient.log("[微信视频] 更新: 步骤=${update.step} | 消息=${update.message} | 成功=${update.success}")
 
-                if (update.terminal && !update.success) {
+                if (update.terminal && !update.success && !update.reported && update.message != USER_CANCEL_MESSAGE) {
                     DebugLog.e(TAG, "[微信视频] 终端失败 | ${update.message}")
                     LobsterClient.report(activity, "微信视频", LobsterReportStatus.ERROR, update.message)
                 }
@@ -138,13 +151,37 @@ class VideoCallCoordinator(
         }
         activeRequestId = if (terminalHandled) null else requestId
         pendingTerminalUpdate?.let(::finishTerminalUpdate)
+        val id = requestId
+        if (!terminalHandled && activeRequestId == id) {
+            armRequestWatchdog(requestToken, id, contact.displayName)
+        }
     }
 
     fun clear() {
         ttsService.stop()
         activeRequestToken++
+        requestWatchdogJob?.cancel()
+        requestWatchdogJob = null
         activeRequestId?.let(automationGateway::clearRequestListener)
         activeRequestId = null
+    }
+
+    private fun armRequestWatchdog(requestToken: Long, requestId: String, contactName: String) {
+        requestWatchdogJob?.cancel()
+        requestWatchdogJob = activity.lifecycleScope.launch(Dispatchers.Main) {
+            delay(REQUEST_TIMEOUT_MS)
+            if (requestToken != activeRequestToken || activeRequestId != requestId) {
+                return@launch
+            }
+            activeRequestId = null
+            automationGateway.clearRequestListener(requestId)
+            val message = activity.getString(R.string.video_call_request_timeout)
+            LobsterClient.log("[微信视频] 请求级超时: 联系人=$contactName, requestId=$requestId")
+            LobsterClient.report(activity, "微信视频", LobsterReportStatus.ERROR, message)
+            ttsService.speak(message)
+            Toast.makeText(activity, message, Toast.LENGTH_SHORT).show()
+            onNeedAccessibilityPermission()
+        }
     }
 
     private fun persistSuccessfulCall(contactId: String) {

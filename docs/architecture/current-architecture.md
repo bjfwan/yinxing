@@ -1,6 +1,6 @@
 # 当前架构说明
 
-更新时间：2026-04-28
+更新时间：2026-05-07
 
 ## 1. 架构概览
 
@@ -27,7 +27,7 @@
   - `VideoCallCoordinator`
   - `VideoContactDialogController`
 - `feature.settings`
-  - 低性能模式和系统设置入口
+  - 低性能模式、系统设置入口和版本更新检查
 - `feature.incoming`
   - 系统电话来电页（实验性）
   - `PhoneCallReceiver`、`IncomingCallForegroundService`、`IncomingNumberMatcher`
@@ -60,6 +60,8 @@
   - `PermissionUtil`
   - `NetworkUtil`
   - `AccessibilityServiceMatcher`
+  - `DebugLog`
+  - `VersionFormatter`
 ### 2.4 automation
 
 - `automation.wechat`
@@ -69,7 +71,7 @@
 ### 2.5 testing
 
 - `app/src/test`
-  - 单元测试（171 tests, 0 failed）与 Robolectric UI 冒烟
+  - 单元测试（290 tests, 0 failed）与 Robolectric UI 冒烟
 - `app/src/androidTest`
   - 设备级仪器测试
 - `benchmark`
@@ -99,22 +101,24 @@
 - 系统设置页跳转
 - 无障碍服务（微信自动化）
 - 悬浮窗权限（微信自动化）
-- Firebase Crashlytics（崩溃日志上报）
+- Lobster 日志、诊断与性能指标上报
 
 ## 5. 当前架构特点
 
-- 没有后端
+- 无账号、无业务后端，核心数据本地优先
+- 可选 Lobster 日志与性能指标上报，用于线上诊断和自有网站分析
 - 已有轻量 SQLite 联系人数据层，设置和桌面应用配置仍依赖 SharedPreferences
 - 没有依赖注入框架
 - 主业务仍集中在单个 `app` 模块
 - 联系人和天气数据操作全面迁移至后台线程，主线程不做 IO
 - 空状态视图和权限流程已经形成公共抽象
+- 微信视频自动化已补齐服务中断、请求超时、失败回前台和步骤级诊断，但仍依赖具体微信 UI 与无障碍能力
 - 自动化能力与主业务已做包级隔离，但仍处在同一应用包内
 - 测试层已经拆分为单元测试、Robolectric 与设备级仪器测试三层
 
 ## 6. 当前仍需关注的点
 
-- `automation.wechat` 仍属于实验性代码，需要继续做设备级稳定性验证
+- `automation.wechat` 仍需要持续做多机型、多微信版本和弱网场景验证
 - 系统电话自动接听（`feature.incoming`）兼容性覆盖尚不完整
 - 低性能模式、权限拒绝、系统设置跳转和跨页面链路仍缺更完整的设备级回归
 - 设置、桌面应用选择和部分状态仍依赖 SharedPreferences，没有更强的状态恢复层

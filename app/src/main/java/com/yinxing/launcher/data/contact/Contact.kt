@@ -34,7 +34,7 @@ data class Contact(
         companion object {
             fun fromStorage(value: String?, phoneNumber: String?, wechatId: String?): PreferredAction {
                 val normalized = value?.trim().orEmpty()
-                values().firstOrNull { it.name == normalized }?.let { return it }
+                entries.firstOrNull { it.name == normalized }?.let { return it }
                 return if (phoneNumber.isNullOrBlank() && !wechatId.isNullOrBlank()) {
                     WECHAT_VIDEO
                 } else {

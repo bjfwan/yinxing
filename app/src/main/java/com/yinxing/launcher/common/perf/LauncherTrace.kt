@@ -11,6 +11,7 @@ object LauncherTraceNames {
     const val HOME_ICON_LOAD = "oldlauncher.home.icon.load"
     const val HOME_WEATHER_REQUEST = "oldlauncher.home.weather.request"
     const val WECHAT_VIDEO_TOTAL = "oldlauncher.wechat.video.total"
+    const val WECHAT_VIDEO_FAILURE_TOTAL = "oldlauncher.wechat.video.failure.total"
     const val INCOMING_CALL_RESPONSE = "oldlauncher.incoming.call.response"
 }
 

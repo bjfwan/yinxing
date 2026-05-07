@@ -1,6 +1,6 @@
 # 测试策略
 
-更新时间：2026-04-28
+更新时间：2026-05-07
 
 ## 1. 当前测试现状
 
@@ -11,6 +11,9 @@
 
 ## 2. 当前已验证结果
 
+- 2026-05-07：`testDebugUnitTest` **290 tests, 0 failed**，BUILD SUCCESSFUL
+- 2026-05-07：`lintDebug` 通过，BUILD SUCCESSFUL
+- 2026-05-07：`assembleRelease` 通过，Release APK 约 2.15 MB
 - 2026-04-28：`testDebugUnitTest` **171 tests, 0 failed**，BUILD SUCCESSFUL
 - 2026-04-25：`assembleDebug` 通过
 - 2026-04-25：`assembleDebugAndroidTest` 通过

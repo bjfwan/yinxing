@@ -1,6 +1,7 @@
 package com.yinxing.launcher.feature.settings
 
 import android.view.View
+import android.widget.FrameLayout
 import android.widget.TextView
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatDelegate
@@ -13,7 +14,7 @@ import com.yinxing.launcher.data.home.LauncherPreferences
 
 internal fun SettingsActivity.showDeviceSettingsSheet() {
     val dialog = BottomSheetDialog(this)
-    val view = layoutInflater.inflate(R.layout.sheet_settings_device, null)
+    val view = layoutInflater.inflate(R.layout.sheet_settings_device, FrameLayout(this), false)
     dialog.setContentView(view)
 
     val defaultLauncherSummary = view.findViewById<TextView>(R.id.tv_default_launcher_sheet_summary)

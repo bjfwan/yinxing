@@ -159,6 +159,7 @@
     <string name="starting_video_call">正在发起视频通话…</string>
     <string name="video_call_in_progress">已有进行中的微信视频任务，请稍候</string>
     <string name="accessibility_service_not_running">无障碍服务未运行，请重新开启</string>
+    <string name="video_call_request_timeout">微信视频长时间没有响应，请重新开启无障碍服务后再试</string>
 
     <string name="overlay_permission_title">需要悬浮窗权限</string>
     <string name="overlay_permission_message">为了显示操作状态，需要开启悬浮窗权限</string>
@@ -280,6 +281,16 @@
     <string name="settings_incoming_trace_empty">还没有来电链路记录，来过一次电话后会显示广播、提醒、来电页和接听结果</string>
     <string name="settings_system_title">系统设置</string>
     <string name="settings_system_summary">打开系统设置调整网络、声音等</string>
+    <string name="settings_update_title">版本更新</string>
+    <string name="settings_update_summary">当前版本：v%1$s（%2$d）</string>
+    <string name="settings_update_check">检查</string>
+    <string name="settings_update_checking">正在检查更新…</string>
+    <string name="settings_update_latest">当前已经是最新版本</string>
+    <string name="settings_update_failed">检查更新失败，请稍后再试</string>
+    <string name="settings_update_available_title">发现新版本 v%1$s</string>
+    <string name="settings_update_available_message">有新版本可以下载，建议由家属协助安装。</string>
+    <string name="settings_update_download">下载更新</string>
+    <string name="settings_update_open_failed">无法打开下载页面</string>
 
     <!-- 权限管理通用 -->
     <string name="settings_section_permissions">权限管理</string>
