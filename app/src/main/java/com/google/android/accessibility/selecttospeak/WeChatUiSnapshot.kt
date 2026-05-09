@@ -1,8 +1,19 @@
 package com.google.android.accessibility.selecttospeak
 
+import android.graphics.Rect
 import android.view.accessibility.AccessibilityNodeInfo
 import com.yinxing.launcher.automation.wechat.WeChatViewIds
 import com.yinxing.launcher.automation.wechat.util.AccessibilityUtil
+
+internal data class WeChatUiBounds(
+    val left: Int,
+    val top: Int,
+    val right: Int,
+    val bottom: Int
+) {
+    val centerY: Int
+        get() = (top + bottom) / 2
+}
 
 internal data class WeChatUiSnapshot(
     val text: String? = null,
@@ -11,6 +22,7 @@ internal data class WeChatUiSnapshot(
     val className: String? = null,
     val clickable: Boolean = false,
     val editable: Boolean = false,
+    val bounds: WeChatUiBounds? = null,
     val children: List<WeChatUiSnapshot> = emptyList()
 ) {
     fun flatten(): Sequence<WeChatUiSnapshot> = sequence {
@@ -46,6 +58,8 @@ internal data class WeChatUiSnapshot(
                         }
                     }
                 }
+                val bounds = Rect()
+                node.getBoundsInScreen(bounds)
                 return WeChatUiSnapshot(
                     text = node.text?.toString(),
                     contentDescription = node.contentDescription?.toString(),
@@ -53,6 +67,12 @@ internal data class WeChatUiSnapshot(
                     className = node.className?.toString(),
                     clickable = node.isClickable,
                     editable = node.isEditable || node.className == "android.widget.EditText",
+                    bounds = if (bounds.isEmpty) null else WeChatUiBounds(
+                        left = bounds.left,
+                        top = bounds.top,
+                        right = bounds.right,
+                        bottom = bounds.bottom
+                    ),
                     children = children
                 )
             }
@@ -68,6 +88,21 @@ internal enum class WeChatDismissAction {
     SHEET_CANCEL,
     CLOSE_DIALOG
 }
+
+internal data class WeChatTargetScore(
+    val displayName: String?,
+    val score: Int,
+    val reasons: List<String>
+) {
+    val accepted: Boolean
+        get() = displayName != null && score >= 80
+}
+
+internal data class WeChatActionCandidate(
+    val label: String,
+    val score: Int,
+    val reasons: List<String>
+)
 
 internal object WeChatUiSnapshotAnalyzer {
     private val noSearchResultTexts = listOf("无搜索结果", "没有找到", "无结果")
@@ -119,26 +154,79 @@ internal object WeChatUiSnapshotAnalyzer {
     }
 
     fun findContactSearchResultDisplayName(snapshot: WeChatUiSnapshot, contactName: String): String? {
+        val score = scoreContactSearchResult(snapshot, contactName)
+        return if (score.accepted) score.displayName else null
+    }
+
+    fun scoreContactSearchResult(snapshot: WeChatUiSnapshot, contactName: String): WeChatTargetScore {
         val normalizedName = contactName.trim()
         if (normalizedName.isEmpty()) {
-            return null
+            return WeChatTargetScore(null, 0, listOf("blank_query"))
         }
-        val displayName = snapshot.flatten()
-            .firstNotNullOfOrNull { node ->
-                if (node.viewIdResourceName !in contactResultTitleIds) {
-                    return@firstNotNullOfOrNull null
-                }
-                node.text?.trim()?.takeIf { it.isNotEmpty() }
-                    ?: node.contentDescription?.trim()?.takeIf { it.isNotEmpty() }
-            }
-            ?: return null
+        val titleNode = snapshot.flatten().firstOrNull { node ->
+            node.viewIdResourceName in contactResultTitleIds &&
+                readableText(node)?.isNotEmpty() == true
+        } ?: return WeChatTargetScore(null, 0, listOf("missing_title_id"))
+        val displayName = readableText(titleNode) ?: return WeChatTargetScore(null, 0, listOf("blank_title"))
+        var score = 40
+        val reasons = mutableListOf("title_id")
         if (displayName == normalizedName) {
-            return displayName
+            score += 30
+            reasons += "exact_title"
+        }
+        if (snapshot.clickable || snapshot.flatten().any { it.clickable }) {
+            score += 10
+            reasons += "clickable"
+        }
+        if (displayName == normalizedName) {
+            if (hasNetworkResultMarker(snapshot)) {
+                score -= 50
+                reasons += "network_marker"
+            }
+            return WeChatTargetScore(displayName, score.coerceAtLeast(0), reasons)
         }
         val texts = snapshot.flatten()
             .flatMap { node -> sequenceOf(node.text, node.contentDescription) }
             .mapNotNull { value -> value?.trim()?.takeIf { it.isNotEmpty() } }
-        return if (texts.any { matchesContactSecondaryField(it, normalizedName) }) displayName else null
+            .toList()
+        if (texts.any { matchesContactSecondaryField(it, normalizedName) }) {
+            score += 35
+            reasons += "secondary_field"
+        }
+        if (hasNetworkResultMarker(snapshot)) {
+            score -= 50
+            reasons += "network_marker"
+        }
+        return WeChatTargetScore(displayName, score.coerceAtLeast(0), reasons)
+    }
+
+    fun rankActionCandidates(snapshot: WeChatUiSnapshot, labels: Collection<String>): List<WeChatActionCandidate> {
+        val normalizedLabels = labels.map { it.trim() }.filter { it.isNotEmpty() }.distinct()
+        if (normalizedLabels.isEmpty()) {
+            return emptyList()
+        }
+        return snapshot.flatten().mapNotNull { node ->
+            val label = readableText(node) ?: return@mapNotNull null
+            val matchedLabel = normalizedLabels.firstOrNull { target ->
+                label == target || label.contains(target)
+            } ?: return@mapNotNull null
+            val exact = label == matchedLabel
+            var score = if (exact) 60 else 35
+            val reasons = mutableListOf(if (exact) "exact_text" else "contains_text")
+            if (node.clickable) {
+                score += 20
+                reasons += "clickable"
+            }
+            if (node.viewIdResourceName != null) {
+                score += 10
+                reasons += "view_id"
+            }
+            if (node.bounds != null) {
+                score += 5
+                reasons += "bounds"
+            }
+            WeChatActionCandidate(matchedLabel, score, reasons)
+        }.sortedByDescending { it.score }.toList()
     }
 
     fun isVideoCallSheetVisible(snapshot: WeChatUiSnapshot): Boolean {
@@ -170,6 +258,15 @@ internal object WeChatUiSnapshotAnalyzer {
             (compactText.startsWith("$label:") || compactText.startsWith("$label：")) &&
                 compactText.substring(label.length + 1).contains(compactName)
         }
+    }
+
+    private fun hasNetworkResultMarker(snapshot: WeChatUiSnapshot): Boolean {
+        return hasExactText(snapshot, "搜索网络结果") || hasContainingText(snapshot, "网络结果")
+    }
+
+    private fun readableText(node: WeChatUiSnapshot): String? {
+        return node.text?.trim()?.takeIf { it.isNotEmpty() }
+            ?: node.contentDescription?.trim()?.takeIf { it.isNotEmpty() }
     }
 
     private fun hasConversationChrome(snapshot: WeChatUiSnapshot): Boolean {

@@ -178,7 +178,7 @@ class IncomingAutoAnswerDecisionMakerTest {
     // ── 全局开关 ────────────────────────────────────────────────────────────
 
     @Test
-    fun globalAutoAnswerOverridesUnmatchedContact() {
+    fun globalAutoAnswerDoesNotAutoAnswerUnknownNumber() {
         val decision = IncomingAutoAnswerDecisionMaker.decide(
             contacts = emptyList(),
             incomingNumber = "13900000000",
@@ -187,11 +187,11 @@ class IncomingAutoAnswerDecisionMakerTest {
         )
 
         assertNull(decision.matchedContact)
-        assertTrue("全局开关开启时未匹配联系人也应自动接听", decision.autoAnswer)
+        assertFalse("全局开关开启时也不能自动接听陌生号码", decision.autoAnswer)
     }
 
     @Test
-    fun globalAutoAnswerOverridesContactAutoAnswerOff() {
+    fun globalAutoAnswerRequiresContactAutoAnswerOn() {
         val contact = contact(name = "李叔叔", phoneNumber = "13812345678", autoAnswer = false)
 
         val decision = IncomingAutoAnswerDecisionMaker.decide(
@@ -202,7 +202,22 @@ class IncomingAutoAnswerDecisionMakerTest {
         )
 
         assertEquals(contact, decision.matchedContact)
-        assertTrue("全局开关开启时即使联系人未开启也应自动接听", decision.autoAnswer)
+        assertFalse("全局开关开启但联系人未开启时不应自动接听", decision.autoAnswer)
+    }
+
+    @Test
+    fun globalAutoAnswerDisabledSuppressesContactAutoAnswer() {
+        val contact = contact(name = "张阿姨", phoneNumber = "13812345678", autoAnswer = true)
+
+        val decision = IncomingAutoAnswerDecisionMaker.decide(
+            contacts = listOf(contact),
+            incomingNumber = "13812345678",
+            delaySeconds = 5,
+            globalAutoAnswer = false
+        )
+
+        assertEquals(contact, decision.matchedContact)
+        assertFalse("全局开关关闭时联系人开启也不应自动接听", decision.autoAnswer)
     }
 
     // ── 辅助 ───────────────────────────────────────────────────────────────

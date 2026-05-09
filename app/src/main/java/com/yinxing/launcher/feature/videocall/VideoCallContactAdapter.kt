@@ -1,5 +1,6 @@
 package com.yinxing.launcher.feature.videocall
 
+import android.content.res.ColorStateList
 import android.net.Uri
 import android.view.LayoutInflater
 import android.view.View
@@ -14,6 +15,7 @@ import androidx.lifecycle.LifecycleCoroutineScope
 import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
+import com.google.android.material.button.MaterialButton
 import com.yinxing.launcher.R
 import com.yinxing.launcher.common.media.MediaThumbnailLoader
 import com.yinxing.launcher.data.contact.Contact
@@ -59,7 +61,7 @@ class VideoCallContactAdapter(
         val photo: ImageView = view.findViewById(R.id.iv_video_contact_photo)
         val name: TextView = view.findViewById(R.id.tv_video_contact_name)
         val subtitle: TextView = view.findViewById(R.id.tv_video_contact_subtitle)
-        val btnVideoCall: View = view.findViewById(R.id.btn_video_call)
+        val btnVideoCall: MaterialButton = view.findViewById(R.id.btn_video_call)
         var photoJob: Job? = null
     }
 
@@ -123,6 +125,18 @@ class VideoCallContactAdapter(
         bindSubtitle(holder, contact)
 
         val isWechat = contact.preferredAction == Contact.PreferredAction.WECHAT_VIDEO
+        holder.btnVideoCall.text = context.getString(
+            if (isWechat) R.string.contact_card_action_wechat_v2 else R.string.contact_card_action_phone_v2
+        )
+        holder.btnVideoCall.backgroundTintList = ColorStateList.valueOf(
+            ContextCompat.getColor(
+                context,
+                if (isWechat) R.color.launcher_video_action else R.color.launcher_phone_action
+            )
+        )
+        holder.btnVideoCall.setIconResource(
+            if (isWechat) android.R.drawable.ic_menu_camera else android.R.drawable.ic_menu_call
+        )
 
         holder.btnVideoCall.contentDescription = context.getString(
             if (isWechat) R.string.video_contact_wechat_action_description

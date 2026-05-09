@@ -159,6 +159,88 @@ class WeChatUiSnapshotAnalyzerTest {
         assertEquals("挑战自我", WeChatUiSnapshotAnalyzer.findContactSearchResultDisplayName(labeledAliasSnapshot, "wan."))
     }
 
+    @Test
+    fun scoresSearchResultEvidenceAndRejectsNetworkSections() {
+        val strongContact = node(
+            clickable = true,
+            children = listOf(
+                node(text = "挑战自我", viewIdResourceName = "com.tencent.mm:id/odf"),
+                node(text = "微信号：wxid_wanan")
+            )
+        )
+        val networkLike = node(
+            clickable = true,
+            children = listOf(
+                node(text = "wan.", viewIdResourceName = "com.tencent.mm:id/odf"),
+                node(text = "搜索网络结果")
+            )
+        )
+
+        val accepted = WeChatUiSnapshotAnalyzer.scoreContactSearchResult(strongContact, "wxid_wanan")
+        val rejected = WeChatUiSnapshotAnalyzer.scoreContactSearchResult(networkLike, "wan.")
+
+        assertTrue(accepted.accepted)
+        assertTrue(accepted.score >= 80)
+        assertFalse(rejected.accepted)
+        assertTrue(rejected.reasons.contains("network_marker"))
+    }
+
+    @Test
+    fun ranksActionCandidatesByTextClickabilityAndIdEvidence() {
+        val snapshot = node(
+            children = listOf(
+                node(text = "视频通话"),
+                node(text = "视频通话", clickable = true, viewIdResourceName = "com.tencent.mm:id/action")
+            )
+        )
+
+        val candidates = WeChatUiSnapshotAnalyzer.rankActionCandidates(snapshot, listOf("视频通话"))
+
+        assertEquals(2, candidates.size)
+        assertTrue(candidates.first().score > candidates.last().score)
+        assertTrue(candidates.first().reasons.contains("clickable"))
+    }
+
+    @Test
+    fun failureReplayRoundTripKeepsSessionAndSnapshotEvidence() {
+        val replay = WeChatFailureReplay(
+            message = "搜索失败",
+            createdAt = 1000L,
+            session = WeChatFailureSnapshot(
+                step = "WAITING_SEARCH",
+                contactName = "妈妈",
+                startedAt = 1L,
+                stepStartedAt = 2L,
+                actionAttempts = mapOf("search" to 2),
+                stepHistory = listOf("WAITING_HOME", "WAITING_SEARCH"),
+                stepDurations = mapOf("waiting_home" to 120L),
+                lastDetectedPage = "SEARCH",
+                lastProgressAt = 3L,
+                lastAnnouncedMessage = "正在搜索",
+                lastSemanticPage = "NO_RESULT",
+                taskStep = "WAITING_CONTACT_RESULT",
+                taskReason = "no_contact_result"
+            ),
+            root = node(
+                children = listOf(
+                    node(text = "搜索"),
+                    node(text = "无搜索结果")
+                )
+            )
+        )
+
+        val decoded = WeChatFailureDiagnostics.decodeReplay(
+            WeChatFailureDiagnostics.encodeReplay(replay)
+        )
+
+        assertEquals("搜索失败", decoded.message)
+        assertEquals("妈妈", decoded.session?.contactName)
+        assertEquals("NO_RESULT", decoded.session?.lastSemanticPage)
+        assertEquals("WAITING_CONTACT_RESULT", decoded.session?.taskStep)
+        assertEquals("no_contact_result", decoded.session?.taskReason)
+        assertTrue(decoded.root?.let(WeChatUiSnapshotAnalyzer::hasNoSearchResult) == true)
+    }
+
     private fun node(
         text: String? = null,
         contentDescription: String? = null,

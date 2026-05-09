@@ -12,6 +12,10 @@
     <color name="launcher_primary_soft">#1F2630</color>
     <color name="launcher_action">#10B981</color>
     <color name="launcher_action_dark">#34D399</color>
+    <color name="launcher_phone_action">#047857</color>
+    <color name="launcher_phone_action_soft">#0E2F24</color>
+    <color name="launcher_video_action">#2563EB</color>
+    <color name="launcher_video_action_soft">#10243F</color>
     <color name="launcher_text_primary">#F1F5F9</color>
     <color name="launcher_text_secondary">#94A3B8</color>
     <color name="launcher_text_muted">#64748B</color>

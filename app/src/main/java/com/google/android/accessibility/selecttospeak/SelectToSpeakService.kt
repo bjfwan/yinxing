@@ -108,6 +108,7 @@ class SelectToSpeakService : AccessibilityService(), WeChatRequestHost {
     private var lastMissingRootLogAt = 0L
     private val rootProvider = WeChatRootProvider(this)
     private val elementLocator = WeChatElementLocator(this)
+    private val taskEngine = WeChatVideoTaskEngine(maxAttemptsPerStep = MAX_STEP_RECOVERY_ATTEMPTS)
 
     private var wechatVersionTagged = false
 
@@ -439,12 +440,22 @@ class SelectToSpeakService : AccessibilityService(), WeChatRequestHost {
         currentClass: String?,
         session: VideoCallSession? = currentSession
     ): WeChatPage {
-        val page = detectWeChatPageLegacy(root, currentClass)
+        val semantic = snapshotOf(root)?.let(WeChatSemanticPageRecognizer::recognize)
+        val legacy = detectWeChatPageLegacy(root, currentClass)
+        val page = if (semantic != null && semantic.reliable) {
+            semantic.toWeChatPage().takeIf { it != WeChatPage.UNKNOWN } ?: legacy
+        } else {
+            legacy
+        }
+        session?.lastSemanticPage = semantic
         session?.lastDetectedPage = page
         return page
     }
 
     private fun detectWeChatPageLegacy(root: AccessibilityNodeInfo, currentClass: String?): WeChatPage {
+        if (elementLocator.isVideoCallSheetVisible(root)) {
+            return WeChatPage.VIDEO_SHEET
+        }
         if (currentClass == WeChatClassNames.SEARCH_UI || isSearchPage(root)) {
             return WeChatPage.SEARCH
         }
@@ -458,6 +469,18 @@ class SelectToSpeakService : AccessibilityService(), WeChatRequestHost {
             return WeChatPage.HOME
         }
         return WeChatPage.UNKNOWN
+    }
+
+    private fun WeChatSemanticPageResult.toWeChatPage(): WeChatPage {
+        return when (page) {
+            WeChatSemanticPage.HOME -> WeChatPage.HOME
+            WeChatSemanticPage.SEARCH -> WeChatPage.SEARCH
+            WeChatSemanticPage.CONTACT_DETAIL -> WeChatPage.CONTACT_DETAIL
+            WeChatSemanticPage.CHAT -> WeChatPage.CHAT
+            WeChatSemanticPage.VIDEO_SHEET -> WeChatPage.VIDEO_SHEET
+            WeChatSemanticPage.NO_RESULT -> WeChatPage.SEARCH
+            WeChatSemanticPage.UNKNOWN -> WeChatPage.UNKNOWN
+        }
     }
 
 
@@ -627,6 +650,7 @@ class SelectToSpeakService : AccessibilityService(), WeChatRequestHost {
     ) {
         recordStepHistory(session, nextStep)
         session.step = nextStep
+        syncTaskState(session, nextStep)
         session.stepStartedAt = System.currentTimeMillis()
         resetForStepEntry(session, nextStep)
         session.moreButtonClickedAt = 0L
@@ -760,6 +784,10 @@ class SelectToSpeakService : AccessibilityService(), WeChatRequestHost {
             "processCurrentWindow: step=${session.step} class=$currentClass rawClass=${root.className} lastUiClass=${rootProvider.lastObservedClassName}"
         }
 
+        if (applyTaskDecision(session, root, currentClass)) {
+            return
+        }
+
         when (session.step) {
             Step.WAITING_HOME -> handleWaitingHome(session, root, currentClass)
             Step.WAITING_LAUNCHER_UI -> handleLauncherUI(session, root)
@@ -772,6 +800,64 @@ class SelectToSpeakService : AccessibilityService(), WeChatRequestHost {
 
     private fun snapshotOf(root: AccessibilityNodeInfo?): WeChatUiSnapshot? {
         return WeChatUiSnapshot.fromNode(root)
+    }
+
+    private fun applyTaskDecision(
+        session: VideoCallSession,
+        root: AccessibilityNodeInfo,
+        currentClass: String?
+    ): Boolean {
+        val snapshot = snapshotOf(root)
+        val semantic = snapshot?.let(WeChatSemanticPageRecognizer::recognize)
+            ?: WeChatSemanticPageResult(WeChatSemanticPage.UNKNOWN, 0, listOf("missing_snapshot"))
+        val contactScore = if (session.step == Step.WAITING_CONTACT_RESULT && snapshot != null) {
+            WeChatUiSnapshotAnalyzer.scoreContactSearchResult(snapshot, session.contactName)
+        } else {
+            null
+        }
+        val taskState = session.taskState.copy(
+            step = session.step.toTaskStep(),
+            contactName = session.contactName
+        )
+        val decision = taskEngine.decide(taskState, semantic, contactScore)
+        session.taskState = decision.nextState
+        session.lastSemanticPage = semantic
+        session.lastTaskDecisionReason = decision.reason
+        DebugLog.d(TAG) {
+            "taskEngine: step=${taskState.step}, semantic=${semantic.page}/${semantic.confidence}, " +
+                "action=${decision.action}, reason=${decision.reason}, next=${decision.nextState.step}, score=${contactScore?.score}"
+        }
+        return when (decision.action) {
+            WeChatVideoTaskAction.FAIL -> {
+                failAndHide("未找到联系人: ${session.contactName}", root)
+                true
+            }
+            WeChatVideoTaskAction.RECOVER_HOME -> {
+                recoverToHome(session, root, currentClass, "taskEngine: ${decision.reason}")
+                true
+            }
+            else -> false
+        }
+    }
+
+    private fun Step.toTaskStep(): WeChatVideoTaskStep {
+        return when (this) {
+            Step.WAITING_HOME,
+            Step.WAITING_LAUNCHER_UI -> WeChatVideoTaskStep.WAITING_HOME
+            Step.WAITING_SEARCH_FALLBACK -> WeChatVideoTaskStep.WAITING_SEARCH
+            Step.WAITING_CONTACT_RESULT -> WeChatVideoTaskStep.WAITING_CONTACT_RESULT
+            Step.WAITING_CONTACT_DETAIL -> WeChatVideoTaskStep.WAITING_CONTACT_DETAIL
+            Step.WAITING_VIDEO_OPTIONS -> WeChatVideoTaskStep.WAITING_VIDEO_OPTIONS
+        }
+    }
+
+    private fun syncTaskState(session: VideoCallSession, step: Step) {
+        session.taskState = session.taskState.copy(
+            step = step.toTaskStep(),
+            contactName = session.contactName,
+            attempts = emptyMap(),
+            resolvedDisplayName = session.resolvedContactTitle ?: session.taskState.resolvedDisplayName
+        )
     }
 
     private fun tryDismissTransientUi(session: VideoCallSession, root: AccessibilityNodeInfo?): Boolean {
@@ -935,6 +1021,15 @@ class SelectToSpeakService : AccessibilityService(), WeChatRequestHost {
                     reason = "WAITING_HOME: 当前在搜索页"
                 )
             }
+            WeChatPage.VIDEO_SHEET -> {
+                logStep(session, "detectPage", "VIDEO_SHEET", "视频弹窗意外出现，回首页")
+                recoverToHome(
+                    session = session,
+                    root = root,
+                    currentClass = currentClass,
+                    reason = "WAITING_HOME: 当前在视频弹窗"
+                )
+            }
             WeChatPage.UNKNOWN -> {
                 val observeAttempt = incrementActionAttempt(session, "home_observe")
                 logStep(session, "detectPage", "UNKNOWN", "class=$currentClass observeAttempt=$observeAttempt childCount=${root.childCount}")
@@ -1076,6 +1171,11 @@ class SelectToSpeakService : AccessibilityService(), WeChatRequestHost {
                 }
                 return
             }
+            WeChatPage.VIDEO_SHEET -> {
+                logStep(session, "detectPage", "VIDEO_SHEET", "已出现视频选项，直接推进")
+                rerouteTo(session, Step.WAITING_VIDEO_OPTIONS, "正在选择视频通话")
+                return
+            }
             WeChatPage.HOME -> {
                 logStep(session, "detectPage", "HOME", "搜索页已关闭回到首页，重新查找")
                 session.searchTextApplied = false
@@ -1122,6 +1222,11 @@ class SelectToSpeakService : AccessibilityService(), WeChatRequestHost {
                     return
                 }
                 logStep(session, "detectPage", "CHAT", "聊天页，点+展开菜单发起视频通话")
+            }
+            WeChatPage.VIDEO_SHEET -> {
+                logStep(session, "detectPage", "VIDEO_SHEET", "已出现视频选项，直接选择")
+                transitionTo(session, Step.WAITING_VIDEO_OPTIONS, "正在选择视频通话")
+                return
             }
             WeChatPage.SEARCH -> {
                 logStep(session, "detectPage", "SEARCH", "仍停留在搜索页，回到结果阶段")
@@ -1198,6 +1303,7 @@ class SelectToSpeakService : AccessibilityService(), WeChatRequestHost {
                 resolveAndRerouteTo(session, session.step, "WAITING_VIDEO_OPTIONS: launcherHome")
                 return
             }
+            WeChatPage.VIDEO_SHEET -> Unit
 
             else -> Unit
         }
@@ -1234,6 +1340,7 @@ class SelectToSpeakService : AccessibilityService(), WeChatRequestHost {
         recordStepSuccess(oldStep, duration)
         recordStepHistory(session, nextStep)
         session.step = nextStep
+        syncTaskState(session, nextStep)
         session.stepStartedAt = System.currentTimeMillis()
         resetForStepEntry(session, nextStep)
 
@@ -1260,6 +1367,11 @@ class SelectToSpeakService : AccessibilityService(), WeChatRequestHost {
         session.stepDurations[session.step.name.lowercase()] = stepElapsed
         recordStepSuccess(session.step, stepElapsed)
         session.moreButtonClickedAt = 0L
+        session.taskState = session.taskState.copy(
+            step = WeChatVideoTaskStep.COMPLETED,
+            attempts = emptyMap()
+        )
+        session.lastTaskDecisionReason = "completed"
         
         val totalElapsed = System.currentTimeMillis() - session.startedAt
         DebugLog.banner(
@@ -1329,6 +1441,7 @@ class SelectToSpeakService : AccessibilityService(), WeChatRequestHost {
         }
     }
 
+    @Suppress("DEPRECATION")
     private fun obtainSpeakerTargetRoot(): AccessibilityNodeInfo? {
         rootInActiveWindow?.let { return AccessibilityNodeInfo.obtain(it) }
         rootProvider.peekCachedRoot()?.let { return AccessibilityNodeInfo.obtain(it) }
@@ -1433,13 +1546,23 @@ class SelectToSpeakService : AccessibilityService(), WeChatRequestHost {
                 System.currentTimeMillis() - session.stepStartedAt
             logStep(session, "FAILED", message)
         }
+        val sessionSnapshot = session?.failureSnapshot()
+        val rootSnapshot = snapshotOf(root)
         val diagnostics = WeChatFailureDiagnostics.build(
             message = message,
-            session = session?.failureSnapshot(),
+            session = sessionSnapshot,
             root = root,
             service = this
         )
         WeChatFailureDiagnostics.logErrorLong(TAG, diagnostics)
+        serviceScope.launch(Dispatchers.IO) {
+            WeChatFailureDiagnostics.saveReplay(
+                context = this@SelectToSpeakService,
+                message = message,
+                session = sessionSnapshot,
+                root = rootSnapshot
+            )
+        }
         LobsterClient.log("[微信自动] 失败诊断:\n$diagnostics")
         if (session != null) {
             reportTerminalMetrics(session, success = false)
@@ -1584,7 +1707,10 @@ class SelectToSpeakService : AccessibilityService(), WeChatRequestHost {
             stepDurations = stepDurations.toMap(),
             lastDetectedPage = lastDetectedPage?.name,
             lastProgressAt = lastProgressAt,
-            lastAnnouncedMessage = lastAnnouncedMessage
+            lastAnnouncedMessage = lastAnnouncedMessage,
+            lastSemanticPage = lastSemanticPage?.page?.name,
+            taskStep = taskState.step.name,
+            taskReason = lastTaskDecisionReason
         )
     }
 
@@ -1608,7 +1734,10 @@ class SelectToSpeakService : AccessibilityService(), WeChatRequestHost {
         val stepDurations: MutableMap<String, Long> = mutableMapOf(),
         var lastProgressAt: Long = System.currentTimeMillis(),
         var dismissingUntil: Long = 0L,
-        var dismissAttempts: Int = 0
+        var dismissAttempts: Int = 0,
+        var lastSemanticPage: WeChatSemanticPageResult? = null,
+        var taskState: WeChatVideoTaskState = WeChatVideoTaskState(contactName = contactName),
+        var lastTaskDecisionReason: String? = null
     )
 
 
@@ -1617,6 +1746,7 @@ class SelectToSpeakService : AccessibilityService(), WeChatRequestHost {
         SEARCH,
         CHAT,
         CONTACT_DETAIL,
+        VIDEO_SHEET,
         UNKNOWN
     }
 

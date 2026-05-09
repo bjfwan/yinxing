@@ -3,9 +3,11 @@ package com.yinxing.launcher.feature.incoming
 import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
+import android.os.Build
 import android.telephony.TelephonyManager
 import com.yinxing.launcher.common.util.CallAudioStrategy
 import com.yinxing.launcher.common.util.DebugLog
+import com.yinxing.launcher.common.util.PermissionUtil
 import com.yinxing.launcher.data.home.LauncherPreferences
 import com.yinxing.launcher.feature.phone.PhoneContactManager
 import java.util.concurrent.atomic.AtomicLong
@@ -51,10 +53,6 @@ class PhoneCallReceiver : BroadcastReceiver() {
                     DebugLog.e(TAG, "Failed to load phone contacts for incoming match", it)
                     emptyList()
                 }
-                val matchedContact = IncomingNumberMatcher.findBestMatch(
-                    contacts = contacts,
-                    incomingNumber = incomingNumber
-                )
                 val event = latestEvent.get()
                 if (event == null || event.first != token || event.second != TelephonyManager.EXTRA_STATE_RINGING) {
                     DebugLog.i(TAG) {
@@ -62,24 +60,35 @@ class PhoneCallReceiver : BroadcastReceiver() {
                     }
                     return@launch
                 }
-                callerLabel = matchedContact?.name ?: callerLabel
-                val globalAutoAnswer = LauncherPreferences.getInstance(appContext).isAutoAnswerEnabled()
-                val autoAnswer = globalAutoAnswer || matchedContact?.autoAnswer == true
+                val preferences = LauncherPreferences.getInstance(appContext)
+                val decision = IncomingAutoAnswerDecisionMaker.decide(
+                    contacts = contacts,
+                    incomingNumber = incomingNumber,
+                    delaySeconds = preferences.getAutoAnswerDelaySeconds(),
+                    globalAutoAnswer = preferences.isAutoAnswerEnabled()
+                )
+                val compatibilityDecision = readCompatibilityDecision(appContext, preferences, decision)
+                val finalAutoAnswer = decision.autoAnswer && compatibilityDecision.canAutoAnswer
+                callerLabel = decision.callerLabel
+                DebugLog.i(TAG) {
+                    "compatibility strategy=${compatibilityDecision.strategy}, autoAnswer=$finalAutoAnswer, " +
+                        "confidence=${compatibilityDecision.confidence}, blockers=${compatibilityDecision.blockers}"
+                }
                 runCatching { CallAudioStrategy.maximizeIncomingRingVolume(appContext) }
                     .onFailure { DebugLog.w(TAG, "maximizeIncomingRingVolume failed", it) }
                 IncomingCallDiagnostics.recordBroadcastReceived(
                     context = appContext,
                     callerLabel = callerLabel,
                     incomingNumber = incomingNumber,
-                    autoAnswer = autoAnswer
+                    autoAnswer = finalAutoAnswer
                 )
                 runCatching {
                     IncomingCallForegroundService.start(
                         context = appContext,
                         callerName = callerLabel,
-                        autoAnswer = autoAnswer,
+                        autoAnswer = finalAutoAnswer,
                         incomingNumber = incomingNumber,
-                        knownContact = matchedContact != null
+                        knownContact = decision.matchedContact != null
                     )
                 }.onFailure { failure ->
                     IncomingCallDiagnostics.recordServiceStartFailure(
@@ -103,4 +112,27 @@ class PhoneCallReceiver : BroadcastReceiver() {
             }
         }
     }
+
+    private fun readCompatibilityDecision(
+        context: Context,
+        preferences: LauncherPreferences,
+        decision: IncomingAutoAnswerDecision
+    ): IncomingCallCompatibilityDecision {
+        return IncomingCallCompatibilityDecisionEngine.decide(
+            IncomingCallCompatibilityInput(
+                sdkInt = Build.VERSION.SDK_INT,
+                knownContact = decision.matchedContact != null,
+                globalAutoAnswerEnabled = preferences.isAutoAnswerEnabled(),
+                contactAutoAnswerEnabled = decision.matchedContact?.autoAnswer == true,
+                hasPhonePermission = ready { PermissionUtil.hasPhonePermission(context) },
+                hasNotificationPermission = ready { PermissionUtil.hasNotificationPermission(context) },
+                isDefaultLauncher = ready { PermissionUtil.isDefaultLauncher(context) },
+                ignoresBatteryOptimizations = ready { PermissionUtil.isIgnoringBatteryOptimizations(context) },
+                autoStartConfirmed = preferences.isAutoStartConfirmed(),
+                backgroundStartConfirmed = preferences.isBackgroundStartConfirmed()
+            )
+        )
+    }
+
+    private fun ready(block: () -> Boolean): Boolean = runCatching(block).getOrDefault(false)
 }

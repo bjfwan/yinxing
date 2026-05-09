@@ -11,7 +11,7 @@
         <item name="android:textSize">16sp</item>
         <item name="android:textColor">@color/launcher_text_secondary</item>
         <item name="android:includeFontPadding">false</item>
-        <item name="android:letterSpacing">0.02</item>
+        <item name="android:letterSpacing">0</item>
     </style>
 
     <style name="TextAppearance.OldLauncher.DisplayTime">
@@ -20,7 +20,7 @@
         <item name="android:textStyle">bold</item>
         <item name="android:textColor">@color/launcher_primary_dark</item>
         <item name="android:includeFontPadding">false</item>
-        <item name="android:letterSpacing">-0.02</item>
+        <item name="android:letterSpacing">0</item>
     </style>
 
     <style name="TextAppearance.OldLauncher.Date">
@@ -236,7 +236,7 @@
         <item name="android:textSize">22sp</item>
         <item name="android:textColor">@color/launcher_text_secondary</item>
         <item name="android:includeFontPadding">false</item>
-        <item name="android:letterSpacing">0.05</item>
+        <item name="android:letterSpacing">0</item>
     </style>
 
     <style name="TextAppearance.OldLauncher.HeroTitle">
@@ -245,7 +245,7 @@
         <item name="android:textStyle">bold</item>
         <item name="android:textColor">@color/launcher_text_primary</item>
         <item name="android:includeFontPadding">false</item>
-        <item name="android:letterSpacing">-0.03</item>
+        <item name="android:letterSpacing">0</item>
     </style>
 
     <style name="Widget.OldLauncher.PageHeroCard" parent="Widget.OldLauncher.DialogSurfaceCard">
@@ -287,7 +287,7 @@
         <item name="android:textStyle">bold</item>
         <item name="android:textColor">@color/launcher_primary_dark</item>
         <item name="android:includeFontPadding">false</item>
-        <item name="android:letterSpacing">-0.02</item>
+        <item name="android:letterSpacing">0</item>
     </style>
 
     <style name="TextAppearance.OldLauncher.FloatingTitle">

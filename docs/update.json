@@ -1,6 +1,6 @@
 {
-  "versionCode": 15,
-  "versionName": "1.8.1",
+  "versionCode": 16,
+  "versionName": "1.9.0",
   "apkUrl": "https://yx.likeyou.qzz.io/app-release.apk",
-  "releaseNotes": "微信视频稳定性增强：增加服务中断兜底、请求级超时保护、失败后回到银杏桌面和更完整的步骤诊断。家属设置页新增版本更新检查。"
+  "releaseNotes": "微信视频升级为任务引擎：增加 UI 语义识别、搜索结果评分和失败样本回放。来电自动接听增加兼容性决策引擎，电话与视频联系人按钮按长辈视觉友好原则优化，测试补充关键逻辑链路覆盖。"
 }

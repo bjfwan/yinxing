@@ -81,6 +81,10 @@ class PhoneContactAdapter(
         } else {
             holder.btnCall.isVisible = true
             holder.manageHint.isVisible = false
+            holder.btnCall.contentDescription = holder.itemView.context.getString(
+                R.string.contact_call_description,
+                contact.displayName
+            )
             holder.btnCall.setOnClickListener { onCallClick(contact) }
             if (fullCardTapEnabled) {
                 holder.itemView.setOnClickListener { onCallClick(contact) }

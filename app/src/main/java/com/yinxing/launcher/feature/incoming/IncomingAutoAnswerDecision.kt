@@ -14,16 +14,17 @@ object IncomingAutoAnswerDecisionMaker {
         contacts: List<Contact>,
         incomingNumber: String,
         delaySeconds: Int,
-        globalAutoAnswer: Boolean = false
+        globalAutoAnswer: Boolean = true
     ): IncomingAutoAnswerDecision {
         val matchedContact = IncomingNumberMatcher.findBestMatch(
             contacts = contacts,
             incomingNumber = incomingNumber
         )
+        val contactAllowsAutoAnswer = matchedContact?.autoAnswer == true
         return IncomingAutoAnswerDecision(
             callerLabel = matchedContact?.name ?: incomingNumber.trim().takeIf { it.isNotEmpty() },
             matchedContact = matchedContact,
-            autoAnswer = globalAutoAnswer || matchedContact?.autoAnswer == true,
+            autoAnswer = globalAutoAnswer && contactAllowsAutoAnswer,
             delaySeconds = delaySeconds.coerceIn(1, 30)
         )
     }
