@@ -12,6 +12,10 @@ import org.json.JSONArray
 import org.json.JSONObject
 import java.net.HttpURLConnection
 import java.net.URL
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
+import java.util.TimeZone
 import java.util.UUID
 
 enum class LobsterReportStatus(val wireValue: String) {
@@ -24,6 +28,7 @@ object LobsterClient {
     private const val TAG = "LobsterClient"
     private const val PREFS_NAME = "lobster_client"
     private const val KEY_INSTALL_ID = "install_id"
+    private const val KEY_DEVICE_SIGNATURE = "device_signature"
     private const val MAX_LOG_BUFFER_CHARS = 60_000
     private const val MAX_LOG_ENTRY_CHARS = 8_000
 
@@ -54,6 +59,7 @@ object LobsterClient {
 
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
     private val logBuffer = StringBuilder()
+    private val sessionId = UUID.randomUUID().toString()
 
     @Synchronized
     fun log(message: String) {
@@ -82,7 +88,12 @@ object LobsterClient {
                     put("scene", scene)
                     put("status", status.wireValue)
                     summary?.trim()?.takeIf { it.isNotEmpty() }?.let { put("summary", it) }
-                    put("logs", logsToReport)
+                    put("logs", LobsterLogSanitizer.sanitize(logsToReport))
+                    put("event_level", status.wireValue)
+                    put("session_id", sessionId)
+                    put("app_version", BuildConfig.VERSION_NAME)
+                    put("app_version_code", BuildConfig.VERSION_CODE)
+                    put("created_at", currentIsoTimestamp())
                 }
 
                 val result = postJson(endpoint, body, successPrefix = "上报成功", failurePrefix = "上报失败")
@@ -116,6 +127,9 @@ object LobsterClient {
                     put("device", deviceName)
                     put("device_id", deviceId)
                     put("metrics", metricsArray)
+                    put("session_id", sessionId)
+                    put("app_version", BuildConfig.VERSION_NAME)
+                    put("app_version_code", BuildConfig.VERSION_CODE)
                 }
 
                 val url = "$baseEndpoint/metrics"
@@ -244,9 +258,24 @@ object LobsterClient {
     @Synchronized
     private fun installId(context: Context): String {
         val prefs = context.applicationContext.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
-        prefs.getString(KEY_INSTALL_ID, null)?.takeIf { it.isNotBlank() }?.let { return it }
-        val id = UUID.randomUUID().toString()
-        prefs.edit().putString(KEY_INSTALL_ID, id).apply()
-        return id
+        val signature = listOf(Build.MANUFACTURER, Build.MODEL, Build.DEVICE)
+            .joinToString("|") { it.trim().lowercase() }
+        val resolved = LobsterDeviceIdentity.resolve(
+            storedId = prefs.getString(KEY_INSTALL_ID, null),
+            storedDeviceSignature = prefs.getString(KEY_DEVICE_SIGNATURE, null),
+            currentDeviceSignature = signature,
+            createId = { UUID.randomUUID().toString() }
+        )
+        prefs.edit()
+            .putString(KEY_INSTALL_ID, resolved.id)
+            .putString(KEY_DEVICE_SIGNATURE, signature)
+            .apply()
+        return resolved.id
+    }
+
+    private fun currentIsoTimestamp(): String {
+        return SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'", Locale.US).apply {
+            timeZone = TimeZone.getTimeZone("UTC")
+        }.format(Date())
     }
 }
