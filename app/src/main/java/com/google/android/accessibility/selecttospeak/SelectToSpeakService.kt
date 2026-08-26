@@ -64,7 +64,6 @@ class SelectToSpeakService : AccessibilityService(), WeChatRequestHost {
         private const val MAX_UNKNOWN_HOME_OBSERVE_ATTEMPTS = 2
         private const val MAX_SEARCH_ENTRY_ATTEMPTS = 3
         private const val MAX_SEARCH_OPEN_ATTEMPTS = 3
-        private const val MAX_SEARCH_INPUT_ATTEMPTS = 3
 
         private const val MAX_CONTACT_DETAIL_ATTEMPTS = 4
         private const val MAX_VIDEO_OPTION_ATTEMPTS = 3
@@ -694,12 +693,14 @@ class SelectToSpeakService : AccessibilityService(), WeChatRequestHost {
         when (target) {
             Step.WAITING_HOME -> {
                 session.searchTextApplied = false
+                session.searchInputSubmittedAt = 0L
                 session.launcherPrepared = false
                 session.resolvedContactTitle = null
             }
             Step.WAITING_LAUNCHER_UI,
             Step.WAITING_SEARCH_FALLBACK -> {
                 session.searchTextApplied = false
+                session.searchInputSubmittedAt = 0L
                 session.launcherPrepared = false
                 session.resolvedContactTitle = null
             }
@@ -718,6 +719,7 @@ class SelectToSpeakService : AccessibilityService(), WeChatRequestHost {
             Step.WAITING_LAUNCHER_UI,
             Step.WAITING_SEARCH_FALLBACK -> {
                 session.searchTextApplied = false
+                session.searchInputSubmittedAt = 0L
                 session.resolvedContactTitle = null
             }
             Step.WAITING_CONTACT_RESULT -> {
@@ -762,6 +764,7 @@ class SelectToSpeakService : AccessibilityService(), WeChatRequestHost {
         if (root == null) {
             val fallbackPkg = rootInActiveWindow?.packageName?.toString()
             val now = System.currentTimeMillis()
+            if (session.missingRootSince == 0L) session.missingRootSince = now
             if (now - lastMissingRootLogAt >= 2000L) {
                 lastMissingRootLogAt = now
                 WeChatFailureDiagnostics.logDebugLong(
@@ -769,9 +772,32 @@ class SelectToSpeakService : AccessibilityService(), WeChatRequestHost {
                     "processCurrentWindow: 微信窗口未找到，当前前台包名=$fallbackPkg, step=${session.step}, contact=${session.contactName}\nwindows=${WeChatFailureDiagnostics.describeWindows(this)}"
                 )
             }
+            when (WeChatForegroundRecoveryPolicy.decide(
+                activePackage = fallbackPkg,
+                missingRootMs = now - session.missingRootSince,
+                recoveryAttempts = session.foregroundRecoveryAttempts
+            )) {
+                ForegroundRecoveryDecision.WAIT -> Unit
+                ForegroundRecoveryDecision.RELAUNCH -> {
+                    session.foregroundRecoveryAttempts++
+                    session.missingRootSince = now
+                    logStep(session, "recoverWechatForeground", true, "attempt=${session.foregroundRecoveryAttempts}")
+                    rootProvider.reset()
+                    prepareRecoveryState(session, Step.WAITING_HOME)
+                    rerouteTo(session, Step.WAITING_HOME, "微信已离开前台，正在重新打开", launching = true)
+                    if (!launchWeChat()) failAndHide("重新打开微信失败")
+                    return
+                }
+                ForegroundRecoveryDecision.FAIL -> {
+                    logStep(session, "recoverWechatForeground", false, "package=$fallbackPkg")
+                    failAndHide("微信窗口恢复失败")
+                    return
+                }
+            }
             scheduleAdaptiveProcess(session, DelayProfile.WAIT_LOOP)
             return
         }
+        session.missingRootSince = 0L
 
         val now = System.currentTimeMillis()
         if (now < session.dismissingUntil) {
@@ -1139,27 +1165,36 @@ class SelectToSpeakService : AccessibilityService(), WeChatRequestHost {
             }
         }
 
-        if (session.searchTextApplied && !elementLocator.verifySearchInputFilled(root, session.contactName)) {
-            session.searchTextApplied = false
-        }
-
-        if (!session.searchTextApplied) {
-            val filled = elementLocator.fillSearchInput(root, session.contactName)
-            logStep(session, "fillSearchInput", filled, "contact=${session.contactName}")
-            if (!filled) {
-                if (!ensureAttemptBudget(session, "search_input", MAX_SEARCH_INPUT_ATTEMPTS, "输入搜索名称失败", root)) {
-                    return
+        val now = System.currentTimeMillis()
+        val verified = session.searchTextApplied && elementLocator.verifySearchInputFilled(root, session.contactName)
+        when (WeChatSearchInputPolicy.decide(
+            submitted = session.searchTextApplied,
+            verified = verified,
+            elapsedMs = now - session.searchInputSubmittedAt,
+            failedAttempts = session.actionAttempts["search_input"] ?: 0
+        )) {
+            SearchInputDecision.COMPLETE -> transitionTo(session, Step.WAITING_CONTACT_RESULT, "正在查找联系人")
+            SearchInputDecision.WAIT_FOR_VERIFICATION -> scheduleAdaptiveProcess(session, DelayProfile.STABLE)
+            SearchInputDecision.SUBMIT -> {
+                val submitted = elementLocator.fillSearchInput(root, session.contactName)
+                logStep(session, "submitSearchInput", submitted)
+                if (submitted) {
+                    session.searchTextApplied = true
+                    session.searchInputSubmittedAt = now
+                    scheduleAdaptiveProcess(session, DelayProfile.STABLE)
+                } else {
+                    if (!ensureAttemptBudget(session, "search_input", WeChatSearchInputPolicy.MAX_FAILED_ATTEMPTS, "输入搜索名称失败", root)) return
+                    scheduleAdaptiveProcess(session, DelayProfile.STABLE, attemptKey = "search_input", actionSucceeded = false)
                 }
-                scheduleAdaptiveProcess(session, DelayProfile.STABLE, attemptKey = "search_input")
-                return
-
             }
-            session.searchTextApplied = true
-            transitionTo(session, Step.WAITING_CONTACT_RESULT, "正在查找联系人")
-            return
+            SearchInputDecision.RETRY -> {
+                session.searchTextApplied = false
+                session.searchInputSubmittedAt = 0L
+                if (!ensureAttemptBudget(session, "search_input", WeChatSearchInputPolicy.MAX_FAILED_ATTEMPTS, "输入搜索名称失败", root)) return
+                scheduleAdaptiveProcess(session, DelayProfile.STABLE, attemptKey = "search_input", actionSucceeded = false)
+            }
+            SearchInputDecision.FAIL -> failAndHide("输入搜索名称失败", root)
         }
-
-        transitionTo(session, Step.WAITING_CONTACT_RESULT, "正在查找联系人")
     }
 
     private fun handleContactResult(session: VideoCallSession, root: AccessibilityNodeInfo) {
@@ -1396,7 +1431,11 @@ class SelectToSpeakService : AccessibilityService(), WeChatRequestHost {
             "微信视频",
             LobsterReportStatus.SUCCESS,
             "视频通话已发起",
-            LobsterReportDetails(traceId = session.requestId, steps = session.structuredSteps)
+            LobsterReportDetails(
+                traceId = session.requestId,
+                steps = session.structuredSteps,
+                sensitiveValues = listOf(session.contactName)
+            )
         )
         reportTerminalMetrics(session, success = true)
         applyWeChatCallAudioStrategy()
@@ -1589,7 +1628,8 @@ class SelectToSpeakService : AccessibilityService(), WeChatRequestHost {
                     traceId = session.requestId,
                     errorCode = "WECHAT_${session.step.name}_$suffix",
                     failedStep = failedStep,
-                    steps = session.structuredSteps
+                    steps = session.structuredSteps,
+                    sensitiveValues = listOf(session.contactName)
                 )
             )
         }
@@ -1771,6 +1811,9 @@ class SelectToSpeakService : AccessibilityService(), WeChatRequestHost {
         val stepFailCount: MutableMap<Step, Int> = mutableMapOf(),
         val stepDurations: MutableMap<String, Long> = mutableMapOf(),
         val structuredSteps: MutableList<LobsterTraceStep> = mutableListOf(),
+        var searchInputSubmittedAt: Long = 0L,
+        var missingRootSince: Long = 0L,
+        var foregroundRecoveryAttempts: Int = 0,
         var lastProgressAt: Long = System.currentTimeMillis(),
         var dismissingUntil: Long = 0L,
         var dismissAttempts: Int = 0,

@@ -90,8 +90,10 @@ object LobsterClient {
                     put("device_id", deviceId)
                     put("scene", scene)
                     put("status", status.wireValue)
-                    summary?.trim()?.takeIf { it.isNotEmpty() }?.let { put("summary", it) }
-                    put("logs", LobsterLogSanitizer.sanitize(logsToReport))
+                    summary?.trim()?.takeIf { it.isNotEmpty() }?.let {
+                        put("summary", LobsterLogSanitizer.sanitize(it, details.sensitiveValues))
+                    }
+                    put("logs", LobsterLogSanitizer.sanitize(logsToReport, details.sensitiveValues))
                     put("event_level", status.wireValue)
                     put("session_id", sessionId)
                     put("app_version", BuildConfig.VERSION_NAME)

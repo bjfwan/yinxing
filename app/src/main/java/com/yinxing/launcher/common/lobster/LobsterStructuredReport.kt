@@ -23,7 +23,8 @@ data class LobsterReportDetails(
     val traceId: String? = null,
     val errorCode: String? = null,
     val failedStep: String? = null,
-    val steps: List<LobsterTraceStep> = emptyList()
+    val steps: List<LobsterTraceStep> = emptyList(),
+    val sensitiveValues: List<String> = emptyList()
 ) {
     fun toJson(): JSONObject = JSONObject().apply {
         traceId.clean(120)?.let { put("trace_id", it) }
@@ -37,7 +38,7 @@ data class LobsterReportDetails(
                         put("step_name", step.stepName.clean(120).orEmpty())
                         put("action", step.action.clean(120).orEmpty())
                         put("outcome", step.outcome.wireValue)
-                        step.detail.clean(500)?.let { put("detail", LobsterLogSanitizer.sanitize(it)) }
+                        step.detail.clean(500)?.let { put("detail", LobsterLogSanitizer.sanitize(it, sensitiveValues)) }
                         step.durationMs?.takeIf { it >= 0 }?.let { put("duration_ms", it) }
                         put("occurred_at", step.occurredAt.clean(40).orEmpty())
                     })

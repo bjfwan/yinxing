@@ -21,4 +21,23 @@ class LobsterLogSanitizerTest {
         assertFalse(sanitized.contains("secret-token-value"))
         assertTrue(sanitized.contains("Bearer ***"))
     }
+
+    @Test
+    fun `masks contact names supplied by the video call session`() {
+        val sanitized = LobsterLogSanitizer.sanitize(
+            "failure=未找到联系人: 石延刚, contact=石延刚, nodeText=石延刚",
+            sensitiveValues = listOf("石延刚")
+        )
+
+        assertFalse(sanitized.contains("石延刚"))
+        assertTrue(sanitized.contains("***"))
+    }
+
+    @Test
+    fun `masks labeled contact names even when a different event flushes the buffer`() {
+        val sanitized = LobsterLogSanitizer.sanitize("[微信视频] 流程开始: 联系人=石延刚, requestId=1")
+
+        assertFalse(sanitized.contains("石延刚"))
+        assertTrue(sanitized.contains("联系人=***"))
+    }
 }

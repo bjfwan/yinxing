@@ -140,7 +140,8 @@ class VideoCallCoordinator(
                         LobsterReportDetails(
                             traceId = requestId,
                             errorCode = "WECHAT_${update.step.name}_FAILED",
-                            failedStep = update.step.name.lowercase()
+                            failedStep = update.step.name.lowercase(),
+                            sensitiveValues = listOf(targetName ?: contact.displayName)
                         )
                     )
                 }
@@ -196,7 +197,8 @@ class VideoCallCoordinator(
                 LobsterReportDetails(
                     traceId = requestId,
                     errorCode = "WECHAT_REQUEST_TIMEOUT",
-                    failedStep = "request_watchdog"
+                    failedStep = "request_watchdog",
+                    sensitiveValues = listOf(contactName)
                 )
             )
             ttsService.speak(message)

@@ -34,4 +34,27 @@ class LobsterStructuredReportTest {
         assertEquals("success", first.getString("outcome"))
         assertFalse(first.has("detail"))
     }
+
+    @Test
+    fun `masks sensitive values in structured step details`() {
+        val details = LobsterReportDetails(
+            traceId = "request-2",
+            sensitiveValues = listOf("石延刚"),
+            steps = listOf(
+                LobsterTraceStep(
+                    stepCode = "search",
+                    stepName = "搜索联系人",
+                    action = "input",
+                    outcome = LobsterStepOutcome.ERROR,
+                    detail = "nodeText=石延刚",
+                    occurredAt = "2026-08-26T00:00:00.000Z"
+                )
+            )
+        )
+
+        val json = details.toJson().toString()
+
+        assertFalse(json.contains("石延刚"))
+        assertFalse(json.contains("sensitiveValues"))
+    }
 }

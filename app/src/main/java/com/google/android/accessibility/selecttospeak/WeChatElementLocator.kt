@@ -177,13 +177,12 @@ internal class WeChatElementLocator(private val service: AccessibilityService) {
         if (byId != null) {
             val ok = AccessibilityUtil.setText(byId, contactName)
             AccessibilityUtil.safeRecycle(byId)
-            if (ok && verifySearchInputFilled(root, contactName)) return true
+            if (ok) return true
         }
         val editableNode = AccessibilityUtil.findFirstEditableNode(root) ?: return false
         val ok = AccessibilityUtil.setText(editableNode, contactName)
         AccessibilityUtil.safeRecycle(editableNode)
-        if (!ok) return false
-        return verifySearchInputFilled(root, contactName)
+        return ok
     }
 
     fun verifySearchInputFilled(root: AccessibilityNodeInfo?, contactName: String): Boolean {
@@ -191,7 +190,9 @@ internal class WeChatElementLocator(private val service: AccessibilityService) {
         if (normalizedName.isEmpty()) {
             return false
         }
-        val editNode = AccessibilityUtil.findFirstEditableNode(root) ?: return false
+        val editNode = findNodeByIds(root, WeChatViewIds.SEARCH_INPUT)
+            ?: AccessibilityUtil.findFirstEditableNode(root)
+            ?: return false
         val current = editNode.text?.toString().orEmpty()
         AccessibilityUtil.safeRecycle(editNode)
         return current.trim().contains(normalizedName)
