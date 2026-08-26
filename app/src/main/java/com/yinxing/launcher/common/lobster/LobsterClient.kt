@@ -2,6 +2,8 @@ package com.yinxing.launcher.common.lobster
 
 import android.content.Context
 import android.os.Build
+import android.net.ConnectivityManager
+import android.net.NetworkCapabilities
 import com.yinxing.launcher.BuildConfig
 import com.yinxing.launcher.common.util.DebugLog
 import kotlinx.coroutines.CoroutineScope
@@ -71,7 +73,8 @@ object LobsterClient {
         context: Context,
         scene: String,
         status: LobsterReportStatus = inferStatus(scene),
-        summary: String? = null
+        summary: String? = null,
+        details: LobsterReportDetails = LobsterReportDetails()
     ) {
         val logsToReport = takeBufferedLogs()
 
@@ -94,6 +97,9 @@ object LobsterClient {
                     put("app_version", BuildConfig.VERSION_NAME)
                     put("app_version_code", BuildConfig.VERSION_CODE)
                     put("created_at", currentIsoTimestamp())
+                    put("network_type", networkType(context))
+                    val structured = details.toJson()
+                    structured.keys().forEach { key -> put(key, structured.get(key)) }
                 }
 
                 val result = postJson(endpoint, body, successPrefix = "上报成功", failurePrefix = "上报失败")
@@ -107,7 +113,7 @@ object LobsterClient {
         }
     }
 
-    fun reportMetrics(context: Context, metrics: List<Pair<String, Long>>) {
+    fun reportMetrics(context: Context, metrics: List<Pair<String, Long>>, traceId: String? = null) {
         if (metrics.isEmpty()) return
 
         val deviceId = installId(context)
@@ -130,6 +136,7 @@ object LobsterClient {
                     put("session_id", sessionId)
                     put("app_version", BuildConfig.VERSION_NAME)
                     put("app_version_code", BuildConfig.VERSION_CODE)
+                    traceId?.trim()?.takeIf { it.isNotEmpty() }?.let { put("trace_id", it.take(120)) }
                 }
 
                 val url = "$baseEndpoint/metrics"
@@ -277,5 +284,16 @@ object LobsterClient {
         return SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'", Locale.US).apply {
             timeZone = TimeZone.getTimeZone("UTC")
         }.format(Date())
+    }
+
+    private fun networkType(context: Context): String {
+        val manager = context.getSystemService(Context.CONNECTIVITY_SERVICE) as? ConnectivityManager ?: return "unknown"
+        val capabilities = manager.getNetworkCapabilities(manager.activeNetwork) ?: return "offline"
+        return when {
+            capabilities.hasTransport(NetworkCapabilities.TRANSPORT_WIFI) -> "wifi"
+            capabilities.hasTransport(NetworkCapabilities.TRANSPORT_CELLULAR) -> "cellular"
+            capabilities.hasTransport(NetworkCapabilities.TRANSPORT_ETHERNET) -> "ethernet"
+            else -> "unknown"
+        }
     }
 }

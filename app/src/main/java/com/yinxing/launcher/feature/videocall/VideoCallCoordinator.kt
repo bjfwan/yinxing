@@ -9,6 +9,7 @@ import com.yinxing.launcher.automation.wechat.WeChatPackage
 import com.yinxing.launcher.automation.wechat.model.AutomationState
 import com.yinxing.launcher.common.lobster.LobsterClient
 import com.yinxing.launcher.common.lobster.LobsterReportStatus
+import com.yinxing.launcher.common.lobster.LobsterReportDetails
 import com.yinxing.launcher.common.service.TTSService
 import com.yinxing.launcher.common.util.DebugLog
 import com.yinxing.launcher.common.util.NetworkUtil
@@ -131,7 +132,17 @@ class VideoCallCoordinator(
 
                 if (update.terminal && !update.success && !update.reported && update.message != USER_CANCEL_MESSAGE) {
                     DebugLog.e(TAG, "[微信视频] 终端失败 | ${update.message}")
-                    LobsterClient.report(activity, "微信视频", LobsterReportStatus.ERROR, update.message)
+                    LobsterClient.report(
+                        activity,
+                        "微信视频",
+                        LobsterReportStatus.ERROR,
+                        update.message,
+                        LobsterReportDetails(
+                            traceId = requestId,
+                            errorCode = "WECHAT_${update.step.name}_FAILED",
+                            failedStep = update.step.name.lowercase()
+                        )
+                    )
                 }
                 
                 ttsService.speak(ttsMessage)
@@ -177,7 +188,17 @@ class VideoCallCoordinator(
             automationGateway.clearRequestListener(requestId)
             val message = activity.getString(R.string.video_call_request_timeout)
             LobsterClient.log("[微信视频] 请求级超时: 联系人=$contactName, requestId=$requestId")
-            LobsterClient.report(activity, "微信视频", LobsterReportStatus.ERROR, message)
+            LobsterClient.report(
+                activity,
+                "微信视频",
+                LobsterReportStatus.ERROR,
+                message,
+                LobsterReportDetails(
+                    traceId = requestId,
+                    errorCode = "WECHAT_REQUEST_TIMEOUT",
+                    failedStep = "request_watchdog"
+                )
+            )
             ttsService.speak(message)
             Toast.makeText(activity, message, Toast.LENGTH_SHORT).show()
             onNeedAccessibilityPermission()

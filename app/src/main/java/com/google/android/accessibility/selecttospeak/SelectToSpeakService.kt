@@ -14,6 +14,9 @@ import com.yinxing.launcher.automation.wechat.model.AutomationState
 import com.yinxing.launcher.automation.wechat.util.AccessibilityUtil
 import com.yinxing.launcher.common.lobster.LobsterClient
 import com.yinxing.launcher.common.lobster.LobsterReportStatus
+import com.yinxing.launcher.common.lobster.LobsterReportDetails
+import com.yinxing.launcher.common.lobster.LobsterStepOutcome
+import com.yinxing.launcher.common.lobster.LobsterTraceStep
 import com.yinxing.launcher.common.perf.LauncherTraceNames
 import com.yinxing.launcher.common.util.CallAudioStrategy
 import com.yinxing.launcher.common.util.DebugLog
@@ -29,6 +32,10 @@ import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
+import java.util.TimeZone
 
 
 class SelectToSpeakService : AccessibilityService(), WeChatRequestHost {
@@ -1383,10 +1390,15 @@ class SelectToSpeakService : AccessibilityService(), WeChatRequestHost {
         )
         LobsterClient.log("[微信自动] 流程成功 ✅")
         LobsterClient.log("[微信自动] 流程终点: 成功发起视频通话 | 耗时=${totalElapsed}ms")
-        LobsterClient.report(this, "微信视频", LobsterReportStatus.SUCCESS, "视频通话已发起")
-        reportTerminalMetrics(session, success = true)
-
         logStep(session, "COMPLETED", "视频通话已发起", "totalElapsed=${totalElapsed}ms")
+        LobsterClient.report(
+            this,
+            "微信视频",
+            LobsterReportStatus.SUCCESS,
+            "视频通话已发起",
+            LobsterReportDetails(traceId = session.requestId, steps = session.structuredSteps)
+        )
+        reportTerminalMetrics(session, success = true)
         applyWeChatCallAudioStrategy()
         floatingView?.updateMessage("视频通话已发起")
         notifyState(session, "视频通话已发起", success = true, terminal = true)
@@ -1409,7 +1421,7 @@ class SelectToSpeakService : AccessibilityService(), WeChatRequestHost {
         session.stepDurations.forEach { (step, duration) ->
             metrics += "oldlauncher.wechat.video.step.$step" to duration
         }
-        LobsterClient.reportMetrics(this, metrics)
+        LobsterClient.reportMetrics(this, metrics, traceId = session.requestId)
     }
 
     private fun applyWeChatCallAudioStrategy() {
@@ -1566,7 +1578,20 @@ class SelectToSpeakService : AccessibilityService(), WeChatRequestHost {
         LobsterClient.log("[微信自动] 失败诊断:\n$diagnostics")
         if (session != null) {
             reportTerminalMetrics(session, success = false)
-            LobsterClient.report(this, "微信视频", LobsterReportStatus.ERROR, message)
+            val failedStep = session.step.name.lowercase()
+            val suffix = if (message.contains("超时")) "TIMEOUT" else "FAILED"
+            LobsterClient.report(
+                this,
+                "微信视频",
+                LobsterReportStatus.ERROR,
+                message,
+                LobsterReportDetails(
+                    traceId = session.requestId,
+                    errorCode = "WECHAT_${session.step.name}_$suffix",
+                    failedStep = failedStep,
+                    steps = session.structuredSteps
+                )
+            )
         }
         cancelSession(false)
         if (session != null) {
@@ -1643,6 +1668,19 @@ class SelectToSpeakService : AccessibilityService(), WeChatRequestHost {
             .append(" result=").append(result)
         if (!extra.isNullOrBlank()) sb.append(" | ").append(extra)
         DebugLog.d(TAG) { sb.toString() }
+        session.structuredSteps += LobsterTraceStep(
+            stepCode = session.step.name.lowercase(),
+            stepName = stepName,
+            action = action,
+            outcome = when (result) {
+                false -> LobsterStepOutcome.ERROR
+                true -> LobsterStepOutcome.SUCCESS
+                else -> if (action == "FAILED") LobsterStepOutcome.ERROR else LobsterStepOutcome.REPORTED
+            },
+            detail = listOfNotNull(result?.toString(), extra).joinToString(" · ").takeIf { it.isNotBlank() },
+            durationMs = (System.currentTimeMillis() - session.stepStartedAt).coerceAtLeast(0),
+            occurredAt = currentTraceTimestamp()
+        )
     }
 
     private fun recordStepSuccess(step: Step, duration: Long) {
@@ -1732,6 +1770,7 @@ class SelectToSpeakService : AccessibilityService(), WeChatRequestHost {
         val stepHistory: ArrayDeque<Step> = ArrayDeque(),
         val stepFailCount: MutableMap<Step, Int> = mutableMapOf(),
         val stepDurations: MutableMap<String, Long> = mutableMapOf(),
+        val structuredSteps: MutableList<LobsterTraceStep> = mutableListOf(),
         var lastProgressAt: Long = System.currentTimeMillis(),
         var dismissingUntil: Long = 0L,
         var dismissAttempts: Int = 0,
@@ -1739,6 +1778,11 @@ class SelectToSpeakService : AccessibilityService(), WeChatRequestHost {
         var taskState: WeChatVideoTaskState = WeChatVideoTaskState(contactName = contactName),
         var lastTaskDecisionReason: String? = null
     )
+
+    private fun currentTraceTimestamp(): String = SimpleDateFormat(
+        "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'",
+        Locale.US
+    ).apply { timeZone = TimeZone.getTimeZone("UTC") }.format(Date())
 
 
     private enum class WeChatPage {
