@@ -1,8 +1,8 @@
 package com.yinxing.launcher.feature.settings
 
+import android.app.Dialog
 import android.view.View
 import android.widget.LinearLayout
-import com.google.android.material.bottomsheet.BottomSheetDialog
 import com.yinxing.launcher.R
 import com.yinxing.launcher.feature.incoming.IncomingGuardItem
 
@@ -30,8 +30,9 @@ internal enum class PermissionGroup(
     val entries: List<PermissionEntry>
         get() = when (this) {
             Call -> listOf(
-                PermissionEntry.PhonePermission,
-                PermissionEntry.NotificationPermission
+                PermissionEntry.NotificationPermission,
+                PermissionEntry.DefaultPhone,
+                PermissionEntry.PhonePermission
             )
             KeepAlive -> listOf(
                 PermissionEntry.DefaultLauncher,
@@ -47,6 +48,7 @@ internal enum class PermissionGroup(
 }
 
 internal enum class PermissionEntry {
+    DefaultPhone,
     PhonePermission,
     NotificationPermission,
     DefaultLauncher,
@@ -69,8 +71,14 @@ internal data class BadgeStyle(
     val backgroundColorResId: Int
 )
 
-internal data class ListSheetContext(
-    val dialog: BottomSheetDialog,
+internal data class DialogEntryIcon(
+    val drawableResId: Int,
+    val tintResId: Int,
+    val plateResId: Int
+)
+
+internal data class ListDialogContext(
+    val dialog: Dialog,
     val contentView: View,
     val container: LinearLayout
 )
@@ -87,6 +95,7 @@ internal data class ContactCounts(
 
 internal fun IncomingGuardItem.toPermissionEntry(): PermissionEntry {
     return when (this) {
+        IncomingGuardItem.DefaultPhone -> PermissionEntry.DefaultPhone
         IncomingGuardItem.PhonePermission -> PermissionEntry.PhonePermission
         IncomingGuardItem.NotificationPermission -> PermissionEntry.NotificationPermission
         IncomingGuardItem.DefaultLauncher -> PermissionEntry.DefaultLauncher

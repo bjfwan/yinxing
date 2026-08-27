@@ -13,6 +13,7 @@ sealed class WeatherState {
     abstract val adcode: String
     abstract val now: WeatherNow?
     abstract val forecast: List<WeatherForecastDay>
+    open val hourly: List<WeatherHour> = emptyList()
     abstract val lastFetchTime: Long
     abstract val error: String?
 
@@ -34,6 +35,7 @@ sealed class WeatherState {
         override val adcode: String,
         override val now: WeatherNow,
         override val forecast: List<WeatherForecastDay>,
+        override val hourly: List<WeatherHour> = emptyList(),
         override val lastFetchTime: Long,
         val fromCache: Boolean = false
     ) : WeatherState() {
@@ -70,6 +72,7 @@ sealed class WeatherState {
         override val adcode: String = cached.adcode
         override val now: WeatherNow = cached.now
         override val forecast: List<WeatherForecastDay> = cached.forecast
+        override val hourly: List<WeatherHour> = cached.hourly
         override val lastFetchTime: Long = cached.lastFetchTime
         override val error: String = message
         override val isValid: Boolean = true

@@ -39,6 +39,18 @@ object CallAudioStrategy {
         }
     }
 
+    /** Volume only; the default dialer must change the route through InCallService. */
+    fun maximizeSystemCallVolume(context: Context) {
+        val audioManager = audioManager(context) ?: return
+        runCatching { setStreamToMax(audioManager, AudioManager.STREAM_VOICE_CALL) }
+            .onFailure { throwable ->
+                DebugLog.e(
+                    TAG,
+                    "maximizeSystemCallVolume: FAILED - ${throwable::class.simpleName}: ${throwable.message}"
+                )
+            }
+    }
+
     fun prepareVoipCall(context: Context): Result {
         val audioManager = audioManager(context) ?: return Result(false, false)
         return runCatching {

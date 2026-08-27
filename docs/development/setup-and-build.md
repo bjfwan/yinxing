@@ -1,6 +1,6 @@
 # 构建与环境说明
 
-更新时间：2026-05-07
+更新时间：2026-08-27
 
 ## 1. 基础环境
 
@@ -32,8 +32,11 @@
 ## 4. 当前已验证命令
 
 ```powershell
-.\build.bat :app:assembleDebugAndroidTest :app:testDebugUnitTest :app:assembleDebug :app:lintDebug
+.\gradlew.bat :app:assembleDebug :app:testDebugUnitTest :app:lintDebug
+.\gradlew.bat :app:assembleRelease
 ```
+
+2026-08-27 本地结果：421 tests, 0 failed；Lint 0 errors；Debug 与 Release 构建通过。`assembleDebugAndroidTest` 和 `connectedDebugAndroidTest` 仍需在最终发布前重跑。
 
 ## 5. 常用命令
 
@@ -60,7 +63,7 @@
 ```powershell
 adb devices
 # 或使用完整路径
-& 'D:\androidsdk\platform-tools\adb.exe' devices
+& "$env:LOCALAPPDATA\Android\Sdk\platform-tools\adb.exe" devices
 ```
 
 常见状态说明：

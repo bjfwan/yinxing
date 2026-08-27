@@ -5,6 +5,8 @@ import android.content.Context
 import android.content.Intent
 import android.os.Bundle
 import android.os.CountDownTimer
+import android.telephony.TelephonyManager
+import android.view.View
 import android.view.WindowManager
 import android.widget.TextView
 import android.widget.Toast
@@ -21,25 +23,33 @@ import com.yinxing.launcher.common.util.CallAudioStrategy
 import com.yinxing.launcher.common.util.DebugLog
 import com.yinxing.launcher.data.home.LauncherPreferences
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
 class IncomingCallActivity : AppCompatActivity() {
 
     private lateinit var tvCaller: TextView
+    private lateinit var tvSubtitle: TextView
     private lateinit var tvRisk: TextView
     private lateinit var tvCountdown: TextView
+    private lateinit var tvAcceptLabel: TextView
+    private lateinit var tvDeclineLabel: TextView
     private lateinit var btnAccept: CardView
     private lateinit var btnDecline: CardView
 
     private var countDownTimer: CountDownTimer? = null
     private var riskJob: Job? = null
+    private var actionJob: Job? = null
     private var actionInProgress = false
+    private var managedCallObserved = false
     private val platformCompat = IncomingPlatformCompat()
     private lateinit var actions: IncomingCallActions
     private var announcer: IncomingCallAnnouncer? = null
+    private val managedCallListener: (ActiveTelecomCallSnapshot) -> Unit = ::renderManagedCallSnapshot
 
     companion object {
         private const val TAG = "IncomingCallActivity"
+        private const val MANAGED_ANSWER_CONFIRMATION_TIMEOUT_MS = 5_000L
 
         const val EXTRA_CALLER_NAME = "extra_caller_name"
         const val EXTRA_AUTO_ANSWER = "extra_auto_answer"
@@ -79,8 +89,11 @@ class IncomingCallActivity : AppCompatActivity() {
         announcer = IncomingCallAnnouncer(this)
 
         tvCaller = findViewById(R.id.tv_incoming_caller)
+        tvSubtitle = findViewById(R.id.tv_incoming_subtitle)
         tvRisk = findViewById(R.id.tv_incoming_risk)
         tvCountdown = findViewById(R.id.tv_incoming_countdown)
+        tvAcceptLabel = findViewById(R.id.tv_incoming_accept_label)
+        tvDeclineLabel = findViewById(R.id.tv_incoming_decline_label)
         btnAccept = findViewById(R.id.btn_incoming_accept)
         btnDecline = findViewById(R.id.btn_incoming_decline)
 
@@ -88,6 +101,16 @@ class IncomingCallActivity : AppCompatActivity() {
         btnDecline.setOnClickListener { declineCall() }
 
         applyIntent(intent)
+    }
+
+    override fun onStart() {
+        super.onStart()
+        ActiveTelecomCallSession.addListener(managedCallListener)
+    }
+
+    override fun onStop() {
+        ActiveTelecomCallSession.removeListener(managedCallListener)
+        super.onStop()
     }
 
     override fun onNewIntent(intent: Intent) {
@@ -100,6 +123,7 @@ class IncomingCallActivity : AppCompatActivity() {
 
     override fun onDestroy() {
         riskJob?.cancel()
+        actionJob?.cancel()
         hideCountdown()
         announcer?.shutdown()
         announcer = null
@@ -161,7 +185,13 @@ class IncomingCallActivity : AppCompatActivity() {
 
     private fun resetUiState() {
         actionInProgress = false
+        actionJob?.cancel()
         riskJob?.cancel()
+        tvSubtitle.setText(R.string.incoming_call_subtitle)
+        tvAcceptLabel.setText(R.string.incoming_call_accept)
+        tvDeclineLabel.setText(R.string.incoming_call_decline)
+        btnAccept.visibility = View.VISIBLE
+        btnDecline.contentDescription = getString(R.string.incoming_call_decline)
         setActionButtonsEnabled(true)
         hideCountdown()
         renderRisk(null)
@@ -198,15 +228,24 @@ class IncomingCallActivity : AppCompatActivity() {
         hideCountdown()
         announcer?.stop()
 
+        val managedSnapshot = ActiveTelecomCallSession.snapshot()
+        if (managedSnapshot.state == ManagedTelecomCallState.Ringing) {
+            val managedResult = ActiveTelecomCallSession.answer()
+            if (managedResult.dispatched || managedSnapshot.answerRequested) {
+                showActionPending(R.string.incoming_call_status_answering)
+                monitorManagedAnswer(managedSnapshot.callId)
+                return
+            }
+            managedResult.error?.let {
+                handleAcceptFailure(it.message ?: getString(R.string.incoming_call_status_unknown_error))
+                return
+            }
+        }
+
         val result = answerRingingCall()
         if (result.success) {
-            IncomingCallSessionState.answered()
-            IncomingCallDiagnostics.recordAcceptSuccess(this, result.detail)
-            applyAnsweredCallAudioStrategy()
-            IncomingCallForegroundService.stop(this)
-            LobsterClient.report(this, "来电已接听")
-            traceAndReport(this, LauncherTraceNames.INCOMING_CALL_RESPONSE)
-            finish()
+            showActionPending(R.string.incoming_call_status_answering)
+            confirmLegacyAnswer(result.detail)
             return
         }
 
@@ -222,6 +261,25 @@ class IncomingCallActivity : AppCompatActivity() {
         setActionButtonsEnabled(false)
         hideCountdown()
         announcer?.stop()
+
+        val managedSnapshot = ActiveTelecomCallSession.snapshot()
+        if (managedSnapshot.hasCall) {
+            val managedResult = ActiveTelecomCallSession.end()
+            if (managedResult.dispatched || managedSnapshot.endRequested) {
+                showActionPending(R.string.incoming_call_status_declining)
+                return
+            }
+            managedResult.error?.let {
+                val detail = it.message ?: getString(R.string.incoming_call_status_unknown_error)
+                IncomingCallDiagnostics.recordDeclineFailure(
+                    this,
+                    detail,
+                    IncomingCallFailureReason(IncomingCallFailureCategory.CallAction, detail)
+                )
+                restoreActionUi()
+                return
+            }
+        }
 
         val result = endRingingCall()
         if (result.success) {
@@ -296,6 +354,114 @@ class IncomingCallActivity : AppCompatActivity() {
             IncomingCallDiagnostics.recordSpeakerEnabled(this)
             DebugLog.i(TAG) { "applyAnsweredCallAudioStrategy: call volume=max speakerphone enabled" }
         }
+    }
+
+    private fun renderManagedCallSnapshot(snapshot: ActiveTelecomCallSnapshot) {
+        if (snapshot.callId == null) {
+            if (managedCallObserved && snapshot.state == ManagedTelecomCallState.Disconnected) finish()
+            return
+        }
+        managedCallObserved = true
+        snapshot.callerName?.takeIf(String::isNotBlank)?.let { tvCaller.text = it }
+        when (snapshot.state) {
+            ManagedTelecomCallState.Active,
+            ManagedTelecomCallState.Held -> renderOngoingCall(snapshot)
+            ManagedTelecomCallState.Connecting -> showActionPending(
+                R.string.incoming_call_status_answering
+            )
+            ManagedTelecomCallState.Disconnected -> finish()
+            ManagedTelecomCallState.Ringing -> {
+                if (actionInProgress && !snapshot.answerRequested) restoreActionUi()
+            }
+            ManagedTelecomCallState.None -> Unit
+        }
+    }
+
+    private fun renderOngoingCall(snapshot: ActiveTelecomCallSnapshot) {
+        actionJob?.cancel()
+        hideCountdown()
+        renderRisk(null)
+        actionInProgress = false
+        tvSubtitle.setText(R.string.incoming_call_ongoing_subtitle)
+        tvCountdown.isVisible = true
+        tvCountdown.setText(
+            if (snapshot.state == ManagedTelecomCallState.Held) {
+                R.string.incoming_call_status_held
+            } else {
+                R.string.incoming_call_status_accept_confirmed
+            }
+        )
+        btnAccept.visibility = View.GONE
+        btnDecline.isEnabled = true
+        btnDecline.alpha = 1f
+        btnDecline.contentDescription = getString(R.string.incoming_call_end)
+        tvDeclineLabel.setText(R.string.incoming_call_end)
+    }
+
+    private fun monitorManagedAnswer(callId: String?) {
+        if (callId == null) return
+        actionJob?.cancel()
+        actionJob = lifecycleScope.launch {
+            delay(MANAGED_ANSWER_CONFIRMATION_TIMEOUT_MS)
+            if (ActiveTelecomCallSession.expireAnswerRequest(callId)) {
+                handleAcceptFailure(getString(R.string.incoming_call_status_not_confirmed))
+            }
+        }
+    }
+
+    private fun confirmLegacyAnswer(commandDetail: String) {
+        actionJob?.cancel()
+        actionJob = lifecycleScope.launch {
+            repeat(15) {
+                when (readLegacyCallState()) {
+                    TelephonyManager.CALL_STATE_OFFHOOK -> {
+                        confirmAnswer(commandDetail)
+                        return@launch
+                    }
+                    TelephonyManager.CALL_STATE_IDLE -> {
+                        if (it > 1) {
+                            handleAcceptFailure(getString(R.string.incoming_call_status_not_confirmed))
+                            return@launch
+                        }
+                    }
+                }
+                delay(200L)
+            }
+            handleAcceptFailure(getString(R.string.incoming_call_status_not_confirmed))
+        }
+    }
+
+    @Suppress("DEPRECATION")
+    private fun readLegacyCallState(): Int? = runCatching {
+        getSystemService(TelephonyManager::class.java)?.callState
+    }.getOrNull()
+
+    private fun confirmAnswer(detail: String) {
+        IncomingCallSessionState.answered()
+        IncomingCallDiagnostics.recordAcceptSuccess(this, detail)
+        applyAnsweredCallAudioStrategy()
+        IncomingCallForegroundService.stop(this)
+        LobsterClient.report(this, "来电已接听")
+        traceAndReport(this, LauncherTraceNames.INCOMING_CALL_RESPONSE)
+        finish()
+    }
+
+    private fun handleAcceptFailure(detail: String) {
+        val reason = IncomingCallFailureReason(IncomingCallFailureCategory.CallAction, detail)
+        IncomingCallDiagnostics.recordAcceptFailure(this, detail, reason)
+        Toast.makeText(this, detail, Toast.LENGTH_SHORT).show()
+        restoreActionUi()
+    }
+
+    private fun showActionPending(messageRes: Int) {
+        tvCountdown.isVisible = true
+        tvCountdown.setText(messageRes)
+    }
+
+    private fun restoreActionUi() {
+        actionInProgress = false
+        setActionButtonsEnabled(true)
+        hideCountdown()
     }
 
     private fun setActionButtonsEnabled(enabled: Boolean) {

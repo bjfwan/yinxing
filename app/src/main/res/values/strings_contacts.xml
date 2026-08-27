@@ -1,0 +1,105 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="video_title">微信视频</string>
+    <string name="video_manage_title">管理联系人</string>
+    <string name="video_mode_call_summary">认准头像，点“视频”按钮</string>
+
+    <string name="video_mode_manage_summary">添加、编辑或删除联系人</string>
+
+    <string name="action_add">新增</string>
+    <string name="action_back">返回</string>
+    <string name="action_cancel">取消</string>
+    <string name="action_confirm">确定</string>
+    <string name="action_edit">编辑</string>
+    <string name="action_delete">删除</string>
+    <string name="action_manage">管理</string>
+    <string name="action_go_to_settings">去设置</string>
+    <string name="action_clear">清空</string>
+    <string name="action_edit_avatar">选择并编辑头像</string>
+    <string name="avatar_editor_title">调整头像</string>
+    <string name="avatar_crop_preview">头像裁切预览</string>
+    <string name="avatar_crop_tip">单指移动，双指缩放</string>
+    <string name="action_use_photo">使用头像</string>
+    <string name="action_processing">处理中…</string>
+    <string name="avatar_load_failed">照片读取失败，请重新选择</string>
+    <string name="avatar_save_failed">头像保存失败，请重试</string>
+    <string name="action_continue">继续</string>
+    <string name="action_retry">重新加载</string>
+    <string name="label_name">姓名</string>
+    <string name="hint_name">请输入姓名</string>
+    <string name="label_phone">手机号</string>
+    <string name="hint_phone">请输入手机号</string>
+    <string name="label_contact_name">桌面显示名</string>
+    <string name="hint_wechat_contact_name">请输入桌面上显示的名字</string>
+    <string name="label_wechat_search_name">微信搜索名</string>
+    <string name="hint_wechat_search_name">请输入微信里实际能搜到的备注或昵称</string>
+
+    <string name="phone_contact_dialog_add_title">添加联系人</string>
+    <string name="phone_contact_dialog_edit_title">编辑联系人</string>
+    <string name="contact_dialog_add_title">新增联系人</string>
+    <string name="contact_dialog_edit_title">编辑联系人</string>
+    <string name="contact_dialog_wechat_tip">如果默认用微信视频，请填写微信里实际能搜到对方的名称</string>
+
+    <string name="contact_card_action_phone_v2">拨打电话</string>
+    <string name="contact_card_action_wechat_v2">视频</string>
+    <string name="contact_auto_answer_badge">自动接听</string>
+    <string name="contact_video_subtitle_wechat">微信：%1$s</string>
+    <string name="contact_video_subtitle_phone">%1$s</string>
+    <string name="contact_manage_hint_edit">编辑资料</string>
+
+    <string name="video_contact_wechat_action_description">给 %1$s 发起微信视频</string>
+    <string name="video_contact_phone_action_description">给 %1$s 拨打电话</string>
+
+    <string name="contact_search_hint">搜索显示名、手机号或微信搜索名</string>
+    <string name="contact_wechat_search_name_required">默认方式是微信视频时，需要填写微信搜索名</string>
+    <string name="contact_wechat_search_name_missing">这个联系人还没有微信搜索名</string>
+
+    <string name="contact_photo_preview">联系人照片预览</string>
+    <string name="contact_updated">联系人已更新</string>
+    <string name="contact_update_failed">更新失败：%1$s</string>
+    <string name="contact_deleted">联系人已删除</string>
+    <string name="contact_delete_failed">删除失败：%1$s</string>
+    <string name="contact_add_failed">添加失败：%1$s</string>
+    <string name="contact_load_failed">联系人加载失败：%1$s</string>
+    <string name="dial_failed">拨号失败：%1$s</string>
+    <string name="phone_call_permission_required">需要先授权电话权限，才能直接拨打</string>
+    <string name="open_contacts_failed">未找到可打开的联系人应用</string>
+
+    <string name="state_phone_empty_title">暂无联系人</string>
+    <string name="state_phone_empty_message">还没有常用联系人，请让家人先帮您设置</string>
+    <string name="state_phone_empty_action">新增联系人</string>
+    <string name="action_back_home">返回首页</string>
+
+    <string name="contact_name_placeholder">联系人</string>
+    <string name="contact_photo_description">%1$s 的照片</string>
+    <string name="contact_call_description">拨打 %1$s</string>
+    <string name="input_contact_name">请输入联系人姓名</string>
+    <string name="contact_added_named">已保存联系人：%1$s</string>
+    <string name="delete_contact_title">删除联系人</string>
+    <string name="video_contact_delete_message">确定要删除 %1$s 吗？</string>
+    <string name="network_unavailable_detail">网络未连接，请检查网络</string>
+    <string name="network_unavailable">网络未连接</string>
+    <string name="accessibility_required">请先开启无障碍权限</string>
+    <string name="wechat_not_installed_detail">未安装微信应用</string>
+    <string name="wechat_not_installed">未安装微信</string>
+    <string name="starting_video_call_detail">正在为您拨打视频电话</string>
+    <string name="starting_video_call">正在发起视频通话…</string>
+    <string name="video_call_in_progress">已有进行中的微信视频任务，请稍候</string>
+    <string name="video_call_request_timeout">微信视频长时间没有响应，请重新开启无障碍服务后再试</string>
+
+    <string name="overlay_permission_title">需要悬浮窗权限</string>
+    <string name="overlay_permission_message">为了显示操作状态，需要开启悬浮窗权限</string>
+    <string name="accessibility_dialog_title">需要开启无障碍权限</string>
+    <string name="accessibility_dialog_message">自动拨打微信视频需要无障碍服务权限，请在设置中开启</string>
+    <string name="state_video_empty_title">还没有联系人</string>
+    <string name="state_video_empty_message">还没有视频联系人，请让家人先帮您设置</string>
+
+    <string name="state_video_manage_empty_message">先添加一个联系人，再设置电话或微信视频</string>
+    <string name="state_video_empty_action_add">新增联系人</string>
+    <string name="state_video_search_empty_title">未找到联系人</string>
+    <string name="state_video_search_empty_message">没有匹配“%1$s”的联系人，可以清空搜索后再试</string>
+    <string name="video_contact_placeholder">联系人</string>
+    <string name="video_contact_action_description">联系 %1$s</string>
+    <string name="video_contact_search_hint">搜索联系人姓名或关键词</string>
+    <string name="status_operating">正在操作…</string>
+</resources>

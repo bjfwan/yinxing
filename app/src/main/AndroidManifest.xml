@@ -10,6 +10,7 @@
     <uses-permission android:name="android.permission.MODIFY_AUDIO_SETTINGS" />
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
     <uses-permission android:name="android.permission.SYSTEM_ALERT_WINDOW" />
     <uses-permission android:name="android.permission.VIBRATE" />
     <uses-permission android:name="android.permission.USE_FULL_SCREEN_INTENT" />
@@ -40,6 +41,22 @@
         <package android:name="com.huawei.android.totemweather" />
         <package android:name="com.oppo.weather" />
         <package android:name="com.vivo.weather" />
+        <package android:name="com.bbk.launcher2" />
+        <package android:name="com.vivo.permissionmanager" />
+        <package android:name="com.miui.home" />
+        <package android:name="com.miui.securitycenter" />
+        <package android:name="com.huawei.android.launcher" />
+        <package android:name="com.huawei.systemmanager" />
+        <package android:name="com.hihonor.android.launcher" />
+        <package android:name="com.hihonor.systemmanager" />
+        <package android:name="com.oplus.launcher" />
+        <package android:name="com.oppo.launcher" />
+        <package android:name="net.oneplus.launcher" />
+        <package android:name="com.sec.android.app.launcher" />
+        <package android:name="com.samsung.android.lool" />
+        <package android:name="com.android.settings" />
+        <package android:name="com.android.launcher" />
+        <package android:name="com.google.android.apps.nexuslauncher" />
     </queries>
 
     <application
@@ -76,8 +93,27 @@
             android:name=".feature.settings.SettingsActivity"
             android:exported="false" />
         <activity
+            android:name=".feature.weather.WeatherDetailActivity"
+            android:exported="false" />
+        <activity
+            android:name=".feature.weather.WeatherCityManagerActivity"
+            android:exported="false" />
+        <activity
             android:name=".feature.phone.PhoneActivity"
             android:exported="false" />
+        <activity
+            android:name=".feature.phone.SystemDialerActivity"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.intent.action.DIAL" />
+                <category android:name="android.intent.category.DEFAULT" />
+            </intent-filter>
+            <intent-filter>
+                <action android:name="android.intent.action.DIAL" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <data android:scheme="tel" />
+            </intent-filter>
+        </activity>
         <activity
             android:name=".feature.phone.PhoneContactActivity"
             android:exported="false" />
@@ -114,6 +150,18 @@
             <property
                 android:name="android.app.PROPERTY_SPECIAL_USE_FGS_SUBTYPE"
                 android:value="incoming_call_alert" />
+        </service>
+
+        <service
+            android:name=".feature.incoming.YinxingInCallService"
+            android:exported="true"
+            android:permission="android.permission.BIND_INCALL_SERVICE">
+            <meta-data
+                android:name="android.telecom.IN_CALL_SERVICE_UI"
+                android:value="true" />
+            <intent-filter>
+                <action android:name="android.telecom.InCallService" />
+            </intent-filter>
         </service>
 
         <service

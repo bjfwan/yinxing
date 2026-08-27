@@ -1,7 +1,13 @@
 <resources xmlns:tools="http://schemas.android.com/tools">
-    <!-- Base application theme. -->
     <style name="Base.Theme.OldLauncher" parent="Theme.Material3.DayNight.NoActionBar">
-        <!-- Customize your dark theme here. -->
-        <!-- <item name="colorPrimary">@color/my_dark_primary</item> -->
+        <item name="android:windowBackground">@drawable/bg_gradient</item>
+        <item name="android:windowLightStatusBar">false</item>
+        <item name="android:statusBarColor">@android:color/transparent</item>
+        <item name="android:navigationBarColor">@android:color/transparent</item>
+        <item name="colorPrimary">@color/launcher_primary</item>
+        <item name="colorOnPrimary">@color/launcher_on_primary</item>
+        <item name="colorSurface">@color/launcher_surface</item>
+        <item name="colorOnSurface">@color/launcher_text_primary</item>
+        <item name="colorOutline">@color/launcher_outline</item>
     </style>
 </resources>

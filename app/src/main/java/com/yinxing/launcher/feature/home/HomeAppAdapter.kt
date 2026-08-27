@@ -69,6 +69,7 @@ class HomeAppAdapter(
         val icon: ImageView = view.findViewById(R.id.icon)
         val name: TextView = view.findViewById(R.id.name)
         var iconJob: Job? = null
+        var boundStableId: Long = Long.MIN_VALUE
         var uiKey: Int = Int.MIN_VALUE
     }
 
@@ -100,6 +101,7 @@ class HomeAppAdapter(
     ) {
         if (holder is AppViewHolder && payloads.contains(PAYLOAD_UI)) {
             applyUi(holder)
+            bindApp(holder, itemAt(position))
             return
         }
         super.onBindViewHolder(holder, position, payloads)
@@ -109,15 +111,14 @@ class HomeAppAdapter(
         if (holder is AppViewHolder) {
             holder.iconJob?.cancel()
             holder.iconJob = null
+            holder.boundStableId = Long.MIN_VALUE
+            holder.icon.animate().cancel()
+            holder.icon.setImageDrawable(null)
         }
         super.onViewRecycled(holder)
     }
 
     override fun onViewDetachedFromWindow(holder: RecyclerView.ViewHolder) {
-        if (holder is AppViewHolder) {
-            holder.iconJob?.cancel()
-            holder.iconJob = null
-        }
         super.onViewDetachedFromWindow(holder)
     }
 
@@ -135,7 +136,7 @@ class HomeAppAdapter(
         }
         holder.uiKey = uiKey
         holder.card.cardElevation = context.dpToPx(if (lowPerformanceMode) 2 else 6).toFloat()
-        val baseIconDp = if (lowPerformanceMode) 80 else 96
+        val baseIconDp = if (lowPerformanceMode) 104 else 116
         val iconSize = context.dpToPx((baseIconDp * iconScale / 100f).toInt().coerceAtLeast(48))
         val iconLp = holder.icon.layoutParams
         if (iconLp.width != iconSize || iconLp.height != iconSize) {
@@ -148,42 +149,53 @@ class HomeAppAdapter(
         if (holder.icon.paddingLeft != pad) {
             holder.icon.setPadding(pad, pad, pad, pad)
         }
-        val cardHeight = context.dpToPx((200 * iconScale / 100f).toInt().coerceAtLeast(120))
+        val cardHeight = context.dpToPx((260 * iconScale / 100f).toInt().coerceAtLeast(168))
         val cardLp = holder.card.layoutParams
         if (cardLp.height != cardHeight) {
             cardLp.height = cardHeight
             holder.card.layoutParams = cardLp
         }
-        holder.name.textSize = (24f * iconScale / 100f).coerceAtLeast(16f)
+        holder.name.textSize = (28f * iconScale / 100f).coerceAtLeast(18f)
     }
 
     private fun bindApp(holder: AppViewHolder, item: HomeAppItem) {
         val context = holder.itemView.context
+        holder.boundStableId = item.stableId
         holder.name.text = item.appName
         holder.card.contentDescription = item.appName
-        holder.icon.setBackgroundResource(
-            when (item.type) {
-                HomeAppItem.Type.PHONE -> R.drawable.icon_background_phone
-                HomeAppItem.Type.WECHAT_VIDEO -> R.drawable.icon_background_wechat
-                else -> R.drawable.icon_background
-            }
-        )
         holder.iconJob?.cancel()
         if (item.type == HomeAppItem.Type.APP) {
-            holder.icon.setImageResource(android.R.drawable.sym_def_app_icon)
+            holder.icon.setBackgroundResource(R.drawable.icon_background)
+            holder.icon.clipToOutline = false
+            holder.icon.imageTintList = null
+            val pad = context.dpToPx((16 * iconScale / 100f).toInt().coerceAtLeast(8))
+            holder.icon.setPadding(pad, pad, pad, pad)
+            holder.icon.animate().cancel()
+            holder.icon.alpha = 0f
+            holder.icon.setImageDrawable(null)
             val iconSize = holder.icon.layoutParams.width.coerceAtLeast(1)
             holder.iconJob = scope.launch {
                 val bitmap = MediaThumbnailLoader.loadAppIcon(context, item.packageName, iconSize)
-                if (!holder.itemView.isAttachedToWindow) return@launch
-                val currentPosition = holder.bindingAdapterPosition
-                if (currentPosition == RecyclerView.NO_POSITION) return@launch
-                val currentItem = itemAtOrNull(currentPosition)
-                if (currentItem?.stableId == item.stableId && bitmap != null) {
+                if (holder.boundStableId != item.stableId) return@launch
+                if (bitmap != null) {
                     holder.icon.setImageBitmap(bitmap)
+                    if (lowPerformanceMode) {
+                        holder.icon.alpha = 1f
+                    } else {
+                        holder.icon.animate().alpha(1f).setDuration(120L).start()
+                    }
+                } else {
+                    holder.icon.setImageResource(android.R.drawable.sym_def_app_icon)
+                    holder.icon.alpha = 1f
                 }
             }
         } else {
+            holder.icon.setBackgroundResource(R.drawable.bg_home_icon_clip)
+            holder.icon.clipToOutline = true
+            holder.icon.imageTintList = null
+            holder.icon.setPadding(0, 0, 0, 0)
             holder.icon.setImageResource(item.iconResId ?: android.R.drawable.sym_def_app_icon)
+            holder.icon.alpha = 1f
         }
         holder.icon.setOnLongClickListener(null)
         holder.card.setOnLongClickListener(null)

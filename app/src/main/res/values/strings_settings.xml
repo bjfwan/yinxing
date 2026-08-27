@@ -1,0 +1,187 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="settings_title">设置</string>
+    <string name="settings_subtitle">管理银杏的全部功能</string>
+    <string name="settings_elder_title">老人设置</string>
+    <string name="settings_elder_subtitle">只保留最常用的设置</string>
+    <string name="settings_switch_elder">卡片样式</string>
+    <string name="settings_switch_standard">列表样式</string>
+    <string name="settings_quick_title">快捷设置</string>
+    <string name="settings_function_title">功能设置</string>
+    <string name="settings_contacts_title">联系人与首页</string>
+    <string name="settings_contacts_summary">管理家人联系人与首页内容</string>
+    <string name="settings_calls_title">来电与接听</string>
+    <string name="settings_calls_summary">自动接听、倒计时、来电状态</string>
+    <string name="settings_permissions_title">权限管理</string>
+    <string name="settings_permissions_summary">电话、后台、视频权限</string>
+    <string name="settings_device_title">桌面与显示</string>
+    <string name="settings_device_summary">默认桌面、图标大小、显示模式</string>
+    <string name="settings_system_summary_short">天气城市、系统设置、版本更新</string>
+    <string name="settings_check_update">检查版本更新</string>
+    <string name="settings_elder_progress">安心使用</string>
+    <string name="settings_elder_pending_count">还有 %1$d 项待处理</string>
+    <string name="settings_elder_contacts">家人联系人</string>
+    <string name="settings_elder_contacts_count">%1$d 位</string>
+    <string name="settings_elder_device">桌面与后台</string>
+    <string name="settings_elder_system">系统与天气</string>
+    <string name="settings_continue_setup">继续设置</string>
+    <string name="settings_contact_dialog_title">管理家人联系人</string>
+    <string name="settings_open_phone_contacts">电话联系人</string>
+    <string name="settings_open_video_contacts">微信视频联系人</string>
+    <string name="settings_delay_dialog_title">自动接听倒计时</string>
+    <string name="settings_icon_scale_dialog_title">图标与文字大小</string>
+    <string name="settings_action_adjust">调整</string>
+    <string name="settings_action_open">打开</string>
+    <string name="settings_action_check">检查</string>
+    <string name="settings_action_view">查看</string>
+
+    <string name="settings_manage_phone_contacts_title">电话联系人</string>
+    <string name="settings_manage_phone_contacts_summary">添加或修改常用电话联系人</string>
+    <string name="settings_manage_video_contacts_title">微信视频联系人</string>
+    <string name="settings_manage_video_contacts_summary">添加或修改微信视频联系人</string>
+    <string name="settings_manage_home_apps_title">首页应用</string>
+    <string name="settings_manage_home_apps_summary">调整首页要显示的应用</string>
+    <string name="settings_section_incoming_guard_title">先看来电保障</string>
+    <string name="settings_incoming_guard_title">来电保障</string>
+    <string name="settings_incoming_guard_pending_item">%1$s未开启</string>
+    <string name="settings_incoming_guard_phone_risk">无法识别来电，可能错过重要电话</string>
+    <string name="settings_incoming_guard_action_now">立即处理</string>
+    <string name="settings_incoming_guard_status_ready">已完成</string>
+    <string name="settings_incoming_guard_status_pending">待处理</string>
+    <string name="settings_incoming_guard_summary_ready">来电提醒、来电页和自动接听已经可以稳定工作</string>
+    <string name="settings_incoming_guard_summary_blocked">当前最先处理：%1$s</string>
+    <string name="settings_guard_status_done">已完成</string>
+    <string name="settings_guard_status_confirmed">已确认</string>
+    <string name="settings_guard_status_pending">待确认</string>
+    <string name="settings_guard_status_blocking">先处理</string>
+
+    <string name="settings_section_system_title">系统与天气</string>
+    <string name="settings_contacts_hub_summary">电话 %1$d 人 · 视频 %2$d 人 · 首页 %3$d 个</string>
+    <string name="settings_permissions_hub_summary_ready">来电、后台和视频权限都已处理</string>
+    <string name="settings_permissions_hub_summary_pending">当前还差：%1$s</string>
+    <string name="settings_incoming_guard_action_open">查看详情</string>
+    <string name="settings_dialog_system_message">这里可以修改天气城市，或打开系统设置。</string>
+    <string name="settings_entry_modify">修改 ›</string>
+    <string name="settings_entry_open_settings">打开 ›</string>
+    <string name="settings_device_hub_summary">%1$s · %2$s</string>
+    <string name="settings_device_hub_default_ready">默认桌面已设好</string>
+    <string name="settings_device_hub_default_pending">还没设默认桌面</string>
+    <string name="settings_device_hub_low_performance_on">低性能已开</string>
+    <string name="settings_device_hub_low_performance_off">低性能已关</string>
+    <string name="settings_keep_alive_review_title">后台保活相关权限</string>
+    <string name="settings_keep_alive_review_summary">默认桌面、电池、自启动和后台弹出界面</string>
+    <string name="settings_low_performance_title">低性能模式</string>
+    <string name="settings_low_performance_summary_on">已开启，减少动画和刷新</string>
+    <string name="settings_low_performance_summary_off">已关闭，保持完整效果</string>
+    <string name="settings_state_on">已开启</string>
+    <string name="settings_state_off">已关闭</string>
+    <string name="settings_auto_answer_title">来电自动接听</string>
+    <string name="settings_auto_answer_summary_on">已开启，命中联系人会自动接通</string>
+    <string name="settings_auto_answer_summary_off">已关闭，来电需手动接听</string>
+    <string name="settings_auto_answer_delay_title">自动接听倒计时</string>
+    <string name="settings_auto_answer_delay_summary">%1$d 秒后自动接听</string>
+    <string name="settings_dark_mode_title">显示模式</string>
+    <string name="settings_dark_mode_dialog_message">选择适合当前环境的显示方式</string>
+    <string name="settings_dark_mode_summary_system">跟随系统：开了系统暗色就用暗色，关了就用浅色</string>
+    <string name="settings_dark_mode_summary_light">浅色：白底黑字</string>
+    <string name="settings_dark_mode_summary_dark">深色：深底浅字，适合夜间</string>
+    <string name="settings_dark_mode_system">跟随系统</string>
+    <string name="settings_dark_mode_light">浅色</string>
+    <string name="settings_dark_mode_dark">深色</string>
+    <string name="settings_dark_mode_select">选择</string>
+    <string name="settings_full_card_tap_title">整卡可点击拨打</string>
+    <string name="settings_full_card_tap_summary_on">已开启。点联系人卡片任意位置都拨号</string>
+    <string name="settings_full_card_tap_summary_off">已关闭。仅点拨打按钮拨号，避免误碰</string>
+    <string name="settings_incoming_trace_title">最近来电状态</string>
+    <string name="settings_incoming_trace_empty">还没有来电链路记录，来过一次电话后会显示广播、提醒、来电页和接听结果</string>
+    <string name="settings_system_title">系统设置</string>
+    <string name="settings_system_summary">打开系统设置调整网络、声音等</string>
+    <string name="settings_update_title">版本更新</string>
+    <string name="settings_update_summary">当前版本：v%1$s（%2$d）</string>
+    <string name="settings_update_check">检查</string>
+    <string name="settings_update_checking">正在检查更新…</string>
+    <string name="settings_update_latest">当前已经是最新版本</string>
+    <string name="settings_update_failed">检查更新失败，请稍后再试</string>
+    <string name="settings_update_available_title">发现新版本 v%1$s</string>
+    <string name="settings_update_available_message">有新版本可以下载，建议由家属协助安装。</string>
+    <string name="settings_update_download">下载更新</string>
+    <string name="settings_update_open_failed">无法打开下载页面</string>
+
+    <!-- 权限管理通用 -->
+    <string name="settings_weather_city_title">天气城市</string>
+    <string name="settings_weather_city_summary">当前城市：%1$s</string>
+    <string name="settings_weather_city_hint">输入城市名，如：北京、上海、重庆</string>
+    <string name="settings_weather_city_updated">城市已更新为：%1$s</string>
+    <string name="settings_weather_city_empty">请输入城市名</string>
+    <string name="settings_permission_go_set">去设置</string>
+
+    <!-- 无障碍服务 -->
+    <string name="settings_accessibility_title">无障碍服务</string>
+    <string name="settings_accessibility_summary_on">已开启，微信视频自动操作可用</string>
+    <string name="settings_accessibility_summary_off">未开启，点击去系统设置</string>
+
+    <string name="settings_notification_permission_title">通知权限</string>
+    <string name="settings_notification_permission_summary_on">已开启，来电通知更稳定</string>
+    <string name="settings_notification_permission_summary_off">未开启，可能收不到来电提醒</string>
+    <string name="settings_notification_permission_granted_toast">通知权限已授权</string>
+
+    <!-- 电池优化豁免 -->
+    <string name="settings_battery_title">电池无限制</string>
+    <string name="settings_battery_summary_on">已豁免，后台更稳定</string>
+    <string name="settings_battery_summary_off">未豁免，后台可能被系统中断</string>
+
+    <!-- 后台弹出界面 -->
+    <string name="settings_bg_start_title">后台弹出界面</string>
+    <string name="settings_bg_start_summary_on">已确认，可更容易拉起来电页</string>
+    <string name="settings_bg_start_summary_off">需去系统设置开启后回来确认</string>
+
+    <!-- 自启动 -->
+    <string name="settings_autostart_title">开机自启动</string>
+    <string name="settings_autostart_summary_on">已确认，重启后更容易继续在线</string>
+    <string name="settings_autostart_summary_off">需去系统设置开启后回来确认</string>
+
+    <!-- 悬浮窗 -->
+    <string name="settings_overlay_title">悬浮窗权限</string>
+    <string name="settings_overlay_summary_on">已开启，视频状态可悬浮显示</string>
+    <string name="settings_overlay_summary_off">未开启，点击去系统设置</string>
+
+    <!-- 电话权限 -->
+    <string name="settings_phone_permission_title">电话权限</string>
+    <string name="settings_phone_permission_summary_on">已授权，可识别来电并自动接听</string>
+    <string name="settings_phone_permission_summary_off">未授权，需先开启电话相关权限</string>
+    <string name="settings_phone_permission_granted_toast">电话权限已授权</string>
+    <string name="settings_default_phone_title">默认电话应用</string>
+    <string name="settings_default_phone_summary_on">已设为默认电话，系统来电由银杏接管</string>
+    <string name="settings_default_phone_summary_off">未设置，无法使用稳定自动接听</string>
+    <string name="settings_default_phone_action">立即设置</string>
+    <string name="settings_default_phone_required_toast">需要选择银杏作为默认电话应用，才能继续配置自动接听</string>
+    <string name="settings_incoming_vendor_title">当前手机来电适配</string>
+    <string name="settings_incoming_vendor_summary">%1$s：检查电话、后台和省电限制</string>
+    <string name="settings_incoming_vendor_dialog_title">%1$s 来电适配</string>
+    <string name="settings_incoming_vendor_xiaomi">必须先把银杏设为默认电话应用，否则系统会禁止电话和接听权限。然后请允许自启动、后台弹出界面，并关闭省电限制。</string>
+    <string name="settings_incoming_vendor_vivo">请在系统管家中允许自启动、后台高耗电和锁屏通知。Android 15 侧载安装时，还需先解除系统对高风险权限的限制。</string>
+    <string name="settings_incoming_vendor_huawei">请允许自启动、关联启动、后台活动和锁屏弹窗，并关闭省电限制。HarmonyOS 5/6 兼容应用还需确认能读取真实通话信息。</string>
+    <string name="settings_incoming_vendor_honor">请允许自启动、关联启动、后台活动、锁屏弹窗和通知，并关闭省电限制；若系统标记为风险应用，需要先解除限制。</string>
+    <string name="settings_incoming_vendor_oplus">请允许自动启动、前台与后台活动、后台弹出界面，并关闭应用省电限制。不同系统版本的菜单名称可能不同。</string>
+    <string name="settings_incoming_vendor_samsung">请把银杏加入“永不休眠的应用”，避免深度休眠停止来电服务；侧载安装时还需确认自动拦截器没有限制应用。</string>
+    <string name="settings_incoming_vendor_meizu">请允许后台运行、锁屏通知和自启动，并关闭省电限制。不同 Flyme 版本需要逐项人工确认。</string>
+    <string name="settings_incoming_vendor_android">请完成默认电话、电话权限、通知权限和电池优化设置。</string>
+    <string name="settings_manual_check_message">请先去系统设置开启%1$s，回来后再标记完成。</string>
+    <string name="settings_permission_group_call_title">来电识别</string>
+    <string name="settings_permission_group_call_summary">电话权限、通知权限</string>
+    <string name="settings_permission_group_keep_alive_title">后台保活</string>
+    <string name="settings_permission_group_keep_alive_summary">默认桌面、电池、自启动</string>
+    <string name="settings_permission_group_video_title">视频通话</string>
+    <string name="settings_permission_group_video_summary">无障碍、悬浮窗</string>
+    <string name="settings_permission_group_call_dialog_message">电话权限和通知权限集中在这里处理。</string>
+    <string name="settings_permission_group_keep_alive_dialog_message">默认桌面和后台保活相关设置集中在这里处理。</string>
+    <string name="settings_permission_group_video_dialog_message">微信视频自动操作相关权限集中在这里处理。</string>
+    <string name="settings_permission_group_progress">待处理 %1$d/%2$d</string>
+    <string name="settings_permission_group_pending_summary">还差：%1$s</string>
+    <string name="settings_permission_dialog_close">关闭</string>
+    <string name="settings_manual_check_mark_done">我已完成</string>
+    <string name="settings_manual_check_mark_pending">改为未完成</string>
+    <string name="settings_manual_check_done_toast">%1$s 已标记完成</string>
+    <string name="settings_manual_check_reset_toast">%1$s 已改为未完成</string>
+
+</resources>

@@ -465,6 +465,33 @@ class IncomingCallActivitySmokeTest {
         assertTrue("全局开启但联系人未开启时不显示倒计时", activity.tv_countdown.text.isEmpty())
     }
 
+    @Test
+    fun activeTelecomCallRendersOngoingUiInsteadOfFinishing() {
+        val call = object : ManagedTelecomCall {
+            override val id = "activity-call"
+            override fun answerAudioOnly() = Unit
+            override fun reject() = Unit
+            override fun disconnect() = Unit
+        }
+        ActiveTelecomCallSession.attach(
+            call = call,
+            state = ManagedTelecomCallState.Active,
+            callerName = "李阿姨",
+            incomingNumber = "13812345678"
+        )
+
+        val activity = buildActivity("李阿姨", autoAnswer = false)
+        idle()
+
+        assertEquals(View.GONE, activity.btn_accept.visibility)
+        assertEquals(
+            context.getString(R.string.incoming_call_end),
+            activity.findViewById<TextView>(R.id.tv_incoming_decline_label).text.toString()
+        )
+        assertTrue(!activity.isFinishing)
+        ActiveTelecomCallSession.detach(call.id)
+    }
+
     // ═══════════════════════════════════════════════════════════════════════
     // 辅助
     // ═══════════════════════════════════════════════════════════════════════

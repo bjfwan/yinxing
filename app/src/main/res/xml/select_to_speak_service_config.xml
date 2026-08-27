@@ -1,8 +1,0 @@
-<?xml version="1.0" encoding="utf-8"?>
-<accessibility-service xmlns:android="http://schemas.android.com/apk/res/android"
-    android:accessibilityEventTypes="typeAllMask"
-    android:accessibilityFeedbackType="feedbackSpoken|feedbackGeneric"
-    android:accessibilityFlags="flagReportViewIds|flagRetrieveInteractiveWindows|flagIncludeNotImportantViews"
-    android:canRetrieveWindowContent="true"
-    android:description="@string/select_to_speak_service_description"
-    android:notificationTimeout="0" />

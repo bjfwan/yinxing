@@ -49,7 +49,6 @@ class LauncherAppRepository(
     fun getStaticHomeItems(): List<HomeAppItem> {
         return buildList {
             addPrimaryBuiltInItems()
-            addSecondaryBuiltInItems()
         }
     }
 
@@ -95,7 +94,6 @@ class LauncherAppRepository(
                 orderedApps.forEach { app ->
                     selectedAppsByPackage[app.packageName]?.let(::add)
                 }
-                addSecondaryBuiltInItems()
             }
 
             preferences.syncAppOrder(orderedApps.map { it.packageName })
@@ -161,7 +159,7 @@ class LauncherAppRepository(
                 packageName = "phone",
                 appName = appContext.getString(R.string.home_item_phone),
                 type = HomeAppItem.Type.PHONE,
-                iconResId = android.R.drawable.ic_menu_myplaces
+                iconResId = R.drawable.ic_home_phone_designed
             )
         )
         add(
@@ -169,18 +167,7 @@ class LauncherAppRepository(
                 packageName = "wechat_video",
                 appName = appContext.getString(R.string.home_item_wechat_video),
                 type = HomeAppItem.Type.WECHAT_VIDEO,
-                iconResId = android.R.drawable.ic_menu_call
-            )
-        )
-    }
-
-    private fun MutableList<HomeAppItem>.addSecondaryBuiltInItems() {
-        add(
-            HomeAppItem(
-                packageName = "add",
-                appName = appContext.getString(R.string.home_item_add),
-                type = HomeAppItem.Type.ADD,
-                iconResId = android.R.drawable.ic_input_add
+                iconResId = R.drawable.ic_home_video_designed
             )
         )
     }

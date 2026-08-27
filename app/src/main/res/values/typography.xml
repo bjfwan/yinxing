@@ -14,15 +14,6 @@
         <item name="android:letterSpacing">0</item>
     </style>
 
-    <style name="TextAppearance.OldLauncher.DisplayTime">
-        <item name="android:fontFamily">sans-serif-medium</item>
-        <item name="android:textSize">68sp</item>
-        <item name="android:textStyle">bold</item>
-        <item name="android:textColor">@color/launcher_primary_dark</item>
-        <item name="android:includeFontPadding">false</item>
-        <item name="android:letterSpacing">0</item>
-    </style>
-
     <style name="TextAppearance.OldLauncher.Date">
         <item name="android:fontFamily">sans-serif-medium</item>
         <item name="android:textSize">20sp</item>
@@ -54,22 +45,6 @@
         <item name="android:includeFontPadding">false</item>
     </style>
 
-    <style name="TextAppearance.OldLauncher.CardTitleLarge">
-        <item name="android:fontFamily">sans-serif-medium</item>
-        <item name="android:textSize">26sp</item>
-        <item name="android:textStyle">bold</item>
-        <item name="android:textColor">@color/launcher_text_primary</item>
-        <item name="android:includeFontPadding">false</item>
-    </style>
-
-    <style name="TextAppearance.OldLauncher.Body">
-        <item name="android:fontFamily">sans-serif</item>
-        <item name="android:textSize">18sp</item>
-        <item name="android:textColor">@color/launcher_text_primary</item>
-        <item name="android:includeFontPadding">false</item>
-        <item name="android:lineSpacingExtra">2dp</item>
-    </style>
-
     <style name="TextAppearance.OldLauncher.Meta">
         <item name="android:fontFamily">sans-serif</item>
         <item name="android:textSize">16sp</item>
@@ -77,20 +52,11 @@
         <item name="android:includeFontPadding">false</item>
     </style>
 
-    <style name="TextAppearance.OldLauncher.HintStrong">
-        <item name="android:fontFamily">sans-serif-medium</item>
-        <item name="android:textSize">15sp</item>
-        <item name="android:textStyle">bold</item>
-        <item name="android:textColor">@color/launcher_primary_dark</item>
-        <item name="android:includeFontPadding">false</item>
-    </style>
-
-
     <style name="TextAppearance.OldLauncher.ButtonPrimary">
         <item name="android:fontFamily">sans-serif-medium</item>
         <item name="android:textSize">18sp</item>
         <item name="android:textStyle">bold</item>
-        <item name="android:textColor">@android:color/white</item>
+        <item name="android:textColor">@color/launcher_on_primary</item>
         <item name="android:includeFontPadding">false</item>
     </style>
 
@@ -99,14 +65,6 @@
         <item name="android:textSize">18sp</item>
         <item name="android:textStyle">bold</item>
         <item name="android:textColor">@color/launcher_primary_dark</item>
-        <item name="android:includeFontPadding">false</item>
-    </style>
-
-    <style name="TextAppearance.OldLauncher.ButtonDanger">
-        <item name="android:fontFamily">sans-serif-medium</item>
-        <item name="android:textSize">18sp</item>
-        <item name="android:textStyle">bold</item>
-        <item name="android:textColor">@color/launcher_danger</item>
         <item name="android:includeFontPadding">false</item>
     </style>
 
@@ -142,21 +100,9 @@
         <item name="android:includeFontPadding">false</item>
     </style>
 
-    <style name="TextAppearance.OldLauncher.DialogMessage">
-        <item name="android:fontFamily">sans-serif</item>
-        <item name="android:textSize">18sp</item>
-        <item name="android:textColor">@color/launcher_text_secondary</item>
-        <item name="android:includeFontPadding">false</item>
-        <item name="android:lineSpacingExtra">4dp</item>
-    </style>
-
-    <style name="TextAppearance.OldLauncher.DialogSectionTitle">
-        <item name="android:fontFamily">sans-serif-medium</item>
-        <item name="android:textSize">20sp</item>
-        <item name="android:textStyle">bold</item>
-        <item name="android:textColor">@color/launcher_text_primary</item>
-        <item name="android:includeFontPadding">false</item>
-    </style>
+    <style
+        name="TextAppearance.OldLauncher.DialogMessage"
+        parent="TextAppearance.OldLauncher.StateBody" />
 
     <style name="Widget.OldLauncher.DialogSurfaceCard" parent="">
         <item name="cardBackgroundColor">@color/launcher_surface</item>
@@ -195,18 +141,6 @@
         <item name="cardElevation">0dp</item>
     </style>
 
-    <style name="Widget.OldLauncher.DialogButtonOutlinePrimary" parent="Widget.OldLauncher.DialogButtonSecondary">
-        <item name="strokeColor">@color/launcher_primary</item>
-    </style>
-
-    <style name="TextAppearance.OldLauncher.SectionTitle">
-        <item name="android:fontFamily">sans-serif-medium</item>
-        <item name="android:textSize">26sp</item>
-        <item name="android:textStyle">bold</item>
-        <item name="android:textColor">@color/launcher_text_primary</item>
-        <item name="android:includeFontPadding">false</item>
-    </style>
-
     <style name="TextAppearance.OldLauncher.SectionSubtitle">
         <item name="android:fontFamily">sans-serif</item>
         <item name="android:textSize">18sp</item>
@@ -229,14 +163,6 @@
         <item name="android:textStyle">bold</item>
         <item name="android:textColor">@color/launcher_primary_dark</item>
         <item name="android:includeFontPadding">false</item>
-    </style>
-
-    <style name="TextAppearance.OldLauncher.HeroSubtitle">
-        <item name="android:fontFamily">sans-serif</item>
-        <item name="android:textSize">22sp</item>
-        <item name="android:textColor">@color/launcher_text_secondary</item>
-        <item name="android:includeFontPadding">false</item>
-        <item name="android:letterSpacing">0</item>
     </style>
 
     <style name="TextAppearance.OldLauncher.HeroTitle">
@@ -303,15 +229,6 @@
         <item name="android:textSize">16sp</item>
         <item name="android:textColor">@color/launcher_on_overlay_muted</item>
         <item name="android:includeFontPadding">false</item>
-    </style>
-
-    <style name="Widget.OldLauncher.WeatherCard" parent="Widget.OldLauncher.ListItemCard">
-        <item name="cardBackgroundColor">@color/launcher_primary_soft</item>
-    </style>
-
-    <style name="Widget.OldLauncher.SearchCard" parent="Widget.OldLauncher.ListItemCard">
-        <item name="cardCornerRadius">24dp</item>
-        <item name="cardElevation">3dp</item>
     </style>
 
     <style name="Widget.OldLauncher.FloatingStatusCard" parent="">

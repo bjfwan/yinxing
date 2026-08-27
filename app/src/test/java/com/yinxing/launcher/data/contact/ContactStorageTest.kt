@@ -83,6 +83,19 @@ class ContactStorageTest {
     }
 
     @Test
+    fun accessibilityServiceComponentUsesCurrentApplicationId() {
+        val component = AccessibilityServiceMatcher.componentName(
+            "com.yinxing.launcher.devicetest",
+            "com.google.android.accessibility.selecttospeak.SelectToSpeakService"
+        )
+
+        assertEquals(
+            "com.yinxing.launcher.devicetest/com.google.android.accessibility.selecttospeak.SelectToSpeakService",
+            component
+        )
+    }
+
+    @Test
     fun decodeNullReturnsEmptyList() {
         val contacts = ContactStorage.decode(null)
         assertTrue(contacts.isEmpty())

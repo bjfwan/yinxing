@@ -9,66 +9,57 @@
     android:orientation="vertical">
 
     <LinearLayout
+        android:id="@+id/layout_weather_primary"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:gravity="center_vertical"
         android:orientation="horizontal">
+
+        <ImageView
+            android:id="@+id/iv_weather_icon"
+            android:layout_width="36dp"
+            android:layout_height="36dp"
+            android:layout_marginEnd="8dp"
+            android:contentDescription="@null"
+            android:importantForAccessibility="no"
+            android:src="@drawable/ic_weather_sun"
+            android:visibility="gone" />
 
         <TextView
             android:id="@+id/tv_weather_city"
             style="@style/TextAppearance.OldLauncher.Eyebrow"
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:text="@string/home_weather_placeholder_city" />
-
-        <TextView
-            android:id="@+id/tv_weather_update"
-            style="@style/TextAppearance.OldLauncher.Caption"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="" />
-
-    </LinearLayout>
-
-    <LinearLayout
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="10dp"
-        android:gravity="center_vertical"
-        android:orientation="horizontal">
+            android:maxLines="1"
+            android:text="@string/home_weather_placeholder_city" />
 
         <TextView
             android:id="@+id/tv_weather_temp"
             style="@style/TextAppearance.OldLauncher.WeatherTemperature"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
+            android:layout_marginStart="10dp"
             android:text="@string/home_weather_placeholder_temp" />
 
-        <LinearLayout
-            android:layout_width="0dp"
+        <TextView
+            android:id="@+id/tv_weather_desc"
+            style="@style/TextAppearance.OldLauncher.WeatherHeadline"
+            android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_marginStart="14dp"
-            android:layout_weight="1"
-            android:orientation="vertical">
-
-            <TextView
-                android:id="@+id/tv_weather_desc"
-                style="@style/TextAppearance.OldLauncher.WeatherHeadline"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:text="@string/home_weather_placeholder_desc" />
-
-            <TextView
-                android:id="@+id/tv_weather_high_low"
-                style="@style/TextAppearance.OldLauncher.Meta"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="4dp"
-                android:text="" />
-
-        </LinearLayout>
-
+            android:layout_marginStart="8dp"
+            android:maxLines="1"
+            android:text="@string/home_weather_placeholder_desc" />
     </LinearLayout>
+
+    <TextView
+        android:id="@+id/tv_weather_update"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="44dp"
+        android:layout_marginTop="2dp"
+        android:maxLines="2"
+        android:text=""
+        android:textColor="@color/launcher_text_secondary"
+        android:textSize="15sp" />
 
 </LinearLayout>

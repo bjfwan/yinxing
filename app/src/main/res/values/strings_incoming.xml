@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="incoming_call_subtitle">电话来电</string>
+    <string name="incoming_call_ongoing_subtitle">正在通话</string>
+    <string name="incoming_call_unknown_caller">未知来电</string>
+    <string name="incoming_call_accept">接听</string>
+    <string name="incoming_call_decline">拒绝</string>
+    <string name="incoming_call_icon_description">来电图标</string>
+    <string name="incoming_call_notification_title">来电中</string>
+    <string name="incoming_call_notification_channel_name">来电提醒</string>
+    <string name="incoming_call_notification_channel_description">用于显示系统电话来电通知，并尽量以全屏方式唤起来电页</string>
+    <string name="incoming_call_auto_answer_countdown">%1$d 秒后自动接听</string>
+    <string name="incoming_call_voice_announcement">来电人：%1$s</string>
+    <string name="incoming_call_voice_unknown">电话来了</string>
+    <string name="incoming_call_status_answering">正在接听，请稍候</string>
+    <string name="incoming_call_status_declining">正在拒绝来电</string>
+    <string name="incoming_call_status_accept_sent">已发送接听指令</string>
+    <string name="incoming_call_status_accept_confirmed">电话已实际接通</string>
+    <string name="incoming_call_status_not_ringing">来电已结束或不再响铃</string>
+    <string name="incoming_call_status_not_confirmed">系统未确认电话已接通，请手动检查</string>
+    <string name="incoming_call_status_held">通话已保持</string>
+    <string name="incoming_call_status_decline_sent">已发送拒接指令</string>
+    <string name="incoming_call_status_decline_unsupported">当前系统版本不支持自动拒接</string>
+    <string name="incoming_call_status_permission_missing">缺少电话权限，请先去设置里授权</string>
+    <string name="incoming_call_status_unknown_error">未知原因</string>
+    <string name="incoming_call_status_action_failed">%1$s失败：%2$s</string>
+    <string name="incoming_call_status_speaker_on">已切到扬声器</string>
+    <string name="incoming_call_status_speaker_kept_private">已保持耳机或蓝牙输出</string>
+    <string name="incoming_call_ongoing_notification_title">通话中</string>
+    <string name="incoming_call_end">结束通话</string>
+    <string name="incoming_call_trace_detail_auto_answer">命中自动接听</string>
+    <string name="incoming_call_trace_detail_manual_answer">等待手动接听</string>
+    <string name="incoming_call_trace_broadcast">广播已收到</string>
+    <string name="incoming_call_trace_broadcast_failed">广播处理失败</string>
+    <string name="incoming_call_trace_service">来电提醒已启动</string>
+    <string name="incoming_call_trace_service_failed">来电提醒启动失败</string>
+    <string name="incoming_call_trace_activity">来电页已打开</string>
+    <string name="incoming_call_trace_accept_success">接听成功</string>
+    <string name="incoming_call_trace_accept_failed">接听失败</string>
+    <string name="incoming_call_trace_decline_success">拒接成功</string>
+    <string name="incoming_call_trace_decline_failed">拒接失败</string>
+    <string name="incoming_call_trace_speaker_on">扬声器已打开</string>
+    <string name="incoming_call_trace_speaker_kept_private">保持当前输出</string>
+    <string name="action_pick_contact_short">通讯录导入</string>
+    <string name="action_call">拨打</string>
+    <string name="action_save">保存</string>
+</resources>

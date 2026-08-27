@@ -1,14 +1,17 @@
 package com.yinxing.launcher.data.weather
 
 import android.content.Context
+import android.os.SystemClock
+import com.yinxing.launcher.common.lobster.LobsterClient
 import com.yinxing.launcher.common.perf.LauncherTraceNames
 import com.yinxing.launcher.common.perf.traceAndReport
 import com.yinxing.launcher.common.perf.traceBegin
 import com.yinxing.launcher.common.util.DebugLog
-import com.yinxing.launcher.data.weather.source.SeniverseWeatherDataSource
+import com.yinxing.launcher.data.weather.source.OpenMeteoWeatherDataSource
 import com.yinxing.launcher.data.weather.source.SeniverseWeatherSource
-import com.yinxing.launcher.data.weather.source.TencentWeatherDataSource
 import com.yinxing.launcher.data.weather.source.TencentWeatherSource
+import com.yinxing.launcher.data.weather.source.WeatherSource
+import com.yinxing.launcher.data.weather.source.WeatherSourceResult
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Deferred
@@ -22,6 +25,10 @@ import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
 import org.json.JSONException
 import java.io.IOException
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
+import java.util.TimeZone
 
 object WeatherRepository {
     private const val TAG = "WeatherRepository"
@@ -44,8 +51,7 @@ object WeatherRepository {
     @Volatile
     private var diskCache: WeatherDiskCache? = null
 
-    private var tencentSource: TencentWeatherSource = TencentWeatherDataSource(apiClient)
-    private var seniverseSource: SeniverseWeatherSource = SeniverseWeatherDataSource(apiClient)
+    private var weatherSource: WeatherSource = OpenMeteoWeatherDataSource(apiClient)
     private var clock: () -> Long = { System.currentTimeMillis() }
 
     fun initialize(context: Context) {
@@ -59,16 +65,17 @@ object WeatherRepository {
 
     suspend fun fetchWeather(cityName: String, context: Context? = null): WeatherState = withContext(Dispatchers.IO) {
         traceBegin(LauncherTraceNames.HOME_WEATHER_REQUEST)
+        val startedAt = SystemClock.elapsedRealtime()
         val normalizedCityName = normalizeCityName(cityName)
-        cacheMutex.withLock {
-            freshCached(normalizedCityName)?.let { cached ->
-                context?.let { traceAndReport(it, LauncherTraceNames.HOME_WEATHER_REQUEST) }
-                return@withContext cached.copy(fromCache = true)
-            }
+        val cached = cacheMutex.withLock { freshCached(normalizedCityName) }
+        if (cached != null) {
+            val result = cached.copy(fromCache = true)
+            context?.let { reportWeatherResult(it, result, startedAt) }
+            return@withContext result
         }
 
         backoffState(normalizedCityName)?.let { state ->
-            context?.let { traceAndReport(it, LauncherTraceNames.HOME_WEATHER_REQUEST) }
+            context?.let { reportWeatherResult(it, state, startedAt) }
             return@withContext state
         }
 
@@ -89,8 +96,40 @@ object WeatherRepository {
             }
         }
         val result = deferred.await()
-        context?.let { traceAndReport(it, LauncherTraceNames.HOME_WEATHER_REQUEST) }
+        context?.let { reportWeatherResult(it, result, startedAt) }
         result
+    }
+
+    suspend fun fetchWeatherAtLocation(
+        cityName: String,
+        latitude: Double,
+        longitude: Double,
+        context: Context? = null,
+    ): WeatherState = withContext(Dispatchers.IO) {
+        traceBegin(LauncherTraceNames.HOME_WEATHER_REQUEST)
+        val startedAt = SystemClock.elapsedRealtime()
+        val normalizedCityName = normalizeCityName(cityName)
+        val result = fetchWeatherInternal(normalizedCityName, latitude, longitude)
+        context?.let { reportWeatherResult(it, result, startedAt) }
+        result
+    }
+
+    private fun reportWeatherResult(context: Context, result: WeatherState, startedAt: Long) {
+        traceAndReport(context, LauncherTraceNames.HOME_WEATHER_REQUEST)
+        LobsterClient.reportUsage(
+            context,
+            WeatherUsageEventFactory.from(
+                state = result,
+                durationMs = (SystemClock.elapsedRealtime() - startedAt).coerceAtLeast(0L),
+                occurredAt = currentIsoTimestamp()
+            )
+        )
+    }
+
+    private fun currentIsoTimestamp(): String {
+        return SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'", Locale.US).apply {
+            timeZone = TimeZone.getTimeZone("UTC")
+        }.format(Date())
     }
 
     fun clearCache() {
@@ -116,7 +155,11 @@ object WeatherRepository {
 
     private fun freshCached(cityName: String): WeatherState.Success? {
         val cached = cachedSuccess(cityName) ?: return null
-        return cached.takeIf { clock() - it.lastFetchTime < CACHE_TTL_MS }
+        return cached.takeIf {
+            clock() - it.lastFetchTime < CACHE_TTL_MS &&
+                it.forecast.size >= 4 &&
+                it.hourly.isNotEmpty()
+        }
     }
 
     private fun cachedSuccess(cityName: String): WeatherState.Success? {
@@ -139,23 +182,35 @@ object WeatherRepository {
         }
     }
 
-    private suspend fun fetchWeatherInternal(cityName: String): WeatherState {
+    private suspend fun fetchWeatherInternal(
+        cityName: String,
+        latitude: Double? = null,
+        longitude: Double? = null,
+    ): WeatherState {
         return try {
-            val adcode = tencentSource.searchAdcode(cityName)
-                ?: return WeatherState.CityNotFound(cityName)
-
-            val (now, forecast) = coroutineScope {
-                val nowDeferred = async { tencentSource.fetchNow(adcode, cityName) }
-                val forecastDeferred = async { seniverseSource.fetchForecast(cityName) }
-                nowDeferred.await() to forecastDeferred.await()
+            val weather = if (latitude != null && longitude != null) {
+                weatherSource.fetchWeather(latitude, longitude, cityName)
+            } else {
+                weatherSource.fetchWeather(cityName)
             }
-
-            val currentNow = now ?: error("实时天气为空")
+            if (weather == null) {
+                val cached = cachedSuccess(cityName)?.copy(fromCache = true)
+                return if (cached != null) {
+                    WeatherState.UsingCache(
+                        cached,
+                        WeatherFailureReason.Api,
+                        "城市查询暂时不可用",
+                    )
+                } else {
+                    WeatherState.CityNotFound(cityName)
+                }
+            }
             val state = WeatherState.Success(
                 cityName = cityName,
-                adcode = adcode,
-                now = currentNow,
-                forecast = forecast,
+                adcode = weather.locationKey,
+                now = weather.now,
+                forecast = weather.forecast,
+                hourly = weather.hourly,
                 lastFetchTime = clock()
             )
             cacheMutex.withLock {
@@ -218,8 +273,22 @@ object WeatherRepository {
         diskCache: WeatherDiskCache?,
         clock: () -> Long
     ) {
-        this.tencentSource = tencentSource
-        this.seniverseSource = seniverseSource
+        this.weatherSource = object : WeatherSource {
+            override suspend fun fetchWeather(cityName: String): WeatherSourceResult? {
+                val adcode = tencentSource.searchAdcode(cityName) ?: return null
+                val (now, forecast) = coroutineScope {
+                    val nowDeferred = async { tencentSource.fetchNow(adcode, cityName) }
+                    val forecastDeferred = async { seniverseSource.fetchForecast(cityName) }
+                    nowDeferred.await() to forecastDeferred.await()
+                }
+                return WeatherSourceResult(
+                    locationKey = adcode,
+                    now = now ?: error("实时天气为空"),
+                    forecast = forecast,
+                    hourly = emptyList()
+                )
+            }
+        }
         this.diskCache = diskCache
         this.clock = clock
         clearRuntimeStateForTest()
@@ -239,8 +308,7 @@ object WeatherRepository {
     }
 
     internal fun resetForTest() {
-        tencentSource = TencentWeatherDataSource(apiClient)
-        seniverseSource = SeniverseWeatherDataSource(apiClient)
+        weatherSource = OpenMeteoWeatherDataSource(apiClient)
         diskCache = null
         clock = { System.currentTimeMillis() }
         clearRuntimeStateForTest()

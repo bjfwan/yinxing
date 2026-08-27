@@ -2,6 +2,7 @@ package com.yinxing.launcher.feature.incoming
 
 enum class IncomingGuardItem {
     PhonePermission,
+    DefaultPhone,
     NotificationPermission,
     DefaultLauncher,
     BatteryOptimization,
@@ -32,8 +33,8 @@ object IncomingGuardReadinessEvaluator {
 
     fun evaluate(
         hasPhonePermission: Boolean,
+        isDefaultPhone: Boolean = true,
         hasNotificationPermission: Boolean,
-        isDefaultLauncher: Boolean,
         ignoresBatteryOptimizations: Boolean,
         autoStartConfirmed: Boolean,
         backgroundStartConfirmed: Boolean
@@ -41,16 +42,16 @@ object IncomingGuardReadinessEvaluator {
         return IncomingGuardReadiness(
             items = listOf(
                 IncomingGuardItemState(
-                    item = IncomingGuardItem.PhonePermission,
-                    isReady = hasPhonePermission
-                ),
-                IncomingGuardItemState(
                     item = IncomingGuardItem.NotificationPermission,
                     isReady = hasNotificationPermission
                 ),
                 IncomingGuardItemState(
-                    item = IncomingGuardItem.DefaultLauncher,
-                    isReady = isDefaultLauncher
+                    item = IncomingGuardItem.DefaultPhone,
+                    isReady = isDefaultPhone
+                ),
+                IncomingGuardItemState(
+                    item = IncomingGuardItem.PhonePermission,
+                    isReady = hasPhonePermission
                 ),
                 IncomingGuardItemState(
                     item = IncomingGuardItem.BatteryOptimization,

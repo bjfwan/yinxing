@@ -25,7 +25,6 @@ data class LauncherSettings(
     val autoAnswerDelaySeconds: Int = LauncherSettingsDataStore.DEFAULT_AUTO_ANSWER_DELAY_SECONDS,
     val fullCardTapEnabled: Boolean = false,
     val darkMode: String = LauncherSettingsDataStore.DARK_MODE_SYSTEM,
-    val kioskModeEnabled: Boolean = false,
     val autoStartConfirmed: Boolean = false,
     val backgroundStartConfirmed: Boolean = false,
     val iconScale: Int = LauncherSettingsDataStore.DEFAULT_ICON_SCALE
@@ -37,7 +36,6 @@ data class LauncherSettingsMigration(
     val autoAnswerDelaySeconds: Int? = null,
     val fullCardTapEnabled: Boolean? = null,
     val darkMode: String? = null,
-    val kioskModeEnabled: Boolean? = null,
     val autoStartConfirmed: Boolean? = null,
     val backgroundStartConfirmed: Boolean? = null,
     val iconScale: Int? = null
@@ -49,7 +47,6 @@ data class LauncherSettingsMigration(
             autoAnswerDelaySeconds,
             fullCardTapEnabled,
             darkMode,
-            kioskModeEnabled,
             autoStartConfirmed,
             backgroundStartConfirmed,
             iconScale
@@ -79,7 +76,6 @@ class LauncherSettingsDataStore private constructor(context: Context) {
         private val KEY_AUTO_ANSWER_DELAY_SECONDS = intPreferencesKey("auto_answer_delay_seconds")
         private val KEY_FULL_CARD_TAP_ENABLED = booleanPreferencesKey("full_card_tap_enabled")
         private val KEY_DARK_MODE = stringPreferencesKey("dark_mode")
-        private val KEY_KIOSK_MODE_ENABLED = booleanPreferencesKey("kiosk_mode_enabled")
         private val KEY_AUTOSTART_CONFIRMED = booleanPreferencesKey("autostart_confirmed")
         private val KEY_BACKGROUND_START_CONFIRMED = booleanPreferencesKey("background_start_confirmed")
         private val KEY_ICON_SCALE = intPreferencesKey("icon_scale")
@@ -133,13 +129,6 @@ class LauncherSettingsDataStore private constructor(context: Context) {
         )
     }
 
-    fun setKioskModeEnabled(enabled: Boolean) {
-        mutate(
-            update = { it.copy(kioskModeEnabled = enabled) },
-            persist = { it[KEY_KIOSK_MODE_ENABLED] = enabled }
-        )
-    }
-
     fun setAutoStartConfirmed(confirmed: Boolean) {
         mutate(
             update = { it.copy(autoStartConfirmed = confirmed) },
@@ -176,7 +165,6 @@ class LauncherSettingsDataStore private constructor(context: Context) {
                         ?: current.autoAnswerDelaySeconds).coerceIn(1, 30),
                     fullCardTapEnabled = migration.fullCardTapEnabled ?: current.fullCardTapEnabled,
                     darkMode = migration.darkMode?.let(::normalizeDarkMode) ?: current.darkMode,
-                    kioskModeEnabled = migration.kioskModeEnabled ?: current.kioskModeEnabled,
                     autoStartConfirmed = migration.autoStartConfirmed ?: current.autoStartConfirmed,
                     backgroundStartConfirmed = migration.backgroundStartConfirmed
                         ?: current.backgroundStartConfirmed,
@@ -192,7 +180,6 @@ class LauncherSettingsDataStore private constructor(context: Context) {
                 }
                 migration.fullCardTapEnabled?.let { preferences[KEY_FULL_CARD_TAP_ENABLED] = it }
                 migration.darkMode?.let { preferences[KEY_DARK_MODE] = normalizeDarkMode(it) }
-                migration.kioskModeEnabled?.let { preferences[KEY_KIOSK_MODE_ENABLED] = it }
                 migration.autoStartConfirmed?.let { preferences[KEY_AUTOSTART_CONFIRMED] = it }
                 migration.backgroundStartConfirmed?.let { preferences[KEY_BACKGROUND_START_CONFIRMED] = it }
                 migration.iconScale?.let {
@@ -244,7 +231,6 @@ class LauncherSettingsDataStore private constructor(context: Context) {
                 .coerceIn(1, 30),
             fullCardTapEnabled = this[KEY_FULL_CARD_TAP_ENABLED] ?: false,
             darkMode = normalizeDarkMode(this[KEY_DARK_MODE]),
-            kioskModeEnabled = this[KEY_KIOSK_MODE_ENABLED] ?: false,
             autoStartConfirmed = this[KEY_AUTOSTART_CONFIRMED] ?: false,
             backgroundStartConfirmed = this[KEY_BACKGROUND_START_CONFIRMED] ?: false,
             iconScale = (this[KEY_ICON_SCALE] ?: DEFAULT_ICON_SCALE).coerceIn(MIN_ICON_SCALE, MAX_ICON_SCALE)

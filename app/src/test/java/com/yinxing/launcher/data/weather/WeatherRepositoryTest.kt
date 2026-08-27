@@ -94,6 +94,33 @@ class WeatherRepositoryTest {
     }
 
     @Test
+    fun fetchWeatherUsesExpiredCacheWhenGeocodingTemporarilyReturnsNoCity() = runTest {
+        diskCache.write(
+            WeatherState.Success(
+                cityName = "北京",
+                adcode = "110000",
+                now = sampleNow("北京"),
+                forecast = sampleForecast(),
+                lastFetchTime = 0L,
+            )
+        )
+        val tencentSource = FakeTencentWeatherSource(adcode = null)
+        WeatherRepository.configureForTest(
+            tencentSource = tencentSource,
+            seniverseSource = FakeSeniverseWeatherSource(),
+            diskCache = diskCache,
+            clock = { nowMillis },
+        )
+
+        val state = WeatherRepository.fetchWeather("北京")
+
+        assertTrue(state is WeatherState.UsingCache)
+        state as WeatherState.UsingCache
+        assertEquals("北京", state.cityName)
+        assertEquals(WeatherFailureReason.Api, state.reason)
+    }
+
+    @Test
     fun fetchWeatherReturnsUsingCacheThenBackoffWhenRequestFailsAfterCacheExpires() = runTest {
         val tencentSource = FakeTencentWeatherSource()
         val seniverseSource = FakeSeniverseWeatherSource()

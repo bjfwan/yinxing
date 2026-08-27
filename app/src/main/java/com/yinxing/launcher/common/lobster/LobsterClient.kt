@@ -76,6 +76,7 @@ object LobsterClient {
         summary: String? = null,
         details: LobsterReportDetails = LobsterReportDetails()
     ) {
+        if (!shouldUploadCurrentRuntime()) return
         val logsToReport = takeBufferedLogs()
 
         if (logsToReport.isBlank()) return
@@ -84,25 +85,15 @@ object LobsterClient {
 
         scope.launch {
             try {
-                val deviceName = "${Build.MANUFACTURER} ${Build.MODEL} (Android ${Build.VERSION.RELEASE})"
-                val body = JSONObject().apply {
-                    put("device", deviceName)
-                    put("device_id", deviceId)
-                    put("scene", scene)
-                    put("status", status.wireValue)
-                    summary?.trim()?.takeIf { it.isNotEmpty() }?.let {
-                        put("summary", LobsterLogSanitizer.sanitize(it, details.sensitiveValues))
-                    }
-                    put("logs", LobsterLogSanitizer.sanitize(logsToReport, details.sensitiveValues))
-                    put("event_level", status.wireValue)
-                    put("session_id", sessionId)
-                    put("app_version", BuildConfig.VERSION_NAME)
-                    put("app_version_code", BuildConfig.VERSION_CODE)
-                    put("created_at", currentIsoTimestamp())
-                    put("network_type", networkType(context))
-                    val structured = details.toJson()
-                    structured.keys().forEach { key -> put(key, structured.get(key)) }
-                }
+                val body = createReportBody(
+                    context = context,
+                    deviceId = deviceId,
+                    scene = scene,
+                    status = status,
+                    summary = summary,
+                    logs = logsToReport,
+                    details = details
+                )
 
                 val result = postJson(endpoint, body, successPrefix = "上报成功", failurePrefix = "上报失败")
                 if (result !is PostJsonResult.Success) {
@@ -115,8 +106,92 @@ object LobsterClient {
         }
     }
 
+    fun reportUsage(context: Context, event: LobsterUsageEvent) {
+        if (!shouldUploadCurrentRuntime()) return
+        val appContext = context.applicationContext
+        val deviceId = installId(appContext)
+
+        scope.launch {
+            try {
+                val body = createReportBody(
+                    context = appContext,
+                    deviceId = deviceId,
+                    scene = event.scene,
+                    status = event.status,
+                    summary = event.summary,
+                    logs = event.logLine,
+                    details = event.details
+                )
+                val pending = LobsterPendingReport(
+                    id = body.getString("delivery_id"),
+                    endpoint = endpoint,
+                    payload = body.toString()
+                )
+                LobsterPendingReportStore.enqueue(appContext, pending)
+                val result = postJson(
+                    endpoint,
+                    body,
+                    successPrefix = "使用事件上报成功",
+                    failurePrefix = "使用事件上报失败"
+                )
+                if (result is PostJsonResult.Success) {
+                    LobsterPendingReportStore.remove(appContext, pending.id)
+                }
+            } catch (e: Exception) {
+                DebugLog.e(TAG, "使用事件上报异常: ${e.message}", e)
+            }
+        }
+    }
+
+    fun flushPendingReports(context: Context) {
+        if (!shouldUploadCurrentRuntime()) return
+        val appContext = context.applicationContext
+        scope.launch {
+            LobsterPendingReportStore.read(appContext).forEach { pending ->
+                val body = runCatching { JSONObject(pending.payload) }.getOrNull()
+                if (body == null) {
+                    LobsterPendingReportStore.remove(appContext, pending.id)
+                    return@forEach
+                }
+                val result = postJson(
+                    pending.endpoint,
+                    body,
+                    successPrefix = "待发送日志补传成功",
+                    failurePrefix = "待发送日志补传失败"
+                )
+                if (result is PostJsonResult.Success) {
+                    LobsterPendingReportStore.remove(appContext, pending.id)
+                }
+            }
+        }
+    }
+
+    internal fun recordCrash(context: Context, snapshot: LobsterCrashSnapshot) {
+        if (!shouldUploadCurrentRuntime()) return
+        val appContext = context.applicationContext
+        val event = snapshot.toUsageEvent()
+        val body = createReportBody(
+            context = appContext,
+            deviceId = installId(appContext),
+            scene = event.scene,
+            status = event.status,
+            summary = event.summary,
+            logs = event.logLine,
+            details = event.details
+        )
+        LobsterPendingReportStore.enqueue(
+            appContext,
+            LobsterPendingReport(
+                id = body.getString("delivery_id"),
+                endpoint = endpoint,
+                payload = body.toString()
+            ),
+            synchronous = true
+        )
+    }
+
     fun reportMetrics(context: Context, metrics: List<Pair<String, Long>>, traceId: String? = null) {
-        if (metrics.isEmpty()) return
+        if (metrics.isEmpty() || !shouldUploadCurrentRuntime()) return
 
         val deviceId = installId(context)
 
@@ -297,5 +372,53 @@ object LobsterClient {
             capabilities.hasTransport(NetworkCapabilities.TRANSPORT_ETHERNET) -> "ethernet"
             else -> "unknown"
         }
+    }
+
+    private fun createReportBody(
+        context: Context,
+        deviceId: String,
+        scene: String,
+        status: LobsterReportStatus,
+        summary: String?,
+        logs: String,
+        details: LobsterReportDetails
+    ): JSONObject {
+        val deviceName = "${Build.MANUFACTURER} ${Build.MODEL} (Android ${Build.VERSION.RELEASE})"
+        val deviceState = if (status == LobsterReportStatus.ERROR) {
+            runCatching { LobsterDeviceStateCollector.capture(context) }.getOrNull()
+        } else {
+            null
+        }
+        val diagnosticLogs = listOfNotNull(logs, deviceState?.toLogLine())
+            .filter(String::isNotBlank)
+            .joinToString("\n")
+        return JSONObject().apply {
+            put("delivery_id", UUID.randomUUID().toString())
+            put("device", deviceName)
+            put("device_id", deviceId)
+            put("scene", scene)
+            put("status", status.wireValue)
+            summary?.trim()?.takeIf { it.isNotEmpty() }?.let {
+                put("summary", LobsterLogSanitizer.sanitize(it, details.sensitiveValues))
+            }
+            put("logs", LobsterLogSanitizer.sanitize(diagnosticLogs, details.sensitiveValues))
+            put("event_level", status.wireValue)
+            put("session_id", sessionId)
+            put("app_version", BuildConfig.VERSION_NAME)
+            put("app_version_code", BuildConfig.VERSION_CODE)
+            put("created_at", currentIsoTimestamp())
+            put("network_type", networkType(context))
+            val structured = details.toJson()
+            structured.keys().forEach { key -> put(key, structured.get(key)) }
+            deviceState?.let { put("device_state", it.toJson()) }
+        }
+    }
+
+    private fun shouldUploadCurrentRuntime(): Boolean {
+        return LobsterRuntimePolicy.shouldUpload(
+            manufacturer = Build.MANUFACTURER,
+            model = Build.MODEL,
+            fingerprint = Build.FINGERPRINT
+        )
     }
 }

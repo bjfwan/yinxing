@@ -12,6 +12,16 @@
         android:orientation="vertical"
         android:padding="28dp">
 
+        <ImageView
+            android:id="@+id/iv_dialog_vendor_icon"
+            android:layout_width="56dp"
+            android:layout_height="56dp"
+            android:layout_gravity="center_horizontal"
+            android:layout_marginBottom="14dp"
+            android:contentDescription="@string/settings_vendor_icon_description"
+            android:scaleType="fitCenter"
+            android:visibility="gone" />
+
         <TextView
             android:id="@+id/tv_dialog_title"
             style="@style/TextAppearance.OldLauncher.DialogTitle"
@@ -31,6 +41,7 @@
 
 
         <LinearLayout
+            android:id="@+id/layout_dialog_actions"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="28dp"

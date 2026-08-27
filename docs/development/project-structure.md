@@ -1,11 +1,11 @@
 # 项目结构规范
 
-更新时间：2026-05-07
+更新时间：2026-08-27
 
 ## 1. 根目录结构
 
 ```text
-OldLauncher/
+yinxing/
 ├── app/
 ├── benchmark/
 ├── docs/
@@ -29,30 +29,37 @@ app/src/main/
 │   ├── automation/wechat/
 │   │   ├── manager/
 │   │   ├── model/
-│   │   ├── service/
 │   │   └── util/
 │   ├── common/
-│   │   ├── ai/
+│   │   ├── lobster/
 │   │   ├── media/
+│   │   ├── perf/
 │   │   ├── service/
 │   │   ├── ui/
 │   │   └── util/
 │   ├── data/
 │   │   ├── contact/
 │   │   ├── home/
+│   │   ├── settings/
 │   │   └── weather/
+│   │       ├── parser/
+│   │       └── source/
 │   └── feature/
 │       ├── appmanage/
 │       ├── home/
 │       ├── incoming/
 │       ├── phone/
 │       ├── settings/
-│       └── videocall/
+│       ├── videocall/
+│       └── weather/
 └── res/
     ├── drawable/
+    ├── drawable-nodpi/
     ├── layout/
     ├── mipmap-*/
     ├── values/
+    ├── values-night/
+    ├── values-v27/
     └── xml/
 ```
 
@@ -71,6 +78,8 @@ benchmark/src/main/kotlin/    Baseline Profile 与 Macrobenchmark
 - 本地数据模型、偏好设置、仓储与管理器放在 `data`
 - 实验性微信自动化能力统一放在 `automation.wechat`
 - 设备级 UI 回归放在 `app/src/androidTest`
+- Android 不支持在 `drawable`、`layout` 下创建任意功能子目录；资源通过文件名前缀分类
+- 字符串、颜色、尺寸和样式按功能拆分为 `strings_*`、`colors_*`、`dimens_*`、`styles_*` 文件
 
 ## 5. 命名规则
 
@@ -96,6 +105,8 @@ benchmark/src/main/kotlin/    Baseline Profile 与 Macrobenchmark
 - 新电话功能：`feature.phone`
 - 新视频联系人功能：`feature.videocall`
 - 新设置页功能：`feature.settings`
+- 新天气页面：`feature.weather`
+- 新天气数据源或解析器：`data.weather.source` / `data.weather.parser`
 - 新图片或缩略图能力：`common.media`
 - 新共享工具：`common.util` 或 `common.ui`
 - 新本地数据源：`data`

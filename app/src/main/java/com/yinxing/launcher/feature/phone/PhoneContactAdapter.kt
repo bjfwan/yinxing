@@ -25,7 +25,7 @@ class PhoneContactAdapter(
 ) : ListAdapter<Contact, PhoneContactAdapter.ViewHolder>(DIFF) {
 
     private var isManageMode = false
-    private var fullCardTapEnabled = false
+    private var layoutStyle = PhoneContactLayoutStyle.LARGE
     private var animationsEnabled = true
     private val animatedIds = HashSet<Long>()
 
@@ -40,13 +40,13 @@ class PhoneContactAdapter(
     fun setManageMode(manage: Boolean) {
         if (isManageMode == manage) return
         isManageMode = manage
-        notifyItemRangeChanged(0, itemCount)
+        notifyDataSetChanged()
     }
 
-    fun setFullCardTapEnabled(enabled: Boolean) {
-        if (fullCardTapEnabled == enabled) return
-        fullCardTapEnabled = enabled
-        notifyItemRangeChanged(0, itemCount)
+    fun setLayoutStyle(style: PhoneContactLayoutStyle) {
+        if (layoutStyle == style) return
+        layoutStyle = style
+        notifyDataSetChanged()
     }
 
     inner class ViewHolder(itemView: android.view.View) : RecyclerView.ViewHolder(itemView) {
@@ -61,9 +61,22 @@ class PhoneContactAdapter(
 
     override fun getItemId(position: Int): Long = getItem(position).id.hashCode().toLong()
 
+    override fun getItemViewType(position: Int): Int {
+        return if (layoutStyle == PhoneContactLayoutStyle.GRID) {
+            VIEW_TYPE_GRID
+        } else {
+            VIEW_TYPE_LARGE
+        }
+    }
+
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder {
+        val layout = if (viewType == VIEW_TYPE_GRID) {
+            R.layout.item_phone_contact_grid
+        } else {
+            R.layout.item_phone_contact
+        }
         val view = LayoutInflater.from(parent.context)
-            .inflate(R.layout.item_phone_contact, parent, false)
+            .inflate(layout, parent, false)
         return ViewHolder(view)
     }
 
@@ -77,6 +90,8 @@ class PhoneContactAdapter(
         if (isManageMode) {
             holder.btnCall.isVisible = false
             holder.manageHint.isVisible = true
+            holder.itemView.isClickable = true
+            holder.itemView.isFocusable = true
             holder.itemView.setOnClickListener { onEditClick(contact) }
         } else {
             holder.btnCall.isVisible = true
@@ -86,12 +101,9 @@ class PhoneContactAdapter(
                 contact.displayName
             )
             holder.btnCall.setOnClickListener { onCallClick(contact) }
-            if (fullCardTapEnabled) {
-                holder.itemView.setOnClickListener { onCallClick(contact) }
-            } else {
-                holder.itemView.setOnClickListener(null)
-                holder.itemView.isClickable = false
-            }
+            holder.itemView.setOnClickListener(null)
+            holder.itemView.isClickable = false
+            holder.itemView.isFocusable = false
         }
 
         animateInIfFirstShow(holder, position)
@@ -179,6 +191,8 @@ class PhoneContactAdapter(
 
     companion object {
         private const val ENTRY_ANIMATION_LIMIT = 8
+        private const val VIEW_TYPE_LARGE = 0
+        private const val VIEW_TYPE_GRID = 1
 
         private val DIFF = object : DiffUtil.ItemCallback<Contact>() {
             override fun areItemsTheSame(a: Contact, b: Contact) = a.id == b.id

@@ -3,7 +3,6 @@
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import android.widget.CheckBox
 import android.widget.ImageView
 import android.widget.TextView
 import androidx.recyclerview.widget.DiffUtil
@@ -11,6 +10,7 @@ import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
 import com.yinxing.launcher.R
 import com.yinxing.launcher.common.media.MediaThumbnailLoader
+import com.yinxing.launcher.feature.settings.SettingsToggle
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
@@ -40,7 +40,8 @@ class AppListAdapter(
     class ViewHolder(view: View) : RecyclerView.ViewHolder(view) {
         val icon: ImageView = view.findViewById(R.id.app_icon)
         val name: TextView = view.findViewById(R.id.app_name)
-        val checkbox: CheckBox = view.findViewById(R.id.app_checkbox)
+        val checkbox: SettingsToggle = view.findViewById(R.id.app_checkbox)
+        val divider: View = view.findViewById(R.id.app_row_divider)
         var iconJob: Job? = null
     }
 
@@ -53,7 +54,7 @@ class AppListAdapter(
     }
 
     override fun onBindViewHolder(holder: ViewHolder, position: Int) {
-        bind(holder, getItem(position))
+        bind(holder, getItem(position), position == itemCount - 1)
     }
 
     override fun onViewRecycled(holder: ViewHolder) {
@@ -77,28 +78,38 @@ class AppListAdapter(
         notifyItemRangeChanged(0, itemCount)
     }
 
-    private fun bind(holder: ViewHolder, appInfo: AppInfo) {
+    private fun bind(holder: ViewHolder, appInfo: AppInfo, isLast: Boolean) {
         val context = holder.itemView.context
         holder.name.text = appInfo.appName
+        holder.divider.visibility = if (isLast) View.GONE else View.VISIBLE
+        val selectionState = context.getString(
+            if (appInfo.isSelected) R.string.app_manage_selected else R.string.app_manage_unselected
+        )
+        val selectionDescription = context.getString(
+            R.string.app_manage_selection_content_description,
+            appInfo.appName,
+            selectionState
+        )
 
         holder.checkbox.setOnCheckedChangeListener(null)
         holder.checkbox.isChecked = appInfo.isSelected
+        holder.checkbox.contentDescription = selectionDescription
         holder.checkbox.setOnCheckedChangeListener { _, isChecked ->
             if (isChecked != appInfo.isSelected) {
                 onCheckChanged(appInfo, isChecked)
             }
         }
 
-        holder.itemView.setOnClickListener {
-            holder.checkbox.isChecked = !holder.checkbox.isChecked
+        holder.itemView.findViewById<View>(R.id.app_row_click_target).apply {
+            contentDescription = selectionDescription
+            setOnClickListener {
+                holder.checkbox.isChecked = !holder.checkbox.isChecked
+            }
         }
 
-        val iconSize = context.dpToPx(if (lowPerformanceMode) 48 else 56)
-        holder.icon.layoutParams = holder.icon.layoutParams.apply {
-            width = iconSize
-            height = iconSize
-        }
-        holder.icon.setImageResource(android.R.drawable.sym_def_app_icon)
+        val iconSize = context.dpToPx(if (lowPerformanceMode) 32 else 40)
+        holder.icon.setImageDrawable(null)
+        holder.icon.alpha = 0f
         holder.iconJob?.cancel()
         holder.iconJob = scope.launch {
             val bitmap = MediaThumbnailLoader.loadAppIcon(context, appInfo.packageName, iconSize)
@@ -108,6 +119,7 @@ class AppListAdapter(
             val currentItem = currentList.getOrNull(holder.bindingAdapterPosition)
             if (currentItem?.packageName == appInfo.packageName && bitmap != null) {
                 holder.icon.setImageBitmap(bitmap)
+                holder.icon.alpha = 1f
             }
         }
     }

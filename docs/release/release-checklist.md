@@ -1,59 +1,54 @@
 # 发布检查清单
 
-更新时间：2026-05-07
+更新时间：2026-08-27
 
 ## 1. 版本信息
 
-- 版本号已更新（当前 `versionCode = 15`，`versionName = "1.8.1"`）
-- 变更范围已确认
-- 发布说明已准备
+- [x] 当前源码版本为 `versionCode = 17`、`versionName = "2.0.0"`
+- [x] v2.0.0 主体变更范围已记录
+- [x] 最终发布说明已确认
+- [x] 首页视觉收尾已确认
 
-## 2. 构建检查
+## 2. 当前本地构建基线
 
-- `JAVA_HOME` 已确认可用（本地 `build.bat` 使用 `D:\Android\jbr`）
-- `GRADLE_USER_HOME` 已确认使用稳定路径
-- `:app:assembleDebug` 通过
-- `:app:testDebugUnitTest` 通过（290 tests, 0 failed）
-- `:app:assembleDebugAndroidTest` 通过
-- `:app:lintDebug` 没有阻断错误
-- `:app:assembleRelease` 通过（输出 `app/build/outputs/apk/release/app-release.apk`，约 2.15 MB）
-- `:app:lintVitalRelease` 通过
-- `docs/app-release.apk` 已用本次 Release APK 覆盖
-- GitHub Release 已上传同一个 `app-release.apk`
-- Cloudflare 域名托管下载页已发布并验证主下载链接
-- `README.md`、`docs/index.html` 与 `docs/update.json` 的版本号、包体大小和下载链接已同步
-- 目标设备可安装
-- 关键权限声明已确认
+- [x] `:app:assembleDebug` 通过
+- [x] `:app:testDebugUnitTest` 通过（421 tests, 0 failed）
+- [x] `:app:lintDebug` 通过（0 errors，85 warnings，`UnusedResources = 0`）
+- [x] `:app:assembleRelease` 通过
+- [x] `:app:lintVitalRelease` 通过
+- [x] Release APK 输出到 `app/build/outputs/apk/release/app-release.apk`，约 2.61 MiB
+- [x] 本轮重新执行 `:app:assembleDebugAndroidTest`
+- [ ] 在目标设备完整执行 `:app:connectedDebugAndroidTest`
 
-## 3. 功能检查
+## 3. 发布前功能检查
 
-- 默认桌面入口正常
-- 应用管理页正常
-- 电话联系人页正常
-- 视频联系人页正常
-- 设置入口正常
-- 主页天气卡片入口已在目标设备验证
+- [ ] 默认桌面与首页最终视觉正常
+- [ ] 应用管理选择、移除和排序正常
+- [ ] 电话联系人列表/宫格、头像、增删改和拨号正常
+- [ ] 视频联系人管理与微信视频主动拨号正常
+- [ ] 天气详情、城市管理、当前位置与失败回退正常
+- [ ] 设置卡片/列表模式、权限入口和版本检查正常
+- [ ] 使用真实 SIM 验证系统电话响铃、倒计时、接听、挂断和扬声器
 
-## 4. 权限检查
+## 4. 权限与兼容性
 
-- 联系人权限申请正常
-- 拨号权限申请正常
-- 视频联系人页涉及的权限提示正常
-- 实验性自动化能力若保留入口，需确认权限文案不会误导用户
+- [ ] 联系人、电话、通知、定位和无障碍权限文案准确
+- [ ] 权限拒绝后页面可恢复，且不会清空已有数据
+- [ ] 默认电话角色和厂商设置引导在目标设备可用
+- [ ] 微信视频来电自动接听未被描述为当前交付能力
 
-## 5. 文档检查
+## 5. 发布资产同步
 
-- `README.md` 已更新
-- `docs/product/` 已更新
-- `docs/architecture/` 已更新
-- `docs/development/` 已更新
-- `docs/testing/` 已更新
-- 规划类内容没有误写成已交付能力
+- [x] Markdown 状态文档已更新到 v2.0.0
+- [x] 用最终 Release APK 覆盖 `docs/app-release.apk`
+- [x] 更新 `docs/update.json` 的版本、下载地址和发布说明
+- [x] 更新 `docs/index.html` 的版本号与包体大小
+- [x] 上传 GitHub Release，并核对 APK SHA-256
+- [x] 部署下载页并验证公开下载链接
+- [x] 提交改动、创建 `v2.0.0` 标签并确认远端提交
 
-## 6. 发布前回归
+## 6. 发布口径
 
-- 手工冒烟测试已完成
-- 如环境有设备或模拟器，已执行 `:app:connectedDebugAndroidTest`
-- 当前无设备时，至少确认仪器测试 APK 可以编译
-- 关键已知问题已记录
-- 非当前版本能力没有被写成"已实现"
+- 本地构建通过不等于线上发布完成。
+- 真机设计验收不替代系统电话真实 SIM 回归。
+- 下载页、`update.json`、GitHub Release 和最终 APK 一致后，才能将 v2.0.0 标记为已发布。

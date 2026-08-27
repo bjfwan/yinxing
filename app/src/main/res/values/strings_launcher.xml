@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="set_default_launcher_title">设为默认桌面</string>
+    <string name="set_default_launcher_message">点击"立即设置"后，系统会优先弹出默认桌面选择窗口，请选择"银杏"。如果系统没有弹出选择窗口，再进入系统设置手动选择。\n\n设置成功后，按 Home 键会优先回到本应用。</string>
+    <string name="set_default_launcher_message_vivo">vivo / iQOO 需要完成两处设置：\n1. 在“默认应用 → 桌面”中选择“银杏”\n2. 进入“安全 → 更多安全设置 → 更换系统桌面”，开启“允许更换桌面”，并关闭“点击主屏键锁定系统桌面”\n\n返回后会自动检查是否真正生效。</string>
+    <string name="set_default_launcher_vivo_default_action">1. 设置默认桌面</string>
+    <string name="set_default_launcher_vivo_security_action">2. 打开安全设置</string>
+    <string name="set_default_launcher_message_xiaomi">小米中国版澎湃 OS 官方限制第三方应用成为默认桌面。你仍可打开系统设置确认当前机型是否提供“桌面应用”选项。</string>
+    <string name="set_default_launcher_message_huawei">华为不同 HarmonyOS 版本支持情况不同。请在“默认应用 → 桌面”中选择“银杏”；如果没有桌面选项，说明当前版本不支持更换。</string>
+    <string name="set_default_launcher_message_honor">荣耀不同 MagicOS 版本支持情况不同。请在“默认应用 → 桌面”中选择“银杏”；如果没有桌面选项，说明当前版本不支持更换。</string>
+    <string name="set_default_launcher_message_oplus">请在“应用 → 默认应用 → 桌面应用”中选择“银杏”。返回后会自动检查是否真正生效。</string>
+    <string name="set_default_launcher_message_samsung">请在“应用 → 选择默认应用 → 主屏幕应用”中选择“银杏”。返回后会自动检查是否真正生效。</string>
+    <string name="set_default_launcher_view_settings">查看系统设置</string>
+    <string name="settings_vendor_icon_description">当前手机厂商的系统图标</string>
+    <string name="set_default_launcher_action">立即设置</string>
+    <string name="set_default_launcher_later">稍后再说</string>
+    <string name="set_default_launcher_summary_on">已设置，按 Home 键会回到本桌面</string>
+    <string name="set_default_launcher_summary_off">未设置，点击引导开启</string>
+    <string name="set_default_launcher_summary_extra_gate">还需允许更换桌面，点击查看步骤</string>
+    <string name="set_default_launcher_summary_restricted">当前系统限制第三方默认桌面</string>
+    <string name="set_default_launcher_summary_version_dependent">是否支持取决于系统版本，点击检查</string>
+    <string name="settings_default_launcher_title">默认桌面</string>
+    <string name="settings_default_launcher_ready">已设置</string>
+    <string name="settings_default_launcher_pending">未设置</string>
+    <string name="clear_default_launcher_choose_other">请在系统设置中选择其他桌面应用</string>
+
+    <string name="settings_icon_scale_title">图标与文字大小</string>
+    <string name="settings_icon_scale_summary">%d%%（默认 100%%）</string>
+
+</resources>

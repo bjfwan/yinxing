@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="weather_toolbar_action_ripple">#24FFFFFF</color>
+    <color name="weather_detail_hero_start">#46391F</color>
+    <color name="weather_detail_hero_mid">#302B20</color>
+    <color name="weather_detail_hero_end">#1A2027</color>
+    <color name="weather_detail_current_start">#3B311E</color>
+    <color name="weather_detail_current_end">#25251F</color>
+</resources>

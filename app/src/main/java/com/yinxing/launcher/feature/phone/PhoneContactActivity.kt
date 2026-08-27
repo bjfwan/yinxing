@@ -6,7 +6,6 @@ import android.content.Intent
 import android.content.pm.PackageManager
 import android.net.Uri
 import android.os.Bundle
-import android.provider.ContactsContract
 import android.view.View
 import android.view.ViewGroup
 import android.widget.CheckBox
@@ -21,18 +20,25 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.widget.SwitchCompat
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
+import androidx.core.view.ViewCompat
+import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.isVisible
+import androidx.core.view.updatePadding
 import androidx.core.widget.doAfterTextChanged
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
+import androidx.recyclerview.widget.GridLayoutManager
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.google.android.material.card.MaterialCardView
 import com.yinxing.launcher.R
+import com.yinxing.launcher.common.lobster.LobsterClient
+import com.yinxing.launcher.common.lobster.LobsterUsageEvents
 import com.yinxing.launcher.common.media.MediaThumbnailLoader
 import com.yinxing.launcher.common.ui.PageStateView
+import com.yinxing.launcher.common.ui.AvatarEditorController
 
 import com.yinxing.launcher.data.contact.Contact
 import com.yinxing.launcher.data.home.LauncherPreferences
@@ -147,12 +153,17 @@ class PhoneContactActivity : AppCompatActivity() {
     private lateinit var launcherPreferences: LauncherPreferences
     private lateinit var viewModel: PhoneContactViewModel
     private lateinit var pageTitleText: TextView
-    private lateinit var modeActionButton: MaterialCardView
+    private lateinit var modeActionButton: View
     private lateinit var modeActionText: TextView
     private lateinit var modeSummaryText: TextView
-    private lateinit var searchLayout: MaterialCardView
+    private lateinit var manageTools: View
     private lateinit var searchInput: EditText
-    private lateinit var clearSearchButton: MaterialCardView
+    private lateinit var clearSearchButton: View
+    private lateinit var changeLayoutButton: View
+    private lateinit var currentLayoutText: TextView
+    private lateinit var layoutPreferences: PhoneContactLayoutPreferences
+    private lateinit var avatarEditor: AvatarEditorController
+    private var layoutStyle = PhoneContactLayoutStyle.LARGE
 
     private var launchedFromManageEntry = false
     private var dialogPhotoPreview: ImageView? = null
@@ -166,8 +177,7 @@ class PhoneContactActivity : AppCompatActivity() {
         ActivityResultContracts.PickVisualMedia()
     ) { uri ->
         if (uri != null) {
-            selectedAvatarUri = uri.toString()
-            renderDialogPhoto()
+            avatarEditor.edit(uri)
         }
     }
 
@@ -179,6 +189,7 @@ class PhoneContactActivity : AppCompatActivity() {
         if (granted && contact != null) {
             makeCall(contact)
         } else {
+            LobsterClient.reportUsage(this, LobsterUsageEvents.CALL_PERMISSION_DENIED)
             showToast(getString(R.string.phone_call_permission_required))
         }
     }
@@ -186,8 +197,21 @@ class PhoneContactActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_phone_contact)
+        applySystemInsets()
 
         launcherPreferences = LauncherPreferences.getInstance(this)
+        layoutPreferences = PhoneContactLayoutPreferences(this)
+        avatarEditor = AvatarEditorController(this) { uri, bitmap ->
+            selectedAvatarUri = uri.toString()
+            dialogPhotoJob?.cancel()
+            dialogPhotoPreview?.apply {
+                imageTintList = null
+                clearColorFilter()
+                setPadding(0, 0, 0, 0)
+                setImageBitmap(bitmap)
+            }
+        }
+        layoutStyle = layoutPreferences.get()
         viewModel = ViewModelProvider(this, PhoneContactViewModel.Factory(this))[PhoneContactViewModel::class.java]
 
         recyclerView = findViewById(R.id.recycler_phone_contacts)
@@ -200,15 +224,18 @@ class PhoneContactActivity : AppCompatActivity() {
         modeActionText = findViewById(R.id.tv_mode_action)
         modeSummaryText = findViewById(R.id.tv_mode_summary)
 
-        searchLayout = findViewById(R.id.layout_manage_search)
+        manageTools = findViewById(R.id.layout_manage_tools)
         searchInput = findViewById(R.id.et_contact_search)
         clearSearchButton = findViewById(R.id.btn_clear_search)
+        changeLayoutButton = findViewById(R.id.btn_change_layout)
+        currentLayoutText = findViewById(R.id.tv_current_layout)
 
         adapter = PhoneContactAdapter(
             scope = lifecycleScope,
-            onCallClick = { contact -> makeCall(contact) },
+            onCallClick = ::makeCall,
             onEditClick = { contact -> showContactDialog(contact) }
         )
+        adapter.setLayoutStyle(layoutStyle)
         recyclerView.adapter = adapter
 
         launchedFromManageEntry = intent.getBooleanExtra(EXTRA_START_IN_MANAGE_MODE, false)
@@ -235,7 +262,8 @@ class PhoneContactActivity : AppCompatActivity() {
         clearSearchButton.setOnClickListener {
             searchInput.text?.clear()
         }
-
+        changeLayoutButton.setOnClickListener { showLayoutChoiceDialog() }
+        renderCurrentLayout()
         observeViewModel()
 
         if (launchedFromManageEntry) {
@@ -250,6 +278,7 @@ class PhoneContactActivity : AppCompatActivity() {
                     viewModel.isManageMode.collect { manageMode ->
                         adapter.setManageMode(manageMode)
                         updateModeUi(manageMode)
+                        updateState(adapter.currentList)
                     }
                 }
                 launch {
@@ -308,7 +337,6 @@ class PhoneContactActivity : AppCompatActivity() {
 
     override fun onResume() {
         super.onResume()
-        adapter.setFullCardTapEnabled(launcherPreferences.isFullCardTapEnabled())
         adapter.setAnimationsEnabled(!launcherPreferences.isLowPerformanceModeEnabled())
         viewModel.refresh()
     }
@@ -322,10 +350,11 @@ class PhoneContactActivity : AppCompatActivity() {
         modeActionButton.contentDescription = actionText
         modeActionButton.isVisible = true
         modeSummaryText.text = getString(
-            if (isManageMode) R.string.phone_contact_manage_summary else R.string.phone_contact_call_summary
+            if (isManageMode) R.string.phone_contact_manage_summary else R.string.phone_contact_call_summary_short
         )
-        searchLayout.isVisible = isManageMode
+        manageTools.isVisible = isManageMode
         clearSearchButton.isVisible = isManageMode && viewModel.searchQuery.value.isNotBlank()
+        updateRecyclerLayout()
     }
 
     private fun updateState(contacts: List<Contact>) {
@@ -350,11 +379,88 @@ class PhoneContactActivity : AppCompatActivity() {
                 if (isManageMode) R.string.state_phone_manage_empty_message else R.string.state_phone_empty_message
             ),
             actionText = getString(
-                if (isManageMode) R.string.state_phone_empty_action else R.string.action_back_home
+                if (isManageMode) R.string.state_phone_empty_action else R.string.action_manage_contacts
             )
         ) {
-            if (isManageMode) showContactDialog(null) else finish()
+            if (isManageMode) showContactDialog(null) else viewModel.setManageMode(true)
         }
+    }
+
+    private fun updateRecyclerLayout() {
+        val useGrid = layoutStyle == PhoneContactLayoutStyle.GRID
+        val currentlyGrid = recyclerView.layoutManager is GridLayoutManager
+        if (useGrid != currentlyGrid) {
+            recyclerView.layoutManager = if (useGrid) {
+                GridLayoutManager(this, 2)
+            } else {
+                LinearLayoutManager(this)
+            }
+        }
+    }
+
+    private fun showLayoutChoiceDialog() {
+        val sheetView = layoutInflater.inflate(R.layout.dialog_phone_layout_choice, null)
+        val dialog = AlertDialog.Builder(this).setView(sheetView).create()
+        dialog.window?.setBackgroundDrawableResource(android.R.color.transparent)
+
+        val largeOption = sheetView.findViewById<MaterialCardView>(R.id.option_layout_large)
+        val gridOption = sheetView.findViewById<MaterialCardView>(R.id.option_layout_grid)
+        val largeBadge = sheetView.findViewById<TextView>(R.id.check_layout_large)
+        val gridBadge = sheetView.findViewById<TextView>(R.id.check_layout_grid)
+        val selectedStroke = (3 * resources.displayMetrics.density).toInt()
+
+        fun renderSelection() {
+            val largeSelected = layoutStyle == PhoneContactLayoutStyle.LARGE
+            largeOption.isSelected = largeSelected
+            gridOption.isSelected = !largeSelected
+            largeBadge.visibility = if (largeSelected) View.VISIBLE else View.INVISIBLE
+            gridBadge.visibility = if (largeSelected) View.INVISIBLE else View.VISIBLE
+            largeOption.strokeWidth = if (largeSelected) selectedStroke else 1
+            gridOption.strokeWidth = if (largeSelected) 1 else selectedStroke
+            largeOption.strokeColor = ContextCompat.getColor(
+                this,
+                if (largeSelected) R.color.launcher_primary else R.color.launcher_outline
+            )
+            gridOption.strokeColor = ContextCompat.getColor(
+                this,
+                if (largeSelected) R.color.launcher_outline else R.color.launcher_primary
+            )
+        }
+
+        fun select(style: PhoneContactLayoutStyle) {
+            setLayoutStyle(style)
+            renderSelection()
+            dialog.dismiss()
+        }
+
+        largeOption.setOnClickListener { select(PhoneContactLayoutStyle.LARGE) }
+        gridOption.setOnClickListener { select(PhoneContactLayoutStyle.GRID) }
+        sheetView.findViewById<View>(R.id.btn_layout_cancel).setOnClickListener { dialog.dismiss() }
+        renderSelection()
+        dialog.show()
+        dialog.window?.setLayout(
+            (resources.displayMetrics.widthPixels * 0.92f).toInt(),
+            android.view.WindowManager.LayoutParams.WRAP_CONTENT
+        )
+    }
+
+    private fun setLayoutStyle(style: PhoneContactLayoutStyle) {
+        if (layoutStyle == style) return
+        layoutStyle = style
+        layoutPreferences.set(style)
+        adapter.setLayoutStyle(style)
+        updateRecyclerLayout()
+        renderCurrentLayout()
+    }
+
+    private fun renderCurrentLayout() {
+        currentLayoutText.setText(
+            if (layoutStyle == PhoneContactLayoutStyle.LARGE) {
+                R.string.phone_contact_layout_large_summary
+            } else {
+                R.string.phone_contact_layout_grid_summary
+            }
+        )
     }
 
     private fun makeCall(contact: Contact) {
@@ -369,8 +475,10 @@ class PhoneContactActivity : AppCompatActivity() {
         }
         val intent = Intent(Intent.ACTION_CALL, Uri.fromParts("tel", number, null))
         runCatching { startActivity(intent) }.onFailure {
+            LobsterClient.reportUsage(this, LobsterUsageEvents.OUTGOING_CALL_FAILED)
             showToast(getString(R.string.dial_failed, it.message ?: ""))
         }.onSuccess {
+            LobsterClient.reportUsage(this, LobsterUsageEvents.OUTGOING_CALL_STARTED)
             viewModel.incrementCallCountAsync(contact.id)
         }
     }
@@ -518,6 +626,24 @@ class PhoneContactActivity : AppCompatActivity() {
         }
 
         dialog.show()
+        dialog.window?.setLayout(
+            (resources.displayMetrics.widthPixels * 0.92f).toInt(),
+            android.view.WindowManager.LayoutParams.WRAP_CONTENT
+        )
+    }
+
+    private fun applySystemInsets() {
+        val root = findViewById<View>(R.id.phone_contact_root)
+        val baseTop = (12 * resources.displayMetrics.density).toInt()
+        ViewCompat.setOnApplyWindowInsetsListener(root) { view, insets ->
+            val bars = insets.getInsets(
+                WindowInsetsCompat.Type.statusBars() or
+                    WindowInsetsCompat.Type.navigationBars() or
+                    WindowInsetsCompat.Type.displayCutout()
+            )
+            view.updatePadding(top = bars.top + baseTop, bottom = bars.bottom)
+            insets
+        }
     }
 
     private fun showDeleteDialog(contact: Contact) {
@@ -545,11 +671,13 @@ class PhoneContactActivity : AppCompatActivity() {
         if (uri == null) {
             val padding = (28 * resources.displayMetrics.density).toInt()
             preview.setPadding(padding, padding, padding, padding)
-            preview.setImageResource(android.R.drawable.ic_menu_camera)
+            preview.setImageResource(R.drawable.ic_contact_avatar_placeholder)
+            preview.clearColorFilter()
             return
         }
         val padding = (28 * resources.displayMetrics.density).toInt()
-        preview.setImageResource(android.R.drawable.ic_menu_camera)
+        preview.setImageResource(R.drawable.ic_contact_avatar_placeholder)
+        preview.clearColorFilter()
         preview.setPadding(padding, padding, padding, padding)
         dialogPhotoJob = lifecycleScope.launch {
             val bitmap = runCatching {

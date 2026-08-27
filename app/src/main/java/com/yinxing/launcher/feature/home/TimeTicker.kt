@@ -1,6 +1,5 @@
 package com.yinxing.launcher.feature.home
 
-import android.os.Build
 import kotlinx.coroutines.currentCoroutineContext
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
@@ -39,19 +38,15 @@ class TimeTicker(
 
     private fun buildLunarDateString(cal: Calendar): String {
         return try {
-            if (Build.VERSION.SDK_INT < Build.VERSION_CODES.N) {
-                ""
-            } else {
-                val chinese = android.icu.util.ChineseCalendar().apply {
-                    timeInMillis = cal.timeInMillis
-                }
-                val lunarMonth = chinese.get(android.icu.util.ChineseCalendar.MONTH) + 1
-                val lunarDay = chinese.get(android.icu.util.ChineseCalendar.DAY_OF_MONTH)
-                val monthText = (if (chinese.get(android.icu.util.ChineseCalendar.IS_LEAP_MONTH) == 1) "闰" else "") +
-                    (lunarMonthNames.getOrNull(lunarMonth) ?: lunarMonth.toString()) + "月"
-                val dayText = lunarDayNames.getOrNull(lunarDay) ?: lunarDay.toString()
-                "农历 $monthText$dayText"
+            val chinese = android.icu.util.ChineseCalendar().apply {
+                timeInMillis = cal.timeInMillis
             }
+            val lunarMonth = chinese.get(android.icu.util.ChineseCalendar.MONTH) + 1
+            val lunarDay = chinese.get(android.icu.util.ChineseCalendar.DAY_OF_MONTH)
+            val monthText = (if (chinese.get(android.icu.util.ChineseCalendar.IS_LEAP_MONTH) == 1) "闰" else "") +
+                (lunarMonthNames.getOrNull(lunarMonth) ?: lunarMonth.toString()) + "月"
+            val dayText = lunarDayNames.getOrNull(lunarDay) ?: lunarDay.toString()
+            "农历 $monthText$dayText"
         } catch (_: Exception) {
             ""
         }

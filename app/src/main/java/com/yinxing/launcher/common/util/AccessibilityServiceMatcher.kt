@@ -1,6 +1,9 @@
 package com.yinxing.launcher.common.util
 
 object AccessibilityServiceMatcher {
+    fun componentName(packageName: String, serviceClassName: String): String =
+        "$packageName/$serviceClassName"
+
     fun contains(enabledServices: String?, serviceName: String): Boolean {
         val normalizedServiceName = serviceName.trim()
         val serviceList = enabledServices

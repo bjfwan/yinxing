@@ -2,6 +2,7 @@ package com.yinxing.launcher.common.util
 
 import android.Manifest
 import android.annotation.SuppressLint
+import android.app.NotificationManager
 import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
@@ -11,10 +12,12 @@ import android.os.Build
 import android.os.Environment
 import android.os.PowerManager
 import android.provider.Settings
+import androidx.core.app.NotificationManagerCompat
 
 object PermissionUtil {
 
     private const val TAG = "PermissionUtil"
+    private const val INCOMING_CALL_CHANNEL_ID = "incoming_call_alerts"
 
     fun isAccessibilityServiceEnabled(context: Context, serviceName: String): Boolean {
         return isAccessibilityServiceEnabled(
@@ -60,17 +63,25 @@ object PermissionUtil {
     }
 
     fun hasNotificationPermission(context: Context): Boolean {
-        return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-            context.checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS) ==
-                PackageManager.PERMISSION_GRANTED
-        } else {
-            true
-        }
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU &&
+            context.checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS) !=
+            PackageManager.PERMISSION_GRANTED
+        ) return false
+        if (!areIncomingNotificationsEnabled(context)) return false
+        return canUseIncomingCallFullScreenIntent(context)
     }
 
     fun openNotificationSettings(context: Context) {
         runCatching {
-            val intent = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            val intent = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE &&
+                areIncomingNotificationsEnabled(context) &&
+                !canUseIncomingCallFullScreenIntent(context)
+            ) {
+                Intent(
+                    Settings.ACTION_MANAGE_APP_USE_FULL_SCREEN_INTENT,
+                    Uri.parse("package:${context.packageName}")
+                )
+            } else if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
                 Intent(Settings.ACTION_APP_NOTIFICATION_SETTINGS).apply {
                     putExtra(Settings.EXTRA_APP_PACKAGE, context.packageName)
                 }
@@ -85,6 +96,24 @@ object PermissionUtil {
         }.onFailure {
             openAppDetailSettings(context)
         }
+    }
+
+    private fun areIncomingNotificationsEnabled(context: Context): Boolean {
+        if (!runCatching {
+                NotificationManagerCompat.from(context).areNotificationsEnabled()
+            }.getOrDefault(false)
+        ) return false
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) return true
+        val manager = context.getSystemService(NotificationManager::class.java) ?: return false
+        val channel = manager.getNotificationChannel(INCOMING_CALL_CHANNEL_ID) ?: return true
+        return channel.importance != NotificationManager.IMPORTANCE_NONE
+    }
+
+    private fun canUseIncomingCallFullScreenIntent(context: Context): Boolean {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.UPSIDE_DOWN_CAKE) return true
+        return runCatching {
+            context.getSystemService(NotificationManager::class.java)?.canUseFullScreenIntent() == true
+        }.getOrDefault(false)
     }
 
     // ── 悬浮窗 ────────────────────────────────────────────────────────────────
@@ -164,6 +193,8 @@ object PermissionUtil {
             PackageManager.PERMISSION_GRANTED &&
             context.checkSelfPermission(Manifest.permission.READ_PHONE_STATE) ==
             PackageManager.PERMISSION_GRANTED &&
+            context.checkSelfPermission(Manifest.permission.READ_CALL_LOG) ==
+            PackageManager.PERMISSION_GRANTED &&
             (Build.VERSION.SDK_INT < Build.VERSION_CODES.O ||
                 context.checkSelfPermission(Manifest.permission.ANSWER_PHONE_CALLS) ==
                 PackageManager.PERMISSION_GRANTED)
@@ -173,95 +204,29 @@ object PermissionUtil {
     fun canStartBackgroundActivity(): Boolean = false
 
     fun openBackgroundStartSettings(context: Context) {
-        val candidates = listOf(
-            Intent().setComponent(
-                ComponentName(
-                    "com.vivo.permissionmanager",
-                    "com.vivo.permissionmanager.activity.BgStartUpManagerActivity"
-                )
-            ).putExtra("packagename", context.packageName),
-            Intent().setComponent(
-                ComponentName(
-                    "com.miui.securitycenter",
-                    "com.miui.permcenter.autostart.AutoStartManagementActivity"
-                )
-            ),
-            Intent().setComponent(
-                ComponentName(
-                    "com.huawei.systemmanager",
-                    "com.huawei.systemmanager.startupmgr.ui.StartupNormalAppListActivity"
-                )
-            ),
-            Intent().setComponent(
-                ComponentName(
-                    "com.coloros.safecenter",
-                    "com.coloros.privacypermissionsentry.PermissionTopActivity"
-                )
-            )
-        )
-        for (intent in candidates) {
-            intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-            runCatching {
-                context.startActivity(intent)
-                return
-            }
-        }
-        openAppDetailSettings(context)
+        openOemSettings(context, OemSettingsCapability.BACKGROUND_START)
     }
 
     fun isAutoStartEnabled(): Boolean = false
 
     fun openAutoStartSettings(context: Context) {
-        val candidates = listOf(
-            Intent().setComponent(
-                ComponentName(
-                    "com.miui.securitycenter",
-                    "com.miui.permcenter.autostart.AutoStartManagementActivity"
-                )
-            ),
-            Intent().setComponent(
-                ComponentName(
-                    "com.huawei.systemmanager",
-                    "com.huawei.systemmanager.startupmgr.ui.StartupNormalAppListActivity"
-                )
-            ),
-            Intent().setComponent(
-                ComponentName(
-                    "com.huawei.systemmanager",
-                    "com.huawei.systemmanager.optimize.bootstart.BootStartActivity"
-                )
-            ),
-            Intent().setComponent(
-                ComponentName(
-                    "com.coloros.safecenter",
-                    "com.coloros.privacypermissionsentry.PermissionTopActivity"
-                )
-            ),
-            Intent().setComponent(
-                ComponentName(
-                    "com.oppo.safe",
-                    "com.oppo.safe.permission.startup.StartupAppListActivity"
-                )
-            ),
-            Intent().setComponent(
-                ComponentName(
-                    "com.vivo.permissionmanager",
-                    "com.vivo.permissionmanager.activity.BgStartUpManagerActivity"
-                )
-            ),
-            Intent().setComponent(
-                ComponentName(
-                    "com.samsung.android.lool",
-                    "com.samsung.android.sm.ui.battery.BatteryActivity"
-                )
-            )
-        )
-        for (intent in candidates) {
-            intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-            runCatching {
-                context.startActivity(intent)
-                return
+        openOemSettings(context, OemSettingsCapability.AUTO_START)
+    }
+
+    private fun openOemSettings(context: Context, capability: OemSettingsCapability) {
+        val targets = OemSettingsCatalog.targets(Build.MANUFACTURER, capability)
+        for (target in targets) {
+            val intent = Intent().apply {
+                target.action?.let(::setAction)
+                target.packageName?.let(::setPackage)
+                if (target.packageName != null && target.className != null) {
+                    component = ComponentName(target.packageName, target.className)
+                }
+                target.packageExtraKey?.let { putExtra(it, context.packageName) }
+                addCategory(Intent.CATEGORY_DEFAULT)
+                addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
             }
+            if (runCatching { context.startActivity(intent) }.isSuccess) return
         }
         openAppDetailSettings(context)
     }

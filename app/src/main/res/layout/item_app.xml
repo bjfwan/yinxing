@@ -1,33 +1,29 @@
 <?xml version="1.0" encoding="utf-8"?>
-<com.google.android.material.card.MaterialCardView xmlns:android="http://schemas.android.com/apk/res/android"
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
-    style="@style/Widget.OldLauncher.ListItemCard"
     android:layout_width="match_parent"
-    android:layout_height="wrap_content"
-    android:layout_marginStart="6dp"
-    android:layout_marginTop="8dp"
-    android:layout_marginEnd="6dp"
-    android:layout_marginBottom="8dp"
-    android:clickable="true"
-    android:focusable="true"
-    android:foreground="?android:attr/selectableItemBackground">
+    android:layout_height="wrap_content">
 
     <LinearLayout
+        android:id="@+id/app_row_click_target"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
+        android:clickable="true"
+        android:focusable="true"
+        android:foreground="?android:attr/selectableItemBackground"
         android:gravity="center_vertical"
-        android:minHeight="104dp"
+        android:minHeight="72dp"
         android:orientation="horizontal"
-        android:paddingStart="18dp"
-        android:paddingTop="16dp"
-        android:paddingEnd="18dp"
-        android:paddingBottom="16dp">
+        android:paddingStart="14dp"
+        android:paddingTop="10dp"
+        android:paddingEnd="14dp"
+        android:paddingBottom="10dp">
 
         <FrameLayout
-            android:layout_width="72dp"
-            android:layout_height="72dp"
-            android:background="@drawable/edit_text_background"
-            android:padding="12dp">
+            android:layout_width="48dp"
+            android:layout_height="48dp"
+            android:background="@drawable/bg_settings_icon_plate"
+            android:padding="4dp">
 
             <ImageView
                 android:id="@+id/app_icon"
@@ -39,24 +35,32 @@
 
         <TextView
             android:id="@+id/app_name"
-            style="@style/TextAppearance.OldLauncher.ListTitle"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
-            android:layout_marginStart="18dp"
-            android:layout_marginEnd="16dp"
+            android:layout_marginStart="14dp"
+            android:layout_marginEnd="12dp"
             android:layout_weight="1"
             android:ellipsize="end"
-            android:maxLines="2" />
+            android:fontFamily="sans-serif-medium"
+            android:maxLines="2"
+            android:textColor="@color/launcher_text_primary"
+            android:textSize="18sp"
+            android:textStyle="bold" />
 
-        <CheckBox
+        <com.yinxing.launcher.feature.settings.SettingsToggle
             android:id="@+id/app_checkbox"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:buttonTint="@color/launcher_primary"
-            android:minHeight="48dp"
-            android:scaleX="1.45"
-            android:scaleY="1.45" />
+            android:layout_width="42dp"
+            android:layout_height="32dp" />
 
     </LinearLayout>
-</com.google.android.material.card.MaterialCardView>
+
+    <View
+        android:id="@+id/app_row_divider"
+        android:layout_width="match_parent"
+        android:layout_height="1dp"
+        android:layout_gravity="bottom"
+        android:layout_marginStart="76dp"
+        android:layout_marginEnd="14dp"
+        android:background="@color/launcher_divider" />
+</FrameLayout>
 

@@ -44,7 +44,7 @@
             android:gravity="center"
             android:text="×"
             android:textSize="18sp"
-            android:textColor="#66FFFFFF"
+            android:textColor="@color/launcher_on_overlay_muted"
             android:clickable="true"
             android:focusable="true" />
 

@@ -5,6 +5,7 @@ import android.os.Looper
 import android.view.ContextThemeWrapper
 import android.view.LayoutInflater
 import android.widget.FrameLayout
+import android.widget.TextView
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleOwner
@@ -12,6 +13,7 @@ import androidx.lifecycle.LifecycleRegistry
 import androidx.lifecycle.lifecycleScope
 import androidx.test.core.app.ApplicationProvider
 import com.google.android.material.button.MaterialButton
+import com.google.android.material.card.MaterialCardView
 import com.yinxing.launcher.R
 import com.yinxing.launcher.data.contact.Contact
 import org.junit.Assert.assertEquals
@@ -32,12 +34,26 @@ class ElderContactActionUiTest {
             .inflate(R.layout.item_phone_contact, FrameLayout(themedContext), false)
         val button = view.findViewById<MaterialButton>(R.id.btn_call)
 
-        assertTrue(button.minHeight >= 76.dp)
+        assertTrue(view.layoutParams.height >= 232.dp)
+        assertTrue(button.layoutParams.height >= 76.dp)
         assertTrue(button.textSize >= 22.sp)
         assertEquals(
             ContextCompat.getColor(context, R.color.launcher_phone_action),
             button.backgroundTintList?.defaultColor
         )
+    }
+
+    @Test
+    fun phoneContactCardUsesSettingsSurfaceAndIconBadge() {
+        val view = LayoutInflater.from(themedContext)
+            .inflate(R.layout.item_phone_contact, FrameLayout(themedContext), false)
+        val card = view as MaterialCardView
+        val badge = view.findViewById<TextView>(R.id.tv_auto_answer_badge)
+
+        assertEquals(18.dp.toFloat(), card.radius, 0.5f)
+        assertTrue(card.cardElevation <= 1.dp)
+        assertTrue(badge.text.none { it == '⚡' })
+        assertTrue(badge.compoundDrawablesRelative[0] != null)
     }
 
     @Test
@@ -47,7 +63,7 @@ class ElderContactActionUiTest {
             scope = owner.lifecycleScope,
             lowPerformanceMode = true,
             onContactClick = {},
-            onWechatVideoClick = {}
+            onEditClick = {}
         )
         val parent = FrameLayout(themedContext)
         val holder = adapter.onCreateViewHolder(parent, 0)
@@ -74,15 +90,15 @@ class ElderContactActionUiTest {
     }
 
     @Test
-    fun videoContactWechatActionUsesLargeBlueTouchTarget() {
+    fun videoContactWechatActionUsesLargeGreenTouchTarget() {
         val view = LayoutInflater.from(themedContext)
             .inflate(R.layout.item_video_contact, FrameLayout(themedContext), false)
         val button = view.findViewById<MaterialButton>(R.id.btn_video_call)
 
-        assertTrue(button.minHeight >= 76.dp)
+        assertTrue(button.layoutParams.height >= 76.dp)
         assertTrue(button.textSize >= 22.sp)
         assertEquals(
-            ContextCompat.getColor(context, R.color.launcher_video_action),
+            ContextCompat.getColor(context, R.color.launcher_phone_action),
             button.backgroundTintList?.defaultColor
         )
     }

@@ -108,7 +108,7 @@ class HomeViewModel(
         if (expired) {
             weatherRefreshJob?.cancel()
             weatherRefreshJob = viewModelScope.launch {
-                delay(if (cached == null) 1_200L else 250L)
+                if (cached != null) delay(250L)
                 refreshWeatherNow()
             }
         }
@@ -233,5 +233,17 @@ private class AndroidHomeWeatherSource(
 
     override fun getCached() = WeatherRepository.getCached()
 
-    override suspend fun fetchWeather(cityName: String) = WeatherRepository.fetchWeather(cityName, appContext)
+    override suspend fun fetchWeather(cityName: String): WeatherState {
+        val location = preferences.getSelectedLocation()
+        return if (location != null && location.cityName == cityName) {
+            WeatherRepository.fetchWeatherAtLocation(
+                cityName,
+                location.latitude,
+                location.longitude,
+                appContext,
+            )
+        } else {
+            WeatherRepository.fetchWeather(cityName, appContext)
+        }
+    }
 }

@@ -1,15 +1,22 @@
 package com.yinxing.launcher.feature.home
 
+import android.Manifest
 import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
+import android.content.pm.PackageManager
 import android.os.Build
 import android.os.Bundle
 import android.view.animation.DecelerateInterpolator
 import android.widget.Toast
 import androidx.activity.OnBackPressedCallback
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.content.ContextCompat
+import androidx.core.view.ViewCompat
+import androidx.core.view.WindowInsetsCompat
+import androidx.core.view.updatePadding
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.DefaultItemAnimator
@@ -17,10 +24,21 @@ import androidx.recyclerview.widget.GridLayoutManager
 import androidx.recyclerview.widget.ItemTouchHelper
 import com.yinxing.launcher.R
 import com.yinxing.launcher.databinding.ActivityMainBinding
+import com.yinxing.launcher.data.weather.WeatherLocationResolver
+import com.yinxing.launcher.data.weather.WeatherPreferences
+import com.yinxing.launcher.data.weather.WeatherRepository
+import com.yinxing.launcher.feature.settings.SettingsActivity
+import com.yinxing.launcher.feature.settings.SettingsReturnCoordinator
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
 
 class MainActivity : AppCompatActivity() {
+
+    private val returnToDeviceSettings = Runnable {
+        if (!isFinishing && !isDestroyed) {
+            startActivity(SettingsActivity.deviceSettingsIntent(this))
+        }
+    }
     private lateinit var binding: ActivityMainBinding
     private lateinit var adapter: HomeAppAdapter
     private lateinit var itemMoveCallback: ItemMoveCallback
@@ -32,6 +50,12 @@ class MainActivity : AppCompatActivity() {
     private var packageReceiverRegistered = false
     private var tickerJob: Job? = null
     private var fullyDrawnReported = false
+    private val weatherPreferences by lazy { WeatherPreferences.getInstance(this) }
+    private val locationPermissionLauncher = registerForActivityResult(
+        ActivityResultContracts.RequestPermission(),
+    ) { granted ->
+        if (granted) resolveInitialWeatherLocation() else viewModel.maybeRefreshWeather()
+    }
 
     private val packageChangeReceiver = object : BroadcastReceiver() {
         override fun onReceive(context: Context?, intent: Intent?) {
@@ -43,6 +67,7 @@ class MainActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding.root)
+        setupSafeArea()
         viewModel = ViewModelProvider(this, HomeViewModel.Factory(this))[HomeViewModel::class.java]
         navigator = HomeNavigator(this)
         headerController = WeatherHeaderController(binding)
@@ -58,6 +83,64 @@ class MainActivity : AppCompatActivity() {
         registerPackageReceiver()
         playEntryAnimation()
         binding.recyclerHome.post { viewModel.refreshApps() }
+        binding.root.post(::startInitialWeatherLocationFlow)
+    }
+
+    private fun startInitialWeatherLocationFlow() {
+        val permissionGranted = hasCoarseLocationPermission()
+        when (
+            initialWeatherLocationAction(
+                hasCity = weatherPreferences.hasCity(),
+                permissionGranted = permissionGranted,
+                permissionRequested = weatherPreferences.wasInitialLocationPermissionRequested(),
+            )
+        ) {
+            InitialWeatherLocationAction.RequestPermission -> {
+                weatherPreferences.markInitialLocationPermissionRequested()
+                locationPermissionLauncher.launch(Manifest.permission.ACCESS_COARSE_LOCATION)
+            }
+            InitialWeatherLocationAction.ResolveLocation -> resolveInitialWeatherLocation()
+            InitialWeatherLocationAction.None -> Unit
+        }
+    }
+
+    private fun resolveInitialWeatherLocation() {
+        lifecycleScope.launch {
+            val location = WeatherLocationResolver.resolve(this@MainActivity)
+            if (location == null) {
+                viewModel.maybeRefreshWeather()
+                return@launch
+            }
+            weatherPreferences.setCurrentLocation(
+                location.cityName,
+                location.latitude,
+                location.longitude,
+            )
+            WeatherRepository.clearCache()
+            viewModel.refreshWeatherNow()
+        }
+    }
+
+    private fun hasCoarseLocationPermission(): Boolean =
+        ContextCompat.checkSelfPermission(
+            this,
+            Manifest.permission.ACCESS_COARSE_LOCATION,
+        ) == PackageManager.PERMISSION_GRANTED
+
+    private fun setupSafeArea() {
+        val baseTopPadding = binding.root.paddingTop
+        val baseBottomPadding = binding.root.paddingBottom
+        ViewCompat.setOnApplyWindowInsetsListener(binding.root) { view, insets ->
+            val systemInsets = insets.getInsets(
+                WindowInsetsCompat.Type.systemBars() or WindowInsetsCompat.Type.displayCutout()
+            )
+            view.updatePadding(
+                top = baseTopPadding + systemInsets.top,
+                bottom = baseBottomPadding + systemInsets.bottom,
+            )
+            insets
+        }
+        ViewCompat.requestApplyInsets(binding.root)
     }
 
     override fun onNewIntent(intent: Intent) {
@@ -67,8 +150,19 @@ class MainActivity : AppCompatActivity() {
 
     override fun onResume() {
         super.onResume()
+        if (SettingsReturnCoordinator.consumeDeviceSettingsReturn(this)) {
+            binding.root.postDelayed(returnToDeviceSettings, DEFAULT_LAUNCHER_SETTLE_DELAY_MS)
+        }
         startTimeTicker()
-        viewModel.maybeRefreshWeather()
+        if (
+            shouldRefreshWeatherOnResume(
+                hasCity = weatherPreferences.hasCity(),
+                permissionGranted = hasCoarseLocationPermission(),
+                permissionRequested = weatherPreferences.wasInitialLocationPermissionRequested(),
+            )
+        ) {
+            viewModel.maybeRefreshWeather()
+        }
     }
 
     override fun onPause() {
@@ -79,10 +173,15 @@ class MainActivity : AppCompatActivity() {
     }
 
     override fun onDestroy() {
+        binding.root.removeCallbacks(returnToDeviceSettings)
         if (packageReceiverRegistered) {
             unregisterReceiver(packageChangeReceiver)
         }
         super.onDestroy()
+    }
+
+    companion object {
+        private const val DEFAULT_LAUNCHER_SETTLE_DELAY_MS = 300L
     }
 
     private fun setupBackPress() {
@@ -121,6 +220,7 @@ class MainActivity : AppCompatActivity() {
     private fun setupActions() {
         binding.cardWeather.root.setOnClickListener { navigator.openWeatherEntry() }
         binding.btnFamilySettings.setOnClickListener { navigator.showCaregiverEntryDialog() }
+        binding.btnAdjustHome.setOnClickListener { navigator.openAppManager() }
     }
 
     private fun observeViewModel() {
@@ -205,3 +305,26 @@ class MainActivity : AppCompatActivity() {
         }
     }
 }
+
+internal enum class InitialWeatherLocationAction {
+    None,
+    RequestPermission,
+    ResolveLocation,
+}
+
+internal fun initialWeatherLocationAction(
+    hasCity: Boolean,
+    permissionGranted: Boolean,
+    permissionRequested: Boolean,
+): InitialWeatherLocationAction = when {
+    hasCity -> InitialWeatherLocationAction.None
+    permissionGranted -> InitialWeatherLocationAction.ResolveLocation
+    !permissionRequested -> InitialWeatherLocationAction.RequestPermission
+    else -> InitialWeatherLocationAction.None
+}
+
+internal fun shouldRefreshWeatherOnResume(
+    hasCity: Boolean,
+    permissionGranted: Boolean,
+    permissionRequested: Boolean,
+): Boolean = hasCity || permissionRequested && !permissionGranted

@@ -27,6 +27,7 @@
         </FrameLayout>
 
         <TextView
+            android:id="@+id/tv_incoming_subtitle"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginTop="24dp"
@@ -115,6 +116,7 @@
                         app:tint="@android:color/white" />
 
                     <TextView
+                        android:id="@+id/tv_incoming_decline_label"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:layout_marginTop="12dp"
@@ -154,6 +156,7 @@
                         app:tint="@android:color/white" />
 
                     <TextView
+                        android:id="@+id/tv_incoming_accept_label"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:layout_marginTop="12dp"

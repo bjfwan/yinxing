@@ -1,15 +1,23 @@
 <resources xmlns:tools="http://schemas.android.com/tools">
     <style name="Base.Theme.OldLauncher" parent="Theme.Material3.DayNight.NoActionBar">
         <item name="android:windowBackground">@drawable/bg_gradient</item>
+        <item name="android:windowLightStatusBar">true</item>
+        <item name="android:statusBarColor">@android:color/transparent</item>
+        <item name="android:navigationBarColor">@android:color/transparent</item>
+        <item name="colorPrimary">@color/launcher_primary</item>
+        <item name="colorOnPrimary">@color/launcher_on_primary</item>
+        <item name="colorSurface">@color/launcher_surface</item>
+        <item name="colorOnSurface">@color/launcher_text_primary</item>
+        <item name="colorOutline">@color/launcher_outline</item>
     </style>
 
     <style name="Theme.OldLauncher" parent="Base.Theme.OldLauncher" />
 
     <style name="Theme.OldLauncher.AppManage" parent="Base.Theme.OldLauncher" />
 
-    <style name="ShapeAppearance.OldLauncher.Circle" parent="">
+    <style name="ShapeAppearance.OldLauncher.ContactPhoto" parent="">
         <item name="cornerFamily">rounded</item>
-        <item name="cornerSize">50%</item>
+        <item name="cornerSize">18dp</item>
     </style>
 </resources>
 

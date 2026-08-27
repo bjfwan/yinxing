@@ -1,6 +1,5 @@
 package com.yinxing.launcher.feature.incoming
 
-import android.content.Context
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import androidx.test.platform.app.InstrumentationRegistry
 import com.yinxing.launcher.data.home.LauncherPreferences

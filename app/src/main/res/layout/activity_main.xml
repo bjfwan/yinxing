@@ -5,18 +5,52 @@
     android:id="@+id/layout_home_root"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@drawable/bg_gradient"
+    android:background="@drawable/bg_settings_page_gradient"
     android:orientation="vertical"
-    android:paddingStart="16dp"
-    android:paddingTop="12dp"
-    android:paddingEnd="16dp"
-    android:paddingBottom="0dp"
+    android:paddingStart="12dp"
+    android:paddingTop="8dp"
+    android:paddingEnd="12dp"
+    android:paddingBottom="12dp"
     tools:context=".feature.home.MainActivity">
 
-    <com.google.android.material.card.MaterialCardView
+    <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        style="@style/Widget.OldLauncher.PageHeroCard">
+        android:gravity="center_vertical"
+        android:orientation="horizontal">
+
+        <TextView
+            style="@style/TextAppearance.OldLauncher.PageTitle"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="@string/home_title"
+            android:textSize="26sp" />
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btn_family_settings"
+            style="@style/Widget.MaterialComponents.Button.OutlinedButton"
+            android:layout_width="wrap_content"
+            android:layout_height="42dp"
+            android:minWidth="100dp"
+            android:text="@string/home_caregiver_entry"
+            android:textAllCaps="false"
+            android:textColor="@color/launcher_text_primary"
+            android:textSize="14sp"
+            app:cornerRadius="14dp"
+            app:icon="@drawable/ic_settings_category_system"
+            app:iconPadding="6dp"
+            app:iconSize="18dp"
+            app:iconTint="@color/launcher_text_secondary"
+            app:strokeColor="@color/launcher_outline"
+            app:strokeWidth="1dp" />
+    </LinearLayout>
+
+    <com.google.android.material.card.MaterialCardView
+        style="@style/Widget.OldLauncher.PageHeroCard"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="8dp">
 
         <LinearLayout
             android:layout_width="match_parent"
@@ -24,75 +58,46 @@
             android:orientation="vertical"
             android:padding="12dp">
 
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:gravity="center_vertical"
-                android:orientation="horizontal">
-
-                <TextView
-                    style="@style/TextAppearance.OldLauncher.HeroSubtitle"
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:layout_weight="1"
-                    android:text="@string/home_title"
-                    android:alpha="0.8" />
-
-                <com.google.android.material.button.MaterialButton
-                    android:id="@+id/btn_family_settings"
-                    style="@style/Widget.MaterialComponents.Button.TextButton"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="@string/home_caregiver_entry"
-                    android:textColor="@color/launcher_text_muted"
-                    android:textAllCaps="false"
-                    app:icon="@android:drawable/ic_menu_preferences"
-                    app:iconTint="@color/launcher_text_muted" />
-
-            </LinearLayout>
-
             <TextView
                 android:id="@+id/tv_time"
                 style="@style/TextAppearance.OldLauncher.HeroTitle"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_gravity="center_horizontal"
-                android:layout_marginTop="12dp"
                 android:text="@string/home_time_placeholder" />
 
             <LinearLayout
-                android:layout_width="wrap_content"
+                android:id="@+id/layout_calendar_summary"
+                android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_gravity="center_horizontal"
                 android:layout_marginTop="4dp"
-                android:gravity="center_vertical"
-                android:orientation="horizontal">
+                android:gravity="center_horizontal"
+                android:orientation="vertical">
 
                 <TextView
                     android:id="@+id/tv_date"
                     style="@style/TextAppearance.OldLauncher.Date"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
+                    android:gravity="center"
+                    android:maxLines="1"
                     android:text="@string/home_date_placeholder" />
-
-                <View
-                    android:layout_width="4dp"
-                    android:layout_height="4dp"
-                    android:layout_marginHorizontal="8dp"
-                    android:background="@drawable/dot_separator" />
 
                 <TextView
                     android:id="@+id/tv_lunar"
                     style="@style/TextAppearance.OldLauncher.Eyebrow"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:textColor="@color/launcher_text_muted" />
+                    android:layout_marginTop="4dp"
+                    android:gravity="center"
+                    android:maxLines="1"
+                    android:textColor="@color/launcher_text_secondary" />
             </LinearLayout>
 
             <View
                 android:layout_width="match_parent"
                 android:layout_height="1dp"
-                android:layout_marginTop="14dp"
+                android:layout_marginTop="10dp"
                 android:background="@color/launcher_outline" />
 
             <include
@@ -100,8 +105,7 @@
                 layout="@layout/item_home_weather"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="12dp" />
-
+                android:layout_marginTop="8dp" />
         </LinearLayout>
     </com.google.android.material.card.MaterialCardView>
 
@@ -143,7 +147,6 @@
                     android:layout_height="wrap_content"
                     android:layout_weight="1"
                     tools:text="正在整理首页" />
-
             </LinearLayout>
 
             <TextView
@@ -165,7 +168,6 @@
                 android:visibility="gone"
                 tools:text="重新加载"
                 tools:visibility="visible" />
-
         </LinearLayout>
     </com.google.android.material.card.MaterialCardView>
 
@@ -173,10 +175,30 @@
         android:id="@+id/recycler_home"
         android:layout_width="match_parent"
         android:layout_height="0dp"
-        android:layout_marginTop="12dp"
+        android:layout_marginTop="6dp"
         android:layout_weight="1"
         android:clipToPadding="false"
         android:overScrollMode="never"
-        android:paddingBottom="16dp" />
+        android:paddingBottom="8dp" />
+
+    <com.google.android.material.button.MaterialButton
+        android:id="@+id/btn_adjust_home"
+        style="@style/Widget.MaterialComponents.Button.OutlinedButton"
+        android:layout_width="match_parent"
+        android:layout_height="64dp"
+        android:contentDescription="@string/home_adjust_description"
+        android:text="@string/home_adjust_entry"
+        android:textAllCaps="false"
+        android:textColor="@color/launcher_text_primary"
+        android:textSize="20sp"
+        app:backgroundTint="@color/launcher_surface"
+        app:cornerRadius="22dp"
+        app:icon="@drawable/ic_settings_device_scale"
+        app:iconGravity="textStart"
+        app:iconPadding="12dp"
+        app:iconSize="24dp"
+        app:iconTint="@color/launcher_phone_action"
+        app:strokeColor="@color/launcher_outline"
+        app:strokeWidth="1dp" />
 
 </LinearLayout>

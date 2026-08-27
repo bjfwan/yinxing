@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <dimen name="weather_city_card_height">150dp</dimen>
+    <dimen name="weather_city_card_gap">16dp</dimen>
+</resources>

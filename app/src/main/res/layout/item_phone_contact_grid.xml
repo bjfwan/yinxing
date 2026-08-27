@@ -1,0 +1,91 @@
+<?xml version="1.0" encoding="utf-8"?>
+<com.google.android.material.card.MaterialCardView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:id="@+id/card_phone_contact"
+    android:layout_width="match_parent"
+    android:layout_height="268dp"
+    android:layout_margin="6dp"
+    android:clickable="false"
+    android:focusable="false"
+    app:cardBackgroundColor="@color/launcher_surface"
+    app:cardCornerRadius="18dp"
+    app:cardElevation="1dp"
+    app:strokeColor="@color/launcher_outline"
+    app:strokeWidth="1dp">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:orientation="vertical">
+
+        <com.google.android.material.imageview.ShapeableImageView
+            android:id="@+id/iv_avatar"
+            android:layout_width="match_parent"
+            android:layout_height="0dp"
+            android:layout_margin="8dp"
+            android:layout_weight="1"
+            android:background="@color/launcher_surface_soft"
+            android:contentDescription="@string/contact_photo_preview"
+            android:scaleType="centerCrop"
+            app:shapeAppearanceOverlay="@style/ShapeAppearance.OldLauncher.ContactPhoto" />
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="72dp"
+            android:gravity="center_vertical"
+            android:orientation="horizontal"
+            android:paddingStart="14dp"
+            android:paddingEnd="12dp">
+
+            <TextView
+                android:id="@+id/tv_contact_name"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:ellipsize="end"
+                android:fontFamily="sans-serif-medium"
+                android:maxLines="1"
+                android:textColor="@color/launcher_text_primary"
+                android:textSize="25sp"
+                android:textStyle="bold" />
+
+            <ImageView
+                android:id="@+id/btn_call"
+                android:layout_width="52dp"
+                android:layout_height="52dp"
+                android:background="@drawable/bg_phone_call_circle"
+                android:clickable="true"
+                android:contentDescription="@string/action_call"
+                android:focusable="true"
+                android:foreground="?android:attr/selectableItemBackgroundBorderless"
+                android:padding="12dp"
+                android:src="@drawable/ic_settings_category_calls"
+                app:tint="@android:color/white" />
+
+            <TextView
+                android:id="@+id/tv_manage_hint"
+                android:layout_width="58dp"
+                android:layout_height="42dp"
+                android:background="@drawable/bg_settings_mode_capsule"
+                android:gravity="center"
+                android:text="@string/action_edit"
+                android:textColor="@color/launcher_primary_dark"
+                android:textSize="15sp"
+                android:textStyle="bold"
+                android:visibility="gone" />
+        </LinearLayout>
+
+        <TextView
+            android:id="@+id/tv_contact_phone"
+            android:layout_width="1dp"
+            android:layout_height="1dp"
+            android:visibility="gone" />
+
+        <TextView
+            android:id="@+id/tv_auto_answer_badge"
+            android:layout_width="1dp"
+            android:layout_height="1dp"
+            android:visibility="gone" />
+
+    </LinearLayout>
+</com.google.android.material.card.MaterialCardView>

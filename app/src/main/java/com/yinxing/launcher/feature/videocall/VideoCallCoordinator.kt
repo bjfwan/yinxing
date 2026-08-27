@@ -14,6 +14,7 @@ import com.yinxing.launcher.common.service.TTSService
 import com.yinxing.launcher.common.util.DebugLog
 import com.yinxing.launcher.common.util.NetworkUtil
 import com.yinxing.launcher.common.util.PermissionUtil
+import com.yinxing.launcher.common.util.AccessibilityServiceMatcher
 import com.yinxing.launcher.data.contact.Contact
 import com.yinxing.launcher.data.contact.ContactManager
 import kotlinx.coroutines.Dispatchers
@@ -47,15 +48,12 @@ class VideoCallCoordinator(
             return
         }
 
-        val serviceName = SelectToSpeakService.SHELL_SERVICE_COMPONENT
+        val serviceName = AccessibilityServiceMatcher.componentName(
+            activity.packageName,
+            SelectToSpeakService::class.java.name
+        )
         if (!PermissionUtil.isAccessibilityServiceEnabled(activity, serviceName)) {
             speakAndToast(R.string.accessibility_required, R.string.accessibility_required)
-            onNeedAccessibilityPermission()
-            return
-        }
-
-        if (SelectToSpeakService.getInstance() == null) {
-            speakAndToast(R.string.accessibility_service_not_running)
             onNeedAccessibilityPermission()
             return
         }

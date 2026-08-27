@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="phone_contact_title">打电话</string>
+    <string name="phone_contact_manage_title">管理联系人</string>
+
+    <string name="phone_contact_call_summary_short">认准头像，点“拨打”按钮</string>
+    <string name="phone_contact_manage_summary">添加、编辑或删除联系人</string>
+    <string name="phone_contact_layout_title">联系人显示</string>
+    <string name="phone_contact_layout_large">大头像</string>
+    <string name="phone_contact_layout_grid">照片墙</string>
+    <string name="phone_contact_layout_large_summary">当前：大头像</string>
+    <string name="phone_contact_layout_grid_summary">当前：照片墙</string>
+    <string name="phone_contact_layout_dialog_title">选择联系人显示方式</string>
+    <string name="phone_contact_layout_dialog_message">选中后立即更换拨号页布局</string>
+    <string name="phone_contact_layout_large_description">每屏约 2 人</string>
+    <string name="phone_contact_layout_grid_description">同时看 4 人</string>
+    <string name="action_change">更换</string>
+    <string name="status_current">当前</string>
+    <string name="contact_preview_name">妈妈</string>
+    <string name="contact_dialog_avatar_tip_short">照片越清楚，老人越容易辨认</string>
+    <string name="contact_auto_answer_tip_short">仅对这个联系人生效</string>
+    <string name="action_manage_contacts">管理联系人</string>
+
+    <string name="state_phone_manage_empty_message">先添加一个联系人，设置好手机号后就能直接拨打</string>
+    <string name="contact_phone_required_simple">请填写手机号</string>
+    <string name="contact_auto_answer_label">来电自动接听</string>
+
+    <string name="action_import_from_contacts">从通讯录导入</string>
+    <string name="action_import">导入</string>
+    <string name="action_select_all">全选</string>
+    <string name="action_deselect_all">取消全选</string>
+    <string name="contacts_empty">通讯录中没有找到联系人</string>
+    <string name="contacts_select_required">请至少选择一个联系人</string>
+    <string name="contacts_imported">已导入 %1$d 个联系人</string>
+    <string name="contacts_all_imported">通讯录联系人都已导入</string>
+    <string name="contacts_imported_badge">已导入</string>
+    <string name="contacts_loading">正在读取系统通讯录…</string>
+    <string name="contacts_import_subtitle">从系统通讯录中勾选联系人，导入后老人就能一键拨号</string>
+    <string name="contacts_import_hint">已经导入过的联系人会自动跳过</string>
+
+    <!-- 引导设为默认桌面 -->
+</resources>

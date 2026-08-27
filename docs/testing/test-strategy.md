@@ -1,98 +1,57 @@
 # 测试策略
 
-更新时间：2026-05-07
+更新时间：2026-08-27
 
-## 1. 当前测试现状
+## 1. 当前测试分层
 
-- 单元测试覆盖 `HomeAppOrderPolicy`、`ContactStorage`、`LauncherPreferences`、`ContactManager`、`PermissionRequestHandler`
-- Robolectric UI 冒烟覆盖主页、应用管理、设置、电话联系人、视频联系人页
-- 设备级仪器测试脚手架覆盖主页、设置页、视频联系人页基础场景
-- 命令行验证基线固定为 `:app:testDebugUnitTest`、`:app:assembleDebug`、`:app:assembleDebugAndroidTest`、`:app:lintDebug`
+- 单元测试覆盖首页排序与偏好、联系人存储、天气数据源与缓存、权限策略、厂商适配和来电决策。
+- Robolectric UI 冒烟覆盖主页、应用管理、设置、电话联系人、系统拨号、视频联系人、天气详情和城市管理。
+- `app/src/androidTest` 提供设备级仪器测试。
+- `benchmark` 提供 Baseline Profile 与 Macrobenchmark。
 
-## 2. 当前已验证结果
+## 2. 当前验证结果
 
-- 2026-05-07：`testDebugUnitTest` **290 tests, 0 failed**，BUILD SUCCESSFUL
-- 2026-05-07：`lintDebug` 通过，BUILD SUCCESSFUL
-- 2026-05-07：`assembleRelease` 通过，Release APK 约 2.15 MB
-- 2026-04-28：`testDebugUnitTest` **171 tests, 0 failed**，BUILD SUCCESSFUL
-- 2026-04-25：`assembleDebug` 通过
-- 2026-04-25：`assembleDebugAndroidTest` 通过
-- 2026-04-25：`lintDebug` 通过，`No issues found.`
-- 2026-04-25：Macrobenchmark 在模拟器（Pixel 8 AVD / Android 14）上完成 5 次迭代，冷启动 TTID 中位数约 580ms，有 Baseline Profile 时 P90 帧时间 65ms
+- 2026-08-27：`testDebugUnitTest` **421 tests, 0 failed**。
+- 2026-08-27：`lintDebug` **0 errors, 85 warnings**，`UnusedResources = 0`。
+- 2026-08-27：`assembleDebug` 通过。
+- 2026-08-27：`assembleRelease` 与 `lintVitalRelease` 通过，Release APK 约 **2.61 MiB**。
+- 设置页、天气详情和城市管理已有 vivo V2285A / Android 15 真机设计验收记录，详见根目录 `design-qa.md`。
+- 本轮尚未完整重跑 `connectedDebugAndroidTest`，不得将自动化基线写成全量设备验收。
 
-## 3. 当前最低验证要求
+## 3. 最低自动化门禁
 
-- `:app:assembleDebug` 通过
-- `:app:testDebugUnitTest` 通过
-- `:app:lintDebug` 通过
-- 触及 `androidTest` 时，`:app:assembleDebugAndroidTest` 通过
-- 主页可以正常打开并展示内置入口
-- 应用管理页可以加载并保存勾选状态
-- 电话联系人页可以处理无权限、空列表、联系人增删改和拨号
-- 视频联系人页可以在呼叫模式与管理模式间切换，并完成联系人新增、删除和微信视频发起前置检查
+- `:app:assembleDebug`
+- `:app:testDebugUnitTest`
+- `:app:lintDebug`
+- 触及设备测试时执行 `:app:assembleDebugAndroidTest`
+- 发布候选包执行 `:app:assembleRelease` 和 `:app:lintVitalRelease`
 
-## 4. 当前人工测试清单
+## 4. 发布前真机清单
 
-- 默认桌面切换后，主页入口正常
-- 主页返回键提示正常
-- 设置入口正常
-- 天气入口在有对应厂商应用时可跳转，兜底浏览器可打开
-- 电话联系人权限申请正常
-- 联系人新增、编辑、删除后页面刷新正常
-- 视频联系人新增、删除后列表刷新正常
-- 微信视频发起前的网络、无障碍、悬浮窗前置检查正常
+- 默认桌面切换、首页加载、返回键与“调整首页”入口正常。
+- 电话、微信视频、天气和家属选择的应用入口正常。
+- 应用管理选择、移除、排序和重启恢复正常。
+- 电话联系人无权限、空列表、增删改、头像、布局切换和拨号正常。
+- 视频联系人管理、搜索、置顶和微信视频前置检查正常。
+- 天气定位授权、拒绝、失败回退、城市新增/删除和缓存恢复正常。
+- 设置卡片/列表模式、暗色模式、低性能模式、权限入口和版本检查正常。
+- 使用真实 SIM 验证系统电话来电、倒计时、接听、挂断、扬声器和联系人匹配。
 
-## 5. 当前自动化覆盖
+## 5. 设备级自动化范围
 
-- 单元测试
-  - `HomeAppOrderPolicyTest`
-  - `ContactStorageTest`
-  - `LauncherPreferencesTest`
-  - `ContactManagerTest`
-  - `PermissionRequestHandlerTest`
-  - `AccessibilityServiceMatcher` 相关测试
-- Robolectric UI 冒烟
-  - `MainActivitySmokeTest`
-  - `AppManageActivitySmokeTest`
-  - `SettingsActivitySmokeTest`
-  - `PhoneActivitySmokeTest`
-  - `VideoCallActivitySmokeTest`
-- 设备级仪器测试
-  - `MainActivityInstrumentedTest`
-  - `SettingsActivityInstrumentedTest`
-  - `VideoCallActivityInstrumentedTest`
-- Benchmark / Baseline Profile 分层探针
-  - `UiAutomationProbe#launcherUiSmoke`
-  - `MacrobenchmarkProbe#coldStartupProbe`
-  - `BaselineProfileFrameworkProbe#collectProbe`
-  - `BaselineProfileGenerator#generate`
+- 主页内置入口、时间日期和主要导航。
+- 设置页关键状态和系统设置跳转。
+- 电话与视频联系人空状态、交互和跨页面跳转。
+- 天气详情、城市管理、返回和定位失败状态。
 
-## 6. 设备级仪器测试范围
+## 6. 后续补齐
 
-- 主页启动后能加载出内置入口并展示时间日期
-- 主页点击"电话"入口后可进入 `PhoneContactActivity`
-- 主页点击"微信视频"入口后可进入 `VideoCallActivity`
-- 主页点击天气卡片后可打开天气应用或浏览器天气页
-- 设置页切换低性能模式后，摘要文案与偏好值同步更新
-- 视频联系人页在空数据时展示空状态
-- 视频联系人页在管理模式下可搜索到空结果并清空搜索恢复列表
+- 在目标设备完整运行 `connectedDebugAndroidTest`。
+- 补应用管理和权限拒绝的设备级断言。
+- 为系统电话真实通话流程保留人工验收记录，自动化测试不替代运营商与 ROM 兼容性验证。
+- 优先处理 Lint 中的无障碍描述、文本资源和高价值性能提示；KTX 与依赖版本建议不阻塞 v2.0.0。
 
-## 7. 后续自动化测试建议
+## 7. 历史性能基线
 
-- 补应用管理页与主页低性能模式的设备级回归断言
-- 补设置页系统设置跳转、电话联系人权限拒绝、联系人编辑与跨页面跳转场景
-- 在真机上补跑 `connectedDebugAndroidTest` 以验证设备级测试通过率
-
-## 8. 发布门禁
-
-- 第一阶段（当前）：固定执行 `:app:assembleDebug` + `:app:testDebugUnitTest` + `:app:lintDebug`
-- 第二阶段：触及设备级测试代码时，额外执行 `:app:assembleDebugAndroidTest`
-- 第三阶段：接入可用设备后，把 `:app:connectedDebugAndroidTest` 纳入提测门禁
-- 第四阶段：继续补齐权限拒绝、跨页面跳转和微信自动化关键路径回归
-
-## 9. Benchmark 分层诊断建议
-
-- 当基线采集"看起来卡住"时，先跑 `UiAutomationProbe#launcherUiSmoke`，确认设备解锁、默认桌面与 UI 选择器都正常
-- 第二步跑 `MacrobenchmarkProbe#coldStartupProbe`，确认问题是否已发生在 `MacrobenchmarkRule.measureRepeated(...)` 之前/之中
-- 第三步跑 `BaselineProfileFrameworkProbe#collectProbe`，专门观察是否能进入 `BaselineProfileRule.collect(...)` 的 lambda
-- 最后再跑 `BaselineProfileGenerator#generate`，避免每次都直接进入高成本、低可见性的全量基线采集
+- 2026-04-25：Pixel 8 AVD / Android 14 完成 5 次冷启动 Macrobenchmark；TTID 中位数约 580 ms。
+- 已嵌入 Baseline Profile；历史对比中有 Profile 时 P90 帧时间降低约 46%。该结果不是本轮重新测量值。

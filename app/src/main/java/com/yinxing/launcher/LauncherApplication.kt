@@ -5,6 +5,9 @@ import android.content.ComponentCallbacks2
 import android.os.Handler
 import android.os.Looper
 import androidx.appcompat.app.AppCompatDelegate
+import com.yinxing.launcher.common.lobster.LobsterClient
+import com.yinxing.launcher.common.lobster.LobsterCrashReporter
+import com.yinxing.launcher.common.lobster.LobsterUsageEvents
 import com.yinxing.launcher.common.media.MediaThumbnailLoader
 import com.yinxing.launcher.common.perf.LauncherTraceNames
 import com.yinxing.launcher.common.perf.traceAndReport
@@ -23,6 +26,8 @@ class LauncherApplication : Application() {
     override fun onCreate() {
         super.onCreate()
         traceBegin(LauncherTraceNames.APP_INIT)
+        LobsterCrashReporter.install(this)
+        LobsterClient.flushPendingReports(this)
         applyDarkModePreference()
         Handler(Looper.getMainLooper()).postDelayed(
             {
@@ -36,6 +41,7 @@ class LauncherApplication : Application() {
             3_000L
         )
         traceAndReport(this, LauncherTraceNames.APP_INIT)
+        LobsterClient.reportUsage(this, LobsterUsageEvents.APP_STARTED)
     }
 
     private fun applyDarkModePreference() {

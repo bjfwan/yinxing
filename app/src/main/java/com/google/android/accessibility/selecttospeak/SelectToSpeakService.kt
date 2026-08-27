@@ -3,7 +3,6 @@ package com.google.android.accessibility.selecttospeak
 import android.accessibilityservice.AccessibilityService
 import android.content.Intent
 import android.os.Build
-import android.os.Bundle
 import android.view.accessibility.AccessibilityEvent
 import android.view.accessibility.AccessibilityNodeInfo
 import com.yinxing.launcher.automation.wechat.WeChatClassNames
@@ -21,7 +20,6 @@ import com.yinxing.launcher.common.perf.LauncherTraceNames
 import com.yinxing.launcher.common.util.CallAudioStrategy
 import com.yinxing.launcher.common.util.DebugLog
 import com.yinxing.launcher.common.ui.FloatingStatusView
-import com.yinxing.launcher.data.home.LauncherPreferences
 import com.yinxing.launcher.feature.home.MainActivity
 
 
@@ -48,13 +46,6 @@ class SelectToSpeakService : AccessibilityService(), WeChatRequestHost {
 
         const val ACTION_START_VIDEO_CALL = "com.yinxing.launcher.START_VIDEO_CALL"
         const val EXTRA_CONTACT_NAME = "contact_name"
-
-        /**
-         * 壳服务的完整组件名（package/class 形式），微信会检测该服务是否启用
-         * 以决定是否开放节点树。这是该服务存在的唯一原因，因此常量归属于此。
-         */
-        const val SHELL_SERVICE_COMPONENT =
-            "com.yinxing.launcher/com.google.android.accessibility.selecttospeak.SelectToSpeakService"
 
         private const val TAG = "WeChatAutoService"
 
@@ -108,9 +99,6 @@ class SelectToSpeakService : AccessibilityService(), WeChatRequestHost {
     private lateinit var timeoutManager: TimeoutManager
     private var floatingView: FloatingStatusView? = null
     private var currentSession: VideoCallSession? = null
-    private lateinit var kioskGuard: KioskLauncherGuard
-
-
     private var lastMissingRootLogAt = 0L
     private val rootProvider = WeChatRootProvider(this)
     private val elementLocator = WeChatElementLocator(this)
@@ -129,13 +117,6 @@ class SelectToSpeakService : AccessibilityService(), WeChatRequestHost {
         super.onServiceConnected()
         timeoutManager = TimeoutManager.getInstance(this)
         floatingView = FloatingStatusView(this)
-        kioskGuard = KioskLauncherGuard(
-            service = this,
-            scope = serviceScope,
-            launcherActivityClass = MainActivity::class.java,
-            activeSession = ::hasActiveSession
-        )
-        kioskGuard.init()
         consumePendingRequest()
     }
 
@@ -145,9 +126,6 @@ class SelectToSpeakService : AccessibilityService(), WeChatRequestHost {
 
         if (event?.eventType == AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED && pkg != null) {
             DebugLog.d(TAG) { "[EVENT] WindowStateChanged: pkg=$pkg, class=$className" }
-            if (kioskGuard.onWindowStateChanged(pkg, className)) {
-                return
-            }
         }
 
         if (pkg != WeChatPackage.NAME) {
@@ -197,7 +175,6 @@ class SelectToSpeakService : AccessibilityService(), WeChatRequestHost {
 
     override fun onDestroy() {
         instance = null
-        if (::kioskGuard.isInitialized) kioskGuard.shutdown()
         cancelSession(true, "无障碍服务已关闭，请重新开启后再试")
         floatingView?.hide()
         floatingView = null

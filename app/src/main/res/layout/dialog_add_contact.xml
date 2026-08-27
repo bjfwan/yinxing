@@ -4,7 +4,7 @@
     style="@style/Widget.OldLauncher.DialogSurfaceCard"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:layout_margin="24dp">
+    android:layout_margin="18dp">
 
     <ScrollView
         android:layout_width="match_parent"
@@ -16,7 +16,7 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="vertical"
-            android:padding="28dp">
+            android:padding="20dp">
 
             <TextView
                 android:id="@+id/tv_dialog_title"
@@ -24,134 +24,135 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:gravity="center"
-                android:text="@string/contact_dialog_add_title" />
+                android:maxLines="1"
+                android:text="@string/contact_dialog_add_title"
+                android:textSize="23sp" />
+
+            <com.google.android.material.imageview.ShapeableImageView
+                android:id="@+id/iv_photo_preview"
+                android:layout_width="124dp"
+                android:layout_height="124dp"
+                android:layout_gravity="center_horizontal"
+                android:layout_marginTop="14dp"
+                android:background="@color/launcher_surface_soft"
+                android:contentDescription="@string/contact_photo_preview"
+                android:padding="26dp"
+                android:scaleType="centerCrop"
+                android:src="@drawable/ic_contact_avatar_placeholder"
+                app:shapeAppearanceOverlay="@style/ShapeAppearance.OldLauncher.ContactPhoto" />
 
             <TextView
-                style="@style/TextAppearance.OldLauncher.DialogSectionTitle"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="24dp"
-                android:text="@string/label_photo" />
-
-            <TextView
-                style="@style/TextAppearance.OldLauncher.Meta"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="8dp"
-                android:text="@string/contact_dialog_avatar_tip" />
-
-            <ImageView
-                android:id="@+id/iv_photo_preview"
-                android:layout_width="132dp"
-                android:layout_height="132dp"
-                android:layout_gravity="center_horizontal"
-                android:layout_marginTop="16dp"
-                android:background="@drawable/icon_background"
-                android:contentDescription="@string/contact_photo_preview"
-                android:padding="28dp"
-                android:scaleType="centerCrop"
-                android:src="@android:drawable/ic_menu_camera" />
+                android:layout_marginTop="7dp"
+                android:gravity="center"
+                android:maxLines="1"
+                android:text="@string/contact_dialog_avatar_tip_short"
+                android:textColor="@color/launcher_text_secondary"
+                android:textSize="14sp" />
 
             <com.google.android.material.card.MaterialCardView
                 android:id="@+id/btn_select_photo"
-                style="@style/Widget.OldLauncher.DialogButtonPrimary"
+                style="@style/Widget.OldLauncher.DialogButtonSecondary"
                 android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="16dp">
+                android:layout_height="50dp"
+                android:layout_marginTop="12dp">
 
                 <TextView
-                    style="@style/TextAppearance.OldLauncher.ButtonPrimary"
                     android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
+                    android:layout_height="match_parent"
                     android:gravity="center"
-                    android:minHeight="54dp"
-                    android:paddingStart="16dp"
-                    android:paddingTop="14dp"
-                    android:paddingEnd="16dp"
-                    android:paddingBottom="14dp"
-                    android:text="@string/action_select_photo" />
+                    android:maxLines="1"
+                    android:text="@string/action_edit_avatar"
+                    android:textColor="@color/launcher_primary_dark"
+                    android:textSize="15sp"
+                    android:textStyle="bold" />
             </com.google.android.material.card.MaterialCardView>
-
-            <TextView
-                style="@style/TextAppearance.OldLauncher.DialogSectionTitle"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="24dp"
-                android:layout_marginBottom="10dp"
-                android:text="@string/label_contact_name" />
-
-            <EditText
-                android:id="@+id/et_contact_name"
-                style="@style/TextAppearance.OldLauncher.Input"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:autofillHints="personName"
-                android:background="@drawable/edit_text_background_focused"
-                android:hint="@string/hint_wechat_contact_name"
-                android:imeOptions="actionNext"
-                android:inputType="textPersonName"
-                android:maxLines="1"
-                android:padding="18dp" />
-
-            <TextView
-                style="@style/TextAppearance.OldLauncher.Meta"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="10dp"
-                android:text="@string/contact_display_name_tip" />
-
-            <TextView
-                style="@style/TextAppearance.OldLauncher.DialogSectionTitle"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="24dp"
-                android:layout_marginBottom="10dp"
-                android:text="@string/label_wechat_search_name" />
-
-            <EditText
-                android:id="@+id/et_wechat_name"
-                style="@style/TextAppearance.OldLauncher.Input"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:autofillHints="nickname"
-                android:background="@drawable/edit_text_background_focused"
-                android:hint="@string/hint_wechat_search_name"
-                android:imeOptions="actionDone"
-                android:inputType="text"
-                android:maxLines="1"
-                android:padding="18dp" />
-
-            <TextView
-                style="@style/TextAppearance.OldLauncher.Meta"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="10dp"
-                android:text="@string/contact_dialog_wechat_tip" />
 
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="28dp"
+                android:layout_marginTop="14dp"
+                android:background="@drawable/bg_settings_mode_capsule"
+                android:orientation="vertical"
+                android:padding="14dp">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="@string/label_contact_name"
+                    android:textColor="@color/launcher_text_primary"
+                    android:textSize="15sp"
+                    android:textStyle="bold" />
+
+                <EditText
+                    android:id="@+id/et_contact_name"
+                    style="@style/TextAppearance.OldLauncher.Input"
+                    android:layout_width="match_parent"
+                    android:layout_height="54dp"
+                    android:layout_marginTop="7dp"
+                    android:autofillHints="personName"
+                    android:background="@drawable/edit_text_background_focused"
+                    android:hint="@string/hint_wechat_contact_name"
+                    android:imeOptions="actionNext"
+                    android:inputType="textPersonName"
+                    android:maxLines="1"
+                    android:paddingStart="16dp"
+                    android:paddingEnd="16dp" />
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="11dp"
+                    android:text="@string/label_wechat_search_name"
+                    android:textColor="@color/launcher_text_primary"
+                    android:textSize="15sp"
+                    android:textStyle="bold" />
+
+                <EditText
+                    android:id="@+id/et_wechat_name"
+                    style="@style/TextAppearance.OldLauncher.Input"
+                    android:layout_width="match_parent"
+                    android:layout_height="54dp"
+                    android:layout_marginTop="7dp"
+                    android:autofillHints="nickname"
+                    android:background="@drawable/edit_text_background_focused"
+                    android:hint="@string/hint_wechat_search_name"
+                    android:imeOptions="actionDone"
+                    android:inputType="text"
+                    android:maxLines="1"
+                    android:paddingStart="16dp"
+                    android:paddingEnd="16dp" />
+
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="8dp"
+                    android:text="@string/contact_dialog_wechat_tip"
+                    android:textColor="@color/launcher_text_secondary"
+                    android:textSize="12sp" />
+            </LinearLayout>
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="56dp"
+                android:layout_marginTop="14dp"
                 android:orientation="horizontal">
 
                 <com.google.android.material.card.MaterialCardView
                     android:id="@+id/btn_cancel"
                     style="@style/Widget.OldLauncher.DialogButtonSecondary"
                     android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:layout_marginEnd="8dp"
+                    android:layout_height="match_parent"
+                    android:layout_marginEnd="6dp"
                     android:layout_weight="1">
 
                     <TextView
+                        android:id="@+id/btn_cancel_label"
                         style="@style/TextAppearance.OldLauncher.ButtonSecondary"
                         android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
+                        android:layout_height="match_parent"
                         android:gravity="center"
-                        android:minHeight="54dp"
-                        android:paddingStart="16dp"
-                        android:paddingTop="14dp"
-                        android:paddingEnd="16dp"
-                        android:paddingBottom="14dp"
                         android:text="@string/action_cancel" />
                 </com.google.android.material.card.MaterialCardView>
 
@@ -159,21 +160,16 @@
                     android:id="@+id/btn_confirm"
                     style="@style/Widget.OldLauncher.DialogButtonPrimary"
                     android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:layout_marginStart="8dp"
+                    android:layout_height="match_parent"
+                    android:layout_marginStart="6dp"
                     android:layout_weight="1">
 
                     <TextView
                         style="@style/TextAppearance.OldLauncher.ButtonPrimary"
                         android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
+                        android:layout_height="match_parent"
                         android:gravity="center"
-                        android:minHeight="54dp"
-                        android:paddingStart="16dp"
-                        android:paddingTop="14dp"
-                        android:paddingEnd="16dp"
-                        android:paddingBottom="14dp"
-                        android:text="@string/action_confirm" />
+                        android:text="@string/action_save" />
                 </com.google.android.material.card.MaterialCardView>
             </LinearLayout>
         </LinearLayout>

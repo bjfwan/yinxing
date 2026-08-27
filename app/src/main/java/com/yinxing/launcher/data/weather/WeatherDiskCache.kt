@@ -8,14 +8,19 @@ class WeatherDiskCache(context: Context) {
     private val prefs = context.applicationContext.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
 
     fun read(cityName: String? = null): WeatherState.Success? {
-        val json = prefs.getString(KEY_PAYLOAD, null) ?: return null
+        val cityPayload = cityName?.let { prefs.getString(cityKey(it), null) }
+        val json = cityPayload ?: prefs.getString(KEY_PAYLOAD, null) ?: return null
         return runCatching { parse(json) }.getOrNull()
             ?.takeIf { cityName == null || it.cityName == cityName }
             ?.copy(fromCache = true)
     }
 
     fun write(state: WeatherState.Success) {
-        prefs.edit().putString(KEY_PAYLOAD, serialize(state)).apply()
+        val payload = serialize(state)
+        prefs.edit()
+            .putString(KEY_PAYLOAD, payload)
+            .putString(cityKey(state.cityName), payload)
+            .apply()
     }
 
     fun clear() {
@@ -35,6 +40,17 @@ class WeatherDiskCache(context: Context) {
                     .put("weatherCode", day.weatherCode)
             )
         }
+        val hourly = JSONArray()
+        state.hourly.forEach { hour ->
+            hourly.put(
+                JSONObject()
+                    .put("time", hour.time)
+                    .put("weather", hour.weather)
+                    .put("temperature", hour.temperature)
+                    .put("precipitationProbability", hour.precipitationProbability)
+                    .put("weatherCode", hour.weatherCode)
+            )
+        }
         return JSONObject()
             .put("cityName", state.cityName)
             .put("adcode", state.adcode)
@@ -51,6 +67,7 @@ class WeatherDiskCache(context: Context) {
                     .put("updateTime", state.now.updateTime)
             )
             .put("forecast", forecast)
+            .put("hourly", hourly)
             .toString()
     }
 
@@ -72,6 +89,20 @@ class WeatherDiskCache(context: Context) {
                 )
             )
         }
+        val hourlyJson = root.optJSONArray("hourly") ?: JSONArray()
+        val hourly = mutableListOf<WeatherHour>()
+        for (i in 0 until hourlyJson.length()) {
+            val hour = hourlyJson.getJSONObject(i)
+            hourly.add(
+                WeatherHour(
+                    time = hour.optString("time", ""),
+                    weather = hour.optString("weather", ""),
+                    temperature = hour.optInt("temperature", 0),
+                    precipitationProbability = hour.optInt("precipitationProbability", 0),
+                    weatherCode = hour.optString("weatherCode", "0")
+                )
+            )
+        }
         return WeatherState.Success(
             cityName = root.optString("cityName", ""),
             adcode = root.optString("adcode", ""),
@@ -85,6 +116,7 @@ class WeatherDiskCache(context: Context) {
                 updateTime = nowJson.optString("updateTime", "")
             ),
             forecast = forecast,
+            hourly = hourly,
             lastFetchTime = root.optLong("lastFetchTime", 0L),
             fromCache = true
         )
@@ -93,5 +125,8 @@ class WeatherDiskCache(context: Context) {
     companion object {
         private const val PREFS_NAME = "weather_disk_cache"
         private const val KEY_PAYLOAD = "payload"
+        private const val KEY_CITY_PREFIX = "payload_city_"
+
+        private fun cityKey(cityName: String): String = KEY_CITY_PREFIX + cityName.trim()
     }
 }

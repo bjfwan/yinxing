@@ -9,8 +9,8 @@
 [![License: MIT](https://img.shields.io/badge/license-MIT-B8882A?labelColor=1C1914&style=flat-square)](https://github.com/bjfwan/yinxing/blob/main/LICENSE)
 [![Release](https://img.shields.io/badge/-下载%20APK-B8882A?labelColor=1C1914&style=flat-square)](https://yx.likeyou.qzz.io)
 [![Platform](https://img.shields.io/badge/Android%207%2B-0369A1?labelColor=1C1914&style=flat-square&logo=android&logoColor=white)](#系统要求)
-[![Size](https://img.shields.io/badge/2.16%20MB-555?labelColor=1C1914&style=flat-square)](#)
-[![Version](https://img.shields.io/badge/v1.9.0-B8882A?labelColor=1C1914&style=flat-square)](https://github.com/bjfwan/yinxing/releases)
+[![APK](https://img.shields.io/badge/Release%20APK-2.61%20MiB-555?labelColor=1C1914&style=flat-square)](#)
+[![Source Version](https://img.shields.io/badge/source-v2.0.0-B8882A?labelColor=1C1914&style=flat-square)](https://github.com/bjfwan/yinxing/releases)
 [![Stars](https://img.shields.io/github/stars/bjfwan/yinxing?color=B8882A&labelColor=1C1914&style=flat-square)](https://github.com/bjfwan/yinxing/stargazers)
 [![Kotlin](https://img.shields.io/badge/Kotlin-7F52FF?logo=kotlin&logoColor=white&style=flat-square)](https://kotlinlang.org/)
 [![Made with Love](https://img.shields.io/badge/Made%20with-%E2%9D%A4%EF%B8%8F-red?style=flat-square)](#)
@@ -28,6 +28,12 @@
 现在的手机功能越来越多，字体小、图标多、找东西要翻好几层菜单。年轻人觉得方便的功能，对老人来说全是门槛。市面上不是没有类似的应用，但要么功能太多太杂，要么很久没人维护。
 
 我就想自己做一个给爷爷用的桌面——简单、干净、够用就行，在做这个项目过程中，我借鉴了许多的优秀开源项目，同时加入一些自己的思考，这个项目是我vibecoding的项目，所以有些不尽人意的地方欢迎各位提出来。
+
+### 我想做的事
+
+> **天行健，君子以自强不息。**
+
+我相信，技术进步要向上突破，也要让普通人用得上。我是普通的计算机学生，我愿把所学变成责任，帮助更多人不被 AI 时代落下。借助新一代 AI ，我更新了银杏，初衷不变：**让老人更简单地使用手机，让科技更有温度。**
 
 ---
 
@@ -49,7 +55,7 @@
 | 项目 | 要求 |
 |:----:|------|
 | 系统版本 | Android 7.0 及以上 |
-| 安装包大小 | 约 2.16 MB |
+| 安装包大小 | v2.0.0 Release 约 2.61 MiB |
 | 权限需求 | 电话、联系人、相机（可选） |
 
 ---
@@ -60,9 +66,9 @@
 
 ### [📥 点击下载 APK](https://yx.likeyou.qzz.io)
 
-**最新版本：v1.9.0**
+**最新版本：v2.0.0**
 
-</div
+</div>
 
 > ⚠️ 安装前请先在 **设置 → 安全** 中开启「允许安装未知来源应用」
 
@@ -85,14 +91,21 @@
 
 - 桌面主页与默认 Launcher 入口切换
 - 应用管理与桌面快捷方式自定义
-- **电话簿管理** — 查看、添加、编辑、删除、一键拨号
-- **微信视频通话** — 常用联系人管理与快速发起
-- 低性能模式（省电省内存）
-- 基础系统设置快捷入口
+- **电话簿管理** — 查看、添加、编辑、删除、头像、列表/宫格布局与一键拨号
+- **微信视频通话** — 常用联系人管理、搜索、置顶与自动化主动拨号
+- **应用内天气** — 天气详情、城市管理、当前位置、缓存与失败回退
+- **家属设置** — 卡片/列表模式、权限、设备、主题、性能和版本检查
+- **系统电话接听链路** — 默认电话角色、来电倒计时与自动接听；仍需更多真机验证
+- 暗色模式与低性能模式
+- TTS 播报、故障诊断与性能指标
 
-### 计划中 🚧
-- 语音播报功能
-- 更多主题配色
+### v2.0.0 发布前收尾 🚧
+
+- 首页最终视觉调整
+- 系统电话自动接听的真实 SIM 与多 ROM 验证
+- 完整设备级仪器测试与最终发布资产同步
+
+> 微信视频来电自动接听、远程协助和云同步不在当前版本交付范围内。
 ---
 
 ## 截图
@@ -158,7 +171,7 @@
 yinxing/
 ├── app/              # 主应用模块
 │   ├── src/main/     # 源码 & 资源
-│   └── build.gradle  # 构建配置
+│   └── build.gradle.kts # 构建配置
 ├── benchmark/        # Baseline Profile 与性能测试
 ├── docs/             # 产品、架构、开发文档
 │   ├── architecture/
@@ -186,6 +199,17 @@ yinxing/
 ---
 
 ## 更新日志
+
+<details>
+<summary>📋 v2.0.0（2026-08）</summary>
+
+- 重构首页、家属设置、电话联系人和视频联系人体验
+- 新增应用内天气详情、城市管理与当前位置定位
+- 系统电话接听迁移到默认电话角色与 `InCallService`
+- 增强微信视频任务恢复、超时和诊断
+- 清理升级遗留代码与资源，自动化基线提升到 421 个测试
+
+</details>
 
 <details>
 <summary>📋 v1.9.0 (2026-05)</summary>

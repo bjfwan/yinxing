@@ -6,13 +6,18 @@ import android.content.pm.ActivityInfo
 import android.content.pm.ApplicationInfo
 import android.content.pm.ResolveInfo
 import android.os.Looper
+import android.os.Build
 import android.provider.Settings
+import android.view.View
 import android.widget.TextView
+import android.widget.LinearLayout
+import android.widget.ImageView
 import androidx.test.core.app.ApplicationProvider
 import com.yinxing.launcher.R
 import com.yinxing.launcher.data.home.LauncherPreferences
 import com.yinxing.launcher.data.settings.LauncherSettingsDataStore
 import com.yinxing.launcher.feature.incoming.IncomingCallDiagnostics
+import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertTrue
@@ -22,11 +27,88 @@ import org.junit.runner.RunWith
 import org.robolectric.Robolectric
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.Shadows.shadowOf
+import org.robolectric.shadows.ShadowBuild
 import org.robolectric.annotation.Config
 
 @RunWith(RobolectricTestRunner::class)
 @Config(sdk = [34])
 class SettingsActivitySmokeTest {
+    @Test
+    fun darkModeChooserUsesTheUnifiedDialogSurface() {
+        val activity = buildActivity()
+        val dialog = activity.detailController.showDarkModeDialog()
+
+        assertEquals(
+            activity.getString(R.string.settings_dark_mode_title),
+            dialog.findViewById<TextView>(R.id.tv_dialog_title).text.toString()
+        )
+        assertEquals(3, dialog.findViewById<LinearLayout>(R.id.layout_permission_items).childCount)
+        assertNotNull(dialog.findViewById<View>(R.id.btn_close))
+        dialog.dismiss()
+    }
+
+    @Test
+    fun defaultLauncherDialogShowsTheDeviceManufacturerIcon() {
+        val activity = buildActivity()
+        val dialog = activity.showSetDefaultLauncherDialog()
+        val icon = requireNotNull(dialog.findViewById<ImageView>(R.id.iv_dialog_vendor_icon))
+
+        assertEquals(View.VISIBLE, icon.visibility)
+        assertNotNull(icon.drawable)
+    }
+
+    @Test
+    fun defaultLauncherRowUsesAnUntintedManufacturerIcon() {
+        val activity = buildActivity()
+        activity.showScreen(SettingsScreen.Device)
+        val firstRow = activity.findViewById<LinearLayout>(R.id.settings_detail_rows).getChildAt(0)
+        val icon = firstRow.findViewById<ImageView>(R.id.detail_row_icon)
+
+        assertNotNull(icon.drawable)
+        assertEquals(null, icon.imageTintList)
+    }
+
+    @Test
+    fun vivoDefaultLauncherDialogOffersBothRequiredSystemSteps() {
+        val originalManufacturer = Build.MANUFACTURER
+        ShadowBuild.setManufacturer("vivo")
+        try {
+            val activity = buildActivity()
+            val dialog = activity.showSetDefaultLauncherDialog()
+            val actions = requireNotNull(
+                dialog.findViewById<LinearLayout>(R.id.layout_dialog_actions)
+            )
+            val defaultAction = requireNotNull(
+                dialog.findViewById<TextView>(R.id.tv_cancel_label)
+            )
+            val securityAction = requireNotNull(
+                dialog.findViewById<TextView>(R.id.tv_primary_label)
+            )
+            val defaultButton = requireNotNull(dialog.findViewById<View>(R.id.btn_cancel))
+            val securityButton = requireNotNull(dialog.findViewById<View>(R.id.btn_open_settings))
+            val defaultParams = defaultButton.layoutParams as LinearLayout.LayoutParams
+            val securityParams = securityButton.layoutParams as LinearLayout.LayoutParams
+            val message = requireNotNull(dialog.findViewById<TextView>(R.id.tv_dialog_message))
+
+            assertEquals(LinearLayout.VERTICAL, actions.orientation)
+            assertEquals(defaultParams.width, securityParams.width)
+            assertEquals(0, defaultParams.marginStart)
+            assertEquals(0, defaultParams.marginEnd)
+            assertEquals(0, securityParams.marginStart)
+            assertEquals(0, securityParams.marginEnd)
+            assertEquals(
+                activity.getString(R.string.set_default_launcher_vivo_default_action),
+                defaultAction.text.toString()
+            )
+            assertEquals(
+                activity.getString(R.string.set_default_launcher_vivo_security_action),
+                securityAction.text.toString()
+            )
+            assertTrue(message.text.contains("安全 → 更多安全设置 → 更换系统桌面"))
+        } finally {
+            ShadowBuild.setManufacturer(originalManufacturer)
+        }
+    }
     private lateinit var context: Context
 
     @Before
@@ -37,204 +119,162 @@ class SettingsActivitySmokeTest {
         LauncherSettingsDataStore.getInstance(context).clear()
         IncomingCallDiagnostics.clear(context)
         registerSettingsActivity()
-        registerHomeActivity(packageName = "com.android.launcher3")
-    }
-
-    // ═══════════════════════════════════════════════════════════════════════
-    // 布局：hub 卡片视图存在性
-    // ═══════════════════════════════════════════════════════════════════════
-
-    @Test
-    fun incomingGuardCardExists() {
-        val activity = buildActivity()
-        idle()
-        assertNotNull(activity.findViewById(R.id.btn_card_incoming_guard))
+        registerHomeActivity("com.android.launcher3")
     }
 
     @Test
-    fun autoAnswerCardExists() {
+    fun standardOverviewContainsAllSecondaryPageEntries() {
         val activity = buildActivity()
-        idle()
-        assertNotNull(activity.findViewById(R.id.btn_card_auto_answer))
+        listOf(
+            R.id.btn_detail_contacts,
+            R.id.btn_detail_calls,
+            R.id.btn_detail_permissions,
+            R.id.btn_detail_device,
+            R.id.btn_detail_system
+        ).forEach { assertNotNull(activity.findViewById<View>(it)) }
     }
 
     @Test
-    fun contactsCardExists() {
+    fun incomingGuardShowsSummaryAndAction() {
         val activity = buildActivity()
         idle()
-        assertNotNull(activity.findViewById(R.id.btn_card_contacts))
+        assertTrue(activity.findViewById<TextView>(R.id.tv_incoming_guard_summary).text.isNotEmpty())
+        assertTrue(activity.findViewById<TextView>(R.id.tv_incoming_guard_action).text.isNotEmpty())
     }
 
     @Test
-    fun permissionsCardExists() {
+    fun autoAnswerSummaryReflectsEnabledState() {
         val activity = buildActivity()
         idle()
-        assertNotNull(activity.findViewById(R.id.btn_card_permissions))
-    }
-
-    @Test
-    fun deviceCardExists() {
-        val activity = buildActivity()
-        idle()
-        assertNotNull(activity.findViewById(R.id.btn_card_device))
-    }
-
-    @Test
-    fun systemCardExists() {
-        val activity = buildActivity()
-        idle()
-        assertNotNull(activity.findViewById(R.id.btn_card_system))
-    }
-
-    // ═══════════════════════════════════════════════════════════════════════
-    // 来电守卫 — summary 反映当前阻断项
-    // ═══════════════════════════════════════════════════════════════════════
-
-    @Test
-    fun incomingGuardSummaryIsNotEmpty() {
-        val activity = buildActivity()
-        idle()
-        val summaryView = activity.findViewById<TextView>(R.id.tv_incoming_guard_summary)
-        assertNotNull(summaryView)
-        assertTrue("来电守卫摘要不应为空", summaryView.text.isNotEmpty())
-    }
-
-    @Test
-    fun incomingGuardActionTextIsNotEmpty() {
-        val activity = buildActivity()
-        idle()
-        val actionView = activity.findViewById<TextView>(R.id.tv_incoming_guard_action)
-        assertNotNull(actionView)
-        assertTrue("来电守卫操作按钮文本不应为空", actionView.text.isNotEmpty())
-    }
-
-    @Test
-    fun incomingGuardStatusBadgeIsNotEmpty() {
-        val activity = buildActivity()
-        idle()
-        val statusView = activity.findViewById<TextView>(R.id.tv_incoming_guard_status)
-        assertNotNull(statusView)
-        assertTrue("来电守卫状态徽章不应为空", statusView.text.isNotEmpty())
-    }
-
-    // ═══════════════════════════════════════════════════════════════════════
-    // 自动接听 hub — 默认开启时摘要包含延迟秒数
-    // ═══════════════════════════════════════════════════════════════════════
-
-    @Test
-    fun autoAnswerHubSummaryWhenEnabledContainsDelaySummary() {
-        val activity = buildActivity()
-        idle()
-        val summaryView = activity.findViewById<TextView>(R.id.tv_auto_answer_hub_summary)
-        assertNotNull(summaryView)
-        val expected = activity.getString(
-            R.string.settings_auto_answer_delay_summary,
-            LauncherPreferences.DEFAULT_AUTO_ANSWER_DELAY_SECONDS
-        )
-        assertTrue(
-            "自动接听开启时摘要应包含延迟描述，实际: ${summaryView.text}",
-            summaryView.text.toString() == expected
+        assertEquals(
+            activity.getString(
+                R.string.settings_auto_answer_delay_summary,
+                LauncherPreferences.DEFAULT_AUTO_ANSWER_DELAY_SECONDS
+            ),
+            activity.findViewById<TextView>(R.id.tv_auto_answer_hub_summary).text.toString()
         )
     }
 
     @Test
-    fun autoAnswerHubSummaryWhenDisabledShowsOffText() {
+    fun autoAnswerSummaryReflectsDisabledState() {
         LauncherPreferences.getInstance(context).setAutoAnswerEnabled(false)
         val activity = buildActivity()
         idle()
-        val summaryView = activity.findViewById<TextView>(R.id.tv_auto_answer_hub_summary)
-        assertNotNull(summaryView)
-        val expected = activity.getString(R.string.settings_auto_answer_summary_off)
-        assertTrue(
-            "自动接听关闭时摘要应为关闭描述，实际: ${summaryView.text}",
-            summaryView.text.toString() == expected
+        assertEquals(
+            activity.getString(R.string.settings_auto_answer_summary_off),
+            activity.findViewById<TextView>(R.id.tv_auto_answer_hub_summary).text.toString()
         )
     }
 
     @Test
-    fun autoAnswerHubStatusBadgeIsNotEmpty() {
+    fun secondaryPageSummariesArePopulated() {
         val activity = buildActivity()
         idle()
-        val statusView = activity.findViewById<TextView>(R.id.tv_auto_answer_hub_status)
-        assertNotNull(statusView)
-        assertTrue("自动接听状态徽章不应为空", statusView.text.isNotEmpty())
+        listOf(
+            R.id.btn_detail_contacts,
+            R.id.btn_detail_permissions,
+            R.id.btn_detail_device,
+            R.id.btn_detail_system
+        ).forEach { rootId ->
+            val root = activity.findViewById<View>(rootId)
+            assertTrue(root.findViewById<TextView>(R.id.navigation_summary).text.isNotEmpty())
+        }
     }
 
-    // ═══════════════════════════════════════════════════════════════════════
-    // 诊断链 — 最新通话链路显示在来电守卫摘要区域
-    // ═══════════════════════════════════════════════════════════════════════
+    @Test
+    fun permissionGroupsShowProminentColoredStatus() {
+        val activity = buildActivity()
+        idle()
+        activity.showScreen(SettingsScreen.Permissions)
+
+        val firstRow = activity.findViewById<LinearLayout>(R.id.settings_detail_rows).getChildAt(0)
+        val status = firstRow.findViewById<TextView>(R.id.detail_row_action)
+        val expected = activity.permissionGroupRenderState(PermissionGroup.Call).badge
+
+        assertEquals(View.VISIBLE, status.visibility)
+        assertEquals(expected.text, status.text.toString())
+        assertEquals(activity.getColor(expected.textColorResId), status.currentTextColor)
+    }
 
     @Test
-    fun incomingTraceDiagnosticsDoNotCrashOnLaunch() {
-        IncomingCallDiagnostics.recordBroadcastReceived(
-            context = context,
-            callerLabel = "张阿姨",
-            incomingNumber = "13812345678",
-            autoAnswer = true
+    fun incomingGuardDialogGroupsCallAndKeepAliveEntries() {
+        val activity = buildActivity()
+        idle()
+        val dialog = activity.showIncomingGuardDialog()
+        val groups = dialog.findViewById<LinearLayout>(R.id.layout_permission_items)
+        val callEntries = groups.getChildAt(0).findViewById<LinearLayout>(R.id.layout_section_items)
+        val keepAliveEntries = groups.getChildAt(1).findViewById<LinearLayout>(R.id.layout_section_items)
+
+        assertEquals(2, groups.childCount)
+        assertEquals(3, callEntries.childCount)
+        assertEquals(3, keepAliveEntries.childCount)
+    }
+
+    @Test
+    fun callsScreenShowsDefaultPhoneRoleAndVendorAdaptation() {
+        val activity = buildActivity()
+        activity.showScreen(SettingsScreen.Calls)
+        val matches = arrayListOf<View>()
+
+        activity.findViewById<View>(android.R.id.content).findViewsWithText(
+            matches,
+            activity.getString(R.string.settings_default_phone_title),
+            View.FIND_VIEWS_WITH_TEXT
         )
-        IncomingCallDiagnostics.recordServiceStarted(context, "张阿姨", autoAnswer = true)
-        IncomingCallDiagnostics.recordActivityShown(context, "张阿姨")
-        IncomingCallDiagnostics.recordAcceptSuccess(
-            context,
-            context.getString(R.string.incoming_call_status_accept_sent)
+
+        assertTrue(matches.isNotEmpty())
+        val adaptationMatches = arrayListOf<View>()
+        activity.findViewById<View>(android.R.id.content).findViewsWithText(
+            adaptationMatches,
+            activity.getString(R.string.settings_incoming_vendor_title),
+            View.FIND_VIEWS_WITH_TEXT
         )
-        val activity = buildActivity()
-        idle()
-        assertNotNull(activity.findViewById<TextView>(R.id.tv_incoming_guard_summary))
-    }
-
-    // ═══════════════════════════════════════════════════════════════════════
-    // 权限 hub — 视图存在且文本非空
-    // ═══════════════════════════════════════════════════════════════════════
-
-    @Test
-    fun permissionHubSummaryIsNotEmpty() {
-        val activity = buildActivity()
-        idle()
-        val summaryView = activity.findViewById<TextView>(R.id.tv_permission_hub_summary)
-        assertNotNull(summaryView)
-        assertTrue("权限摘要不应为空", summaryView.text.isNotEmpty())
+        assertTrue(adaptationMatches.isNotEmpty())
     }
 
     @Test
-    fun permissionHubStatusBadgeIsNotEmpty() {
+    fun elderOverviewUsesOneCardHeightAcrossTheFourMainActions() {
         val activity = buildActivity()
         idle()
-        val statusView = activity.findViewById<TextView>(R.id.tv_permission_hub_status)
-        assertNotNull(statusView)
-        assertTrue("权限状态徽章不应为空", statusView.text.isNotEmpty())
+        activity.showScreen(SettingsScreen.ElderOverview)
+
+        val heights = listOf(
+            R.id.btn_elder_guard,
+            R.id.btn_elder_contacts,
+            R.id.btn_elder_system,
+            R.id.btn_elder_device
+        ).map { activity.findViewById<View>(it).layoutParams.height }
+
+        assertEquals(1, heights.distinct().size)
     }
 
+    @Test
+    fun deviceSettingsDoNotOfferTheRemovedKioskMode() {
+        val activity = buildActivity()
+        idle()
+        activity.showScreen(SettingsScreen.Device)
+        val matches = arrayListOf<View>()
 
-    // ═══════════════════════════════════════════════════════════════════════
-    // 生命周期 — 不崩溃
-    // ═══════════════════════════════════════════════════════════════════════
+        activity.findViewById<View>(android.R.id.content).findViewsWithText(
+            matches,
+            "防退出模式",
+            View.FIND_VIEWS_WITH_TEXT
+        )
+
+        assertTrue(matches.isEmpty())
+    }
 
     @Test
-    fun onResumeDoesNotCrash() {
+    fun lifecycleTransitionsDoNotFinishActivity() {
         val controller = Robolectric.buildActivity(SettingsActivity::class.java).setup()
         idle()
-        runCatching {
-            controller.pause()
-            controller.resume()
-        }
+        controller.pause().resume()
         idle()
         assertFalse(controller.get().isFinishing)
+        controller.destroy()
     }
 
-    @Test
-    fun onDestroyDoesNotCrash() {
-        val controller = Robolectric.buildActivity(SettingsActivity::class.java).setup()
-        idle()
-        runCatching { controller.destroy() }
-    }
-
-    // ═══════════════════════════════════════════════════════════════════════
-    // 辅助
-    // ═══════════════════════════════════════════════════════════════════════
-
-    private fun buildActivity() =
-        Robolectric.buildActivity(SettingsActivity::class.java).setup().get()
+    private fun buildActivity() = Robolectric.buildActivity(SettingsActivity::class.java).setup().get()
 
     private fun idle() = shadowOf(Looper.getMainLooper()).idle()
 
@@ -250,8 +290,10 @@ class SettingsActivitySmokeTest {
             name = "com.android.settings.Settings"
             this.applicationInfo = applicationInfo
         }
-        val resolveInfo = ResolveInfo().apply { this.activityInfo = activityInfo }
-        shadowOf(context.packageManager).addResolveInfoForIntent(intent, resolveInfo)
+        shadowOf(context.packageManager).addResolveInfoForIntent(
+            intent,
+            ResolveInfo().apply { this.activityInfo = activityInfo }
+        )
     }
 
     @Suppress("DEPRECATION")
@@ -266,8 +308,10 @@ class SettingsActivitySmokeTest {
             name = "$packageName.feature.home.MainActivity"
             this.applicationInfo = applicationInfo
         }
-        val resolveInfo = ResolveInfo().apply { this.activityInfo = activityInfo }
-        shadowOf(context.packageManager).addResolveInfoForIntent(intent, resolveInfo)
+        shadowOf(context.packageManager).addResolveInfoForIntent(
+            intent,
+            ResolveInfo().apply { this.activityInfo = activityInfo }
+        )
     }
 
     private fun resetLauncherPreferencesSingleton() {

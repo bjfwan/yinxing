@@ -43,8 +43,8 @@ android {
         applicationId = "com.yinxing.launcher"
         minSdk = 24
         targetSdk = 36
-        versionCode = 16
-        versionName = "1.9.0"
+        versionCode = 17
+        versionName = "2.0.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
 
@@ -65,6 +65,12 @@ android {
     }
 
     buildTypes {
+        create("deviceTest") {
+            initWith(getByName("debug"))
+            applicationIdSuffix = ".devicetest"
+            versionNameSuffix = "-device-test"
+            matchingFallbacks += listOf("debug")
+        }
         release {
             isMinifyEnabled = true
             isShrinkResources = true

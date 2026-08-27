@@ -1,10 +1,17 @@
 package com.yinxing.launcher.feature.settings
 
+import android.content.Context
+import android.content.Intent
 import android.os.Bundle
 import android.view.View
+import android.widget.FrameLayout
 import android.widget.TextView
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.activity.addCallback
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.view.ViewCompat
+import androidx.core.view.WindowInsetsCompat
+import androidx.core.view.updatePadding
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
@@ -22,23 +29,15 @@ class SettingsActivity : AppCompatActivity() {
     internal lateinit var launcherPreferences: LauncherPreferences
     internal lateinit var weatherPreferences: WeatherPreferences
 
-    internal lateinit var binding: SettingsViewBinding
     internal val runtime = SettingsRuntimeState()
 
-    // 以下字段代理到 [binding]/[runtime]，保证现有扩展函数 零修改：
-    internal val tvIncomingGuardStatus: TextView get() = binding.tvIncomingGuardStatus
-    internal val tvIncomingGuardProgress: TextView get() = binding.tvIncomingGuardProgress
-    internal val tvIncomingGuardSummary: TextView get() = binding.tvIncomingGuardSummary
-    internal val tvIncomingGuardAction: TextView get() = binding.tvIncomingGuardAction
-    internal val btnIncomingGuardAction: View get() = binding.btnIncomingGuardAction
-    internal val tvContactsHubSummary: TextView get() = binding.tvContactsHubSummary
-    internal val tvAutoAnswerHubStatus: TextView get() = binding.tvAutoAnswerHubStatus
-    internal val tvAutoAnswerHubSummary: TextView get() = binding.tvAutoAnswerHubSummary
-    internal val tvPermissionHubStatus: TextView get() = binding.tvPermissionHubStatus
-    internal val tvPermissionHubSummary: TextView get() = binding.tvPermissionHubSummary
-    internal val tvDeviceHubStatus: TextView get() = binding.tvDeviceHubStatus
-    internal val tvDeviceHubSummary: TextView get() = binding.tvDeviceHubSummary
-    internal val tvSystemHubSummary: TextView get() = binding.tvSystemHubSummary
+    internal val tvIncomingGuardStatus: TextView get() = findViewById(R.id.tv_incoming_guard_status)
+    internal val tvIncomingGuardProgress: TextView get() = findViewById(R.id.tv_incoming_guard_progress)
+    internal val tvIncomingGuardSummary: TextView get() = findViewById(R.id.tv_incoming_guard_summary)
+    internal val tvIncomingGuardAction: TextView get() = findViewById(R.id.tv_incoming_guard_action)
+    internal val btnIncomingGuardAction: View get() = findViewById(R.id.btn_incoming_guard_action)
+    internal val tvAutoAnswerHubStatus: TextView get() = findViewById(R.id.tv_auto_answer_hub_status)
+    internal val tvAutoAnswerHubSummary: TextView get() = findViewById(R.id.tv_auto_answer_hub_summary)
 
     internal var incomingGuardReadiness: IncomingGuardReadiness
         get() = runtime.incomingGuardReadiness
@@ -52,15 +51,15 @@ class SettingsActivity : AppCompatActivity() {
         get() = runtime.contactsSummaryJob
         set(value) { runtime.contactsSummaryJob = value }
 
-    /**
-     * 代替原先的 [android.os.Handler] + [Runnable] debouncing。
-     * Activity 任何地方 emit 一次，收到多个事件后仅需要在下一个帧跑一次 [SettingsOverviewController.performOverviewRefresh]。
-     */
     private val refreshSignal = MutableSharedFlow<Unit>(extraBufferCapacity = 1)
 
     internal lateinit var overviewController: SettingsOverviewController
-    internal lateinit var sheetController: SettingsSheetController
+    internal lateinit var dialogController: SettingsDialogController
     internal lateinit var actionController: SettingsActionController
+    internal lateinit var screenController: SettingsScreenController
+    internal lateinit var detailController: SettingsDetailController
+    internal var currentScreen = SettingsScreen.StandardOverview
+        private set
 
     internal val phonePermissionLauncher = registerForActivityResult(
         ActivityResultContracts.RequestMultiplePermissions()
@@ -72,7 +71,11 @@ class SettingsActivity : AppCompatActivity() {
 
     internal val defaultLauncherRoleLauncher = registerForActivityResult(
         ActivityResultContracts.StartActivityForResult()
-    ) { actionController.onDefaultLauncherRoleResult() }
+    ) { scheduleDefaultLauncherRefresh() }
+
+    internal val defaultPhoneRoleLauncher = registerForActivityResult(
+        ActivityResultContracts.StartActivityForResult()
+    ) { actionController.onDefaultPhoneRoleResult() }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -80,44 +83,119 @@ class SettingsActivity : AppCompatActivity() {
 
         launcherPreferences = LauncherPreferences.getInstance(this)
         weatherPreferences = WeatherPreferences.getInstance(this)
-        binding = SettingsViewBinding(this)
 
         overviewController = SettingsOverviewController(this)
         actionController = SettingsActionController(this)
-        sheetController = SettingsSheetController(this)
+        dialogController = SettingsDialogController(this)
+        screenController = SettingsScreenController(this)
+        detailController = SettingsDetailController(this)
 
         overviewController.bindActions(
             onBack = ::finish,
-            onShowIncomingGuardSheet = sheetController::showIncomingGuardSheet,
-            onShowContactsSheet = sheetController::showContactsSheet,
-            onShowAutoAnswerSheet = sheetController::showAutoAnswerSheet,
-            onShowPermissionGroupsSheet = sheetController::showPermissionGroupsSheet,
-            onShowDeviceSettingsSheet = sheetController::showDeviceSettingsSheet,
-            onShowSystemSheet = sheetController::showSystemSheet
+            onShowIncomingGuard = dialogController::showIncomingGuardDialog,
+            onShowContacts = { showScreen(SettingsScreen.Contacts) },
+            onShowCalls = { showScreen(SettingsScreen.Calls) },
+            onShowPermissions = { showScreen(SettingsScreen.Permissions) },
+            onShowDevice = { showScreen(SettingsScreen.Device) },
+            onShowSystem = { showScreen(SettingsScreen.System) }
         )
-        sheetController.playEntryAnimation()
+        screenController.bindStandard()
+        dialogController.playEntryAnimation()
+        applySystemInsets()
+
+        onBackPressedDispatcher.addCallback(this) {
+            if (currentScreen == SettingsScreen.StandardOverview) finish()
+            else showScreen(SettingsScreen.StandardOverview)
+        }
+
+        currentScreen = SettingsScreen.from(
+            intent.getStringExtra(EXTRA_MODE),
+            intent.getStringExtra(EXTRA_SECTION)
+        )
+        if (currentScreen != SettingsScreen.StandardOverview) showScreen(currentScreen)
 
         lifecycleScope.launch {
             repeatOnLifecycle(Lifecycle.State.STARTED) {
                 refreshSignal.collectLatest {
                     overviewController.performOverviewRefresh()
+                    screenController.refreshActive()
                 }
             }
         }
     }
 
-    /** 后台请求下一帧刷新；collectLatest 会合并连续事件。 */
     internal fun postOverviewRefresh() {
         refreshSignal.tryEmit(Unit)
     }
 
     override fun onResume() {
         super.onResume()
+        SettingsReturnCoordinator.consumeDeviceSettingsReturn(this)
+        actionController.continueDefaultPhoneRoleIfReady()
         overviewController.refreshOverviewUi()
+        if (currentScreen !in setOf(SettingsScreen.StandardOverview, SettingsScreen.ElderOverview)) {
+            detailController.bind(currentScreen)
+        }
+    }
+
+    private fun scheduleDefaultLauncherRefresh() {
+        window.decorView.postDelayed({
+            if (isFinishing || isDestroyed) return@postDelayed
+            overviewController.refreshOverviewUi()
+            if (currentScreen !in setOf(SettingsScreen.StandardOverview, SettingsScreen.ElderOverview)) {
+                detailController.bind(currentScreen)
+            }
+        }, DEFAULT_LAUNCHER_SETTLE_DELAY_MS)
     }
 
     override fun onDestroy() {
         overviewController.onDestroy()
         super.onDestroy()
+    }
+
+    internal fun showScreen(screen: SettingsScreen) {
+        currentScreen = screen
+        val overlay = findViewById<FrameLayout>(R.id.settings_overlay)
+        findViewById<TextView>(R.id.settings_page_title).text = getString(screen.titleRes)
+        if (screen == SettingsScreen.StandardOverview) {
+            overlay.removeAllViews()
+            overlay.visibility = View.GONE
+            screenController.refreshActive()
+            return
+        }
+
+        overlay.removeAllViews()
+        overlay.visibility = View.VISIBLE
+        when (screen) {
+            SettingsScreen.ElderOverview -> {
+                layoutInflater.inflate(R.layout.screen_settings_elder, overlay, true)
+                screenController.bindElder()
+            }
+            else -> {
+                layoutInflater.inflate(R.layout.screen_settings_detail, overlay, true)
+                detailController.bind(screen)
+            }
+        }
+        screenController.refreshActive()
+    }
+
+    private fun applySystemInsets() {
+        val root = findViewById<View>(R.id.settings_root)
+        ViewCompat.setOnApplyWindowInsetsListener(root) { view, insets ->
+            val bars = insets.getInsets(WindowInsetsCompat.Type.systemBars())
+            view.updatePadding(top = bars.top, bottom = bars.bottom)
+            insets
+        }
+    }
+
+    companion object {
+        private const val DEFAULT_LAUNCHER_SETTLE_DELAY_MS = 300L
+        const val EXTRA_MODE = "settings_mode"
+        const val EXTRA_SECTION = "settings_section"
+
+        internal fun deviceSettingsIntent(context: Context): Intent {
+            return Intent(context, SettingsActivity::class.java)
+                .putExtra(EXTRA_SECTION, SettingsScreen.Device.key)
+        }
     }
 }

@@ -1,13 +1,9 @@
 ﻿package com.yinxing.launcher.feature.incoming
 
-import android.app.NotificationChannel
-import android.app.NotificationManager
-import android.app.PendingIntent
 import android.app.Service
 import android.content.Context
 import android.content.Intent
 import android.os.IBinder
-import androidx.core.app.NotificationCompat
 import androidx.core.content.ContextCompat
 import com.yinxing.launcher.R
 import com.yinxing.launcher.common.lobster.LobsterClient
@@ -23,8 +19,9 @@ class IncomingCallForegroundService : Service() {
         private const val TAG = "IncomingCallService"
 
         internal const val ACTION_SHOW_INCOMING_CALL = "com.yinxing.launcher.action.SHOW_INCOMING_CALL"
-        internal const val NOTIFICATION_ID = 41001
-        internal const val CHANNEL_ID = "incoming_call_alerts"
+        internal const val ACTION_SHOW_ONGOING_CALL = "com.yinxing.launcher.action.SHOW_ONGOING_CALL"
+        internal const val NOTIFICATION_ID = IncomingCallNotificationController.NOTIFICATION_ID
+        internal const val CHANNEL_ID = IncomingCallNotificationController.CHANNEL_ID
 
         internal const val EXTRA_CALLER_NAME = "extra_caller_name"
         internal const val EXTRA_AUTO_ANSWER = "extra_auto_answer"
@@ -49,42 +46,38 @@ class IncomingCallForegroundService : Service() {
         }
 
         fun stop(context: Context) {
-            context.getSystemService(NotificationManager::class.java)?.cancel(NOTIFICATION_ID)
+            IncomingCallNotificationController.cancel(context)
             context.stopService(Intent(context, IncomingCallForegroundService::class.java))
+        }
+
+        fun showOngoing(context: Context, callerName: String?) {
+            val intent = Intent(context, IncomingCallForegroundService::class.java).apply {
+                action = ACTION_SHOW_ONGOING_CALL
+                putExtra(EXTRA_CALLER_NAME, callerName)
+            }
+            ContextCompat.startForegroundService(context, intent)
         }
 
         fun ensureNotificationChannels(
             context: Context,
             platformCompat: IncomingPlatformCompat = IncomingPlatformCompat()
         ) {
-            if (!platformCompat.supportsNotificationChannels) return
-            val manager = context.getSystemService(NotificationManager::class.java) ?: return
-            val existing = manager.getNotificationChannel(CHANNEL_ID)
-            if (existing != null) return
-            val channel = NotificationChannel(
-                CHANNEL_ID,
-                context.getString(R.string.incoming_call_notification_channel_name),
-                NotificationManager.IMPORTANCE_HIGH
-            ).apply {
-                description = context.getString(R.string.incoming_call_notification_channel_description)
-                lockscreenVisibility = android.app.Notification.VISIBILITY_PUBLIC
-            }
-            manager.createNotificationChannel(channel)
+            IncomingCallNotificationController.ensureChannel(context, platformCompat)
         }
     }
 
     override fun onBind(intent: Intent?): IBinder? = null
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
-        if (intent?.action == ACTION_SHOW_INCOMING_CALL) {
-            showIncomingCall(
+        when (intent?.action) {
+            ACTION_SHOW_INCOMING_CALL -> showIncomingCall(
                 callerName = intent.getStringExtra(EXTRA_CALLER_NAME),
                 autoAnswer = intent.getBooleanExtra(EXTRA_AUTO_ANSWER, false),
                 incomingNumber = intent.getStringExtra(EXTRA_INCOMING_NUMBER),
                 knownContact = intent.getBooleanExtra(EXTRA_KNOWN_CONTACT, false)
             )
-        } else {
-            stopSelf()
+            ACTION_SHOW_ONGOING_CALL -> showOngoingCall(intent.getStringExtra(EXTRA_CALLER_NAME))
+            else -> stopSelf()
         }
         return START_NOT_STICKY
     }
@@ -124,60 +117,21 @@ class IncomingCallForegroundService : Service() {
         val callerLabel = callerName?.trim()?.takeIf { it.isNotEmpty() }
             ?: getString(R.string.incoming_call_unknown_caller)
 
-        val openIntent = IncomingCallActivity.buildLaunchIntent(
+        val notification = IncomingCallNotificationController.buildIncoming(
             context = this,
             callerName = callerName,
-            autoAnswer = autoAnswer,
+            uiAutoAnswer = autoAnswer,
             incomingNumber = incomingNumber,
             knownContact = knownContact
         )
-        val acceptIntent = IncomingCallActivity.buildLaunchIntent(
-            context = this,
-            callerName = callerName,
-            autoAnswer = autoAnswer,
-            incomingNumber = incomingNumber,
-            knownContact = knownContact,
-            triggerAction = IncomingCallActivity.TRIGGER_ACTION_ACCEPT
-        )
-        val declineIntent = IncomingCallActivity.buildLaunchIntent(
-            context = this,
-            callerName = callerName,
-            autoAnswer = autoAnswer,
-            incomingNumber = incomingNumber,
-            knownContact = knownContact,
-            triggerAction = IncomingCallActivity.TRIGGER_ACTION_DECLINE
-        )
-
-        val notification = NotificationCompat.Builder(this, CHANNEL_ID)
-            .setSmallIcon(android.R.drawable.sym_call_incoming)
-            .setContentTitle(getString(R.string.incoming_call_notification_title))
-            .setContentText(callerLabel)
-            .setSubText(IncomingCallDiagnostics.getNotificationStatusText(this))
-            .setCategory(NotificationCompat.CATEGORY_CALL)
-            .setPriority(NotificationCompat.PRIORITY_MAX)
-            .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
-            .setOngoing(true)
-            .setAutoCancel(false)
-            .setContentIntent(createActivityPendingIntent(100, openIntent))
-            .setFullScreenIntent(createActivityPendingIntent(101, openIntent), true)
-            .addAction(
-                android.R.drawable.sym_action_call,
-                getString(R.string.incoming_call_accept),
-                createActivityPendingIntent(102, acceptIntent)
-            )
-            .addAction(
-                android.R.drawable.ic_menu_close_clear_cancel,
-                getString(R.string.incoming_call_decline),
-                createActivityPendingIntent(103, declineIntent)
-            )
-            .build()
 
         val startedInForeground = runCatching {
             startForeground(NOTIFICATION_ID, notification)
             true
         }.getOrElse { error ->
             DebugLog.e(TAG, "startForeground failed, sdk=${platformCompat.sdkInt}", error)
-            getSystemService(NotificationManager::class.java)?.notify(NOTIFICATION_ID, notification)
+            getSystemService(android.app.NotificationManager::class.java)
+                ?.notify(NOTIFICATION_ID, notification)
             false
         }
 
@@ -190,26 +144,15 @@ class IncomingCallForegroundService : Service() {
             started = startedInForeground
         )
 
-        launchIncomingCallUi(openIntent)
         if (!startedInForeground) {
             stopSelf()
         }
     }
 
-    private fun launchIncomingCallUi(intent: Intent) {
-        runCatching {
-            startActivity(Intent(intent).addFlags(Intent.FLAG_ACTIVITY_NO_ANIMATION))
-        }.onFailure {
-            DebugLog.w(TAG, "launchIncomingCallUi failed: ${it.message}")
-        }
-    }
-
-    private fun createActivityPendingIntent(requestCode: Int, intent: Intent): PendingIntent {
-        return PendingIntent.getActivity(
-            this,
-            requestCode,
-            intent,
-            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+    private fun showOngoingCall(callerName: String?) {
+        startForeground(
+            NOTIFICATION_ID,
+            IncomingCallNotificationController.buildOngoing(this, callerName)
         )
     }
 }

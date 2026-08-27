@@ -181,6 +181,25 @@ class HomeViewModelTest {
     }
 
     @Test
+    fun maybeRefreshWeatherWithoutCacheFetchesImmediately() = runTest {
+        val fetched = weatherState(lastFetchTime = 1000L, temperature = 32)
+        val weatherSource = FakeHomeWeatherSource(cached = null, fetchResult = fetched)
+        val viewModel = createViewModel(
+            appSource = FakeHomeAppSource(
+                staticItems = builtInItems(),
+                homeItemsResult = Result.success(emptyList())
+            ),
+            weatherSource = weatherSource,
+        )
+
+        viewModel.maybeRefreshWeather()
+        dispatcher.scheduler.runCurrent()
+
+        assertEquals(1, weatherSource.fetchCount)
+        assertEquals(fetched, viewModel.weatherState.value)
+    }
+
+    @Test
     fun maybeRefreshWeatherFetchesExpiredCacheAfterDelay() = runTest {
         val cached = weatherState(lastFetchTime = 0L, temperature = 26)
         val fetched = weatherState(lastFetchTime = 1000L, temperature = 32)

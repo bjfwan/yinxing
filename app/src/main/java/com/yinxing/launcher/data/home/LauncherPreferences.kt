@@ -30,7 +30,7 @@ class LauncherPreferences(context: Context) {
         const val DARK_MODE_SYSTEM = "system"
         const val DARK_MODE_LIGHT = "light"
         const val DARK_MODE_DARK = "dark"
-        private const val KEY_KIOSK_MODE_ENABLED = "kiosk_mode_enabled"
+        private const val REMOVED_KEY_KIOSK_MODE_ENABLED = "kiosk_mode_enabled"
         private const val KEY_AUTOSTART_CONFIRMED = "autostart_confirmed"
         private const val KEY_BACKGROUND_START_CONFIRMED = "background_start_confirmed"
         private const val KEY_ICON_SCALE = "icon_scale"
@@ -44,7 +44,7 @@ class LauncherPreferences(context: Context) {
             KEY_AUTO_ANSWER_DELAY_SECONDS,
             KEY_FULL_CARD_TAP_ENABLED,
             KEY_DARK_MODE,
-            KEY_KIOSK_MODE_ENABLED,
+            REMOVED_KEY_KIOSK_MODE_ENABLED,
             KEY_AUTOSTART_CONFIRMED,
             KEY_BACKGROUND_START_CONFIRMED,
             KEY_ICON_SCALE
@@ -146,16 +146,6 @@ class LauncherPreferences(context: Context) {
 
     fun isDarkModeKey(key: String?): Boolean = key == KEY_DARK_MODE
 
-    fun isKioskModeEnabled(): Boolean {
-        return settingsStore.snapshot().kioskModeEnabled
-    }
-
-    fun setKioskModeEnabled(enabled: Boolean) {
-        if (settingsStore.snapshot().kioskModeEnabled == enabled) return
-        settingsStore.setKioskModeEnabled(enabled)
-        notifyPreferenceChanged(KEY_KIOSK_MODE_ENABLED)
-    }
-
     fun isAutoStartConfirmed(): Boolean {
         return settingsStore.snapshot().autoStartConfirmed
     }
@@ -236,7 +226,6 @@ class LauncherPreferences(context: Context) {
                 autoAnswerDelaySeconds = legacy[KEY_AUTO_ANSWER_DELAY_SECONDS] as? Int,
                 fullCardTapEnabled = legacy[KEY_FULL_CARD_TAP_ENABLED] as? Boolean,
                 darkMode = legacy[KEY_DARK_MODE] as? String,
-                kioskModeEnabled = legacy[KEY_KIOSK_MODE_ENABLED] as? Boolean,
                 autoStartConfirmed = legacy[KEY_AUTOSTART_CONFIRMED] as? Boolean,
                 backgroundStartConfirmed = legacy[KEY_BACKGROUND_START_CONFIRMED] as? Boolean,
                 iconScale = legacy[KEY_ICON_SCALE] as? Int

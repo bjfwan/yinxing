@@ -3,6 +3,7 @@
 import android.content.Context
 import android.content.Intent
 import android.os.Bundle
+import android.view.View
 import android.widget.EditText
 import android.widget.TextView
 import android.widget.Toast
@@ -10,6 +11,9 @@ import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.isVisible
+import androidx.core.view.ViewCompat
+import androidx.core.view.WindowInsetsCompat
+import androidx.core.view.updatePadding
 import androidx.core.widget.doAfterTextChanged
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.ViewModelProvider
@@ -24,6 +28,7 @@ import com.yinxing.launcher.common.lobster.LobsterClient
 import com.yinxing.launcher.common.lobster.LobsterReportStatus
 import com.yinxing.launcher.common.service.TTSService
 import com.yinxing.launcher.common.ui.PageStateView
+import com.yinxing.launcher.common.ui.AvatarEditorController
 import com.yinxing.launcher.common.util.PermissionUtil
 import com.yinxing.launcher.data.contact.Contact
 import com.yinxing.launcher.data.contact.ContactManager
@@ -44,7 +49,6 @@ class VideoCallActivity : AppCompatActivity() {
 
     private lateinit var recyclerView: RecyclerView
     private lateinit var adapter: VideoCallContactAdapter
-    private lateinit var manageAdapter: ContactManageAdapter
     private lateinit var pageTitleText: TextView
     private lateinit var modeActionButton: MaterialCardView
     private lateinit var modeActionText: TextView
@@ -56,6 +60,7 @@ class VideoCallActivity : AppCompatActivity() {
     private lateinit var ttsService: TTSService
     private lateinit var launcherPreferences: LauncherPreferences
     private lateinit var dialogController: VideoContactDialogController
+    private lateinit var avatarEditor: AvatarEditorController
     private lateinit var coordinator: VideoCallCoordinator
     private lateinit var viewModel: VideoCallViewModel
     private var launchedFromManageEntry = false
@@ -65,13 +70,14 @@ class VideoCallActivity : AppCompatActivity() {
         ActivityResultContracts.PickVisualMedia()
     ) { uri ->
         if (uri != null) {
-            dialogController.updateSelectedPhoto(uri)
+            avatarEditor.edit(uri)
         }
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_video_call)
+        applySystemInsets()
 
         LobsterClient.log("[微信视频] VideoCallActivity 已打开")
 
@@ -79,6 +85,9 @@ class VideoCallActivity : AppCompatActivity() {
         ttsService = TTSService(this)
         ttsService.initialize()
         viewModel = ViewModelProvider(this, VideoCallViewModel.Factory(this))[VideoCallViewModel::class.java]
+        avatarEditor = AvatarEditorController(this) { uri, bitmap ->
+            dialogController.updateSelectedPhoto(uri, bitmap)
+        }
 
         recyclerView = findViewById(R.id.recycler_video_contacts)
         recyclerView.layoutManager = LinearLayoutManager(this)
@@ -99,13 +108,7 @@ class VideoCallActivity : AppCompatActivity() {
             scope = lifecycleScope,
             lowPerformanceMode = launcherPreferences.isLowPerformanceModeEnabled(),
             onContactClick = { contact -> coordinator.start(contact) },
-            onWechatVideoClick = { contact -> coordinator.start(contact) }
-        )
-
-        manageAdapter = ContactManageAdapter(
-            lowPerformanceMode = launcherPreferences.isLowPerformanceModeEnabled(),
-            onEditClick = { contact -> dialogController.showEditContactDialog(contact) },
-            onDeleteClick = { contact -> dialogController.showDeleteDialog(contact) }
+            onEditClick = { contact -> dialogController.showEditContactDialog(contact) }
         )
 
         coordinator = VideoCallCoordinator(
@@ -169,9 +172,9 @@ class VideoCallActivity : AppCompatActivity() {
             repeatOnLifecycle(Lifecycle.State.STARTED) {
                 launch {
                     viewModel.isManageMode.collect { manageMode ->
-                        recyclerView.layoutManager = LinearLayoutManager(this@VideoCallActivity)
-                        recyclerView.adapter = if (manageMode) manageAdapter else adapter
+                        adapter.setManageMode(manageMode)
                         updateModeUi(manageMode)
+                        updateState(adapter.currentList)
                     }
                 }
                 launch {
@@ -188,11 +191,7 @@ class VideoCallActivity : AppCompatActivity() {
                 }
                 launch {
                     viewModel.visibleContacts.collect { contacts ->
-                        if (viewModel.isManageMode.value) {
-                            manageAdapter.submitList(contacts)
-                        } else {
-                            adapter.submitList(contacts)
-                        }
+                        adapter.submitList(contacts)
                         updateState(contacts)
                     }
                 }
@@ -225,7 +224,6 @@ class VideoCallActivity : AppCompatActivity() {
     override fun onResume() {
         super.onResume()
         applyPerformanceMode()
-        adapter.setFullCardTapEnabled(launcherPreferences.isFullCardTapEnabled())
         viewModel.refresh()
     }
 
@@ -241,7 +239,6 @@ class VideoCallActivity : AppCompatActivity() {
         recyclerView.setItemViewCacheSize(if (lowPerformanceMode) 3 else 8)
         recyclerView.itemAnimator = if (lowPerformanceMode) null else DefaultItemAnimator()
         adapter.setLowPerformanceMode(lowPerformanceMode)
-        manageAdapter.setLowPerformanceMode(lowPerformanceMode)
     }
 
     private fun updateModeUi(isManageMode: Boolean) {
@@ -297,16 +294,31 @@ class VideoCallActivity : AppCompatActivity() {
                 if (isManageMode) {
                     R.string.state_video_empty_action_add
                 } else {
-                    R.string.action_back_home
+                    R.string.action_manage_contacts
                 }
             )
         ) {
             if (isManageMode) {
                 dialogController.showAddContactDialog()
             } else {
-                finish()
+                viewModel.setManageMode(true)
             }
         }
+    }
+
+    private fun applySystemInsets() {
+        val root = findViewById<View>(R.id.video_call_root)
+        val baseTop = (12 * resources.displayMetrics.density).toInt()
+        ViewCompat.setOnApplyWindowInsetsListener(root) { view, insets ->
+            val bars = insets.getInsets(
+                WindowInsetsCompat.Type.statusBars() or
+                    WindowInsetsCompat.Type.navigationBars() or
+                    WindowInsetsCompat.Type.displayCutout()
+            )
+            view.updatePadding(top = bars.top + baseTop, bottom = bars.bottom)
+            insets
+        }
+        ViewCompat.requestApplyInsets(root)
     }
 
     private fun showToast(message: String) {

@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <style name="WeatherDetailText" />
+
+    <style name="WeatherDetailText.SectionTitle">
+        <item name="android:textColor">@color/launcher_text_primary</item>
+        <item name="android:textSize">28sp</item>
+        <item name="android:textStyle">bold</item>
+        <item name="android:includeFontPadding">false</item>
+    </style>
+
+    <style name="WeatherDetailText.PrimaryLabel">
+        <item name="android:textColor">@color/launcher_text_primary</item>
+        <item name="android:textSize">18sp</item>
+        <item name="android:textStyle">bold</item>
+        <item name="android:includeFontPadding">false</item>
+    </style>
+
+    <style name="WeatherDetailText.SecondaryLabel">
+        <item name="android:textColor">@color/launcher_text_secondary</item>
+        <item name="android:textSize">15sp</item>
+        <item name="android:includeFontPadding">false</item>
+    </style>
+
+    <style name="WeatherDetailText.Temperature">
+        <item name="android:textColor">@color/launcher_text_primary</item>
+        <item name="android:textSize">24sp</item>
+        <item name="android:textStyle">bold</item>
+        <item name="android:includeFontPadding">false</item>
+    </style>
+
+    <style name="WeatherDialog" />
+
+    <style name="WeatherDialog.Title">
+        <item name="android:textColor">@color/launcher_text_primary</item>
+        <item name="android:textSize">27sp</item>
+        <item name="android:textStyle">bold</item>
+        <item name="android:includeFontPadding">false</item>
+    </style>
+
+    <style name="WeatherDialog.Button" />
+
+    <style name="WeatherDialog.Button.Primary">
+        <item name="android:textColor">@color/launcher_on_primary</item>
+        <item name="android:textSize">19sp</item>
+        <item name="android:textStyle">bold</item>
+    </style>
+
+    <style name="WeatherDialog.Button.Secondary">
+        <item name="android:textColor">@color/launcher_text_primary</item>
+        <item name="android:textSize">19sp</item>
+        <item name="android:textStyle">bold</item>
+    </style>
+</resources>

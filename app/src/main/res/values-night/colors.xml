@@ -1,7 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <color name="launcher_bg_start">#0F1419</color>
-    <color name="launcher_bg_mid">#11161D</color>
     <color name="launcher_bg_end">#161B22</color>
     <color name="launcher_surface">#161B22</color>
     <color name="launcher_surface_muted">#1A2027</color>
@@ -13,36 +12,44 @@
     <color name="launcher_action">#10B981</color>
     <color name="launcher_action_dark">#34D399</color>
     <color name="launcher_phone_action">#047857</color>
-    <color name="launcher_phone_action_soft">#0E2F24</color>
-    <color name="launcher_video_action">#2563EB</color>
-    <color name="launcher_video_action_soft">#10243F</color>
+    <color name="launcher_on_primary">#0F172A</color>
+    <color name="launcher_on_action">#FFFFFF</color>
     <color name="launcher_text_primary">#F1F5F9</color>
     <color name="launcher_text_secondary">#94A3B8</color>
-    <color name="launcher_text_muted">#64748B</color>
+    <color name="launcher_text_muted">#94A3B8</color>
     <color name="launcher_on_overlay">#FFFFFFFF</color>
     <color name="launcher_on_overlay_muted">#B0CFE3FF</color>
     <color name="launcher_outline">#2A3340</color>
+    <color name="settings_outline">#344150</color>
+    <color name="settings_guard_outline">#2D5A49</color>
+    <color name="settings_page_start">#11171D</color>
+    <color name="settings_page_end">#0D1217</color>
+    <color name="settings_guard_start">#10261F</color>
+    <color name="settings_guard_end">#18211F</color>
+    <color name="settings_primary_start">#18345F</color>
+    <color name="settings_primary_end">#102746</color>
+    <color name="settings_contact_action_start">#047857</color>
+    <color name="settings_contact_action_end">#065F46</color>
+    <color name="settings_mode_surface">#F01F2630</color>
+    <color name="settings_switch_track_on">#22C55E</color>
+    <color name="settings_switch_track_off">#3E4A59</color>
+    <color name="settings_switch_track_border">#64748B</color>
+    <color name="settings_switch_thumb">#F8FAFC</color>
+    <color name="settings_switch_thumb_off">#CBD5E1</color>
+    <color name="settings_switch_thumb_border">#334155</color>
     <color name="launcher_divider">#232B36</color>
     <color name="launcher_warning">#FBBF24</color>
     <color name="launcher_warning_soft">#3F2D14</color>
     <color name="launcher_danger">#F87171</color>
     <color name="launcher_danger_soft">#3A1F22</color>
 
-    <color name="launcher_ginkgo">#D4A857</color>
     <color name="launcher_ginkgo_deep">#E0BB7A</color>
     <color name="launcher_ginkgo_soft">#2A2418</color>
-    <color name="launcher_ginkgo_line">#3D3220</color>
-
-    <color name="launcher_success">#4ADE80</color>
-    <color name="launcher_success_soft">#0F2A1B</color>
-    <color name="launcher_success_line">#1F4A33</color>
 
     <color name="launcher_contacts">#93C5FD</color>
     <color name="launcher_contacts_soft">#10243F</color>
     <color name="launcher_call">#6EE7B7</color>
     <color name="launcher_call_soft">#0E2F24</color>
-    <color name="launcher_permissions">#C4B5FD</color>
-    <color name="launcher_permissions_soft">#251A3F</color>
     <color name="launcher_device">#5EEAD4</color>
     <color name="launcher_device_soft">#0E302D</color>
     <color name="launcher_system">#CBD5E1</color>

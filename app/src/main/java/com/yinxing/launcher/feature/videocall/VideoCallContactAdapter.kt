@@ -27,10 +27,10 @@ class VideoCallContactAdapter(
     private val scope: LifecycleCoroutineScope,
     private var lowPerformanceMode: Boolean,
     private val onContactClick: (Contact) -> Unit,
-    private val onWechatVideoClick: (Contact) -> Unit
+    private val onEditClick: (Contact) -> Unit
 ) : ListAdapter<Contact, VideoCallContactAdapter.ViewHolder>(DiffCallback) {
 
-    private var fullCardTapEnabled = false
+    private var isManageMode = false
     private var animationsEnabled = true
     private val animatedIds = HashSet<Long>()
 
@@ -62,13 +62,14 @@ class VideoCallContactAdapter(
         val name: TextView = view.findViewById(R.id.tv_video_contact_name)
         val subtitle: TextView = view.findViewById(R.id.tv_video_contact_subtitle)
         val btnVideoCall: MaterialButton = view.findViewById(R.id.btn_video_call)
+        val manageHint: TextView = view.findViewById(R.id.tv_video_manage_hint)
         var photoJob: Job? = null
     }
 
-    fun setFullCardTapEnabled(enabled: Boolean) {
-        if (fullCardTapEnabled == enabled) return
-        fullCardTapEnabled = enabled
-        notifyItemRangeChanged(0, itemCount)
+    fun setManageMode(manage: Boolean) {
+        if (isManageMode == manage) return
+        isManageMode = manage
+        notifyDataSetChanged()
     }
 
     override fun getItemId(position: Int): Long = getItem(position).id.hashCode().toLong()
@@ -129,13 +130,10 @@ class VideoCallContactAdapter(
             if (isWechat) R.string.contact_card_action_wechat_v2 else R.string.contact_card_action_phone_v2
         )
         holder.btnVideoCall.backgroundTintList = ColorStateList.valueOf(
-            ContextCompat.getColor(
-                context,
-                if (isWechat) R.color.launcher_video_action else R.color.launcher_phone_action
-            )
+            ContextCompat.getColor(context, R.color.launcher_phone_action)
         )
         holder.btnVideoCall.setIconResource(
-            if (isWechat) android.R.drawable.ic_menu_camera else android.R.drawable.ic_menu_call
+            if (isWechat) R.drawable.ic_settings_action_video else R.drawable.ic_settings_category_calls
         )
 
         holder.btnVideoCall.contentDescription = context.getString(
@@ -146,7 +144,7 @@ class VideoCallContactAdapter(
         holder.photo.contentDescription = context.getString(R.string.contact_photo_description, contact.displayName)
         holder.card.contentDescription = context.getString(R.string.video_contact_action_description, contact.displayName)
 
-        holder.photo.setDefaultAvatar(context, contact.preferredAction)
+        holder.photo.setDefaultAvatar(context)
         holder.photoJob?.cancel()
         val avatarUri = contact.avatarUri?.takeIf { it.isNotBlank() }
         if (avatarUri != null) {
@@ -168,21 +166,19 @@ class VideoCallContactAdapter(
             }
         }
 
-        val primaryAction = View.OnClickListener {
-            if (isWechat) onWechatVideoClick(contact) else onContactClick(contact)
-        }
-        holder.btnVideoCall.setOnClickListener(primaryAction)
-        if (fullCardTapEnabled) {
-            holder.card.setOnClickListener(primaryAction)
-            holder.photo.setOnClickListener(primaryAction)
-            holder.name.setOnClickListener(primaryAction)
+        if (isManageMode) {
+            holder.btnVideoCall.isVisible = false
+            holder.manageHint.isVisible = true
+            holder.card.isClickable = true
+            holder.card.isFocusable = true
+            holder.card.setOnClickListener { onEditClick(contact) }
         } else {
+            holder.btnVideoCall.isVisible = true
+            holder.manageHint.isVisible = false
+            holder.btnVideoCall.setOnClickListener { onContactClick(contact) }
             holder.card.setOnClickListener(null)
             holder.card.isClickable = false
-            holder.photo.setOnClickListener(null)
-            holder.photo.isClickable = false
-            holder.name.setOnClickListener(null)
-            holder.name.isClickable = false
+            holder.card.isFocusable = false
         }
     }
 
@@ -212,14 +208,8 @@ class VideoCallContactAdapter(
         }
     }
 
-    private fun ImageView.setDefaultAvatar(context: android.content.Context, action: Contact.PreferredAction) {
-        setImageResource(
-            if (action == Contact.PreferredAction.WECHAT_VIDEO) {
-                android.R.drawable.ic_menu_camera
-            } else {
-                android.R.drawable.ic_menu_call
-            }
-        )
-        setColorFilter(ContextCompat.getColor(context, R.color.launcher_primary_dark))
+    private fun ImageView.setDefaultAvatar(context: android.content.Context) {
+        setImageResource(R.drawable.ic_contact_avatar_placeholder)
+        clearColorFilter()
     }
 }

@@ -6,6 +6,7 @@ import androidx.lifecycle.lifecycleScope
 import com.yinxing.launcher.R
 import com.yinxing.launcher.common.util.PermissionUtil
 import com.yinxing.launcher.data.contact.ContactManager
+import com.yinxing.launcher.feature.incoming.DefaultPhoneRoleController
 import com.yinxing.launcher.feature.incoming.IncomingGuardItem
 import com.yinxing.launcher.feature.incoming.IncomingGuardReadinessEvaluator
 import com.yinxing.launcher.feature.phone.PhoneContactManager
@@ -19,22 +20,23 @@ internal class SettingsOverviewController(
 ) {
     fun bindActions(
         onBack: () -> Unit,
-        onShowIncomingGuardSheet: () -> Unit,
-        onShowContactsSheet: () -> Unit,
-        onShowAutoAnswerSheet: () -> Unit,
-        onShowPermissionGroupsSheet: () -> Unit,
-        onShowDeviceSettingsSheet: () -> Unit,
-        onShowSystemSheet: () -> Unit
+        onShowIncomingGuard: () -> Unit,
+        onShowContacts: () -> Unit,
+        onShowCalls: () -> Unit,
+        onShowPermissions: () -> Unit,
+        onShowDevice: () -> Unit,
+        onShowSystem: () -> Unit
     ) {
         with(activity) {
             findViewById<View>(R.id.btn_back).setOnClickListener { onBack() }
-            findViewById<View>(R.id.btn_card_incoming_guard).setOnClickListener { onShowIncomingGuardSheet() }
-            btnIncomingGuardAction.setOnClickListener { onShowIncomingGuardSheet() }
-            findViewById<View>(R.id.btn_card_contacts).setOnClickListener { onShowContactsSheet() }
-            findViewById<View>(R.id.btn_card_auto_answer).setOnClickListener { onShowAutoAnswerSheet() }
-            findViewById<View>(R.id.btn_card_permissions).setOnClickListener { onShowPermissionGroupsSheet() }
-            findViewById<View>(R.id.btn_card_device).setOnClickListener { onShowDeviceSettingsSheet() }
-            findViewById<View>(R.id.btn_card_system).setOnClickListener { onShowSystemSheet() }
+            findViewById<View>(R.id.btn_card_incoming_guard).setOnClickListener { onShowIncomingGuard() }
+            btnIncomingGuardAction.setOnClickListener { onShowIncomingGuard() }
+            findViewById<View>(R.id.btn_detail_contacts).setOnClickListener { onShowContacts() }
+            findViewById<View>(R.id.btn_card_auto_answer).setOnClickListener { onShowCalls() }
+            findViewById<View>(R.id.btn_detail_calls).setOnClickListener { onShowCalls() }
+            findViewById<View>(R.id.btn_detail_permissions).setOnClickListener { onShowPermissions() }
+            findViewById<View>(R.id.btn_detail_device).setOnClickListener { onShowDevice() }
+            findViewById<View>(R.id.btn_detail_system).setOnClickListener { onShowSystem() }
         }
     }
 
@@ -100,7 +102,7 @@ internal fun SettingsActivity.updateContactsHubSummary() {
     contactsSummaryJob = lifecycleScope.launch {
         try {
             val counts = loadContactCounts()
-            tvContactsHubSummary.text = getString(
+            navigationSummary(R.id.btn_detail_contacts).text = getString(
                 R.string.settings_contacts_hub_summary,
                 counts.phoneCount,
                 counts.videoCount,
@@ -109,7 +111,7 @@ internal fun SettingsActivity.updateContactsHubSummary() {
         } catch (cancelled: CancellationException) {
             throw cancelled
         } catch (_: Throwable) {
-            tvContactsHubSummary.text = getString(
+            navigationSummary(R.id.btn_detail_contacts).text = getString(
                 R.string.settings_contacts_hub_summary,
                 0,
                 0,
@@ -121,30 +123,25 @@ internal fun SettingsActivity.updateContactsHubSummary() {
 
 internal fun SettingsActivity.updateAutoAnswerHubCard() {
     val enabled = launcherPreferences.isAutoAnswerEnabled()
+    tvAutoAnswerHubStatus.background = null
+    tvAutoAnswerHubStatus.text = getString(
+        if (enabled) R.string.settings_state_on else R.string.settings_state_off
+    )
+    tvAutoAnswerHubStatus.setTextColor(
+        getColor(if (enabled) R.color.launcher_action_dark else R.color.launcher_text_muted)
+    )
     if (enabled) {
-        applyInfoBadge(
-            tv = tvAutoAnswerHubStatus,
-            text = getString(R.string.settings_guard_status_done),
-            textColorResId = R.color.launcher_action_dark,
-            backgroundColorResId = R.color.launcher_primary_soft
-        )
         tvAutoAnswerHubSummary.text = getString(
             R.string.settings_auto_answer_delay_summary,
             launcherPreferences.getAutoAnswerDelaySeconds()
         )
     } else {
-        applyInfoBadge(
-            tv = tvAutoAnswerHubStatus,
-            text = getString(R.string.settings_guard_status_pending),
-            textColorResId = R.color.launcher_warning,
-            backgroundColorResId = R.color.launcher_warning_soft
-        )
         tvAutoAnswerHubSummary.text = getString(R.string.settings_auto_answer_summary_off)
     }
 }
 
 internal fun SettingsActivity.updateSystemHubCard() {
-    tvSystemHubSummary.text = getString(
+    navigationSummary(R.id.btn_detail_system).text = getString(
         R.string.settings_weather_city_summary,
         weatherPreferences.getCityName()
     )
@@ -178,20 +175,16 @@ internal suspend fun SettingsActivity.loadContactCounts(): ContactCounts {
 internal fun SettingsActivity.refreshIncomingGuardUi() {
     incomingGuardReadiness = IncomingGuardReadinessEvaluator.evaluate(
         hasPhonePermission = PermissionUtil.hasPhonePermission(this),
+        isDefaultPhone = DefaultPhoneRoleController.isHeld(this),
         hasNotificationPermission = PermissionUtil.hasNotificationPermission(this),
-        isDefaultLauncher = isDefaultLauncher(),
         ignoresBatteryOptimizations = PermissionUtil.isIgnoringBatteryOptimizations(this),
         autoStartConfirmed = launcherPreferences.isAutoStartConfirmed(),
         backgroundStartConfirmed = launcherPreferences.isBackgroundStartConfirmed()
     )
     val blocker = incomingGuardReadiness.blocker?.item
 
-    tvIncomingGuardProgress.text = getString(
-        R.string.settings_incoming_guard_progress,
-        incomingGuardReadiness.completedCount
-    )
-
     if (incomingGuardReadiness.isReady) {
+        tvIncomingGuardProgress.text = getString(R.string.settings_incoming_guard_status_ready)
         applyInfoBadge(
             tv = tvIncomingGuardStatus,
             text = getString(R.string.settings_incoming_guard_status_ready),
@@ -202,20 +195,22 @@ internal fun SettingsActivity.refreshIncomingGuardUi() {
         tvIncomingGuardAction.text = getString(R.string.settings_incoming_guard_action_open)
     } else {
         val blockerTitle = blocker?.let(::guardTitle).orEmpty()
+        tvIncomingGuardProgress.text = getString(
+            R.string.settings_incoming_guard_pending_item,
+            blockerTitle
+        )
         applyInfoBadge(
             tv = tvIncomingGuardStatus,
             text = getString(R.string.settings_incoming_guard_status_pending),
             textColorResId = R.color.launcher_warning,
             backgroundColorResId = R.color.launcher_warning_soft
         )
-        tvIncomingGuardSummary.text = getString(
-            R.string.settings_incoming_guard_summary_blocked,
-            blockerTitle
-        )
-        tvIncomingGuardAction.text = getString(
-            R.string.settings_incoming_guard_action_fix,
-            blockerTitle
-        )
+        tvIncomingGuardSummary.text = if (blocker == IncomingGuardItem.PhonePermission) {
+            getString(R.string.settings_incoming_guard_phone_risk)
+        } else {
+            getString(R.string.settings_incoming_guard_summary_blocked, blockerTitle)
+        }
+        tvIncomingGuardAction.text = getString(R.string.settings_incoming_guard_action_now)
     }
 }
 
@@ -232,6 +227,10 @@ internal fun SettingsActivity.buildPermissionEntryStates(
             requiresManualConfirmation = itemState.requiresManualConfirmation
         )
     }
+    states[PermissionEntry.DefaultLauncher] = PermissionEntryState(
+        entry = PermissionEntry.DefaultLauncher,
+        isReady = isDefaultLauncher()
+    )
     states[PermissionEntry.Accessibility] = PermissionEntryState(
         entry = PermissionEntry.Accessibility,
         isReady = accessibilityGranted
@@ -246,8 +245,7 @@ internal fun SettingsActivity.buildPermissionEntryStates(
 internal fun SettingsActivity.refreshPermissionHubCard() {
     val states = permissionEntryStates.values.toList()
     val blocker = states.firstOrNull { !it.isReady }
-    val completedCount = states.count { it.isReady }
-    tvPermissionHubSummary.text = if (blocker == null) {
+    navigationSummary(R.id.btn_detail_permissions).text = if (blocker == null) {
         getString(R.string.settings_permissions_hub_summary_ready)
     } else {
         getString(
@@ -255,12 +253,6 @@ internal fun SettingsActivity.refreshPermissionHubCard() {
             permissionEntryTitle(blocker.entry)
         )
     }
-    applyInfoBadge(
-        tv = tvPermissionHubStatus,
-        text = getString(R.string.settings_permission_group_progress, completedCount, states.size),
-        textColorResId = if (blocker == null) R.color.launcher_action_dark else R.color.launcher_warning,
-        backgroundColorResId = if (blocker == null) R.color.launcher_primary_soft else R.color.launcher_warning_soft
-    )
 }
 
 internal fun SettingsActivity.refreshDeviceHubCard() {
@@ -270,32 +262,20 @@ internal fun SettingsActivity.refreshDeviceHubCard() {
     } else {
         getString(R.string.settings_device_hub_default_pending)
     }
-    val kioskSummary = if (launcherPreferences.isKioskModeEnabled()) {
-        getString(R.string.settings_device_hub_kiosk_on)
-    } else {
-        getString(R.string.settings_device_hub_kiosk_off)
-    }
     val performanceSummary = if (launcherPreferences.isLowPerformanceModeEnabled()) {
         getString(R.string.settings_device_hub_low_performance_on)
     } else {
         getString(R.string.settings_device_hub_low_performance_off)
     }
-    tvDeviceHubSummary.text = getString(
+    navigationSummary(R.id.btn_detail_device).text = getString(
         R.string.settings_device_hub_summary,
         defaultSummary,
-        kioskSummary,
         performanceSummary
     )
-    applyInfoBadge(
-        tv = tvDeviceHubStatus,
-        text = if (isDefault) {
-            getString(R.string.settings_guard_status_done)
-        } else {
-            getString(R.string.settings_guard_status_pending)
-        },
-        textColorResId = if (isDefault) R.color.launcher_action_dark else R.color.launcher_warning,
-        backgroundColorResId = if (isDefault) R.color.launcher_primary_soft else R.color.launcher_warning_soft
-    )
+}
+
+private fun SettingsActivity.navigationSummary(rootId: Int): TextView {
+    return findViewById<View>(rootId).findViewById(R.id.navigation_summary)
 }
 
 internal fun SettingsActivity.permissionGroupRenderState(group: PermissionGroup): GroupRenderState {
@@ -328,6 +308,10 @@ internal fun SettingsActivity.permissionGroupRenderState(group: PermissionGroup)
 
 internal fun SettingsActivity.permissionEntrySummary(state: PermissionEntryState): String {
     return when (state.entry) {
+        PermissionEntry.DefaultPhone -> getString(
+            if (state.isReady) R.string.settings_default_phone_summary_on
+            else R.string.settings_default_phone_summary_off
+        )
         PermissionEntry.PhonePermission -> getString(
             if (state.isReady) R.string.settings_phone_permission_summary_on
             else R.string.settings_phone_permission_summary_off
@@ -366,6 +350,7 @@ internal fun SettingsActivity.permissionEntrySummary(state: PermissionEntryState
 internal fun SettingsActivity.permissionEntryTitle(entry: PermissionEntry): String {
     return getString(
         when (entry) {
+            PermissionEntry.DefaultPhone -> R.string.settings_default_phone_title
             PermissionEntry.PhonePermission -> R.string.settings_phone_permission_title
             PermissionEntry.NotificationPermission -> R.string.settings_notification_permission_title
             PermissionEntry.DefaultLauncher -> R.string.set_default_launcher_title

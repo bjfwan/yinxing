@@ -3,9 +3,7 @@ package com.yinxing.launcher.feature.incoming
 import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
-import android.content.pm.PackageManager
 import com.yinxing.launcher.common.util.PermissionUtil
-import com.yinxing.launcher.data.home.LauncherPreferences
 import com.yinxing.launcher.feature.home.MainActivity
 
 /**
@@ -22,8 +20,7 @@ class BootReceiver : BroadcastReceiver() {
 
         IncomingCallForegroundService.ensureNotificationChannels(context)
 
-        val prefs = LauncherPreferences.getInstance(context)
-        if (!prefs.isKioskModeEnabled() && !PermissionUtil.isDefaultLauncher(context)) {
+        if (!PermissionUtil.isDefaultLauncher(context)) {
             return
         }
 

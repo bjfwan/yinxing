@@ -10,14 +10,25 @@ import org.junit.Test
 class IncomingCallCompatibilityDecisionEngineTest {
 
     @Test
-    fun readyModernDeviceUsesTelecomManagerAndAllowsAutoAnswer() {
+    fun readyModernDeviceUsesInCallServiceAndAllowsAutoAnswer() {
         val decision = IncomingCallCompatibilityDecisionEngine.decide(readyInput())
 
         assertTrue(decision.canAutoAnswer)
         assertTrue(decision.isReliable)
-        assertEquals(IncomingCallAcceptStrategy.TelecomManager, decision.strategy)
+        assertEquals(IncomingCallAcceptStrategy.InCallService, decision.strategy)
         assertTrue(decision.blockers.isEmpty())
-        assertEquals(94, decision.confidence)
+        assertEquals(98, decision.confidence)
+    }
+
+    @Test
+    fun missingDefaultPhoneRoleBlocksAutomaticAnswer() {
+        val decision = IncomingCallCompatibilityDecisionEngine.decide(
+            readyInput(isDefaultPhone = false)
+        )
+
+        assertFalse(decision.canAutoAnswer)
+        assertTrue(decision.blockers.contains(IncomingCallCompatibilityBlocker.DefaultPhone))
+        assertEquals(IncomingCallAcceptStrategy.TelecomManager, decision.strategy)
     }
 
     @Test
@@ -30,7 +41,7 @@ class IncomingCallCompatibilityDecisionEngineTest {
         )
 
         assertFalse(decision.canAutoAnswer)
-        assertEquals(IncomingCallAcceptStrategy.TelecomManager, decision.strategy)
+        assertEquals(IncomingCallAcceptStrategy.InCallService, decision.strategy)
         assertEquals(
             listOf(
                 IncomingCallCompatibilityBlocker.ContactWhitelist,
@@ -41,15 +52,15 @@ class IncomingCallCompatibilityDecisionEngineTest {
     }
 
     @Test
-    fun androidSevenUsesHeadsetHookWithCompatibilityWarning() {
+    fun androidSevenUsesInCallServiceWhenAppIsDefaultPhone() {
         val decision = IncomingCallCompatibilityDecisionEngine.decide(
             readyInput(sdkInt = Build.VERSION_CODES.N)
         )
 
         assertTrue(decision.canAutoAnswer)
-        assertFalse(decision.isReliable)
-        assertEquals(IncomingCallAcceptStrategy.HeadsetHook, decision.strategy)
-        assertEquals(66, decision.confidence)
+        assertTrue(decision.isReliable)
+        assertEquals(IncomingCallAcceptStrategy.InCallService, decision.strategy)
+        assertEquals(98, decision.confidence)
     }
 
     @Test
@@ -66,6 +77,19 @@ class IncomingCallCompatibilityDecisionEngineTest {
             listOf(IncomingCallCompatibilityBlocker.NotificationPermission),
             decision.blockers
         )
+    }
+
+    @Test
+    fun disabledNotificationsBlockIncomingUiBeforeAndroidThirteenToo() {
+        val decision = IncomingCallCompatibilityDecisionEngine.decide(
+            readyInput(
+                sdkInt = Build.VERSION_CODES.S,
+                hasNotificationPermission = false
+            )
+        )
+
+        assertFalse(decision.canAutoAnswer)
+        assertTrue(decision.blockers.contains(IncomingCallCompatibilityBlocker.NotificationPermission))
     }
 
     @Test
@@ -141,7 +165,7 @@ class IncomingCallCompatibilityDecisionEngineTest {
         contactAutoAnswerEnabled: Boolean = true,
         hasPhonePermission: Boolean = true,
         hasNotificationPermission: Boolean = true,
-        isDefaultLauncher: Boolean = true,
+        isDefaultPhone: Boolean = true,
         ignoresBatteryOptimizations: Boolean = true,
         autoStartConfirmed: Boolean = true,
         backgroundStartConfirmed: Boolean = true
@@ -152,7 +176,7 @@ class IncomingCallCompatibilityDecisionEngineTest {
         contactAutoAnswerEnabled = contactAutoAnswerEnabled,
         hasPhonePermission = hasPhonePermission,
         hasNotificationPermission = hasNotificationPermission,
-        isDefaultLauncher = isDefaultLauncher,
+        isDefaultPhone = isDefaultPhone,
         ignoresBatteryOptimizations = ignoresBatteryOptimizations,
         autoStartConfirmed = autoStartConfirmed,
         backgroundStartConfirmed = backgroundStartConfirmed

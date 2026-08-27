@@ -3,89 +3,109 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:id="@+id/card_video_contact"
-    style="@style/Widget.OldLauncher.ListItemCard"
     android:layout_width="match_parent"
-    android:layout_height="wrap_content"
-    android:layout_marginStart="6dp"
-    android:layout_marginTop="8dp"
-    android:layout_marginEnd="6dp"
-    android:layout_marginBottom="8dp"
-    android:clickable="true"
-    android:focusable="true"
-    android:foreground="?android:attr/selectableItemBackground">
+    android:layout_height="232dp"
+    android:layout_marginStart="2dp"
+    android:layout_marginTop="7dp"
+    android:layout_marginEnd="2dp"
+    android:layout_marginBottom="7dp"
+    android:clickable="false"
+    android:focusable="false"
+    app:cardBackgroundColor="@color/launcher_surface"
+    app:cardCornerRadius="18dp"
+    app:cardElevation="1dp"
+    app:strokeColor="@color/launcher_outline"
+    app:strokeWidth="1dp">
 
     <LinearLayout
         android:layout_width="match_parent"
-        android:layout_height="240dp"
+        android:layout_height="match_parent"
         android:gravity="center_vertical"
         android:orientation="horizontal"
-        android:paddingStart="24dp"
-        android:paddingEnd="24dp">
+        android:padding="16dp">
 
         <com.google.android.material.imageview.ShapeableImageView
             android:id="@+id/iv_video_contact_photo"
-            android:layout_width="180dp"
-            android:layout_height="180dp"
+            android:layout_width="164dp"
+            android:layout_height="164dp"
             android:background="@color/launcher_surface_soft"
             android:contentDescription="@string/contact_photo_preview"
             android:scaleType="centerCrop"
-            app:shapeAppearanceOverlay="@style/ShapeAppearance.OldLauncher.Circle" />
+            app:shapeAppearanceOverlay="@style/ShapeAppearance.OldLauncher.ContactPhoto" />
 
         <LinearLayout
             android:layout_width="0dp"
             android:layout_height="wrap_content"
-            android:layout_marginStart="20dp"
+            android:layout_marginStart="14dp"
             android:layout_weight="1"
+            android:gravity="center_horizontal"
             android:orientation="vertical">
 
             <TextView
                 android:id="@+id/tv_video_contact_name"
-                style="@style/TextAppearance.OldLauncher.SectionTitle"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:ellipsize="end"
+                android:fontFamily="sans-serif-medium"
+                android:gravity="center"
                 android:maxLines="1"
                 android:text="@string/video_contact_placeholder"
-                android:textSize="28sp" />
+                android:textColor="@color/launcher_text_primary"
+                android:textSize="28sp"
+                android:textStyle="bold" />
 
             <TextView
                 android:id="@+id/tv_video_contact_subtitle"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="6dp"
+                android:layout_marginTop="5dp"
                 android:ellipsize="end"
-                android:fontFamily="monospace"
+                android:gravity="center"
                 android:maxLines="1"
-                android:textColor="@color/launcher_text_primary"
-                android:textSize="20sp"
-                android:textStyle="bold"
+                android:textColor="@color/launcher_text_secondary"
+                android:textSize="14sp"
                 android:visibility="gone"
-                tools:text="微信：奶奶" />
+                tools:text="微信：妈妈" />
 
             <com.google.android.material.button.MaterialButton
                 android:id="@+id/btn_video_call"
                 style="@style/Widget.MaterialComponents.Button"
                 android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="16dp"
+                android:layout_height="76dp"
+                android:layout_marginTop="12dp"
                 android:insetTop="0dp"
                 android:insetBottom="0dp"
+                android:maxLines="1"
                 android:minHeight="76dp"
-                android:paddingStart="24dp"
-                android:paddingEnd="24dp"
+                android:minWidth="0dp"
+                android:paddingStart="8dp"
+                android:paddingEnd="8dp"
+                android:singleLine="true"
                 android:text="@string/contact_card_action_wechat_v2"
                 android:textColor="@android:color/white"
                 android:textSize="22sp"
                 android:textStyle="bold"
-                app:backgroundTint="@color/launcher_video_action"
-                app:cornerRadius="22dp"
-                app:icon="@android:drawable/ic_menu_camera"
+                app:backgroundTint="@color/launcher_phone_action"
+                app:cornerRadius="18dp"
+                app:icon="@drawable/ic_settings_action_video"
                 app:iconGravity="textStart"
-                app:iconPadding="12dp"
-                app:iconSize="30dp"
+                app:iconPadding="5dp"
+                app:iconSize="22dp"
                 app:iconTint="@android:color/white" />
 
+            <TextView
+                android:id="@+id/tv_video_manage_hint"
+                android:layout_width="match_parent"
+                android:layout_height="52dp"
+                android:layout_marginTop="12dp"
+                android:background="@drawable/bg_settings_mode_capsule"
+                android:gravity="center"
+                android:maxLines="1"
+                android:text="@string/contact_manage_hint_edit"
+                android:textColor="@color/launcher_primary"
+                android:textSize="17sp"
+                android:textStyle="bold"
+                android:visibility="gone" />
         </LinearLayout>
-
     </LinearLayout>
 </com.google.android.material.card.MaterialCardView>

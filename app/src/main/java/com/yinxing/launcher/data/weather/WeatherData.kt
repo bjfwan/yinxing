@@ -18,3 +18,11 @@ data class WeatherForecastDay(
     val low: Int,
     val weatherCode: String
 )
+
+data class WeatherHour(
+    val time: String,
+    val weather: String,
+    val temperature: Int,
+    val precipitationProbability: Int,
+    val weatherCode: String
+)

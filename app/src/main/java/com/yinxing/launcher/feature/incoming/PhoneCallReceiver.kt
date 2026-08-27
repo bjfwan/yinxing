@@ -10,20 +10,19 @@ import com.yinxing.launcher.common.util.DebugLog
 import com.yinxing.launcher.common.util.PermissionUtil
 import com.yinxing.launcher.data.home.LauncherPreferences
 import com.yinxing.launcher.feature.phone.PhoneContactManager
-import java.util.concurrent.atomic.AtomicLong
-import java.util.concurrent.atomic.AtomicReference
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
 class PhoneCallReceiver : BroadcastReceiver() {
     companion object {
         private const val TAG = "PhoneCallReceiver"
+        private const val PHONE_STATE_COALESCE_WINDOW_MS = 250L
         private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
-        private val stateToken = AtomicLong(0)
-        private val latestEvent = AtomicReference<Pair<Long, String>?>(null)
+        private val eventCoalescer = IncomingPhoneStateEventCoalescer()
     }
 
     override fun onReceive(context: Context, intent: Intent) {
@@ -34,31 +33,33 @@ class PhoneCallReceiver : BroadcastReceiver() {
             DebugLog.w(TAG, "Received PHONE_STATE_CHANGED without EXTRA_STATE; intent=$intent")
             return
         }
-        val token = stateToken.incrementAndGet()
-        latestEvent.set(token to state)
+        @Suppress("DEPRECATION")
+        val rawIncomingNumber = intent.getStringExtra(TelephonyManager.EXTRA_INCOMING_NUMBER)
+        val ticket = eventCoalescer.record(state, rawIncomingNumber)
+
+        // 默认电话链路的状态和通知生命周期只由 InCallService 管理。
+        if (ready { DefaultPhoneRoleController.isHeld(appContext) }) return
+
         if (state != TelephonyManager.EXTRA_STATE_RINGING) {
             runCatching { IncomingCallForegroundService.stop(appContext) }
                 .onFailure { DebugLog.w(TAG, "Failed to stop foreground service for state=$state", it) }
             return
         }
-        @Suppress("DEPRECATION")
-        val incomingNumber = intent.getStringExtra(TelephonyManager.EXTRA_INCOMING_NUMBER) ?: ""
+
         val pendingResult = goAsync()
         scope.launch {
+            var incomingNumber = ""
             var callerLabel: String? = incomingNumber.ifBlank { null }
             try {
+                delay(PHONE_STATE_COALESCE_WINDOW_MS)
+                val claimedEvent = eventCoalescer.claim(ticket) ?: return@launch
+                incomingNumber = claimedEvent.incomingNumber
+                callerLabel = incomingNumber.ifBlank { null }
                 val contacts = runCatching {
                     PhoneContactManager.getInstance(appContext).getContacts()
                 }.getOrElse {
                     DebugLog.e(TAG, "Failed to load phone contacts for incoming match", it)
                     emptyList()
-                }
-                val event = latestEvent.get()
-                if (event == null || event.first != token || event.second != TelephonyManager.EXTRA_STATE_RINGING) {
-                    DebugLog.i(TAG) {
-                        "Skip stale ringing token=$token current=${event?.first}/${event?.second}"
-                    }
-                    return@launch
                 }
                 val preferences = LauncherPreferences.getInstance(appContext)
                 val decision = IncomingAutoAnswerDecisionMaker.decide(
@@ -126,7 +127,7 @@ class PhoneCallReceiver : BroadcastReceiver() {
                 contactAutoAnswerEnabled = decision.matchedContact?.autoAnswer == true,
                 hasPhonePermission = ready { PermissionUtil.hasPhonePermission(context) },
                 hasNotificationPermission = ready { PermissionUtil.hasNotificationPermission(context) },
-                isDefaultLauncher = ready { PermissionUtil.isDefaultLauncher(context) },
+                isDefaultPhone = ready { DefaultPhoneRoleController.isHeld(context) },
                 ignoresBatteryOptimizations = ready { PermissionUtil.isIgnoringBatteryOptimizations(context) },
                 autoStartConfirmed = preferences.isAutoStartConfirmed(),
                 backgroundStartConfirmed = preferences.isBackgroundStartConfirmed()

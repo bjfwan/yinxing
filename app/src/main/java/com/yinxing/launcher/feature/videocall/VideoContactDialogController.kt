@@ -1,6 +1,7 @@
 ﻿package com.yinxing.launcher.feature.videocall
 
 import android.net.Uri
+import android.graphics.Bitmap
 import android.widget.EditText
 import android.widget.ImageView
 import android.widget.TextView
@@ -8,7 +9,9 @@ import android.widget.Toast
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.cardview.widget.CardView
+import androidx.core.content.ContextCompat
 import androidx.lifecycle.lifecycleScope
+import com.google.android.material.card.MaterialCardView
 import com.yinxing.launcher.R
 import com.yinxing.launcher.common.media.MediaThumbnailLoader
 import com.yinxing.launcher.data.contact.Contact
@@ -30,9 +33,15 @@ class VideoContactDialogController(
     private var previewJob: Job? = null
 
 
-    fun updateSelectedPhoto(uri: Uri) {
+    fun updateSelectedPhoto(uri: Uri, bitmap: Bitmap) {
         selectedAvatarUri = uri.toString()
-        renderSelectedPhoto()
+        previewJob?.cancel()
+        photoPreview?.apply {
+            imageTintList = null
+            clearColorFilter()
+            setPadding(0, 0, 0, 0)
+            setImageBitmap(bitmap)
+        }
     }
 
     fun showAddContactDialog() {
@@ -112,6 +121,8 @@ class VideoContactDialogController(
 
         val nameField = dialogView.findViewById<EditText>(R.id.et_contact_name)
         val wechatField = dialogView.findViewById<EditText>(R.id.et_wechat_name)
+        val cancelButton = dialogView.findViewById<MaterialCardView>(R.id.btn_cancel)
+        val cancelLabel = dialogView.findViewById<TextView>(R.id.btn_cancel_label)
         photoPreview = dialogView.findViewById(R.id.iv_photo_preview)
         selectedAvatarUri = initialContact?.avatarUri
 
@@ -122,8 +133,14 @@ class VideoContactDialogController(
         dialogView.findViewById<CardView>(R.id.btn_select_photo).setOnClickListener {
             onPickPhoto()
         }
-        dialogView.findViewById<CardView>(R.id.btn_cancel).setOnClickListener {
+        if (initialContact != null) {
+            cancelLabel.text = activity.getString(R.string.action_delete)
+            cancelLabel.setTextColor(ContextCompat.getColor(activity, R.color.launcher_danger))
+            cancelButton.setCardBackgroundColor(ContextCompat.getColor(activity, R.color.launcher_danger_soft))
+        }
+        cancelButton.setOnClickListener {
             dialog.dismiss()
+            if (initialContact != null) showDeleteDialog(initialContact)
         }
         dialogView.findViewById<CardView>(R.id.btn_confirm).setOnClickListener {
             val name = nameField.text.toString().trim()
@@ -147,18 +164,25 @@ class VideoContactDialogController(
         }
 
         dialog.show()
+        dialog.window?.setLayout(
+            (activity.resources.displayMetrics.widthPixels * 0.92f).toInt(),
+            android.view.WindowManager.LayoutParams.WRAP_CONTENT
+        )
     }
 
     private fun renderSelectedPhoto() {
         val preview = photoPreview ?: return
+        preview.imageTintList = null
         val avatarUri = selectedAvatarUri?.takeIf { it.isNotBlank() }
         previewJob?.cancel()
         if (avatarUri == null) {
-            preview.setImageResource(android.R.drawable.ic_menu_camera)
+            preview.setImageResource(R.drawable.ic_contact_avatar_placeholder)
+            preview.clearColorFilter()
             preview.setPadding(dp(28), dp(28), dp(28), dp(28))
             return
         }
-        preview.setImageResource(android.R.drawable.ic_menu_camera)
+        preview.setImageResource(R.drawable.ic_contact_avatar_placeholder)
+        preview.clearColorFilter()
         preview.setPadding(dp(28), dp(28), dp(28), dp(28))
         previewJob = activity.lifecycleScope.launch {
             val bitmap = runCatching {
@@ -167,6 +191,7 @@ class VideoContactDialogController(
             if (photoPreview === preview && selectedAvatarUri == avatarUri && bitmap != null) {
                 preview.setPadding(0, 0, 0, 0)
                 preview.setImageBitmap(bitmap)
+                preview.clearColorFilter()
             }
         }
     }

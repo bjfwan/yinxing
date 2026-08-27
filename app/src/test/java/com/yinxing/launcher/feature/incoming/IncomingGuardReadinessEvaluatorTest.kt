@@ -9,11 +9,10 @@ import org.junit.Test
 class IncomingGuardReadinessEvaluatorTest {
 
     @Test
-    fun phonePermissionIsTheFirstBlocker() {
+    fun phonePermissionBlocksAfterDefaultPhoneIsReady() {
         val readiness = IncomingGuardReadinessEvaluator.evaluate(
             hasPhonePermission = false,
             hasNotificationPermission = true,
-            isDefaultLauncher = true,
             ignoresBatteryOptimizations = true,
             autoStartConfirmed = true,
             backgroundStartConfirmed = true
@@ -24,11 +23,38 @@ class IncomingGuardReadinessEvaluatorTest {
     }
 
     @Test
+    fun defaultPhoneRoleBlocksAfterNotificationIsReady() {
+        val readiness = IncomingGuardReadinessEvaluator.evaluate(
+            hasPhonePermission = true,
+            hasNotificationPermission = true,
+            isDefaultPhone = false,
+            ignoresBatteryOptimizations = true,
+            autoStartConfirmed = true,
+            backgroundStartConfirmed = true
+        )
+
+        assertEquals(IncomingGuardItem.DefaultPhone, readiness.blocker?.item)
+    }
+
+    @Test
+    fun notificationReadinessBlocksBeforeDefaultPhoneRoleIsRequested() {
+        val readiness = IncomingGuardReadinessEvaluator.evaluate(
+            hasPhonePermission = false,
+            hasNotificationPermission = false,
+            isDefaultPhone = false,
+            ignoresBatteryOptimizations = false,
+            autoStartConfirmed = false,
+            backgroundStartConfirmed = false
+        )
+
+        assertEquals(IncomingGuardItem.NotificationPermission, readiness.blocker?.item)
+    }
+
+    @Test
     fun autoStartBlocksAfterDetectableItemsAreReady() {
         val readiness = IncomingGuardReadinessEvaluator.evaluate(
             hasPhonePermission = true,
             hasNotificationPermission = true,
-            isDefaultLauncher = true,
             ignoresBatteryOptimizations = true,
             autoStartConfirmed = false,
             backgroundStartConfirmed = true
@@ -44,7 +70,6 @@ class IncomingGuardReadinessEvaluatorTest {
         val readiness = IncomingGuardReadinessEvaluator.evaluate(
             hasPhonePermission = true,
             hasNotificationPermission = true,
-            isDefaultLauncher = true,
             ignoresBatteryOptimizations = true,
             autoStartConfirmed = true,
             backgroundStartConfirmed = true
@@ -60,7 +85,6 @@ class IncomingGuardReadinessEvaluatorTest {
         val readiness = IncomingGuardReadinessEvaluator.evaluate(
             hasPhonePermission = true,
             hasNotificationPermission = false,
-            isDefaultLauncher = true,
             ignoresBatteryOptimizations = true,
             autoStartConfirmed = true,
             backgroundStartConfirmed = true
@@ -71,17 +95,16 @@ class IncomingGuardReadinessEvaluatorTest {
     }
 
     @Test
-    fun defaultLauncherIsBlockerWhenPermissionsGranted() {
+    fun thirdPartyLauncherDoesNotBlockAutomaticAnswerReadiness() {
         val readiness = IncomingGuardReadinessEvaluator.evaluate(
             hasPhonePermission = true,
             hasNotificationPermission = true,
-            isDefaultLauncher = false,
             ignoresBatteryOptimizations = true,
             autoStartConfirmed = true,
             backgroundStartConfirmed = true
         )
 
-        assertEquals(IncomingGuardItem.DefaultLauncher, readiness.blocker?.item)
+        assertTrue(readiness.isReady)
     }
 
     @Test
@@ -89,7 +112,6 @@ class IncomingGuardReadinessEvaluatorTest {
         val readiness = IncomingGuardReadinessEvaluator.evaluate(
             hasPhonePermission = true,
             hasNotificationPermission = true,
-            isDefaultLauncher = true,
             ignoresBatteryOptimizations = false,
             autoStartConfirmed = true,
             backgroundStartConfirmed = true
@@ -103,7 +125,6 @@ class IncomingGuardReadinessEvaluatorTest {
         val readiness = IncomingGuardReadinessEvaluator.evaluate(
             hasPhonePermission = true,
             hasNotificationPermission = true,
-            isDefaultLauncher = true,
             ignoresBatteryOptimizations = true,
             autoStartConfirmed = true,
             backgroundStartConfirmed = false
@@ -117,8 +138,8 @@ class IncomingGuardReadinessEvaluatorTest {
     fun noItemsReadyProducesZeroCompletedCount() {
         val readiness = IncomingGuardReadinessEvaluator.evaluate(
             hasPhonePermission = false,
+            isDefaultPhone = false,
             hasNotificationPermission = false,
-            isDefaultLauncher = false,
             ignoresBatteryOptimizations = false,
             autoStartConfirmed = false,
             backgroundStartConfirmed = false
@@ -126,7 +147,7 @@ class IncomingGuardReadinessEvaluatorTest {
 
         assertEquals(0, readiness.completedCount)
         assertFalse(readiness.isReady)
-        assertEquals(IncomingGuardItem.PhonePermission, readiness.blocker?.item)
+        assertEquals(IncomingGuardItem.NotificationPermission, readiness.blocker?.item)
     }
 
     @Test
@@ -134,12 +155,11 @@ class IncomingGuardReadinessEvaluatorTest {
         val readiness = IncomingGuardReadinessEvaluator.evaluate(
             hasPhonePermission = true,
             hasNotificationPermission = true,
-            isDefaultLauncher = false,
             ignoresBatteryOptimizations = false,
             autoStartConfirmed = false,
             backgroundStartConfirmed = false
         )
 
-        assertEquals(IncomingGuardItem.DefaultLauncher, readiness.blocker?.item)
+        assertEquals(IncomingGuardItem.BatteryOptimization, readiness.blocker?.item)
     }
 }

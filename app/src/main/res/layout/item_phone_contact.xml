@@ -3,62 +3,67 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:id="@+id/card_phone_contact"
-    style="@style/Widget.OldLauncher.ListItemCard"
     android:layout_width="match_parent"
-    android:layout_height="wrap_content"
-    android:layout_marginStart="6dp"
-    android:layout_marginTop="8dp"
-    android:layout_marginEnd="6dp"
-    android:layout_marginBottom="8dp"
-    android:clickable="true"
-    android:focusable="true"
-    android:foreground="?android:attr/selectableItemBackground">
+    android:layout_height="232dp"
+    android:layout_marginStart="2dp"
+    android:layout_marginTop="7dp"
+    android:layout_marginEnd="2dp"
+    android:layout_marginBottom="7dp"
+    android:clickable="false"
+    android:focusable="false"
+    app:cardBackgroundColor="@color/launcher_surface"
+    app:cardCornerRadius="18dp"
+    app:cardElevation="1dp"
+    app:strokeColor="@color/launcher_outline"
+    app:strokeWidth="1dp">
 
     <LinearLayout
         android:layout_width="match_parent"
-        android:layout_height="240dp"
+        android:layout_height="match_parent"
         android:gravity="center_vertical"
         android:orientation="horizontal"
-        android:paddingStart="24dp"
-        android:paddingEnd="24dp">
+        android:padding="16dp">
 
         <com.google.android.material.imageview.ShapeableImageView
             android:id="@+id/iv_avatar"
-            android:layout_width="180dp"
-            android:layout_height="180dp"
+            android:layout_width="164dp"
+            android:layout_height="164dp"
             android:background="@color/launcher_surface_soft"
             android:contentDescription="@string/contact_photo_preview"
             android:scaleType="centerCrop"
-            app:shapeAppearanceOverlay="@style/ShapeAppearance.OldLauncher.Circle" />
+            app:shapeAppearanceOverlay="@style/ShapeAppearance.OldLauncher.ContactPhoto" />
 
         <LinearLayout
             android:layout_width="0dp"
             android:layout_height="wrap_content"
-            android:layout_marginStart="20dp"
+            android:layout_marginStart="14dp"
             android:layout_weight="1"
+            android:gravity="center_horizontal"
             android:orientation="vertical">
 
             <TextView
                 android:id="@+id/tv_contact_name"
-                style="@style/TextAppearance.OldLauncher.SectionTitle"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:ellipsize="end"
+                android:fontFamily="sans-serif-medium"
+                android:gravity="center"
                 android:maxLines="1"
                 android:text="@string/contact_name_placeholder"
-                android:textSize="28sp" />
+                android:textColor="@color/launcher_text_primary"
+                android:textSize="30sp"
+                android:textStyle="bold" />
 
             <TextView
                 android:id="@+id/tv_contact_phone"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="6dp"
+                android:layout_marginTop="5dp"
                 android:ellipsize="end"
-                android:fontFamily="monospace"
+                android:gravity="center"
                 android:maxLines="1"
-                android:textColor="@color/launcher_text_primary"
-                android:textSize="22sp"
-                android:textStyle="bold"
+                android:textColor="@color/launcher_text_secondary"
+                android:textSize="14sp"
                 android:visibility="gone"
                 tools:text="138 0013 8000" />
 
@@ -66,17 +71,17 @@
                 android:id="@+id/tv_auto_answer_badge"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="10dp"
+                android:layout_marginTop="8dp"
                 android:background="@drawable/bg_auto_answer_chip"
-                android:fontFamily="sans-serif-medium"
+                android:drawableStart="@drawable/ic_settings_category_calls"
+                android:drawableTint="@color/launcher_call"
+                android:drawablePadding="5dp"
                 android:gravity="center"
                 android:minHeight="28dp"
-                android:paddingStart="12dp"
-                android:paddingTop="4dp"
-                android:paddingEnd="12dp"
-                android:paddingBottom="4dp"
+                android:paddingStart="10dp"
+                android:paddingEnd="10dp"
                 android:text="@string/contact_auto_answer_badge"
-                android:textColor="@color/launcher_success"
+                android:textColor="@color/launcher_call"
                 android:textSize="12sp"
                 android:visibility="gone" />
 
@@ -84,44 +89,41 @@
                 android:id="@+id/btn_call"
                 style="@style/Widget.MaterialComponents.Button"
                 android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="16dp"
+                android:layout_height="76dp"
+                android:layout_marginTop="12dp"
                 android:insetTop="0dp"
                 android:insetBottom="0dp"
                 android:minHeight="76dp"
-                android:paddingStart="24dp"
-                android:paddingEnd="24dp"
-                android:text="@string/contact_card_action_phone_v2"
+                android:minWidth="0dp"
+                android:maxLines="1"
+                android:paddingStart="8dp"
+                android:paddingEnd="8dp"
+                android:singleLine="true"
+                android:text="@string/action_call"
                 android:textColor="@android:color/white"
                 android:textSize="22sp"
                 android:textStyle="bold"
                 app:backgroundTint="@color/launcher_phone_action"
-                app:cornerRadius="22dp"
-                app:icon="@android:drawable/ic_menu_call"
+                app:cornerRadius="18dp"
+                app:icon="@drawable/ic_settings_category_calls"
                 app:iconGravity="textStart"
-                app:iconPadding="12dp"
-                app:iconSize="30dp"
+                app:iconPadding="5dp"
+                app:iconSize="22dp"
                 app:iconTint="@android:color/white" />
 
             <TextView
                 android:id="@+id/tv_manage_hint"
-                style="@style/TextAppearance.OldLauncher.Badge"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="10dp"
-                android:background="@drawable/edit_text_background"
+                android:layout_width="match_parent"
+                android:layout_height="52dp"
+                android:layout_marginTop="12dp"
+                android:background="@drawable/bg_settings_mode_capsule"
                 android:gravity="center"
                 android:maxLines="1"
-                android:minHeight="40dp"
-                android:paddingStart="14dp"
-                android:paddingTop="8dp"
-                android:paddingEnd="14dp"
-                android:paddingBottom="8dp"
                 android:text="@string/contact_manage_hint_edit"
                 android:textColor="@color/launcher_primary"
+                android:textSize="17sp"
+                android:textStyle="bold"
                 android:visibility="gone" />
-
         </LinearLayout>
-
     </LinearLayout>
 </com.google.android.material.card.MaterialCardView>

@@ -3,6 +3,7 @@ package com.yinxing.launcher.feature.incoming
 import android.os.Build
 
 enum class IncomingCallAcceptStrategy {
+    InCallService,
     TelecomManager,
     HeadsetHook,
     ManualOnly
@@ -14,7 +15,7 @@ enum class IncomingCallCompatibilityBlocker {
     ContactAutoAnswer,
     PhonePermission,
     NotificationPermission,
-    DefaultLauncher,
+    DefaultPhone,
     BatteryOptimization,
     AutoStart,
     BackgroundStart,
@@ -28,7 +29,7 @@ data class IncomingCallCompatibilityInput(
     val contactAutoAnswerEnabled: Boolean,
     val hasPhonePermission: Boolean,
     val hasNotificationPermission: Boolean,
-    val isDefaultLauncher: Boolean,
+    val isDefaultPhone: Boolean,
     val ignoresBatteryOptimizations: Boolean,
     val autoStartConfirmed: Boolean,
     val backgroundStartConfirmed: Boolean
@@ -51,16 +52,18 @@ object IncomingCallCompatibilityDecisionEngine {
             if (!input.globalAutoAnswerEnabled) add(IncomingCallCompatibilityBlocker.GlobalAutoAnswer)
             if (!input.contactAutoAnswerEnabled) add(IncomingCallCompatibilityBlocker.ContactAutoAnswer)
             if (!input.hasPhonePermission) add(IncomingCallCompatibilityBlocker.PhonePermission)
-            if (input.sdkInt >= Build.VERSION_CODES.TIRAMISU && !input.hasNotificationPermission) {
+            if (!input.hasNotificationPermission) {
                 add(IncomingCallCompatibilityBlocker.NotificationPermission)
             }
-            if (!input.isDefaultLauncher) add(IncomingCallCompatibilityBlocker.DefaultLauncher)
+            if (!input.isDefaultPhone) add(IncomingCallCompatibilityBlocker.DefaultPhone)
             if (!input.ignoresBatteryOptimizations) add(IncomingCallCompatibilityBlocker.BatteryOptimization)
             if (!input.autoStartConfirmed) add(IncomingCallCompatibilityBlocker.AutoStart)
             if (!input.backgroundStartConfirmed) add(IncomingCallCompatibilityBlocker.BackgroundStart)
             if (input.sdkInt < Build.VERSION_CODES.N) add(IncomingCallCompatibilityBlocker.UnsupportedPlatform)
         }
         val strategy = when {
+            input.sdkInt >= Build.VERSION_CODES.N && input.isDefaultPhone ->
+                IncomingCallAcceptStrategy.InCallService
             input.sdkInt >= Build.VERSION_CODES.O -> IncomingCallAcceptStrategy.TelecomManager
             input.sdkInt >= Build.VERSION_CODES.N -> IncomingCallAcceptStrategy.HeadsetHook
             else -> IncomingCallAcceptStrategy.ManualOnly
@@ -83,6 +86,7 @@ object IncomingCallCompatibilityDecisionEngine {
         blockers: List<IncomingCallCompatibilityBlocker>
     ): Int {
         val base = when (strategy) {
+            IncomingCallAcceptStrategy.InCallService -> 98
             IncomingCallAcceptStrategy.TelecomManager -> 94
             IncomingCallAcceptStrategy.HeadsetHook -> 66
             IncomingCallAcceptStrategy.ManualOnly -> 0
@@ -95,7 +99,7 @@ object IncomingCallCompatibilityDecisionEngine {
                 IncomingCallCompatibilityBlocker.PhonePermission,
                 IncomingCallCompatibilityBlocker.UnsupportedPlatform -> 40
                 IncomingCallCompatibilityBlocker.NotificationPermission -> 18
-                IncomingCallCompatibilityBlocker.DefaultLauncher -> 14
+                IncomingCallCompatibilityBlocker.DefaultPhone -> 50
                 IncomingCallCompatibilityBlocker.BatteryOptimization,
                 IncomingCallCompatibilityBlocker.AutoStart,
                 IncomingCallCompatibilityBlocker.BackgroundStart -> 10

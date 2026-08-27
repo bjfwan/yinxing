@@ -11,6 +11,9 @@ import android.widget.TextView
 
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.isVisible
+import androidx.core.view.ViewCompat
+import androidx.core.view.WindowInsetsCompat
+import androidx.core.view.updatePadding
 import androidx.recyclerview.widget.DefaultItemAnimator
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
@@ -43,6 +46,7 @@ class AppManageActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_app_manage)
+        applySystemInsets()
 
         launcherPreferences = LauncherPreferences.getInstance(this)
 
@@ -102,6 +106,22 @@ class AppManageActivity : AppCompatActivity() {
         recyclerView.setItemViewCacheSize(if (lowPerformanceMode) 6 else 20)
         recyclerView.itemAnimator = if (lowPerformanceMode) null else DefaultItemAnimator()
         adapter.setLowPerformanceMode(lowPerformanceMode)
+    }
+
+    private fun applySystemInsets() {
+        val root = findViewById<View>(R.id.app_manage_root)
+        val baseTopPadding = root.paddingTop
+        val baseBottomPadding = root.paddingBottom
+        ViewCompat.setOnApplyWindowInsetsListener(root) { view, insets ->
+            val bars = insets.getInsets(
+                WindowInsetsCompat.Type.systemBars() or WindowInsetsCompat.Type.displayCutout()
+            )
+            view.updatePadding(
+                top = baseTopPadding + bars.top,
+                bottom = baseBottomPadding + bars.bottom
+            )
+            insets
+        }
     }
 
     private fun loadInstalledApps() {

@@ -1,7 +1,6 @@
 package com.google.android.accessibility.selecttospeak
 
 import com.google.android.accessibility.selecttospeak.SelectToSpeakService.VideoCallProgress
-import com.yinxing.launcher.automation.wechat.model.AutomationState
 import java.util.concurrent.atomic.AtomicLong
 
 /**

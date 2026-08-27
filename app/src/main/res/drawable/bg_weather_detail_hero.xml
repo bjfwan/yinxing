@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<shape xmlns:android="http://schemas.android.com/apk/res/android" android:shape="rectangle">
+    <gradient
+        android:centerColor="@color/weather_detail_hero_mid"
+        android:centerX="0.82"
+        android:centerY="0.20"
+        android:endColor="@color/weather_detail_hero_end"
+        android:gradientRadius="300dp"
+        android:startColor="@color/weather_detail_hero_start"
+        android:type="radial" />
+</shape>
