@@ -21,35 +21,50 @@ import kotlinx.coroutines.runBlocking
 
 data class LauncherSettings(
     val lowPerformanceModeEnabled: Boolean = false,
+    val homeLayoutLocked: Boolean = false,
+    val homeLongPressResponse: String = LauncherSettingsDataStore.DEFAULT_HOME_LONG_PRESS_RESPONSE,
     val autoAnswerEnabled: Boolean = true,
     val autoAnswerDelaySeconds: Int = LauncherSettingsDataStore.DEFAULT_AUTO_ANSWER_DELAY_SECONDS,
     val fullCardTapEnabled: Boolean = false,
     val darkMode: String = LauncherSettingsDataStore.DARK_MODE_SYSTEM,
+    val fontScaleMode: String = LauncherSettingsDataStore.FONT_SCALE_SYSTEM,
     val autoStartConfirmed: Boolean = false,
     val backgroundStartConfirmed: Boolean = false,
-    val iconScale: Int = LauncherSettingsDataStore.DEFAULT_ICON_SCALE
+    val iconScale: Int = LauncherSettingsDataStore.DEFAULT_ICON_SCALE,
+    val fallDetectionEnabled: Boolean = false,
+    val fallEmergencyContact: String = ""
 )
 
 data class LauncherSettingsMigration(
     val lowPerformanceModeEnabled: Boolean? = null,
+    val homeLayoutLocked: Boolean? = null,
+    val homeLongPressResponse: String? = null,
     val autoAnswerEnabled: Boolean? = null,
     val autoAnswerDelaySeconds: Int? = null,
     val fullCardTapEnabled: Boolean? = null,
     val darkMode: String? = null,
+    val fontScaleMode: String? = null,
     val autoStartConfirmed: Boolean? = null,
     val backgroundStartConfirmed: Boolean? = null,
-    val iconScale: Int? = null
+    val iconScale: Int? = null,
+    val fallDetectionEnabled: Boolean? = null,
+    val fallEmergencyContact: String? = null
 ) {
     val hasValues: Boolean
         get() = listOf(
             lowPerformanceModeEnabled,
+            homeLayoutLocked,
+            homeLongPressResponse,
             autoAnswerEnabled,
             autoAnswerDelaySeconds,
             fullCardTapEnabled,
             darkMode,
+            fontScaleMode,
             autoStartConfirmed,
             backgroundStartConfirmed,
-            iconScale
+            iconScale,
+            fallDetectionEnabled,
+            fallEmergencyContact
         ).any { it != null }
 }
 
@@ -67,18 +82,29 @@ class LauncherSettingsDataStore private constructor(context: Context) {
         const val DARK_MODE_SYSTEM = "system"
         const val DARK_MODE_LIGHT = "light"
         const val DARK_MODE_DARK = "dark"
+        const val FONT_SCALE_SYSTEM = "system"
+        const val FONT_SCALE_STANDARD = "standard"
+        const val FONT_SCALE_LARGE = "large"
+        const val FONT_SCALE_EXTRA_LARGE = "extra_large"
         const val DEFAULT_ICON_SCALE = 100
         const val MIN_ICON_SCALE = 60
         const val MAX_ICON_SCALE = 120
+        const val DEFAULT_HOME_LONG_PRESS_RESPONSE = "standard"
+        const val HOME_LONG_PRESS_RESPONSE_LONG = "long"
 
         private val KEY_LOW_PERFORMANCE_MODE = booleanPreferencesKey("low_performance_mode")
+        private val KEY_HOME_LAYOUT_LOCKED = booleanPreferencesKey("home_layout_locked")
+        private val KEY_HOME_LONG_PRESS_RESPONSE = stringPreferencesKey("home_long_press_response")
         private val KEY_AUTO_ANSWER_ENABLED = booleanPreferencesKey("auto_answer_enabled")
         private val KEY_AUTO_ANSWER_DELAY_SECONDS = intPreferencesKey("auto_answer_delay_seconds")
         private val KEY_FULL_CARD_TAP_ENABLED = booleanPreferencesKey("full_card_tap_enabled")
         private val KEY_DARK_MODE = stringPreferencesKey("dark_mode")
+        private val KEY_FONT_SCALE_MODE = stringPreferencesKey("font_scale_mode")
         private val KEY_AUTOSTART_CONFIRMED = booleanPreferencesKey("autostart_confirmed")
         private val KEY_BACKGROUND_START_CONFIRMED = booleanPreferencesKey("background_start_confirmed")
         private val KEY_ICON_SCALE = intPreferencesKey("icon_scale")
+        private val KEY_FALL_DETECTION_ENABLED = booleanPreferencesKey("fall_detection_enabled")
+        private val KEY_FALL_EMERGENCY_CONTACT = stringPreferencesKey("fall_emergency_contact")
 
         @Volatile
         private var instance: LauncherSettingsDataStore? = null
@@ -151,6 +177,43 @@ class LauncherSettingsDataStore private constructor(context: Context) {
         )
     }
 
+    fun setFontScaleMode(value: String) {
+        val normalized = normalizeFontScaleMode(value)
+        mutate(
+            update = { it.copy(fontScaleMode = normalized) },
+            persist = { it[KEY_FONT_SCALE_MODE] = normalized }
+        )
+    }
+
+    fun setHomeLayoutLocked(locked: Boolean) {
+        mutate(
+            update = { it.copy(homeLayoutLocked = locked) },
+            persist = { it[KEY_HOME_LAYOUT_LOCKED] = locked }
+        )
+    }
+
+    fun setHomeLongPressResponse(response: String) {
+        val normalized = normalizeHomeLongPressResponse(response)
+        mutate(
+            update = { it.copy(homeLongPressResponse = normalized) },
+            persist = { it[KEY_HOME_LONG_PRESS_RESPONSE] = normalized }
+        )
+    }
+
+    fun setFallDetectionEnabled(enabled: Boolean) {
+        mutate(
+            update = { it.copy(fallDetectionEnabled = enabled) },
+            persist = { it[KEY_FALL_DETECTION_ENABLED] = enabled }
+        )
+    }
+
+    fun setFallEmergencyContact(number: String) {
+        mutate(
+            update = { it.copy(fallEmergencyContact = number) },
+            persist = { it[KEY_FALL_EMERGENCY_CONTACT] = number }
+        )
+    }
+
     fun migrateFrom(migration: LauncherSettingsMigration) {
         if (!migration.hasValues) {
             return
@@ -160,30 +223,53 @@ class LauncherSettingsDataStore private constructor(context: Context) {
                 current.copy(
                     lowPerformanceModeEnabled = migration.lowPerformanceModeEnabled
                         ?: current.lowPerformanceModeEnabled,
+                    homeLayoutLocked = migration.homeLayoutLocked ?: current.homeLayoutLocked,
+                    homeLongPressResponse = migration.homeLongPressResponse
+                        ?.let(::normalizeHomeLongPressResponse)
+                        ?: current.homeLongPressResponse,
                     autoAnswerEnabled = migration.autoAnswerEnabled ?: current.autoAnswerEnabled,
                     autoAnswerDelaySeconds = (migration.autoAnswerDelaySeconds
                         ?: current.autoAnswerDelaySeconds).coerceIn(1, 30),
                     fullCardTapEnabled = migration.fullCardTapEnabled ?: current.fullCardTapEnabled,
                     darkMode = migration.darkMode?.let(::normalizeDarkMode) ?: current.darkMode,
+                    fontScaleMode = migration.fontScaleMode?.let(::normalizeFontScaleMode)
+                        ?: current.fontScaleMode,
                     autoStartConfirmed = migration.autoStartConfirmed ?: current.autoStartConfirmed,
                     backgroundStartConfirmed = migration.backgroundStartConfirmed
                         ?: current.backgroundStartConfirmed,
                     iconScale = (migration.iconScale ?: current.iconScale)
-                        .coerceIn(MIN_ICON_SCALE, MAX_ICON_SCALE)
+                        .coerceIn(MIN_ICON_SCALE, MAX_ICON_SCALE),
+                    fallDetectionEnabled = migration.fallDetectionEnabled
+                        ?: current.fallDetectionEnabled,
+                    fallEmergencyContact = migration.fallEmergencyContact
+                        ?: current.fallEmergencyContact
                 )
             },
             persist = { preferences ->
                 migration.lowPerformanceModeEnabled?.let { preferences[KEY_LOW_PERFORMANCE_MODE] = it }
+                migration.homeLayoutLocked?.let { preferences[KEY_HOME_LAYOUT_LOCKED] = it }
+                migration.homeLongPressResponse?.let {
+                    preferences[KEY_HOME_LONG_PRESS_RESPONSE] = normalizeHomeLongPressResponse(it)
+                }
                 migration.autoAnswerEnabled?.let { preferences[KEY_AUTO_ANSWER_ENABLED] = it }
                 migration.autoAnswerDelaySeconds?.let {
                     preferences[KEY_AUTO_ANSWER_DELAY_SECONDS] = it.coerceIn(1, 30)
                 }
                 migration.fullCardTapEnabled?.let { preferences[KEY_FULL_CARD_TAP_ENABLED] = it }
                 migration.darkMode?.let { preferences[KEY_DARK_MODE] = normalizeDarkMode(it) }
+                migration.fontScaleMode?.let {
+                    preferences[KEY_FONT_SCALE_MODE] = normalizeFontScaleMode(it)
+                }
                 migration.autoStartConfirmed?.let { preferences[KEY_AUTOSTART_CONFIRMED] = it }
                 migration.backgroundStartConfirmed?.let { preferences[KEY_BACKGROUND_START_CONFIRMED] = it }
                 migration.iconScale?.let {
                     preferences[KEY_ICON_SCALE] = it.coerceIn(MIN_ICON_SCALE, MAX_ICON_SCALE)
+                }
+                migration.fallDetectionEnabled?.let {
+                    preferences[KEY_FALL_DETECTION_ENABLED] = it
+                }
+                migration.fallEmergencyContact?.let {
+                    preferences[KEY_FALL_EMERGENCY_CONTACT] = it
                 }
             }
         )
@@ -226,14 +312,19 @@ class LauncherSettingsDataStore private constructor(context: Context) {
     private fun androidx.datastore.preferences.core.Preferences.toLauncherSettings(): LauncherSettings {
         return LauncherSettings(
             lowPerformanceModeEnabled = this[KEY_LOW_PERFORMANCE_MODE] ?: false,
+            homeLayoutLocked = this[KEY_HOME_LAYOUT_LOCKED] ?: false,
+            homeLongPressResponse = normalizeHomeLongPressResponse(this[KEY_HOME_LONG_PRESS_RESPONSE]),
             autoAnswerEnabled = this[KEY_AUTO_ANSWER_ENABLED] ?: true,
             autoAnswerDelaySeconds = (this[KEY_AUTO_ANSWER_DELAY_SECONDS] ?: DEFAULT_AUTO_ANSWER_DELAY_SECONDS)
                 .coerceIn(1, 30),
             fullCardTapEnabled = this[KEY_FULL_CARD_TAP_ENABLED] ?: false,
             darkMode = normalizeDarkMode(this[KEY_DARK_MODE]),
+            fontScaleMode = normalizeFontScaleMode(this[KEY_FONT_SCALE_MODE]),
             autoStartConfirmed = this[KEY_AUTOSTART_CONFIRMED] ?: false,
             backgroundStartConfirmed = this[KEY_BACKGROUND_START_CONFIRMED] ?: false,
-            iconScale = (this[KEY_ICON_SCALE] ?: DEFAULT_ICON_SCALE).coerceIn(MIN_ICON_SCALE, MAX_ICON_SCALE)
+            iconScale = (this[KEY_ICON_SCALE] ?: DEFAULT_ICON_SCALE).coerceIn(MIN_ICON_SCALE, MAX_ICON_SCALE),
+            fallDetectionEnabled = this[KEY_FALL_DETECTION_ENABLED] ?: false,
+            fallEmergencyContact = this[KEY_FALL_EMERGENCY_CONTACT].orEmpty()
         )
     }
 
@@ -241,6 +332,23 @@ class LauncherSettingsDataStore private constructor(context: Context) {
         return when (value) {
             DARK_MODE_LIGHT, DARK_MODE_DARK -> value
             else -> DARK_MODE_SYSTEM
+        }
+    }
+
+    private fun normalizeFontScaleMode(value: String?): String {
+        return when (value) {
+            FONT_SCALE_STANDARD,
+            FONT_SCALE_LARGE,
+            FONT_SCALE_EXTRA_LARGE -> value
+            else -> FONT_SCALE_SYSTEM
+        }
+    }
+
+    private fun normalizeHomeLongPressResponse(value: String?): String {
+        return if (value == HOME_LONG_PRESS_RESPONSE_LONG) {
+            HOME_LONG_PRESS_RESPONSE_LONG
+        } else {
+            DEFAULT_HOME_LONG_PRESS_RESPONSE
         }
     }
 }

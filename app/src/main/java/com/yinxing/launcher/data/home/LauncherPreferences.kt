@@ -5,6 +5,7 @@ import android.content.SharedPreferences
 import androidx.core.content.edit
 import com.yinxing.launcher.data.settings.LauncherSettingsDataStore
 import com.yinxing.launcher.data.settings.LauncherSettingsMigration
+import com.yinxing.launcher.common.util.EmergencyContactNumber
 
 class LauncherPreferences(context: Context) {
     private val appContext = context.applicationContext
@@ -22,6 +23,8 @@ class LauncherPreferences(context: Context) {
         private const val PREFS_NAME = "launcher_prefs"
         private const val KEY_APP_ORDER = "app_order"
         private const val KEY_LOW_PERFORMANCE_MODE = "low_performance_mode"
+        private const val KEY_HOME_LAYOUT_LOCKED = "home_layout_locked"
+        private const val KEY_HOME_LONG_PRESS_RESPONSE = "home_long_press_response"
         private const val KEY_AUTO_ANSWER_ENABLED = "auto_answer_enabled"
         private const val KEY_AUTO_ANSWER_DELAY_SECONDS = "auto_answer_delay_seconds"
         const val DEFAULT_AUTO_ANSWER_DELAY_SECONDS = 5
@@ -30,24 +33,38 @@ class LauncherPreferences(context: Context) {
         const val DARK_MODE_SYSTEM = "system"
         const val DARK_MODE_LIGHT = "light"
         const val DARK_MODE_DARK = "dark"
+        private const val KEY_FONT_SCALE_MODE = "font_scale_mode"
+        const val FONT_SCALE_SYSTEM = "system"
+        const val FONT_SCALE_STANDARD = "standard"
+        const val FONT_SCALE_LARGE = "large"
+        const val FONT_SCALE_EXTRA_LARGE = "extra_large"
         private const val REMOVED_KEY_KIOSK_MODE_ENABLED = "kiosk_mode_enabled"
         private const val KEY_AUTOSTART_CONFIRMED = "autostart_confirmed"
         private const val KEY_BACKGROUND_START_CONFIRMED = "background_start_confirmed"
         private const val KEY_ICON_SCALE = "icon_scale"
+        private const val KEY_FALL_DETECTION_ENABLED = "fall_detection_enabled"
+        private const val KEY_FALL_EMERGENCY_CONTACT = "fall_emergency_contact"
         const val DEFAULT_ICON_SCALE = 100
         const val MIN_ICON_SCALE = 60
         const val MAX_ICON_SCALE = 120
+        const val HOME_LONG_PRESS_STANDARD = "standard"
+        const val HOME_LONG_PRESS_LONG = "long"
         private val RESERVED_KEYS = setOf(
             KEY_APP_ORDER,
             KEY_LOW_PERFORMANCE_MODE,
+            KEY_HOME_LAYOUT_LOCKED,
+            KEY_HOME_LONG_PRESS_RESPONSE,
             KEY_AUTO_ANSWER_ENABLED,
             KEY_AUTO_ANSWER_DELAY_SECONDS,
             KEY_FULL_CARD_TAP_ENABLED,
             KEY_DARK_MODE,
+            KEY_FONT_SCALE_MODE,
             REMOVED_KEY_KIOSK_MODE_ENABLED,
             KEY_AUTOSTART_CONFIRMED,
             KEY_BACKGROUND_START_CONFIRMED,
-            KEY_ICON_SCALE
+            KEY_ICON_SCALE,
+            KEY_FALL_DETECTION_ENABLED,
+            KEY_FALL_EMERGENCY_CONTACT
         )
 
         @Volatile
@@ -85,6 +102,12 @@ class LauncherPreferences(context: Context) {
 
     fun syncAppOrder(selectedPackages: Collection<String>) {
         if (homeAppConfig.syncAppOrder(selectedPackages)) notifyPreferenceChanged(KEY_APP_ORDER)
+    }
+
+    fun resetHomeLayout(): Boolean {
+        if (!homeAppConfig.resetToDefault()) return false
+        notifyPreferenceChanged(KEY_APP_ORDER)
+        return true
     }
 
     fun isLowPerformanceModeEnabled(): Boolean {
@@ -146,6 +169,22 @@ class LauncherPreferences(context: Context) {
 
     fun isDarkModeKey(key: String?): Boolean = key == KEY_DARK_MODE
 
+    fun getFontScaleMode(): String = settingsStore.snapshot().fontScaleMode
+
+    fun setFontScaleMode(value: String) {
+        val normalized = when (value) {
+            FONT_SCALE_STANDARD,
+            FONT_SCALE_LARGE,
+            FONT_SCALE_EXTRA_LARGE -> value
+            else -> FONT_SCALE_SYSTEM
+        }
+        if (getFontScaleMode() == normalized) return
+        settingsStore.setFontScaleMode(normalized)
+        notifyPreferenceChanged(KEY_FONT_SCALE_MODE)
+    }
+
+    fun isFontScaleModeKey(key: String?): Boolean = key == KEY_FONT_SCALE_MODE
+
     fun isAutoStartConfirmed(): Boolean {
         return settingsStore.snapshot().autoStartConfirmed
     }
@@ -179,6 +218,54 @@ class LauncherPreferences(context: Context) {
 
     fun isIconScaleKey(key: String?) = key == KEY_ICON_SCALE
 
+    fun isFallDetectionEnabled(): Boolean = settingsStore.snapshot().fallDetectionEnabled
+
+    fun setFallDetectionEnabled(enabled: Boolean) {
+        val safeEnabled = enabled && getFallEmergencyContact().isNotEmpty()
+        if (isFallDetectionEnabled() == safeEnabled) return
+        settingsStore.setFallDetectionEnabled(safeEnabled)
+        notifyPreferenceChanged(KEY_FALL_DETECTION_ENABLED)
+    }
+
+    fun isHomeLayoutLocked(): Boolean {
+        return settingsStore.snapshot().homeLayoutLocked
+    }
+
+    fun setHomeLayoutLocked(locked: Boolean) {
+        if (settingsStore.snapshot().homeLayoutLocked == locked) return
+        settingsStore.setHomeLayoutLocked(locked)
+        notifyPreferenceChanged(KEY_HOME_LAYOUT_LOCKED)
+    }
+
+    fun getHomeLongPressResponse(): String {
+        return settingsStore.snapshot().homeLongPressResponse
+    }
+
+    fun setHomeLongPressResponse(response: String) {
+        val normalized = if (response == HOME_LONG_PRESS_LONG) {
+            HOME_LONG_PRESS_LONG
+        } else {
+            HOME_LONG_PRESS_STANDARD
+        }
+        if (getHomeLongPressResponse() == normalized) return
+        settingsStore.setHomeLongPressResponse(normalized)
+        notifyPreferenceChanged(KEY_HOME_LONG_PRESS_RESPONSE)
+    }
+
+    fun getFallEmergencyContact(): String = settingsStore.snapshot().fallEmergencyContact
+
+    fun setFallEmergencyContact(rawNumber: String) {
+        val normalized = EmergencyContactNumber.normalize(rawNumber).orEmpty()
+        if (getFallEmergencyContact() != normalized) {
+            settingsStore.setFallEmergencyContact(normalized)
+            notifyPreferenceChanged(KEY_FALL_EMERGENCY_CONTACT)
+        }
+        if (normalized.isEmpty() && isFallDetectionEnabled()) {
+            settingsStore.setFallDetectionEnabled(false)
+            notifyPreferenceChanged(KEY_FALL_DETECTION_ENABLED)
+        }
+    }
+
     fun registerListener(listener: SharedPreferences.OnSharedPreferenceChangeListener) {
         synchronized(listeners) {
             listeners += listener
@@ -193,6 +280,14 @@ class LauncherPreferences(context: Context) {
 
     fun isLowPerformanceModeKey(key: String?): Boolean {
         return key == KEY_LOW_PERFORMANCE_MODE
+    }
+
+    fun isHomeLayoutLockedKey(key: String?): Boolean {
+        return key == KEY_HOME_LAYOUT_LOCKED
+    }
+
+    fun isHomeLongPressResponseKey(key: String?): Boolean {
+        return key == KEY_HOME_LONG_PRESS_RESPONSE
     }
 
     fun isSelectionKey(key: String?): Boolean {
@@ -222,13 +317,18 @@ class LauncherPreferences(context: Context) {
         settingsStore.migrateFrom(
             LauncherSettingsMigration(
                 lowPerformanceModeEnabled = legacy[KEY_LOW_PERFORMANCE_MODE] as? Boolean,
+                homeLayoutLocked = legacy[KEY_HOME_LAYOUT_LOCKED] as? Boolean,
+                homeLongPressResponse = legacy[KEY_HOME_LONG_PRESS_RESPONSE] as? String,
                 autoAnswerEnabled = legacy[KEY_AUTO_ANSWER_ENABLED] as? Boolean,
                 autoAnswerDelaySeconds = legacy[KEY_AUTO_ANSWER_DELAY_SECONDS] as? Int,
                 fullCardTapEnabled = legacy[KEY_FULL_CARD_TAP_ENABLED] as? Boolean,
                 darkMode = legacy[KEY_DARK_MODE] as? String,
+                fontScaleMode = legacy[KEY_FONT_SCALE_MODE] as? String,
                 autoStartConfirmed = legacy[KEY_AUTOSTART_CONFIRMED] as? Boolean,
                 backgroundStartConfirmed = legacy[KEY_BACKGROUND_START_CONFIRMED] as? Boolean,
-                iconScale = legacy[KEY_ICON_SCALE] as? Int
+                iconScale = legacy[KEY_ICON_SCALE] as? Int,
+                fallDetectionEnabled = legacy[KEY_FALL_DETECTION_ENABLED] as? Boolean,
+                fallEmergencyContact = legacy[KEY_FALL_EMERGENCY_CONTACT] as? String
             )
         )
 

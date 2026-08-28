@@ -91,8 +91,72 @@ class LauncherPreferencesTest {
     }
 
     @Test
+    fun fontScaleDefaultsToSystemAndPersistsASelectedPreset() {
+        assertEquals(LauncherPreferences.FONT_SCALE_SYSTEM, preferences.getFontScaleMode())
+
+        preferences.setFontScaleMode(LauncherPreferences.FONT_SCALE_LARGE)
+
+        assertEquals(
+            LauncherPreferences.FONT_SCALE_LARGE,
+            LauncherPreferences(context).getFontScaleMode()
+        )
+    }
+
+    @Test
+    fun unknownFontScaleFallsBackToSystem() {
+        preferences.setFontScaleMode("unexpected")
+
+        assertEquals(LauncherPreferences.FONT_SCALE_SYSTEM, preferences.getFontScaleMode())
+    }
+
+    @Test
     fun backgroundStartConfirmationDefaultsToFalse() {
         assertFalse(preferences.isBackgroundStartConfirmed())
+    }
+
+    @Test
+    fun homeLayoutLockDefaultsToFalseAndPersistsAcrossInstances() {
+        assertFalse(preferences.isHomeLayoutLocked())
+
+        preferences.setHomeLayoutLocked(true)
+
+        assertTrue(LauncherPreferences(context).isHomeLayoutLocked())
+    }
+
+    @Test
+    fun homeLongPressResponseDefaultsToStandardAndPersistsAcrossInstances() {
+        assertEquals(
+            LauncherPreferences.HOME_LONG_PRESS_STANDARD,
+            preferences.getHomeLongPressResponse()
+        )
+
+        preferences.setHomeLongPressResponse(LauncherPreferences.HOME_LONG_PRESS_LONG)
+
+        assertEquals(
+            LauncherPreferences.HOME_LONG_PRESS_LONG,
+            LauncherPreferences(context).getHomeLongPressResponse()
+        )
+    }
+
+    @Test
+    fun resetHomeLayoutClearsOnlySelectedAppsAndOrder() {
+        preferences.setPackageSelected("pkg.alpha", true)
+        preferences.setPackageSelected("pkg.beta", true)
+        preferences.setHomeLayoutLocked(true)
+        preferences.setHomeLongPressResponse(LauncherPreferences.HOME_LONG_PRESS_LONG)
+        preferences.setIconScale(110)
+
+        assertTrue(preferences.resetHomeLayout())
+
+        assertTrue(preferences.getSelectedPackages().isEmpty())
+        assertTrue(preferences.getAppOrder().isEmpty())
+        assertTrue(preferences.isHomeLayoutLocked())
+        assertEquals(
+            LauncherPreferences.HOME_LONG_PRESS_LONG,
+            preferences.getHomeLongPressResponse()
+        )
+        assertEquals(110, preferences.getIconScale())
+        assertFalse(preferences.resetHomeLayout())
     }
 
     @Test
@@ -113,9 +177,12 @@ class LauncherPreferencesTest {
         preferences.setAutoAnswerDelaySeconds(12)
         preferences.setFullCardTapEnabled(true)
         preferences.setDarkMode(LauncherPreferences.DARK_MODE_DARK)
+        preferences.setFontScaleMode(LauncherPreferences.FONT_SCALE_LARGE)
         preferences.setAutoStartConfirmed(true)
         preferences.setBackgroundStartConfirmed(true)
         preferences.setIconScale(110)
+        preferences.setHomeLayoutLocked(true)
+        preferences.setHomeLongPressResponse(LauncherPreferences.HOME_LONG_PRESS_LONG)
         preferences.saveAppOrder(listOf("pkg.alpha"))
         preferences.setPackageSelected("pkg.beta", true)
 

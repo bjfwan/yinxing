@@ -42,7 +42,10 @@ class HomeViewModel(
     private val preferenceListener =
         SharedPreferences.OnSharedPreferenceChangeListener { _, key ->
             when {
-                settingsSource.isLowPerformanceModeKey(key) || settingsSource.isIconScaleKey(key) -> {
+                settingsSource.isLowPerformanceModeKey(key) ||
+                    settingsSource.isIconScaleKey(key) ||
+                    settingsSource.isHomeLayoutLockedKey(key) ||
+                    settingsSource.isHomeLongPressResponseKey(key) -> {
                     _settings.value = settingsSource.current()
                 }
                 settingsSource.isHomeAppConfigKey(key) -> {
@@ -161,7 +164,9 @@ class HomeViewModel(
 
 data class HomeSettingsState(
     val lowPerformanceMode: Boolean,
-    val iconScale: Int
+    val iconScale: Int,
+    val homeLayoutLocked: Boolean = false,
+    val homeLongPressResponse: String = LauncherPreferences.HOME_LONG_PRESS_STANDARD
 )
 
 interface HomeAppSource {
@@ -178,6 +183,8 @@ interface HomeSettingsSource {
     fun unregister(listener: SharedPreferences.OnSharedPreferenceChangeListener)
     fun isLowPerformanceModeKey(key: String?): Boolean
     fun isIconScaleKey(key: String?): Boolean
+    fun isHomeLayoutLockedKey(key: String?): Boolean
+    fun isHomeLongPressResponseKey(key: String?): Boolean
     fun isHomeAppConfigKey(key: String?): Boolean
 }
 
@@ -207,7 +214,9 @@ private class AndroidHomeSettingsSource(
 ) : HomeSettingsSource {
     override fun current() = HomeSettingsState(
         lowPerformanceMode = preferences.isLowPerformanceModeEnabled(),
-        iconScale = preferences.getIconScale()
+        iconScale = preferences.getIconScale(),
+        homeLayoutLocked = preferences.isHomeLayoutLocked(),
+        homeLongPressResponse = preferences.getHomeLongPressResponse()
     )
 
     override fun register(listener: SharedPreferences.OnSharedPreferenceChangeListener) {
@@ -221,6 +230,11 @@ private class AndroidHomeSettingsSource(
     override fun isLowPerformanceModeKey(key: String?) = preferences.isLowPerformanceModeKey(key)
 
     override fun isIconScaleKey(key: String?) = preferences.isIconScaleKey(key)
+
+    override fun isHomeLayoutLockedKey(key: String?) = preferences.isHomeLayoutLockedKey(key)
+
+    override fun isHomeLongPressResponseKey(key: String?) =
+        preferences.isHomeLongPressResponseKey(key)
 
     override fun isHomeAppConfigKey(key: String?) = preferences.isHomeAppConfigKey(key)
 }

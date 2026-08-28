@@ -332,6 +332,10 @@ class HomeViewModelTest {
 
         override fun isIconScaleKey(key: String?): Boolean = false
 
+        override fun isHomeLayoutLockedKey(key: String?): Boolean = false
+
+        override fun isHomeLongPressResponseKey(key: String?): Boolean = false
+
         override fun isHomeAppConfigKey(key: String?): Boolean = false
     }
 

@@ -81,6 +81,14 @@ class HomeAppConfig(context: Context) {
         )
     }
 
+    fun resetToDefault(): Boolean {
+        if (getSelectedPackages().isEmpty() && getAppOrder().isEmpty()) {
+            return false
+        }
+        prefs.edit { clear() }
+        return true
+    }
+
     fun migrateFrom(selectedPackages: Set<String>, appOrder: List<String>) {
         if (selectedPackages.isEmpty() && appOrder.isEmpty()) {
             return
