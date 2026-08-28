@@ -106,6 +106,16 @@
     <string name="settings_update_available_message">有新版本可以下载，建议由家属协助安装。</string>
     <string name="settings_update_download">下载更新</string>
     <string name="settings_update_open_failed">无法打开下载页面</string>
+    <string name="settings_user_report_title">反馈问题</string>
+    <string name="settings_user_report_summary">异常现象与复现步骤</string>
+    <string name="settings_user_report_action">填写</string>
+    <string name="settings_user_report_message">应用会同时上报设备型号、系统版本和运行状态。请勿填写姓名、手机号等个人信息。</string>
+    <string name="settings_user_report_type">问题类型</string>
+    <string name="settings_user_report_description_hint">请描述看到的现象（必填）</string>
+    <string name="settings_user_report_steps_hint">如何复现（选填）</string>
+    <string name="settings_user_report_required">请输入问题描述</string>
+    <string name="settings_user_report_submit">提交</string>
+    <string name="settings_user_report_queued">问题已记录，将在联网后自动上传</string>
 
     <!-- 权限管理通用 -->
     <string name="settings_weather_city_title">天气城市</string>

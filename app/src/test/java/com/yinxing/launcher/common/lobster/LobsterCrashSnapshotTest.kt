@@ -20,6 +20,9 @@ class LobsterCrashSnapshotTest {
 
         assertEquals("UNCAUGHT_EXCEPTION", event.details.errorCode)
         assertEquals("background_thread", event.details.failedStep)
+        assertEquals(LobsterLogCategory.CRASH, event.category)
+        assertEquals(LobsterEventType.ERROR, event.eventType)
+        assertEquals("uncaught_exception", event.action)
         assertTrue(serialized.contains("IllegalStateException"))
         assertTrue(serialized.contains("MainActivity.render(MainActivity.kt:88)"))
         assertFalse(serialized.contains("张三"))

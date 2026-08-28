@@ -5,6 +5,8 @@ import com.yinxing.launcher.common.lobster.LobsterReportStatus
 import com.yinxing.launcher.common.lobster.LobsterStepOutcome
 import com.yinxing.launcher.common.lobster.LobsterTraceStep
 import com.yinxing.launcher.common.lobster.LobsterUsageEvent
+import com.yinxing.launcher.common.lobster.LobsterEventType
+import com.yinxing.launcher.common.lobster.LobsterLogCategory
 
 object WeatherUsageEventFactory {
     fun from(state: WeatherState, durationMs: Long, occurredAt: String): LobsterUsageEvent {
@@ -36,6 +38,9 @@ object WeatherUsageEventFactory {
             status = status,
             summary = summary,
             logLine = "[天气] $summary",
+            category = LobsterLogCategory.WEATHER,
+            eventType = if (status == LobsterReportStatus.ERROR) LobsterEventType.ERROR else LobsterEventType.DIAGNOSTIC,
+            action = "refresh_weather",
             details = LobsterReportDetails(
                 errorCode = errorCode,
                 failedStep = if (status == LobsterReportStatus.ERROR) "fetch_weather" else null,

@@ -1,6 +1,8 @@
 package com.yinxing.launcher.data.weather
 
 import com.yinxing.launcher.common.lobster.LobsterReportStatus
+import com.yinxing.launcher.common.lobster.LobsterEventType
+import com.yinxing.launcher.common.lobster.LobsterLogCategory
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Test
@@ -20,6 +22,9 @@ class WeatherUsageEventFactoryTest {
         assertEquals(LobsterReportStatus.ERROR, event.status)
         assertEquals("WEATHER_NETWORK_ERROR", event.details.errorCode)
         assertEquals(321L, event.details.steps.single().durationMs)
+        assertEquals(LobsterLogCategory.WEATHER, event.category)
+        assertEquals(LobsterEventType.ERROR, event.eventType)
+        assertEquals("refresh_weather", event.action)
         assertFalse(serialized.contains("北京市朝阳区"))
         assertFalse(serialized.contains("request failed"))
     }

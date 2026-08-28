@@ -23,6 +23,9 @@ data class LobsterReportDetails(
     val traceId: String? = null,
     val errorCode: String? = null,
     val failedStep: String? = null,
+    val reportType: String? = null,
+    val userDescription: String? = null,
+    val reproductionSteps: String? = null,
     val steps: List<LobsterTraceStep> = emptyList(),
     val sensitiveValues: List<String> = emptyList()
 ) {
@@ -30,6 +33,13 @@ data class LobsterReportDetails(
         traceId.clean(120)?.let { put("trace_id", it) }
         errorCode.clean(120)?.let { put("error_code", it) }
         failedStep.clean(120)?.let { put("failed_step", it) }
+        reportType.clean(40)?.let { put("report_type", it) }
+        userDescription.clean(800)?.let {
+            put("user_description", LobsterLogSanitizer.sanitize(it, sensitiveValues))
+        }
+        reproductionSteps.clean(800)?.let {
+            put("reproduction_steps", LobsterLogSanitizer.sanitize(it, sensitiveValues))
+        }
         if (steps.isNotEmpty()) {
             put("steps", JSONArray().apply {
                 steps.take(100).forEach { step ->

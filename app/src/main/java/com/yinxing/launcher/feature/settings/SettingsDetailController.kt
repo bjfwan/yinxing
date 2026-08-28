@@ -4,15 +4,22 @@ import android.content.Intent
 import android.content.res.ColorStateList
 import android.os.Build
 import android.view.View
+import android.widget.ArrayAdapter
+import android.widget.EditText
 import android.widget.FrameLayout
 import android.widget.ImageView
 import android.widget.LinearLayout
+import android.widget.Spinner
 import android.widget.TextView
+import android.widget.Toast
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatDelegate
 import androidx.core.content.ContextCompat
 import com.yinxing.launcher.BuildConfig
 import com.yinxing.launcher.R
+import com.yinxing.launcher.common.lobster.LobsterClient
+import com.yinxing.launcher.common.lobster.LobsterUserReportFactory
+import com.yinxing.launcher.common.lobster.LobsterUserReportType
 import com.yinxing.launcher.common.util.OemLauncherIconLoader
 import com.yinxing.launcher.common.util.OemLauncherPolicy
 import com.yinxing.launcher.common.util.OemLauncherSupport
@@ -297,6 +304,52 @@ internal class SettingsDetailController(private val activity: SettingsActivity) 
         ) {
             checkAppUpdate()
         }
+        addRow(
+            R.string.settings_user_report_title,
+            R.string.settings_user_report_summary,
+            R.drawable.ic_settings_action_warning,
+            R.color.launcher_warning,
+            R.color.launcher_warning_soft,
+            action = getString(R.string.settings_user_report_action)
+        ) {
+            showUserReportDialog()
+        }
+    }
+
+    internal fun showUserReportDialog(): AlertDialog {
+        val content = activity.layoutInflater.inflate(R.layout.dialog_user_report, null, false)
+        val types = LobsterUserReportType.entries
+        val typeSpinner = content.findViewById<Spinner>(R.id.user_report_type).apply {
+            adapter = ArrayAdapter(
+                activity,
+                android.R.layout.simple_spinner_item,
+                types.map(LobsterUserReportType::label)
+            ).also { it.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item) }
+        }
+        val description = content.findViewById<EditText>(R.id.user_report_description)
+        val reproductionSteps = content.findViewById<EditText>(R.id.user_report_steps)
+        val error = content.findViewById<TextView>(R.id.user_report_error)
+        val dialog = AlertDialog.Builder(activity).setView(content).create()
+        dialog.setCanceledOnTouchOutside(false)
+        content.findViewById<View>(R.id.user_report_cancel).setOnClickListener { dialog.dismiss() }
+        content.findViewById<View>(R.id.user_report_submit).setOnClickListener {
+            val event = LobsterUserReportFactory.create(
+                type = types[typeSpinner.selectedItemPosition.coerceIn(types.indices)],
+                description = description.text?.toString().orEmpty(),
+                reproductionSteps = reproductionSteps.text?.toString()
+            )
+            if (event == null) {
+                error.visibility = View.VISIBLE
+                description.requestFocus()
+                return@setOnClickListener
+            }
+            error.visibility = View.GONE
+            LobsterClient.reportUsage(activity, event)
+            dialog.dismiss()
+            Toast.makeText(activity, R.string.settings_user_report_queued, Toast.LENGTH_LONG).show()
+        }
+        dialog.show()
+        return dialog
     }
 
     private fun SettingsActivity.addSwitchRow(

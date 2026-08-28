@@ -16,6 +16,9 @@ data class LobsterCrashSnapshot(
             scene = "客户端崩溃",
             status = LobsterReportStatus.ERROR,
             summary = "客户端发生未捕获异常",
+            category = LobsterLogCategory.CRASH,
+            eventType = LobsterEventType.ERROR,
+            action = "uncaught_exception",
             logLine = buildString {
                 append("[崩溃] 异常类型=").append(exceptionType)
                 append("\n[崩溃] 线程=").append(threadKind)

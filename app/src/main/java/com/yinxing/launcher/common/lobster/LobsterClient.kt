@@ -84,6 +84,7 @@ object LobsterClient {
         val deviceId = installId(context)
 
         scope.launch {
+            var queued = false
             try {
                 val body = createReportBody(
                     context = context,
@@ -92,16 +93,23 @@ object LobsterClient {
                     status = status,
                     summary = summary,
                     logs = logsToReport,
-                    details = details
+                    details = details,
+                    taxonomy = LobsterEventTaxonomy.infer(scene, status, summary, details.errorCode)
                 )
-
+                val pending = LobsterPendingReport(
+                    id = body.getString("delivery_id"),
+                    endpoint = endpoint,
+                    payload = body.toString()
+                )
+                LobsterPendingReportStore.enqueue(context.applicationContext, pending)
+                queued = true
                 val result = postJson(endpoint, body, successPrefix = "上报成功", failurePrefix = "上报失败")
-                if (result !is PostJsonResult.Success) {
-                    restoreBufferedLogs(logsToReport)
+                if (result is PostJsonResult.Success) {
+                    LobsterPendingReportStore.remove(context.applicationContext, pending.id)
                 }
             } catch (e: Exception) {
                 DebugLog.e(TAG, "上报异常: ${e.message}", e)
-                restoreBufferedLogs(logsToReport)
+                if (!queued) restoreBufferedLogs(logsToReport)
             }
         }
     }
@@ -120,7 +128,8 @@ object LobsterClient {
                     status = event.status,
                     summary = event.summary,
                     logs = event.logLine,
-                    details = event.details
+                    details = event.details,
+                    taxonomy = LobsterEventTaxonomy(event.category, event.eventType, event.action)
                 )
                 val pending = LobsterPendingReport(
                     id = body.getString("delivery_id"),
@@ -177,7 +186,8 @@ object LobsterClient {
             status = event.status,
             summary = event.summary,
             logs = event.logLine,
-            details = event.details
+            details = event.details,
+            taxonomy = LobsterEventTaxonomy(event.category, event.eventType, event.action)
         )
         LobsterPendingReportStore.enqueue(
             appContext,
@@ -381,19 +391,23 @@ object LobsterClient {
         status: LobsterReportStatus,
         summary: String?,
         logs: String,
-        details: LobsterReportDetails
+        details: LobsterReportDetails,
+        taxonomy: LobsterEventTaxonomy
     ): JSONObject {
         val deviceName = "${Build.MANUFACTURER} ${Build.MODEL} (Android ${Build.VERSION.RELEASE})"
-        val deviceState = if (status == LobsterReportStatus.ERROR) {
-            runCatching { LobsterDeviceStateCollector.capture(context) }.getOrNull()
-        } else {
-            null
-        }
-        val diagnosticLogs = listOfNotNull(logs, deviceState?.toLogLine())
+        val deviceState = runCatching { LobsterDeviceStateCollector.capture(context) }.getOrNull()
+        val diagnosticLogs = listOfNotNull(
+            logs,
+            deviceState?.toLogLine()?.takeIf { status == LobsterReportStatus.ERROR }
+        )
             .filter(String::isNotBlank)
             .joinToString("\n")
         return JSONObject().apply {
             put("delivery_id", UUID.randomUUID().toString())
+            put("schema_version", 4)
+            put("category", taxonomy.category.wireValue)
+            put("event_type", taxonomy.eventType.wireValue)
+            taxonomy.action?.let { put("action", it) }
             put("device", deviceName)
             put("device_id", deviceId)
             put("scene", scene)
