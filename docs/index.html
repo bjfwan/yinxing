@@ -3,24 +3,25 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-  <title>银杏 Yinxing · 专为长辈设计的 Android 简洁桌面 v2.0.1</title>
-  <meta name="description" content="银杏是一款专为长辈设计的 Android 简洁桌面，把电话、视频联系人、天气和常用应用收拢在一眼就懂的主页中。免费下载，无广告，支持 Android 7+。" />
+  <title>银杏 Yinxing | 给长辈一个更简单的 Android 首页</title>
+  <meta name="description" content="银杏是一款专为长辈设计的 Android 简洁桌面。大字、大图标、电话、微信视频、天气和常用应用都在第一屏。个人免费、无广告、源码可见。" />
   <meta name="keywords" content="老年人桌面,长辈手机桌面,大字体launcher,老人手机,简洁桌面,银杏,yinxing,Android launcher,老年模式" />
   <meta name="author" content="bjfwan" />
   <meta name="robots" content="index, follow" />
-  <meta name="theme-color" content="#efe7d7" />
+  <meta name="theme-color" content="#ecefeb" media="(prefers-color-scheme: light)" />
+  <meta name="theme-color" content="#141915" media="(prefers-color-scheme: dark)" />
   <link rel="canonical" href="https://yx.likeyou.qzz.io" />
   <meta property="og:type" content="website" />
-  <meta property="og:title" content="银杏 · 专为长辈设计的 Android 简洁桌面" />
-  <meta property="og:description" content="大字体、大图标、一键拨号，把长辈最常用的事情留在第一屏。免费下载，无广告。" />
+  <meta property="og:title" content="银杏 | 给长辈一个更简单的 Android 首页" />
+  <meta property="og:description" content="电话、微信视频、天气和常用应用，都放在一眼能懂的首页。" />
   <meta property="og:url" content="https://yx.likeyou.qzz.io" />
-  <meta property="og:image" content="https://yx.likeyou.qzz.io/icon.png?v=20260828" />
+  <meta property="og:image" content="https://yx.likeyou.qzz.io/assets/images/yinxing-family-hero.png" />
   <meta property="og:locale" content="zh_CN" />
   <meta property="og:site_name" content="银杏 Yinxing" />
-  <meta name="twitter:card" content="summary" />
-  <meta name="twitter:title" content="银杏 · 专为长辈设计的 Android 简洁桌面" />
-  <meta name="twitter:description" content="把电话、视频联系人、天气和常用应用收拢在一眼就懂的主页中。" />
-  <meta name="twitter:image" content="https://yx.likeyou.qzz.io/icon.png?v=20260828" />
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:title" content="银杏 | 给长辈一个更简单的 Android 首页" />
+  <meta name="twitter:description" content="大字、大图标、少步骤，让长辈更简单地使用手机。" />
+  <meta name="twitter:image" content="https://yx.likeyou.qzz.io/assets/images/yinxing-family-hero.png" />
   <script type="application/ld+json">
   {
     "@context": "https://schema.org",
@@ -28,248 +29,268 @@
     "name": "银杏 Yinxing",
     "operatingSystem": "Android 7+",
     "applicationCategory": "UtilitiesApplication",
-    "softwareVersion": "2.0.1",
+    "softwareVersion": "2.0.0",
     "offers": {
       "@type": "Offer",
       "price": "0",
       "priceCurrency": "CNY"
     },
-    "description": "银杏是一款为长辈设计的 Android 简洁桌面，把电话、视频联系人、天气和常用应用集中在更容易理解的主页中。",
+    "description": "银杏是一款为长辈设计的 Android 简洁桌面，把电话、微信视频、天气和常用应用放在更容易理解的首页。",
     "downloadUrl": "https://github.com/bjfwan/yinxing/releases/latest/download/app-release.apk",
     "url": "https://yx.likeyou.qzz.io",
-    "image": "https://yx.likeyou.qzz.io/icon.png?v=20260828",
+    "image": "https://yx.likeyou.qzz.io/assets/images/yinxing-family-hero.png",
     "author": {
       "@type": "Person",
       "name": "bjfwan"
     }
   }
   </script>
-  <link rel="icon" href="./favicon.ico?v=20260828" sizes="any" />
-  <link rel="icon" type="image/png" sizes="32x32" href="./favicon-32x32.png?v=20260828" />
-  <link rel="apple-touch-icon" sizes="180x180" href="./apple-touch-icon.png?v=20260828" />
-  <link rel="manifest" href="./site.webmanifest?v=20260828" />
-  <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;500;600&family=Noto+Sans+SC:wght@300;400;500;700&family=Noto+Serif+SC:wght@400;500;600;700&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="assets/css/style.css" />
-  <script src="assets/js/main.js" defer></script>
+  <link rel="icon" type="image/png" href="./icon.png?v=20260828" />
+  <link rel="preload" as="image" type="image/webp" href="./assets/images/yinxing-family-hero.webp" fetchpriority="high" />
+  <link rel="preload" as="image" type="image/webp" href="./assets/images/ginkgo-atmosphere-v2.webp" />
+  <link rel="stylesheet" href="./assets/css/style.css" />
+  <script src="./assets/vendor/gsap.min.js" defer></script>
+  <script src="./assets/vendor/ScrollTrigger.min.js" defer></script>
+  <script src="./assets/js/main.js" defer></script>
 </head>
 <body>
-  <div class="page-shell">
-    <header class="site-header" data-reveal>
-      <a class="brand" href="#top" aria-label="银杏首页">
-        <span class="brand-mark">
-          <img src="./icon.png?v=20260828" alt="银杏图标" />
-        </span>
-        <span class="brand-copy">
-          <span class="brand-name">银杏</span>
-          <span class="brand-subtitle">Yinxing Launcher</span>
-        </span>
-      </a>
-      <div class="header-meta">
-        <a class="header-link" href="#download">下载 APK</a>
-        <a class="header-link" href="https://github.com/bjfwan/yinxing" target="_blank" rel="noopener noreferrer">GitHub</a>
-        <span class="meta-pill">v2.0.1</span>
+  <a class="skip-link" href="#main">跳到主要内容</a>
+
+  <header class="site-header" data-hero-item>
+    <a class="brand" href="#top" aria-label="银杏首页">
+      <img class="brand-logo" src="./icon.png?v=20260828" width="48" height="48" alt="" />
+      <span>
+        <strong>银杏</strong>
+        <small>Yinxing Launcher</small>
+      </span>
+    </a>
+
+    <nav class="site-nav" aria-label="主导航">
+      <a href="#experience">真实界面</a>
+      <a href="#family">家属设置</a>
+      <a href="#support-scope">支持范围</a>
+      <a href="#open-source">许可说明</a>
+    </nav>
+
+    <a class="header-download" href="./app-release.apk" download="银杏.apk">免费下载 APK</a>
+  </header>
+
+  <main id="main">
+    <section class="hero" id="top" aria-labelledby="hero-title">
+      <div class="hero-intro">
+        <div class="hero-copy">
+          <p class="eyebrow" data-hero-item>仅支持 Android 7+</p>
+          <h1 id="hero-title" data-hero-item>
+            <span class="hero-line hero-line-primary">让长辈用手机，</span>
+            <span class="hero-line hero-line-accent">不用再猜。</span>
+          </h1>
+          <p class="hero-lede" data-hero-item>电话、微信视频、天气和常用应用，都放在一眼看清、一按就到的首页。</p>
+        </div>
+        <div class="hero-actions" data-hero-item>
+          <a class="button button-primary" href="./app-release.apk" download="银杏.apk">免费下载 APK</a>
+          <a class="button button-secondary" href="#experience">查看真实界面</a>
+          <a class="hero-history-link" href="./versions.html">历史发布版本 <span aria-hidden="true">→</span></a>
+        </div>
       </div>
-    </header>
 
-    <main class="page" id="top">
-      <section class="hero-card" data-reveal id="download">
-        <span class="hero-card-quote-mark" aria-hidden="true">&ldquo;</span>
-        <div class="hero-card-body">
-          <p class="eyebrow hero-card-eyebrow">为长辈重新设计 Android 首页</p>
-          <h1 class="hero-card-title">让手机回到<span>一眼就懂</span>的样子</h1>
-          <p class="hero-card-desc">银杏把电话、微信视频、天气和常用应用整理得更清楚，不替代系统功能。</p>
-          <p class="hero-card-signature">—— 银杏团队 &middot; 2026 秋</p>
-        </div>
-        <div class="hero-card-side">
-          <div class="cta-actions">
-            <a class="button button-primary" href="./app-release.apk" download="银杏.apk" title="直接下载银杏 APK">
-              <span>下载 APK</span>
-              <strong>立即开始</strong>
-            </a>
-            <a class="button button-ghost" href="https://github.com/bjfwan/yinxing/releases/latest/download/app-release.apk" target="_blank" rel="noopener noreferrer" title="从 GitHub 下载">
-              <span>GitHub 备用</span>
-              <strong>同一安装包</strong>
-            </a>
-          </div>
-          <ul class="meta-row meta-row-dark" aria-label="软件规格">
-            <li><span>版本</span><strong>v2.0.1</strong></li>
-            <li><span>大小</span><strong>2.60 MiB</strong></li>
-            <li><span>系统</span><strong>Android 7+</strong></li>
-            <li><span>协议</span><strong>MIT</strong></li>
-          </ul>
-        </div>
-      </section>
-
-      <section class="section-block support-block" data-reveal>
-        <div class="section-heading">
-          <div>
-            <p class="section-kicker"><span class="section-kicker-num">01</span>现在包含</p>
-            <h2>把常用事情留在第一屏</h2>
-          </div>
-          <p class="section-intro">首页、电话、视频联系人、应用内天气和家属设置，够用就好。</p>
-        </div>
-        <div class="support-grid">
-          <div class="support-column">
-            <h3>现在可用</h3>
-            <ul>
-              <li>大字桌面与应用内天气</li>
-              <li>电话联系人、头像与直接拨号</li>
-              <li>视频联系人与微信视频发起</li>
-              <li>家属设置与常用应用管理</li>
-            </ul>
-          </div>
-          <div class="support-column is-muted">
-            <h3>保持克制</h3>
-            <ul>
-              <li>无账号</li>
-              <li>无广告</li>
-              <li>本地优先</li>
-              <li>Android 7+</li>
-            </ul>
-          </div>
-        </div>
-        <div class="install-strip">未知来源安装 · 设为默认桌面 · 按需整理首页</div>
-      </section>
-
-      <section class="section-block tokens-block" data-reveal>
-        <div class="section-heading">
-          <div>
-            <p class="section-kicker"><span class="section-kicker-num">02</span>设计语言</p>
-            <h2>设计 Token · 与代码精确对照</h2>
-          </div>
-          <p class="section-intro">这套颜色不是为设计师做的，是按<strong>老花眼、对比敏感度下降、晶状体变黄</strong>等真实视觉变化反推出来的。所有改动基于 <code>colors.xml</code> 增量扩展，<strong>不破坏 110+ 处引用</strong>。</p>
-        </div>
-
-        <div class="tokens-divider" aria-hidden="true"><span></span></div>
-
-        <div class="tokens-rationale">
-          <article class="tokens-rationale-card">
-            <span class="tokens-rationale-numeral" aria-hidden="true">01</span>
-            <span class="tokens-rationale-label">为老人 · 红绿灯逻辑</span>
-            <h3 class="tokens-rationale-title">绿 / 黄 / 红 = 走过几十年的颜色</h3>
-            <p>老人在马路上看了一辈子红绿灯，<strong>不需要重新学习</strong>。所以绿色只给<strong>安全的操作</strong>（接听、保存），黄色只给<strong>需要确认</strong>（倒计时），红色只给<strong>不可逆</strong>（挂断、删除）。考虑到老年人红绿色弱发生率上升，每个动作还配<strong>文字 + 图标</strong>双重提示，不靠颜色单独表意。</p>
-          </article>
-          <article class="tokens-rationale-card">
-            <span class="tokens-rationale-numeral" aria-hidden="true">02</span>
-            <span class="tokens-rationale-label">为老人 · 暖色感知偏好</span>
-            <h3 class="tokens-rationale-title">银杏黄 取自他们熟悉的树叶</h3>
-            <p>老年人晶状体逐年发黄，<strong>蓝光透过率下降，暖色辨识反而变好</strong>。所以品牌色没用流行的冷蓝紫，而是取<code>#B8882A</code> 银杏叶颜色——温暖、亲切、不刺激；柔淡变体 <code>#FBF1DC</code> 做大块背景，文字对比度仍稳在 <strong>WCAG AAA 级（≥7:1）</strong>，老花眼也看得清。</p>
-          </article>
-          <article class="tokens-rationale-card">
-            <span class="tokens-rationale-numeral" aria-hidden="true">03</span>
-            <span class="tokens-rationale-label">为老人 · 暗光不眩光</span>
-            <h3 class="tokens-rationale-title">夜起夜里 不被屏幕扎眼</h3>
-            <p>老花眼对眩光特别敏感，<strong>纯黑底配纯白字反而最累</strong>。所以暗色背景 <code>#0F1419</code> 留一点墨蓝灰、文字 <code>#F1F5F9</code> 不用纯白；从近黑到深炭分两档，从象牙白到雾灰分两档，<strong>夜里起来看时间、看来电姓名都不晕</strong>。</p>
-          </article>
-        </div>
-
-        <p class="tokens-row-label">颜色 · 新增 + 暗色变体</p>
-        <div class="tokens-grid">
-          <article class="token-swatch" style="--bg:#0F172A;--fg:#F1F5F9">
-            <span class="token-tag">保留</span>
-            <div class="token-info">
-              <span class="token-name">launcher_primary</span>
-              <span class="token-hex">#0F172A</span>
-            </div>
-          </article>
-          <article class="token-swatch" style="--bg:#10B981;--fg:#FFFFFF">
-            <span class="token-tag">保留</span>
-            <div class="token-info">
-              <span class="token-name">launcher_action</span>
-              <span class="token-hex">#10B981</span>
-            </div>
-          </article>
-          <article class="token-swatch" style="--bg:#F59E0B;--fg:#1A1814">
-            <span class="token-tag">保留</span>
-            <div class="token-info">
-              <span class="token-name">launcher_warning</span>
-              <span class="token-hex">#F59E0B</span>
-            </div>
-          </article>
-          <article class="token-swatch" style="--bg:#EF4444;--fg:#FFFFFF">
-            <span class="token-tag">保留</span>
-            <div class="token-info">
-              <span class="token-name">launcher_danger</span>
-              <span class="token-hex">#EF4444</span>
-            </div>
-          </article>
-          <article class="token-swatch" style="--bg:#B8882A;--fg:#FFFFFF">
-            <span class="token-tag is-new">新增 · 银杏黄</span>
-            <div class="token-info">
-              <span class="token-name">launcher_brand</span>
-              <span class="token-hex">#B8882A</span>
-            </div>
-          </article>
-          <article class="token-swatch" style="--bg:#FBF1DC;--fg:#8E661B">
-            <span class="token-tag is-new">新增</span>
-            <div class="token-info">
-              <span class="token-name">launcher_brand_soft</span>
-              <span class="token-hex">#FBF1DC</span>
-            </div>
-          </article>
-          <article class="token-swatch" style="--bg:#0F1419;--fg:#F1F5F9">
-            <span class="token-tag is-new">新增 · 暗色</span>
-            <div class="token-info">
-              <span class="token-name">launcher_bg_start</span>
-              <span class="token-hex">#0F1419 / dark</span>
-            </div>
-          </article>
-          <article class="token-swatch" style="--bg:#161B22;--fg:#F1F5F9">
-            <span class="token-tag is-new">新增 · 暗色</span>
-            <div class="token-info">
-              <span class="token-name">launcher_bg_end</span>
-              <span class="token-hex">#161B22 / dark</span>
-            </div>
-          </article>
-          <article class="token-swatch" style="--bg:#1E2530;--fg:#F1F5F9">
-            <span class="token-tag is-new">新增 · 暗色</span>
-            <div class="token-info">
-              <span class="token-name">launcher_surface</span>
-              <span class="token-hex">#1E2530 / dark</span>
-            </div>
-          </article>
-          <article class="token-swatch" style="--bg:#2A3340;--fg:#F1F5F9">
-            <span class="token-tag is-new">新增 · 暗色</span>
-            <div class="token-info">
-              <span class="token-name">launcher_outline</span>
-              <span class="token-hex">#2A3340 / dark</span>
-            </div>
-          </article>
-          <article class="token-swatch" style="--bg:#F1F5F9;--fg:#0F172A">
-            <span class="token-tag is-new">新增 · 暗色</span>
-            <div class="token-info">
-              <span class="token-name">launcher_text_primary</span>
-              <span class="token-hex">#F1F5F9 / dark</span>
-            </div>
-          </article>
-          <article class="token-swatch" style="--bg:#94A3B8;--fg:#0F172A">
-            <span class="token-tag is-new">新增 · 暗色</span>
-            <div class="token-info">
-              <span class="token-name">launcher_text_secondary</span>
-              <span class="token-hex">#94A3B8 / dark</span>
-            </div>
-          </article>
-        </div>
-
-        <p class="tokens-footnote">
-          <span class="tokens-footnote-mark">※</span>
-          对比度按 <strong>WCAG 2.2 AAA</strong>（≥7:1）逐项核验 · 配色基于<strong>老年视觉变化</strong>的真实研究反推 · 所有色值与现有 <code>colors.xml</code> 一一对应
-        </p>
-      </section>
-
-    </main>
-
-    <div class="page-tagline" aria-hidden="true">Designed for elders &middot; Built with care &middot; 2026</div>
-
-    <footer class="site-footer" data-reveal>
-      <p>联系作者：<a href="mailto:2632507193@qq.com">2632507193@qq.com</a></p>
-      <div class="footer-links">
-        <a class="footer-link" href="https://github.com/bjfwan/yinxing" target="_blank" rel="noopener noreferrer">源码仓库</a>
-        <a class="footer-link" href="https://github.com/bjfwan/yinxing/releases" target="_blank" rel="noopener noreferrer">全部发布</a>
+      <div class="hero-media" data-hero-visual>
+        <img
+          class="hero-photo"
+          data-hero-photo
+          src="./assets/images/yinxing-family-hero.webp"
+          width="1536"
+          height="1024"
+          alt="一位长辈与家人一起使用手机"
+          fetchpriority="high"
+        />
       </div>
-    </footer>
-  </div>
+    </section>
+
+    <section class="proof-strip" aria-label="产品特点" data-reveal>
+      <p><strong>一眼看清</strong><span>大字和大图标留在第一屏</span></p>
+      <p><strong>没有负担</strong><span>无账号、无广告，本地优先</span></p>
+      <p><strong>只做 Android</strong><span>Android 7 及以上，个人免费</span></p>
+    </section>
+
+    <section class="story section" aria-labelledby="story-title">
+      <div class="story-copy" data-reveal>
+        <h2 id="story-title">
+          <span class="heading-light">不是教老人适应手机，</span><br />
+          <strong class="heading-strong">是让手机适应老人。</strong>
+        </h2>
+        <p>字太小、入口太深、步骤太多，都会让一次普通操作变得困难。银杏把这些负担拿掉，只留下真正会用到的事情。</p>
+      </div>
+      <div class="story-points" data-reveal-group>
+        <article>
+          <strong>一眼看清</strong>
+          <p>时间、天气、联系人和应用都有清楚层级。</p>
+        </article>
+        <article>
+          <strong>一步到达</strong>
+          <p>电话和微信视频直接放在首页，不再翻找。</p>
+        </article>
+        <article>
+          <strong>少点担心</strong>
+          <p>重要操作有文字提示，误触风险更低。</p>
+        </article>
+      </div>
+    </section>
+
+    <section class="experience section" id="experience" aria-labelledby="experience-title" data-scroll-story>
+      <div class="section-title" data-reveal>
+        <h2 id="experience-title">
+          <span class="heading-light">真实界面，</span><strong class="heading-strong">真实大字。</strong>
+        </h2>
+        <p>下面都是银杏在 Android 真机上的实际画面。</p>
+      </div>
+
+      <div class="experience-product" data-story-product>
+        <div class="story-copy-stack" aria-hidden="true">
+          <article class="story-copy-panel story-copy-home" data-story-copy>
+            <h3>首页只放常用入口</h3>
+            <p>电话、微信视频、时间和天气，一眼就能看见。</p>
+          </article>
+          <article class="story-copy-panel story-copy-settings" data-story-copy>
+            <h3>设置交给家属</h3>
+            <p>联系人、首页应用和来电保障，集中在一个地方。</p>
+          </article>
+          <article class="story-copy-panel story-copy-contacts" data-story-copy>
+            <h3>联系人更好找</h3>
+            <p>电话、微信视频和首页应用，按长辈的习惯提前放好。</p>
+          </article>
+        </div>
+
+        <div class="screen-stage" data-screen-stage>
+          <figure class="screen-card screen-card-featured" data-story-screen data-tilt-card>
+            <img src="./assets/images/app-home.png" width="1080" height="2400" loading="lazy" alt="银杏大字首页" />
+            <figcaption>首页只放常用入口</figcaption>
+          </figure>
+          <figure class="screen-card screen-card-secondary screen-card-settings" data-story-screen data-tilt-card>
+            <img src="./assets/images/family-settings.png" width="1080" height="2400" loading="lazy" alt="银杏家属设置页面" />
+            <figcaption>家属统一管理设置</figcaption>
+          </figure>
+          <figure class="screen-card screen-card-secondary screen-card-contacts" data-story-screen data-tilt-card>
+            <img src="./assets/images/contacts-home.png" width="1080" height="2400" loading="lazy" alt="银杏联系人和首页管理页面" />
+            <figcaption>联系人和应用更好找</figcaption>
+          </figure>
+        </div>
+      </div>
+    </section>
+
+    <section class="family section" id="family" aria-labelledby="family-title">
+      <div class="family-visual" data-reveal>
+        <img
+          src="./assets/images/family-settings-dialog.png"
+          width="1080"
+          height="2400"
+          loading="lazy"
+          alt="银杏家属设置提示框"
+        />
+      </div>
+      <div class="family-copy" data-reveal>
+        <h2 id="family-title">
+          <span class="heading-light">老人只管用，</span><br />
+          <strong class="heading-strong">家属负责设置。</strong>
+        </h2>
+        <p>联系人、首页应用、自动接听、权限和显示模式都集中在家属设置中。长辈平时不需要进入。</p>
+        <ul>
+          <li><strong>联系人</strong><span>提前放好常用家人</span></li>
+          <li><strong>首页应用</strong><span>只留下真正会打开的应用</span></li>
+          <li><strong>来电保障</strong><span>按需设置自动接听与提醒</span></li>
+        </ul>
+      </div>
+    </section>
+
+    <section class="support-scope section" id="support-scope" aria-labelledby="support-scope-title">
+      <div class="support-scope-intro" data-reveal>
+        <h2 id="support-scope-title">
+          <span class="heading-light">哪些已经能用，</span><br />
+          <strong class="heading-strong">哪些还在验证。</strong>
+        </h2>
+        <p>已实现不等于所有 Android 机型都已验证。这里按当前实际进度说明。</p>
+      </div>
+      <div class="support-scope-list" data-reveal-group>
+        <article>
+          <strong>可以直接使用</strong>
+          <p>桌面、天气、电话联系人、视频联系人、应用管理和家属设置。</p>
+        </article>
+        <article>
+          <strong>指定设备已验证</strong>
+          <p>微信视频主动拨号已在 vivo V2285A、Android 15、微信 8.0.66 上跑通。</p>
+        </article>
+        <article>
+          <strong>仍需扩充验证</strong>
+          <p>系统电话自动接听已完成软件适配，仍需真实 SIM 与更多厂商 ROM 验证。</p>
+        </article>
+        <article>
+          <strong>当前不支持</strong>
+          <p>微信视频来电自动接听、远程协助、云同步和 iOS。</p>
+        </article>
+      </div>
+    </section>
+
+    <section class="open-source section" id="open-source" aria-labelledby="open-source-title" data-reveal>
+      <div>
+        <h2 id="open-source-title">
+          <span class="heading-light">简单，</span><strong class="heading-strong">也应该透明。</strong>
+        </h2>
+        <p>银杏无广告、无账号，源码公开可见。个人和非商业用途免费，商业使用需要事先取得付费书面授权。</p>
+      </div>
+      <a class="button button-secondary" href="https://github.com/bjfwan/yinxing" target="_blank" rel="noopener noreferrer">查看 GitHub</a>
+    </section>
+
+    <section class="faq section" aria-labelledby="faq-title">
+      <h2 id="faq-title" data-reveal>
+        <span class="heading-light">安装前，</span><br /><strong class="heading-strong">可能想知道。</strong>
+      </h2>
+      <div class="faq-list" data-reveal>
+        <details>
+          <summary>会替换手机里的系统功能吗？</summary>
+          <p>不会。银杏只是新的 Android 首页，电话、微信和其他应用仍然使用手机原有能力。</p>
+        </details>
+        <details>
+          <summary>安装后还能换回原来的桌面吗？</summary>
+          <p>可以。随时进入系统的默认应用设置，重新选择原来的桌面即可。</p>
+        </details>
+        <details>
+          <summary>需要注册账号或付费吗？</summary>
+          <p>个人使用不需要。银杏免费下载、无广告；商业使用需另行取得授权。</p>
+        </details>
+        <details>
+          <summary>支持 iPhone 或 iOS 吗？</summary>
+          <p>不支持。银杏目前仅支持 Android 7 及以上系统。</p>
+        </details>
+      </div>
+    </section>
+
+    <section class="download section" id="download" aria-labelledby="download-title" data-reveal>
+      <div>
+        <h2 id="download-title">
+          <span class="heading-light">给家里的手机，</span><br />
+          <strong class="heading-strong">换一个更简单的首页。</strong>
+        </h2>
+        <p>仅支持 Android 7 及以上系统。下载安装后，将银杏设为默认桌面即可。</p>
+      </div>
+      <div class="download-actions">
+        <a class="button button-primary" href="./app-release.apk" download="银杏.apk">免费下载 APK</a>
+        <a class="text-link" href="https://github.com/bjfwan/yinxing/releases/latest/download/app-release.apk" target="_blank" rel="noopener noreferrer">GitHub 备用下载</a>
+      </div>
+    </section>
+  </main>
+
+  <footer class="site-footer">
+    <a class="brand footer-brand" href="#top" aria-label="返回银杏首页">
+      <img class="brand-logo" src="./icon.png?v=20260828" width="48" height="48" alt="" loading="lazy" />
+      <span>
+        <strong>银杏</strong>
+        <small>让手机更简单</small>
+      </span>
+    </a>
+    <div class="footer-links">
+      <a href="mailto:2632507193@qq.com">联系作者</a>
+      <a href="https://github.com/bjfwan/yinxing" target="_blank" rel="noopener noreferrer">源码仓库</a>
+      <a href="./versions.html">历史版本</a>
+    </div>
+  </footer>
 </body>
 </html>
