@@ -1,0 +1,210 @@
+[
+  {
+    "tag_name": "v2.0.0",
+    "name": "🍂 银杏 v2.0.0 发布",
+    "published_at": "2026-08-27T10:48:34Z",
+    "body": "# 银杏 v2.0.0\n\n银杏 2.0 是一次完整的产品与工程升级，重点提升长辈使用时的清晰度、稳定性和家属维护效率。\n\n## 主要更新\n\n- 升级主页、家属设置、电话联系人和视频联系人界面。\n- 电话联系人支持头像编辑、列表/宫格布局、系统通讯录导入和直接拨号。\n- 新增应用内天气详情、城市管理、当前位置、缓存与失败回退。\n- 系统电话接听迁移到默认电话角色与 `InCallService`，补充倒计时、状态确认和厂商设置引导。\n- 增强微信视频主动拨号的任务恢复、超时处理和故障诊断。\n- 清理旧页面、孤立代码和未使用资源，并按功能整理资源文件。\n\n## 兼容性说明\n\n- 支持 Android 7.0 及以上版本。\n- 系统电话自动接听依赖默认电话角色和设备 ROM 支持，仍会继续扩充真实 SIM 与多机型验证。\n- 微信视频来电自动接听不在本版本交付范围内。\n\n## 验证\n\n- `421 tests, 0 failed`\n- Android Lint：`0 errors`，`UnusedResources = 0`\n- Debug、仪器测试 APK、Release 和 Release Lint 构建通过\n- Release APK 已通过 APK Signature Scheme v2 签名校验\n- SHA-256：`3DFE1D48948F2E7FBBF1E0ADC41A491852E91D226F6BDABE47FAC88571BC5B15`\n",
+    "draft": false,
+    "prerelease": false,
+    "assets": [
+      {
+        "name": "app-release.apk"
+      }
+    ]
+  },
+  {
+    "tag_name": "v1.9.0",
+    "name": "🍂 银杏 v1.9.0 发布",
+    "published_at": "2026-05-09T08:22:15Z",
+    "body": "🍂 银杏 v1.9.0 发布\n\n🧠 微信自动化从脚本式流程升级为任务引擎，接入 UI 语义识别、语义页面置信度和任务级恢复决策\n🎥 微信视频搜索结果增加联系人评分机制，综合标题 id、精确名称、昵称 / 微信号字段、可点击性和网络结果干扰判断\n🧪 新增失败样本回放系统，失败时保存最近页面快照、语义页面、任务步骤和失败原因，便于后续复盘\n📞 来电自动接听升级为兼容性决策引擎，统一判断联系人白名单、全局开关、联系人开关、权限、默认桌面、电池优化、自启动、后台启动和系统版本策略\n🎨 基于老人视觉友好原则优化电话 / 视频联系人按钮，放大触控区域，区分电话绿色与视频蓝色，并补充无障碍描述\n🧹 移除来电广播动态注册，避免 Manifest 接收器与动态接收器重复处理同一通来电\n✅ 单元测试扩展至 309 tests, 0 failed\n📦 APK 大小：2.16 MB",
+    "draft": false,
+    "prerelease": false,
+    "assets": [
+      {
+        "name": "app-release.apk"
+      }
+    ]
+  },
+  {
+    "tag_name": "v1.8.1",
+    "name": "🍂 银杏 v1.8.1 发布",
+    "published_at": "2026-05-07T11:00:09Z",
+    "body": "🍂 银杏 v1.8.1 发布\n\n🎥 微信视频稳定性增强：服务未运行前置检查、请求级超时、服务中断 / 关闭兜底\n🏠 失败恢复增强：失败或服务异常后回到银杏桌面，减少老人卡在微信界面的概率\n🧪 诊断增强：微信视频失败上报步骤历史、步骤耗时、最后识别页面和失败总耗时，便于 Lobster 网站分析\n🔐 隐私修正：Lobster device_id 改为应用内随机 install_id，不再使用 ANDROID_ID\n🧹 工程清理：Release logcat 输出收紧、Contact 枚举迁移 entries、SharedPreferences 异步写入、Lint 警告清理\n⬆️ 更新机制：家属设置页新增手动检查更新，发布页同步 docs/update.json 和 docs/app-release.apk\n✅ 单元测试扩展至 290 tests, 0 failed\n📦 APK 大小：2.15 MB",
+    "draft": false,
+    "prerelease": false,
+    "assets": [
+      {
+        "name": "app-release.apk"
+      }
+    ]
+  },
+  {
+    "tag_name": "v1.8.0",
+    "name": "🍂 银杏 v1.8.0 发布",
+    "published_at": "2026-05-03T17:58:59Z",
+    "body": "🍂 银杏 v1.8.0 发布\n\n🔧 修复 AccessibilityUtil 节点泄漏（findNodesByContentDescription / findFirstEditableNodeInternal / findScrollableNode），补充回归测试\n🧹 Log.* 统一迁移到 DebugLog 门面，移除死代码 bindOverviewActions\n📦 提取 WeChatPackage / WeChatClassNames / WeChatViewIds 单一来源常量，重构所有 WeChat 调用点\n🧩 拆分 SelectToSpeakService 为 AdaptiveDelayCalculator + WeChatElementLocator + WeChatFailureDiagnostics，服务缩减至状态机核心\n🦞 LobsterClient.postJson 返回显式 PostJsonResult，网络调用结果可区分\n⚙️ SettingsSheetController 拆分为 per-sheet 文件（IncomingGuard / Contacts / AutoAnswer / Device / Permission / System），控制器仅保留委派与共享 helper\n✅ 单元测试扩展至 288 tests, 0 failed\n📦 APK 大小：2.14 MB（较 v1.7.2 减少 0.81 MB）",
+    "draft": false,
+    "prerelease": false,
+    "assets": [
+      {
+        "name": "app-release.apk"
+      }
+    ]
+  },
+  {
+    "tag_name": "v1.7.2",
+    "name": "🍂 银杏 v1.7.2 发布",
+    "published_at": "2026-05-01T03:58:47Z",
+    "body": "🍂 银杏 v1.7.2 发布\n\nBug 修复：\n\n🎥 修复微信视频卡片点击后跳转应用首页而非视频通话页面，VideoCallActivity 添加独立 taskAffinity 避免与 singleInstance MainActivity 冲突\n🎥 修复微信视频卡片点击后启动 VideoCallActivity 缺少 FLAG_ACTIVITY_NEW_TASK 导致任务栈异常\n🦞 修复点击微信视频卡片后日志未上报，首页点击时新增 LobsterClient.log 记录\n🦞 修复 VideoCallActivity 未记录打开 / 关闭日志，onCreate 新增 LobsterClient.log，onDestroy 新增 LobsterClient.report 上传缓冲日志\n📦 APK 大小：2.95 MB",
+    "draft": false,
+    "prerelease": false,
+    "assets": [
+      {
+        "name": "app-release.apk"
+      }
+    ]
+  },
+  {
+    "tag_name": "v1.7.1",
+    "name": "🍂 银杏 v1.7.1 发布",
+    "published_at": "2026-04-30T18:08:43Z",
+    "body": "🍂 银杏 v1.7.1 发布\n\n精简更新：\n\n🧹 移除智能守护 Pro 中心（设备授权码、激活码、AI Pro 状态）全部代码与 UI\n🧹 移除 AI Gateway 通信层（AiGatewayClient、AiDeviceCredentials、AiProStatusClient）\n🧹 移除 Cloudflare AI Gateway Worker 后端及管理脚本\n🧹 移除来电风险 AI 评估链路，来电风险判断回归本地启发式规则\n🧹 移除微信视频 AI 步骤辅助（WeChatStepAssistClient），视频拨号保持无障碍自动化主流程\n🧹 移除设置页 Pro 会员卡片、激活弹窗及相关 drawable 资源\n\n相关调整：\n\n📊 新增 Firebase Telemetry 聚合上报，替代原有分散的 Firebase 调用\n🦞 新增 Tiny Lobster 日志上报（LobsterClient），支持设备 + 场景日志上传\n⚙️ 设置页精简为功能中心，移除 Pro 入口后布局更清晰\n📞 来电页面保留本地风险启发式提示，不再依赖云端 AI\n🎥 视频通话保留无障碍自动化主流程，移除 AI 步骤辅助后流程更稳定\n✅ 单元测试同步清理 AI 相关用例，构建与测试全部通过\n📦 APK 大小：2.95 MB（较 v1.7.0 减少 21 KB）",
+    "draft": false,
+    "prerelease": false,
+    "assets": [
+      {
+        "name": "app-release.apk"
+      }
+    ]
+  },
+  {
+    "tag_name": "v1.7.0",
+    "name": "🍂 银杏 v1.7.0 发布",
+    "published_at": "2026-04-28T15:21:01Z",
+    "body": "🍂 银杏 v1.7.0 发布\n\n重大更新：\n\n🛡️ 新增智能守护 Pro 中心，支持设备授权码、激活码开通、状态检查与本月额度展示\n📞 来电守护升级，新增未知来电风险提醒链路，结合本地规则与 AI Gateway 识别风险等级\n📲 自动接听策略增强，支持全局自动接听开关与联系人单独自动接听共同生效\n🎥 微信视频通话增强，新增页面快照、AI 步骤辅助和异常页面恢复，提升复杂微信界面下的成功率\n⚙️ 设置页重构为更清晰的功能中心，新增智能守护、来电守护、权限、设备和系统入口卡片\n\n相关优化：\n\n🔐 新增设备凭证与 AI Gateway 通信封装，为后续云端能力接入打好基础\n📋 智能守护 Pro 支持复制设备授权码、输入激活码和刷新设备状态\n🚦 来电页面新增风险提示展示，非联系人来电可显示中高风险提醒\n🧭 微信视频流程增加非目标聊天页识别，减少误点和错误恢复\n✅ 单元测试扩展至 171 tests，覆盖来电策略、风险启发式规则、AI 凭证与设置页冒烟路径\n🧹 修复设置页图标 tint 的 lint 阻断问题，Release、Debug、Lint 与测试构建均已通过\n📦 APK 大小：2.97 MB",
+    "draft": false,
+    "prerelease": false,
+    "assets": [
+      {
+        "name": "app-release.apk"
+      }
+    ]
+  },
+  {
+    "tag_name": "v1.6.0",
+    "name": "🍂 银杏 v1.6.0 发布",
+    "published_at": "2026-04-28T05:43:04Z",
+    "body": "🍂 银杏 v1.6.0 发布\n\n主要优化：\n\n🏠 重构主页架构，拆分 HomeViewModel、导航、时间刷新和天气控制逻辑，主页更轻更稳\n⚙️ 瘦身设置页，抽出设置控制器与面板控制器，维护中心结构更清晰\n🌦️ 重构天气链路，拆分数据源、解析器、状态机与磁盘缓存，失败时体验更稳\n📇 统一联系人仓库，电话联系人和视频联系人数据层更一致\n📞 强化来电链路，新增状态机、兼容层、自动接听决策和诊断信息\n🚀 增加启动性能埋点、图标加载优化、Macrobenchmark 场景和 CI 工作流\n✅ 单元测试扩展至 113 tests，覆盖主页、天气、联系人、来电和设置关键路径\n📦 APK 大小：2.93 MB",
+    "draft": false,
+    "prerelease": false,
+    "assets": [
+      {
+        "name": "app-release.apk"
+      }
+    ]
+  },
+  {
+    "tag_name": "v1.5.0",
+    "name": "🍂 银杏 v1.5.0 发布",
+    "published_at": "2026-04-26T14:55:28Z",
+    "body": "🍂 银杏 v1.5.0 发布\n\n主要优化：\n\n🌙 暗色模式：自动 / 浅色 / 深色三档，切换平滑淡入淡出，夜间护眼不刺眼\n✨ 全局入场动画：主页错落浮入、时钟分钟脉动、联系人首屏 stagger 入场\n📞 联系人卡片焕新：号码 / 微信号副标题、自动接听徽章、整卡可拨打开关\n🎯 弹性按压反馈：芯片 / 按钮触感更友好，操作更有回应\n🛠️ 家属维护中心：新增图文教程，桌面整理、权限引导一目了然\n⚡ 性能优化：低性能模式动画自动降级，老旧机型依旧顺滑；RecyclerView 复用动画去重，滑动更稳\n🛡️ 稳定性增强：来电前台服务适配 Android 14，startForeground 失败降级并上报，主页禁用预测性返回避免兼容异常，微信无障碍单击时长调优提升触发率\n📦 APK 大小：2.90 MB",
+    "draft": false,
+    "prerelease": false,
+    "assets": [
+      {
+        "name": "app-release.apk"
+      }
+    ]
+  },
+  {
+    "tag_name": "v1.4.0",
+    "name": "🍂 银杏 v1.4.0 发布",
+    "published_at": "2026-04-25T11:40:31Z",
+    "body": "🍂 银杏 v1.4.0 发布\n\n数据与存储：\n\n📇 微信视频联系人迁移到统一 ContactSqliteStore，提供 GROUP_WECHAT / GROUP_PHONE 常量与历史 key 兼容\n📈 incrementCallCount 返回真实更新结果，视频通话回调统一迁移到 lifecycleScope + IO 写入并补齐日志\n🌦️ 天气缓存与并发请求 key 统一 normalizeCityName，异常收敛为 WeatherState.error，避免 inFlightRequests 卡住\n\n来电链路 / 诊断：\n\n📞 PhoneCallReceiver 增加来电状态、停止服务、响铃音量、联系人加载和 pendingResult.finish 失败日志\n🧪 IncomingCallDiagnostics 新增 ForegroundServiceFailed 与 recordServiceStartFailure，前台服务启动失败时保留完整链路上下文\n\nUI 稳定性：\n\n⚙️ 设置页权限授予、角色切换、默认桌面变化回调统一走防抖 refreshOverviewUi，减少重复刷新\n🖼️ 头像加载捕获 OOM / 解码异常，失败 TTL 降至 60 秒，并支持按 URI 清理失败缓存\n🎥 视频通话 / 电话联系人 Adapter 单条目头像加载增加 try/catch，单个 URI 异常不再影响整页\n📦 APK 大小：2.88 MB",
+    "draft": false,
+    "prerelease": false,
+    "assets": [
+      {
+        "name": "app-release.apk"
+      }
+    ]
+  },
+  {
+    "tag_name": "v1.3.0",
+    "name": "🍂 银杏 v1.3.0 发布",
+    "published_at": "2026-04-24T21:24:32Z",
+    "body": "🍂 银杏 v1.3.0 发布\n\nBug 修复：\n\n🔧 修复 SettingsActivity 仪器化测试与冒烟测试\n📞 修复来电号码匹配逻辑\n📡 修复 PhoneCallReceiver 广播处理异常\n\n功能改进：\n\n📇 重构 ContactManager，提升稳定性与性能\n☎️ 优化 PhoneContactActivity 联系人管理界面交互\n🎥 增强 VideoCallActivity 协调器与对话框控制器\n🏠 改善 HomeAppAdapter 拖拽排序体验\n🖼️ 新增 MediaThumbnailLoader 媒体缩略图支持\n🚀 优化 LauncherApplication 初始化流程\n\n文档 & 官网：\n\n📚 全面刷新文档网站 UI（新样式与布局）\n📦 更新 app-release.apk（v1.3.0）\n📦 APK 大小：2.88 MB",
+    "draft": false,
+    "prerelease": false,
+    "assets": [
+      {
+        "name": "app-release.apk"
+      }
+    ]
+  },
+  {
+    "tag_name": "v1.2.2",
+    "name": "🍂 银杏 v1.2.2 发布",
+    "published_at": "2026-04-23T12:10:08Z",
+    "body": "🍂 银杏 v1.2.2 发布\n\n✨ 界面焕新：深度优化主页布局及联系人列表项设计，视觉风格更统一，也更适合长辈使用\n🚀 系统增强：修复默认启动器状态切换逻辑问题，并优化开机自启动接收器响应性能\n📝 文档升级：全面改造项目移动端展示首页，引入独立资源，提升加载速度与交互体验\n🛠️ 健壮性提升：改进权限请求工具类，增强不同 Android 版本下的兼容性\n🎨 资源优化：更新全局颜色系统与字体排版方案\n📦 APK 大小：2.88 MB",
+    "draft": false,
+    "prerelease": false,
+    "assets": [
+      {
+        "name": "app-release.apk"
+      }
+    ]
+  },
+  {
+    "tag_name": "v1.2.1",
+    "name": "🍂 银杏 v1.2.1 发布",
+    "published_at": "2026-04-23T08:18:11Z",
+    "body": "🍂 银杏 v1.2.1 发布\n\n性能与体验优化：\n\n🚀 Baseline Profile 深度优化：通过 Benchmark 测试重新生成基线配置文件，提升低端机冷启动速度并减少首页滑动和页面切换掉帧\n🛡️ 启动稳定性增强：优化启动流程预编译策略，保证不同 Android 版本设备体验更一致\n\n维护与修复：\n\n🔧 依赖库升级，提升构建安全性\n🧪 环境配置优化，修正 Benchmark 模块包名引用，确保自动化测试链路畅通\n⚙️ Gradle 配置调整，默认启用 TLS 1.3，提升插件下载和构建兼容性\n📦 APK 大小：2.88 MB",
+    "draft": false,
+    "prerelease": false,
+    "assets": [
+      {
+        "name": "app-release.apk"
+      }
+    ]
+  },
+  {
+    "tag_name": "v1.2.0",
+    "name": "🍂 银杏 v1.2.0 发布",
+    "published_at": "2026-04-22T15:32:07Z",
+    "body": "🍂 银杏 v1.2.0 发布\n\n新增：\n\n🔥 接入 Firebase Crashlytics，App 崩溃时自动上传日志，方便开发者远程定位问题\n\n变更：\n\n📦 包名从 com.bajianfeng.launcher 迁移至 com.yinxing.launcher\n🤖 系统要求：Android 7.0+\n📦 APK 大小：2.11 MB",
+    "draft": false,
+    "prerelease": false,
+    "assets": [
+      {
+        "name": "app-release.apk"
+      }
+    ]
+  },
+  {
+    "tag_name": "v1.1.0",
+    "name": "🍂 银杏 v1.1.0 发布",
+    "published_at": "2026-04-22T14:01:57Z",
+    "body": "🍂 银杏 v1.1.0 发布\n\n新功能：\n\n🔠 图标与文字大小调节：设置 → 设备 → 拖动滑条，支持 60%~120% 自由缩放，松手立即生效\n🏠 取消默认桌面：设置 → 设备 → 取消默认桌面，方便临时切换回系统桌面\n\n优化：\n\n⬅️ 首页返回键行为更稳定，防止长辈误按返回键退出桌面\n📞 自动接听延迟支持 + / − 按钮精确调节（1~30 秒）\n📦 APK 大小：1.88 MB",
+    "draft": false,
+    "prerelease": false,
+    "assets": [
+      {
+        "name": "app-release.apk"
+      }
+    ]
+  },
+  {
+    "tag_name": "v1.0.0",
+    "name": "🍂 银杏 v1.0.0 发布",
+    "published_at": "2026-04-22T10:36:44Z",
+    "body": "🍂 银杏 v1.0.0 发布\n\n正式发布：\n\n🏠 桌面主页与默认 Launcher 入口\n📱 应用管理与桌面应用选择\n📞 电话联系人查看、添加、编辑、删除、拨号\n🎥 微信视频联系人管理与发起入口\n⚙️ 低性能模式与基础系统设置入口\n🤖 系统要求：Android 7.0+\n📦 APK 大小：1.88 MB",
+    "draft": false,
+    "prerelease": false,
+    "assets": [
+      {
+        "name": "app-release.apk"
+      }
+    ]
+  }
+]
