@@ -8,10 +8,10 @@ import org.junit.Test
 class WeatherIconResolverTest {
     @Test
     fun `uses distinct source-matched icons for common weather conditions`() {
-        assertEquals(R.drawable.weather_sun, WeatherIconResolver.resolve("晴"))
-        assertEquals(R.drawable.weather_partly_cloudy, WeatherIconResolver.resolve("多云"))
-        assertEquals(R.drawable.weather_cloud, WeatherIconResolver.resolve("阴"))
-        assertEquals(R.drawable.weather_rain, WeatherIconResolver.resolve("阵雨"))
+        assertEquals(R.drawable.weather_icon_sunny, WeatherIconResolver.resolve("晴"))
+        assertEquals(R.drawable.weather_icon_partly_cloudy, WeatherIconResolver.resolve("多云"))
+        assertEquals(R.drawable.weather_icon_cloudy, WeatherIconResolver.resolve("阴"))
+        assertEquals(R.drawable.weather_icon_rain, WeatherIconResolver.resolve("阵雨"))
     }
 
     @Test

@@ -4,29 +4,31 @@
     android:id="@+id/weather_detail_scroll"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@color/launcher_surface"
-    android:clipToPadding="false"
+    android:background="@drawable/bg_settings_page_gradient"
+    android:clipToPadding="true"
     android:fillViewport="true"
     android:overScrollMode="never">
 
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:orientation="vertical">
+        android:orientation="vertical"
+        android:paddingStart="16dp"
+        android:paddingEnd="16dp"
+        android:paddingBottom="48dp">
 
         <FrameLayout
             android:layout_width="match_parent"
-            android:layout_height="60dp">
+            android:layout_height="56dp">
 
             <ImageButton
                 android:id="@+id/btn_back"
                 android:layout_width="52dp"
                 android:layout_height="52dp"
                 android:layout_gravity="start|center_vertical"
-                android:layout_marginStart="8dp"
                 android:background="@drawable/bg_weather_toolbar_action"
                 android:contentDescription="@string/weather_detail_back"
-                android:padding="14dp"
+                android:padding="13dp"
                 android:src="@drawable/ic_weather_detail_back" />
 
             <TextView
@@ -35,24 +37,25 @@
                 android:layout_gravity="center"
                 android:text="@string/weather_detail_title"
                 android:textColor="@color/launcher_text_primary"
-                android:textSize="26sp"
+                android:textSize="22sp"
                 android:textStyle="bold" />
         </FrameLayout>
 
         <androidx.constraintlayout.widget.ConstraintLayout
             android:id="@+id/weather_hero"
             android:layout_width="match_parent"
-            android:layout_height="270dp"
+            android:layout_height="232dp"
+            android:layout_marginTop="12dp"
             android:background="@drawable/bg_weather_detail_hero"
-            android:paddingStart="24dp"
-            android:paddingTop="18dp"
-            android:paddingEnd="20dp"
-            android:paddingBottom="16dp">
+            android:paddingStart="18dp"
+            android:paddingTop="14dp"
+            android:paddingEnd="18dp"
+            android:paddingBottom="14dp">
 
             <TextView
                 android:id="@+id/tv_city"
                 android:layout_width="wrap_content"
-                android:layout_height="48dp"
+                android:layout_height="52dp"
                 android:background="@drawable/bg_weather_toolbar_action"
                 android:clickable="true"
                 android:contentDescription="@string/weather_city_open_manager"
@@ -61,9 +64,9 @@
                 android:drawableTint="@color/launcher_text_secondary"
                 android:focusable="true"
                 android:gravity="center_vertical"
-                android:minWidth="72dp"
+                android:minWidth="96dp"
                 android:textColor="@color/launcher_text_primary"
-                android:textSize="30sp"
+                android:textSize="27sp"
                 android:textStyle="bold"
                 app:layout_constraintStart_toStartOf="parent"
                 app:layout_constraintTop_toTopOf="parent" />
@@ -72,9 +75,9 @@
                 android:id="@+id/tv_date"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="2dp"
-                android:textColor="@color/launcher_text_primary"
-                android:textSize="18sp"
+                android:layout_marginTop="1dp"
+                android:textColor="@color/launcher_text_secondary"
+                android:textSize="16sp"
                 android:textStyle="bold"
                 app:layout_constraintStart_toStartOf="parent"
                 app:layout_constraintTop_toBottomOf="@id/tv_city" />
@@ -85,20 +88,30 @@
                 android:layout_height="wrap_content"
                 android:includeFontPadding="false"
                 android:textColor="@color/launcher_text_primary"
-                android:textSize="82sp"
+                android:textSize="72sp"
                 android:textStyle="bold"
-                app:layout_constraintStart_toStartOf="parent"
-                app:layout_constraintTop_toBottomOf="@id/tv_date" />
+                app:layout_constraintBottom_toBottomOf="parent"
+                app:layout_constraintStart_toStartOf="parent" />
+
+            <ImageView
+                android:id="@+id/iv_weather_hero_icon"
+                android:layout_width="108dp"
+                android:layout_height="108dp"
+                android:contentDescription="@null"
+                android:importantForAccessibility="no"
+                android:padding="4dp"
+                android:scaleType="fitCenter"
+                android:src="@drawable/weather_icon_sunny"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintTop_toTopOf="parent" />
 
             <TextView
                 android:id="@+id/tv_condition"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_marginEnd="2dp"
-                android:layout_marginBottom="4dp"
                 android:includeFontPadding="false"
                 android:textColor="@color/launcher_text_primary"
-                android:textSize="26sp"
+                android:textSize="23sp"
                 android:textStyle="bold"
                 app:layout_constraintBottom_toTopOf="@id/tv_high_low"
                 app:layout_constraintEnd_toEndOf="parent" />
@@ -107,170 +120,23 @@
                 android:id="@+id/tv_high_low"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_marginEnd="2dp"
-                android:layout_marginBottom="2dp"
-                android:textColor="@color/launcher_text_primary"
+                android:layout_marginBottom="4dp"
+                android:textColor="@color/launcher_text_secondary"
                 android:textSize="16sp"
                 android:textStyle="bold"
                 app:layout_constraintBottom_toBottomOf="parent"
                 app:layout_constraintEnd_toEndOf="parent" />
-
-            <ImageView
-                android:id="@+id/iv_weather_hero_icon"
-                android:layout_width="116dp"
-                android:layout_height="116dp"
-                android:contentDescription="@null"
-                android:importantForAccessibility="no"
-                android:scaleType="fitCenter"
-                android:src="@drawable/weather_hero_sun"
-                app:layout_constraintEnd_toEndOf="parent"
-                app:layout_constraintTop_toTopOf="parent" />
-
         </androidx.constraintlayout.widget.ConstraintLayout>
-
-        <View
-            android:layout_width="match_parent"
-            android:layout_height="1dp"
-            android:layout_marginStart="20dp"
-            android:layout_marginTop="10dp"
-            android:layout_marginEnd="20dp"
-            android:background="@color/launcher_divider" />
-
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginStart="20dp"
-            android:layout_marginTop="6dp"
-            android:text="@string/weather_detail_today"
-            android:textColor="@color/launcher_text_secondary"
-            android:textSize="13sp"
-            android:textStyle="bold" />
-
-        <LinearLayout
-            android:id="@+id/hourly_section"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:baselineAligned="false"
-            android:orientation="horizontal"
-            android:paddingStart="20dp"
-            android:paddingTop="2dp"
-            android:paddingEnd="20dp"
-            android:paddingBottom="4dp">
-
-            <include
-                android:id="@+id/hour_now"
-                layout="@layout/item_weather_hour"
-                android:layout_width="0dp"
-                android:layout_height="132dp"
-                android:layout_weight="1" />
-
-            <View
-                android:layout_width="1dp"
-                android:layout_height="110dp"
-                android:layout_gravity="center_vertical"
-                android:background="@color/launcher_divider" />
-
-            <include
-                android:id="@+id/hour_second"
-                layout="@layout/item_weather_hour"
-                android:layout_width="0dp"
-                android:layout_height="132dp"
-                android:layout_weight="1" />
-
-            <View
-                android:layout_width="1dp"
-                android:layout_height="110dp"
-                android:layout_gravity="center_vertical"
-                android:background="@color/launcher_divider" />
-
-            <include
-                android:id="@+id/hour_third"
-                layout="@layout/item_weather_hour"
-                android:layout_width="0dp"
-                android:layout_height="132dp"
-                android:layout_weight="1" />
-
-            <View
-                android:layout_width="1dp"
-                android:layout_height="110dp"
-                android:layout_gravity="center_vertical"
-                android:background="@color/launcher_divider" />
-
-            <include
-                android:id="@+id/hour_fourth"
-                layout="@layout/item_weather_hour"
-                android:layout_width="0dp"
-                android:layout_height="132dp"
-                android:layout_weight="1" />
-        </LinearLayout>
-
-        <LinearLayout
-            android:id="@+id/future_section"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:orientation="vertical"
-            android:paddingStart="20dp"
-            android:paddingTop="14dp"
-            android:paddingEnd="20dp"
-            android:paddingBottom="8dp">
-
-            <TextView
-                style="@style/WeatherDetailText.SectionTitle"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_marginBottom="10dp"
-                android:text="@string/weather_detail_next_days" />
-
-            <include
-                android:id="@+id/day_tomorrow"
-                layout="@layout/item_weather_day" />
-
-            <View
-                android:id="@+id/day_divider_one"
-                android:layout_width="match_parent"
-                android:layout_height="1dp"
-                android:background="@color/launcher_divider" />
-
-            <include
-                android:id="@+id/day_after_tomorrow"
-                layout="@layout/item_weather_day" />
-
-            <View
-                android:id="@+id/day_divider_two"
-                android:layout_width="match_parent"
-                android:layout_height="1dp"
-                android:background="@color/launcher_divider" />
-
-            <include
-                android:id="@+id/day_third"
-                layout="@layout/item_weather_day" />
-        </LinearLayout>
-
-        <TextView
-            android:id="@+id/tv_wind_humidity"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_gravity="center_horizontal"
-            android:layout_marginTop="14dp"
-            android:textColor="@color/launcher_text_primary"
-            android:textSize="15sp" />
-
-        <TextView
-            android:id="@+id/tv_update"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_gravity="center_horizontal"
-            android:layout_marginTop="4dp"
-            android:layout_marginBottom="28dp"
-            android:textColor="@color/launcher_text_secondary"
-            android:textSize="12sp" />
 
         <LinearLayout
             android:id="@+id/error_group"
             android:layout_width="match_parent"
-            android:layout_height="180dp"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="18dp"
             android:gravity="center"
             android:orientation="vertical"
+            android:paddingTop="20dp"
+            android:paddingBottom="20dp"
             android:visibility="gone">
 
             <TextView
@@ -279,16 +145,168 @@
                 android:layout_height="wrap_content"
                 android:text="@string/weather_detail_failed"
                 android:textColor="@color/launcher_text_primary"
-                android:textSize="24sp"
+                android:textSize="22sp"
                 android:textStyle="bold" />
 
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="8dp"
+                android:layout_marginTop="6dp"
                 android:text="@string/weather_detail_retry_hint"
                 android:textColor="@color/launcher_text_secondary"
-                android:textSize="18sp" />
+                android:textSize="17sp" />
+
+            <TextView
+                android:id="@+id/btn_retry"
+                android:layout_width="180dp"
+                android:layout_height="56dp"
+                android:layout_marginTop="16dp"
+                android:background="@drawable/bg_weather_retry_button"
+                android:clickable="true"
+                android:contentDescription="@string/weather_detail_retry"
+                android:focusable="true"
+                android:foreground="?android:attr/selectableItemBackground"
+                android:gravity="center"
+                android:text="@string/weather_detail_retry"
+                android:textColor="@color/launcher_on_primary"
+                android:textSize="19sp"
+                android:textStyle="bold" />
         </LinearLayout>
+
+        <LinearLayout
+            android:id="@+id/hourly_section"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="20dp"
+            android:orientation="vertical">
+
+            <TextView
+                style="@style/WeatherDetailText.SectionTitle"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/weather_detail_today" />
+
+            <com.google.android.material.card.MaterialCardView
+                android:id="@+id/hourly_card"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="10dp"
+                app:cardBackgroundColor="@color/launcher_surface"
+                app:cardCornerRadius="14dp"
+                app:cardElevation="0dp"
+                app:strokeWidth="0dp">
+
+                <HorizontalScrollView
+                    android:id="@+id/hourly_scroll"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:fillViewport="false"
+                    android:overScrollMode="never"
+                    android:scrollbars="none">
+
+                    <LinearLayout
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:orientation="horizontal"
+                        android:paddingStart="4dp"
+                        android:paddingEnd="12dp">
+
+                        <include android:id="@+id/hour_now" layout="@layout/item_weather_hour" />
+                        <include android:id="@+id/hour_second" layout="@layout/item_weather_hour" />
+                        <include android:id="@+id/hour_third" layout="@layout/item_weather_hour" />
+                        <include android:id="@+id/hour_fourth" layout="@layout/item_weather_hour" />
+                        <include android:id="@+id/hour_fifth" layout="@layout/item_weather_hour" />
+                        <include android:id="@+id/hour_sixth" layout="@layout/item_weather_hour" />
+                        <include android:id="@+id/hour_seventh" layout="@layout/item_weather_hour" />
+                        <include android:id="@+id/hour_eighth" layout="@layout/item_weather_hour" />
+                    </LinearLayout>
+                </HorizontalScrollView>
+            </com.google.android.material.card.MaterialCardView>
+        </LinearLayout>
+
+        <LinearLayout
+            android:id="@+id/future_section"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="22dp"
+            android:orientation="vertical">
+
+            <TextView
+                style="@style/WeatherDetailText.SectionTitle"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/weather_detail_next_days" />
+
+            <com.google.android.material.card.MaterialCardView
+                android:id="@+id/future_card"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="10dp"
+                app:cardBackgroundColor="@color/launcher_surface"
+                app:cardCornerRadius="14dp"
+                app:cardElevation="0dp"
+                app:strokeWidth="0dp">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:paddingStart="12dp"
+                    android:paddingEnd="12dp">
+
+                    <include android:id="@+id/day_tomorrow" layout="@layout/item_weather_day" />
+
+                    <View
+                        android:id="@+id/day_divider_one"
+                        android:layout_width="match_parent"
+                        android:layout_height="1dp"
+                        android:background="@color/launcher_divider" />
+
+                    <include android:id="@+id/day_after_tomorrow" layout="@layout/item_weather_day" />
+
+                    <View
+                        android:id="@+id/day_divider_two"
+                        android:layout_width="match_parent"
+                        android:layout_height="1dp"
+                        android:background="@color/launcher_divider" />
+
+                    <include android:id="@+id/day_third" layout="@layout/item_weather_day" />
+                </LinearLayout>
+            </com.google.android.material.card.MaterialCardView>
+        </LinearLayout>
+
+        <com.google.android.material.card.MaterialCardView
+            android:id="@+id/weather_meta_card"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="18dp"
+            app:cardBackgroundColor="@color/launcher_surface"
+            app:cardCornerRadius="14dp"
+            app:cardElevation="0dp"
+            app:strokeWidth="0dp">
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:gravity="center"
+                android:orientation="vertical"
+                android:padding="14dp">
+
+                <TextView
+                    android:id="@+id/tv_wind_humidity"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:textColor="@color/launcher_text_primary"
+                    android:textSize="16sp" />
+
+                <TextView
+                    android:id="@+id/tv_update"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="3dp"
+                    android:textColor="@color/launcher_text_secondary"
+                    android:textSize="13sp" />
+            </LinearLayout>
+        </com.google.android.material.card.MaterialCardView>
     </LinearLayout>
 </androidx.core.widget.NestedScrollView>

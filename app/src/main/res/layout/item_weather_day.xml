@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
-    android:layout_height="88dp"
+    android:layout_height="76dp"
     android:gravity="center_vertical"
     android:orientation="horizontal"
     android:paddingTop="6dp"
@@ -9,24 +9,25 @@
 
     <TextView
         android:id="@+id/tv_day_relative"
-        android:layout_width="64dp"
+        android:layout_width="58dp"
         android:layout_height="wrap_content"
         android:textColor="@color/launcher_text_primary"
-        android:textSize="19sp"
+        android:textSize="18sp"
         android:textStyle="bold" />
 
     <TextView
         android:id="@+id/tv_day_weekday"
-        android:layout_width="42dp"
+        android:layout_width="40dp"
         android:layout_height="wrap_content"
         android:textColor="@color/launcher_text_secondary"
-        android:textSize="16sp" />
+        android:textSize="15sp" />
 
     <ImageView
         android:id="@+id/iv_day_weather"
-        android:layout_width="42dp"
-        android:layout_height="42dp"
-        android:importantForAccessibility="yes" />
+        android:layout_width="38dp"
+        android:layout_height="38dp"
+        android:contentDescription="@null"
+        android:importantForAccessibility="no" />
 
     <TextView
         android:id="@+id/tv_day_condition"
@@ -35,7 +36,7 @@
         android:layout_marginStart="8dp"
         android:layout_weight="1"
         android:textColor="@color/launcher_text_primary"
-        android:textSize="21sp"
+        android:textSize="18sp"
         android:textStyle="bold" />
 
     <TextView
@@ -43,7 +44,7 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:textColor="@color/launcher_text_primary"
-        android:textSize="27sp"
+        android:textSize="23sp"
         android:textStyle="bold" />
 
     <TextView
@@ -53,12 +54,12 @@
         android:paddingEnd="3dp"
         android:text="/"
         android:textColor="@color/launcher_text_secondary"
-        android:textSize="20sp" />
+        android:textSize="18sp" />
 
     <TextView
         android:id="@+id/tv_day_low"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:textColor="@color/launcher_text_secondary"
-        android:textSize="20sp" />
+        android:textSize="18sp" />
 </LinearLayout>

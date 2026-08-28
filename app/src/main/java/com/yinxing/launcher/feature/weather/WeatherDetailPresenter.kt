@@ -13,8 +13,6 @@ data class WeatherDetailUi(
     val temperature: String,
     val condition: String,
     val highLow: String,
-    val hottestAdvice: String,
-    val rainAdvice: String,
     val hours: List<WeatherHourUi>,
     val days: List<WeatherDayUi>,
     val windAndHumidity: String,
@@ -25,7 +23,8 @@ data class WeatherHourUi(
     val label: String,
     val time: String,
     val condition: String,
-    val temperature: String
+    val temperature: String,
+    val precipitation: String,
 )
 
 data class WeatherDayUi(
@@ -42,29 +41,13 @@ object WeatherDetailPresenter {
     fun present(state: WeatherState): WeatherDetailUi {
         val now = requireNotNull(state.now)
         val today = state.forecast.firstOrNull()
-        val todayHours = today?.date?.let { date ->
-            state.hourly.filter { it.time.startsWith(date) }
-        }.orEmpty()
-        val hours = selectHours(todayHours, now.updateTime)
-        val hottest = todayHours.maxByOrNull { it.temperature }
-        val hottestAdvice = hottest?.let {
-            "${dayPart(hourOf(it.time))}${displayHour(hourOf(it.time))}点最热"
-        }.orEmpty()
-        val maxRain = todayHours.maxOfOrNull { it.precipitationProbability } ?: 0
-        val rainAdvice = when {
-            todayHours.isEmpty() -> ""
-            maxRain >= 50 -> "今天建议带伞"
-            maxRain >= 30 -> "今天可能下雨"
-            else -> "今天不用带伞"
-        }
+        val hours = selectHours(state.hourly, now.updateTime, today?.date)
         return WeatherDetailUi(
             city = state.cityName,
             date = today?.date?.let(::formatTodayDate).orEmpty(),
             temperature = "${now.temperature}°",
             condition = now.weather,
             highLow = today?.let { "最高${it.high}° · 最低${it.low}°" }.orEmpty(),
-            hottestAdvice = hottestAdvice,
-            rainAdvice = rainAdvice,
             hours = hours,
             days = state.forecast.drop(1).take(3).mapIndexed(::formatForecastDay),
             windAndHumidity = "${now.windDirection}${now.windPower} · 湿度${now.humidity}%",
@@ -72,22 +55,33 @@ object WeatherDetailPresenter {
         )
     }
 
-    private fun selectHours(hours: List<WeatherHour>, updateTime: String): List<WeatherHourUi> {
+    private fun selectHours(
+        hours: List<WeatherHour>,
+        updateTime: String,
+        currentDate: String?,
+    ): List<WeatherHourUi> {
         if (hours.isEmpty()) return emptyList()
-        val currentHour = updateTime.substringBefore(':').toIntOrNull() ?: hourOf(hours.first().time)
-        val requested = listOf(currentHour, 12, 15, 20).distinct()
-        val selected = requested.mapNotNull { target ->
-            hours.minByOrNull { kotlin.math.abs(hourOf(it.time) - target) }
-        }.distinctBy { it.time }.toMutableList()
-        hours.filter { hourOf(it.time) >= currentHour }.forEach { hour ->
-            if (selected.size < 4 && selected.none { it.time == hour.time }) selected += hour
+        val sorted = hours.sortedBy { it.time }
+        val currentHour = updateTime.substringBefore(':').toIntOrNull()
+        val anchor = if (currentDate != null && currentHour != null) {
+            "$currentDate" + "T" + currentHour.toString().padStart(2, '0') + ":00"
+        } else {
+            sorted.first().time
         }
-        return selected.take(4).mapIndexed { index, hour ->
+        val selected = sorted.filter { it.time >= anchor }.take(HOURLY_ROW_COUNT)
+        return selected.mapIndexed { index, hour ->
+            val hourDate = hour.time.substringBefore('T')
+            val hourValue = hourOf(hour.time)
             WeatherHourUi(
-                label = if (index == 0) "现在" else dayPart(hourOf(hour.time)),
+                label = when {
+                    index == 0 -> "现在"
+                    currentDate != null && hourDate != currentDate -> "明天"
+                    else -> dayPart(hourValue)
+                },
                 time = hour.time.substringAfter('T').take(5),
                 condition = hour.weather,
-                temperature = "${hour.temperature}°"
+                temperature = "${hour.temperature}°",
+                precipitation = "降雨${hour.precipitationProbability}%",
             )
         }
     }
@@ -125,12 +119,6 @@ object WeatherDetailPresenter {
 
     private fun hourOf(time: String): Int = time.substringAfter('T').substringBefore(':').toIntOrNull() ?: 0
 
-    private fun displayHour(hour: Int): Int = when {
-        hour == 0 -> 12
-        hour > 12 -> hour - 12
-        else -> hour
-    }
-
     private fun dayPart(hour: Int): String = when (hour) {
         in 0..5 -> "凌晨"
         in 6..10 -> "上午"
@@ -138,4 +126,6 @@ object WeatherDetailPresenter {
         in 14..17 -> "下午"
         else -> "晚上"
     }
+
+    private const val HOURLY_ROW_COUNT = 8
 }

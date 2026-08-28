@@ -1,9 +1,7 @@
 package com.yinxing.launcher.feature.weather
 
 import android.app.Activity
-import android.app.AlertDialog
 import android.Manifest
-import android.graphics.drawable.ColorDrawable
 import android.content.pm.PackageManager
 import android.os.Bundle
 import android.view.View
@@ -12,7 +10,7 @@ import android.view.inputmethod.EditorInfo
 import android.widget.LinearLayout
 import android.widget.Toast
 import androidx.activity.addCallback
-import androidx.appcompat.app.AppCompatActivity
+import com.yinxing.launcher.common.ui.FontScaleActivity
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.core.content.ContextCompat
 import androidx.core.view.ViewCompat
@@ -20,6 +18,7 @@ import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.updatePadding
 import androidx.lifecycle.lifecycleScope
 import com.yinxing.launcher.R
+import com.yinxing.launcher.common.ui.LauncherDialogFactory
 import com.yinxing.launcher.data.weather.WeatherPreferences
 import com.yinxing.launcher.data.weather.WeatherLocationResolver
 import com.yinxing.launcher.data.weather.WeatherRepository
@@ -29,7 +28,7 @@ import com.yinxing.launcher.databinding.DialogWeatherCitySearchBinding
 import com.yinxing.launcher.databinding.ItemWeatherCityBinding
 import kotlinx.coroutines.launch
 
-class WeatherCityManagerActivity : AppCompatActivity() {
+class WeatherCityManagerActivity : FontScaleActivity() {
     private lateinit var binding: ActivityWeatherCityManagerBinding
     private val preferences by lazy { WeatherPreferences.getInstance(this) }
     private val weatherStates = mutableMapOf<String, WeatherState>()
@@ -184,15 +183,13 @@ class WeatherCityManagerActivity : AppCompatActivity() {
 
     private fun showCitySearchDialog() {
         val dialogBinding = DialogWeatherCitySearchBinding.inflate(layoutInflater)
-        val dialog = AlertDialog.Builder(this).setView(dialogBinding.root).create()
-        dialog.window?.setBackgroundDrawable(ColorDrawable(android.graphics.Color.TRANSPARENT))
-        dialog.setOnShowListener {
-            dialog.window?.setLayout(
-                (resources.displayMetrics.widthPixels * 0.9f).toInt(),
-                WindowManager.LayoutParams.WRAP_CONTENT,
-            )
+        val dialog = LauncherDialogFactory.create(
+            context = this,
+            contentView = dialogBinding.root,
+            dismissOnTouchOutside = false
+        ) {
             dialogBinding.etCitySearch.requestFocus()
-            dialog.window?.setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_STATE_ALWAYS_VISIBLE)
+            it.window?.setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_STATE_ALWAYS_VISIBLE)
         }
 
         fun search() {

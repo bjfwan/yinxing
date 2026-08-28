@@ -5,6 +5,7 @@ import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
 import com.yinxing.launcher.R
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertTrue
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.Robolectric
@@ -26,7 +27,7 @@ class WeatherDetailActivitySmokeTest {
     @Test
     fun `weather content respects top and bottom system safe areas`() {
         val activity = Robolectric.buildActivity(WeatherDetailActivity::class.java).setup().get()
-        val root = activity.findViewById<android.view.View>(R.id.weather_detail_scroll)
+        val root = activity.findViewById<android.view.ViewGroup>(R.id.weather_detail_scroll)
         val insets = WindowInsetsCompat.Builder()
             .setInsets(WindowInsetsCompat.Type.systemBars(), Insets.of(0, 72, 0, 96))
             .build()
@@ -35,6 +36,7 @@ class WeatherDetailActivitySmokeTest {
 
         assertEquals(72, root.paddingTop)
         assertEquals(96, root.paddingBottom)
+        assertTrue(root.clipToPadding)
     }
 
     @Test

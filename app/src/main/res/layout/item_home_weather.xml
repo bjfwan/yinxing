@@ -10,8 +10,9 @@
 
     <LinearLayout
         android:id="@+id/layout_weather_primary"
-        android:layout_width="match_parent"
+        android:layout_width="wrap_content"
         android:layout_height="wrap_content"
+        android:layout_gravity="center_horizontal"
         android:gravity="center_vertical"
         android:orientation="horizontal">
 
@@ -53,11 +54,13 @@
 
     <TextView
         android:id="@+id/tv_weather_update"
-        android:layout_width="match_parent"
+        android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_marginStart="44dp"
-        android:layout_marginTop="2dp"
-        android:maxLines="2"
+        android:layout_gravity="center_horizontal"
+        android:ellipsize="end"
+        android:gravity="center"
+        android:includeFontPadding="false"
+        android:maxLines="1"
         android:text=""
         android:textColor="@color/launcher_text_secondary"
         android:textSize="15sp" />

@@ -4,27 +4,27 @@
 
     <style name="WeatherDetailText.SectionTitle">
         <item name="android:textColor">@color/launcher_text_primary</item>
-        <item name="android:textSize">28sp</item>
+        <item name="android:textSize">22sp</item>
         <item name="android:textStyle">bold</item>
         <item name="android:includeFontPadding">false</item>
     </style>
 
     <style name="WeatherDetailText.PrimaryLabel">
         <item name="android:textColor">@color/launcher_text_primary</item>
-        <item name="android:textSize">18sp</item>
+        <item name="android:textSize">17sp</item>
         <item name="android:textStyle">bold</item>
         <item name="android:includeFontPadding">false</item>
     </style>
 
     <style name="WeatherDetailText.SecondaryLabel">
         <item name="android:textColor">@color/launcher_text_secondary</item>
-        <item name="android:textSize">15sp</item>
+        <item name="android:textSize">14sp</item>
         <item name="android:includeFontPadding">false</item>
     </style>
 
     <style name="WeatherDetailText.Temperature">
         <item name="android:textColor">@color/launcher_text_primary</item>
-        <item name="android:textSize">24sp</item>
+        <item name="android:textSize">23sp</item>
         <item name="android:textStyle">bold</item>
         <item name="android:includeFontPadding">false</item>
     </style>

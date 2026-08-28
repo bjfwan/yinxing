@@ -1,9 +1,82 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <color name="weather_toolbar_action_ripple">#1A0F172A</color>
-    <color name="weather_detail_hero_start">#FFF0B4</color>
-    <color name="weather_detail_hero_mid">#FFF8E2</color>
-    <color name="weather_detail_hero_end">#FFFEFA</color>
-    <color name="weather_detail_current_start">#FFF2C9</color>
-    <color name="weather_detail_current_end">#FFFCF3</color>
+    <color name="weather_detail_hero_start">#EAF3F9</color>
+    <color name="weather_detail_hero_mid">#F5F9FC</color>
+    <color name="weather_detail_hero_end">#FFFFFF</color>
+    <color name="weather_detail_current_start">#E2F1FC</color>
+    <color name="weather_detail_current_end">#F4FAFE</color>
+    <color name="weather_precipitation">#1674C7</color>
+
+    <color name="weather_sunny_page_start">#FFFBF4</color>
+    <color name="weather_sunny_page_end">#F7F8FA</color>
+    <color name="weather_sunny_hero_start">#FFE9B8</color>
+    <color name="weather_sunny_hero_middle">#FFF4D8</color>
+    <color name="weather_sunny_hero_end">#FFFBF1</color>
+    <color name="weather_sunny_surface">#FFFEFB</color>
+    <color name="weather_sunny_current_start">#FFECC2</color>
+    <color name="weather_sunny_current_end">#FFF8E8</color>
+    <color name="weather_sunny_accent">#855200</color>
+    <color name="weather_sunny_secondary_text">#625132</color>
+    <color name="weather_sunny_outline">#E4D2A1</color>
+
+    <color name="weather_cloudy_page_start">#F7FBFE</color>
+    <color name="weather_cloudy_page_end">#E7F3FA</color>
+    <color name="weather_cloudy_hero_start">#D2E9F7</color>
+    <color name="weather_cloudy_hero_middle">#E7F4FB</color>
+    <color name="weather_cloudy_hero_end">#FAFDFF</color>
+    <color name="weather_cloudy_surface">#FCFEFF</color>
+    <color name="weather_cloudy_current_start">#D8EDFA</color>
+    <color name="weather_cloudy_current_end">#F0F8FD</color>
+    <color name="weather_cloudy_accent">#246A95</color>
+    <color name="weather_cloudy_secondary_text">#365E76</color>
+    <color name="weather_cloudy_outline">#B8D6E8</color>
+
+    <color name="weather_rain_page_start">#F1F8FD</color>
+    <color name="weather_rain_page_end">#D9ECF8</color>
+    <color name="weather_rain_hero_start">#BFDFF3</color>
+    <color name="weather_rain_hero_middle">#D9EDF9</color>
+    <color name="weather_rain_hero_end">#F8FCFE</color>
+    <color name="weather_rain_surface">#FAFDFF</color>
+    <color name="weather_rain_current_start">#C7E4F7</color>
+    <color name="weather_rain_current_end">#EAF6FD</color>
+    <color name="weather_rain_accent">#0B6099</color>
+    <color name="weather_rain_secondary_text">#385C75</color>
+    <color name="weather_rain_outline">#A9CFE5</color>
+
+    <color name="weather_storm_page_start">#F3F6FC</color>
+    <color name="weather_storm_page_end">#E1E8F5</color>
+    <color name="weather_storm_hero_start">#CED8EE</color>
+    <color name="weather_storm_hero_middle">#E2E8F6</color>
+    <color name="weather_storm_hero_end">#F9FAFE</color>
+    <color name="weather_storm_surface">#FBFCFF</color>
+    <color name="weather_storm_current_start">#D3DDF2</color>
+    <color name="weather_storm_current_end">#EEF2FB</color>
+    <color name="weather_storm_accent">#405293</color>
+    <color name="weather_storm_secondary_text">#42556F</color>
+    <color name="weather_storm_outline">#B6C2DF</color>
+
+    <color name="weather_snow_page_start">#FAFDFF</color>
+    <color name="weather_snow_page_end">#ECF8FC</color>
+    <color name="weather_snow_hero_start">#E7F8FC</color>
+    <color name="weather_snow_hero_middle">#F2FCFE</color>
+    <color name="weather_snow_hero_end">#FFFFFF</color>
+    <color name="weather_snow_surface">#FDFFFF</color>
+    <color name="weather_snow_current_start">#E5F7FC</color>
+    <color name="weather_snow_current_end">#F7FDFF</color>
+    <color name="weather_snow_accent">#146E86</color>
+    <color name="weather_snow_secondary_text">#405F68</color>
+    <color name="weather_snow_outline">#C7E4EB</color>
+
+    <color name="weather_fog_page_start">#F7FAF9</color>
+    <color name="weather_fog_page_end">#E9F1F0</color>
+    <color name="weather_fog_hero_start">#DDE9E7</color>
+    <color name="weather_fog_hero_middle">#EDF3F2</color>
+    <color name="weather_fog_hero_end">#FAFCFB</color>
+    <color name="weather_fog_surface">#FCFDFC</color>
+    <color name="weather_fog_current_start">#E4EEEC</color>
+    <color name="weather_fog_current_end">#F4F8F7</color>
+    <color name="weather_fog_accent">#426965</color>
+    <color name="weather_fog_secondary_text">#4B6260</color>
+    <color name="weather_fog_outline">#C4D5D2</color>
 </resources>

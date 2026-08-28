@@ -1,38 +1,63 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    android:layout_width="match_parent"
-    android:layout_height="132dp"
+    android:layout_width="98dp"
+    android:layout_height="174dp"
+    android:baselineAligned="false"
     android:gravity="center_horizontal"
     android:orientation="vertical"
-    android:paddingStart="4dp"
-    android:paddingTop="6dp"
-    android:paddingEnd="4dp"
-    android:paddingBottom="10dp">
+    android:paddingStart="6dp"
+    android:paddingTop="8dp"
+    android:paddingEnd="6dp"
+    android:paddingBottom="8dp">
 
     <TextView
-        style="@style/WeatherDetailText.PrimaryLabel"
         android:id="@+id/tv_hour_label"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content" />
-
-    <TextView
-        style="@style/WeatherDetailText.SecondaryLabel"
-        android:id="@+id/tv_hour_time"
+        style="@style/WeatherDetailText.PrimaryLabel"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_marginTop="3dp" />
+        android:maxLines="1" />
+
+    <TextView
+        android:id="@+id/tv_hour_time"
+        style="@style/WeatherDetailText.SecondaryLabel"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="1dp" />
 
     <ImageView
         android:id="@+id/iv_hour_weather"
-        android:layout_width="32dp"
-        android:layout_height="32dp"
-        android:layout_marginTop="6dp"
-        android:importantForAccessibility="yes" />
+        android:layout_width="42dp"
+        android:layout_height="42dp"
+        android:layout_marginTop="5dp"
+        android:contentDescription="@null"
+        android:importantForAccessibility="no"
+        android:padding="2dp" />
 
     <TextView
-        style="@style/WeatherDetailText.Temperature"
-        android:id="@+id/tv_hour_temperature"
-        android:layout_width="wrap_content"
+        android:id="@+id/tv_hour_condition"
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginTop="3dp" />
+        android:layout_marginTop="2dp"
+        android:gravity="center"
+        android:maxLines="1"
+        android:textColor="@color/launcher_text_primary"
+        android:textSize="17sp" />
+
+    <TextView
+        android:id="@+id/tv_hour_temperature"
+        style="@style/WeatherDetailText.Temperature"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:gravity="center"
+        android:textSize="23sp" />
+
+    <TextView
+        android:id="@+id/tv_hour_precipitation"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="1dp"
+        android:gravity="center"
+        android:maxLines="1"
+        android:textColor="@color/weather_precipitation"
+        android:textSize="15sp" />
 </LinearLayout>
