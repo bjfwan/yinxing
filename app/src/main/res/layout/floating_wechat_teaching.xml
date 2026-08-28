@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="112dp"
+    android:layout_height="wrap_content"
+    android:layout_margin="6dp"
+    android:background="@drawable/bg_wechat_teaching_overlay"
+    android:elevation="6dp"
+    android:orientation="vertical"
+    android:padding="6dp">
+
+    <TextView
+        android:id="@+id/wechat_teaching_message"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:gravity="center"
+        android:text="@string/settings_wechat_teaching_prepared_message"
+        android:textColor="@color/launcher_text_primary"
+        android:textSize="11sp" />
+
+    <TextView
+        android:id="@+id/wechat_teaching_primary"
+        android:layout_width="match_parent"
+        android:layout_height="34dp"
+        android:layout_marginTop="4dp"
+        android:background="@drawable/bg_wechat_teaching_start"
+        android:clickable="true"
+        android:focusable="true"
+        android:gravity="center"
+        android:text="@string/settings_wechat_teaching_start"
+        android:textColor="@color/launcher_on_action"
+        android:textSize="13sp"
+        android:textStyle="bold" />
+
+    <TextView
+        android:id="@+id/wechat_teaching_secondary"
+        android:layout_width="match_parent"
+        android:layout_height="34dp"
+        android:layout_marginTop="3dp"
+        android:clickable="true"
+        android:focusable="true"
+        android:gravity="center"
+        android:text="@string/action_cancel"
+        android:textColor="@color/launcher_text_secondary"
+        android:textSize="12sp" />
+</LinearLayout>

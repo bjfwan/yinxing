@@ -4,6 +4,10 @@ import android.accessibilityservice.AccessibilityService
 import android.graphics.Rect
 import android.view.accessibility.AccessibilityNodeInfo
 import com.yinxing.launcher.automation.wechat.WeChatViewIds
+import com.yinxing.launcher.automation.wechat.teaching.WeChatTeachingAction
+import com.yinxing.launcher.automation.wechat.teaching.WeChatLearnedCoordinateResolver
+import com.yinxing.launcher.automation.wechat.teaching.WeChatTeachingProfile
+import com.yinxing.launcher.automation.wechat.teaching.WeChatTeachingSelector
 import com.yinxing.launcher.automation.wechat.util.AccessibilityUtil
 import com.yinxing.launcher.common.util.DebugLog
 
@@ -18,7 +22,10 @@ internal data class SearchResultSections(
     val networkHeaderCenterY: Int?
 )
 
-internal class WeChatElementLocator(private val service: AccessibilityService) {
+internal class WeChatElementLocator(
+    private val service: AccessibilityService,
+    private val learnedProfileProvider: () -> WeChatTeachingProfile? = { null }
+) {
 
     private companion object {
         const val TAG = "WeChatElementLocator"
@@ -77,6 +84,7 @@ internal class WeChatElementLocator(private val service: AccessibilityService) {
                 if (success) return true
             }
         }
+        if (clickLearnedSelector(root, WeChatTeachingAction.OPEN_SEARCH)) return true
         val bounds = Rect()
         root?.getBoundsInScreen(bounds)
         if (!bounds.isEmpty) {
@@ -160,6 +168,7 @@ internal class WeChatElementLocator(private val service: AccessibilityService) {
             AccessibilityUtil.safeRecycle(byPlus)
             if (success) return true
         }
+        if (clickLearnedSelector(root, WeChatTeachingAction.OPEN_MORE)) return true
         val bounds = Rect()
         root?.getBoundsInScreen(bounds)
         if (!bounds.isEmpty) {
@@ -198,12 +207,15 @@ internal class WeChatElementLocator(private val service: AccessibilityService) {
         return current.trim().contains(normalizedName)
     }
 
-    fun clickVideoCallEntry(root: AccessibilityNodeInfo?): Boolean {
+    fun clickVideoCallEntry(root: AccessibilityNodeInfo?, allowLearnedFallback: Boolean = false): Boolean {
         val node = AccessibilityUtil.findBestTextNode(root, "音视频通话", exactMatch = true, preferBottom = false)
-            ?: return false
-        val success = AccessibilityUtil.performClick(service, node)
-        AccessibilityUtil.safeRecycle(node)
-        return success
+        if (node != null) {
+            val success = AccessibilityUtil.performClick(service, node)
+            AccessibilityUtil.safeRecycle(node)
+            if (success) return true
+        }
+        return allowLearnedFallback &&
+            clickLearnedSelector(root, WeChatTeachingAction.OPEN_VIDEO_MENU)
     }
 
     fun clickVideoCallOption(root: AccessibilityNodeInfo?): Boolean {
@@ -214,13 +226,20 @@ internal class WeChatElementLocator(private val service: AccessibilityService) {
         return success
     }
 
-    fun clickVideoCallSheetOption(root: AccessibilityNodeInfo?): Boolean {
-        if (!isVideoCallSheetVisible(root)) return false
-        val node = AccessibilityUtil.findBestTextNode(root, "视频通话", exactMatch = true, preferBottom = false)
-            ?: return false
-        val success = AccessibilityUtil.performClick(service, node)
-        AccessibilityUtil.safeRecycle(node)
-        return success
+    fun clickVideoCallSheetOption(
+        root: AccessibilityNodeInfo?,
+        allowLearnedFallback: Boolean = false
+    ): Boolean {
+        if (isVideoCallSheetVisible(root)) {
+            val node = AccessibilityUtil.findBestTextNode(root, "视频通话", exactMatch = true, preferBottom = false)
+            if (node != null) {
+                val success = AccessibilityUtil.performClick(service, node)
+                AccessibilityUtil.safeRecycle(node)
+                if (success) return true
+            }
+        }
+        return allowLearnedFallback &&
+            clickLearnedSelector(root, WeChatTeachingAction.START_VIDEO_CALL)
     }
 
     fun isVideoCallSheetVisible(root: AccessibilityNodeInfo?): Boolean {
@@ -325,7 +344,11 @@ internal class WeChatElementLocator(private val service: AccessibilityService) {
     fun findContactResultTarget(root: AccessibilityNodeInfo?, contactName: String): ContactResultTarget? {
         if (root == null) return null
         val sections = resolveSearchResultSections(root)
-        WeChatViewIds.CONTACT_RESULT_TITLE_IDS.forEach { id ->
+        val learnedId = learnedProfileProvider()
+            ?.selectorFor(WeChatTeachingAction.OPEN_CONTACT)
+            ?.resourceId
+            ?.takeIf(::isSafeWeChatResourceId)
+        (WeChatViewIds.CONTACT_RESULT_TITLE_IDS + listOfNotNull(learnedId)).forEach { id ->
             val candidates = AccessibilityUtil.findAllById(root, id)
             var matchedNode: AccessibilityNodeInfo? = null
             var matchedDisplayName: String? = null
@@ -349,6 +372,42 @@ internal class WeChatElementLocator(private val service: AccessibilityService) {
         }
         return null
     }
+
+    private fun clickLearnedSelector(
+        root: AccessibilityNodeInfo?,
+        action: WeChatTeachingAction
+    ): Boolean {
+        val selector = learnedProfileProvider()?.selectorFor(action) ?: return false
+        val resourceId = selector.resourceId?.takeIf(::isSafeWeChatResourceId)
+        if (resourceId != null) {
+            val node = AccessibilityUtil.findNodeById(root, resourceId)
+            if (node != null) {
+                val success = AccessibilityUtil.performClick(service, node)
+                AccessibilityUtil.safeRecycle(node)
+                DebugLog.d(TAG) { "clickLearnedSelector: action=$action byId=$success" }
+                if (success) return true
+            }
+        }
+        return clickLearnedCoordinate(action, selector)
+    }
+
+    private fun clickLearnedCoordinate(
+        action: WeChatTeachingAction,
+        selector: WeChatTeachingSelector
+    ): Boolean {
+        val metrics = service.resources.displayMetrics
+        val coordinate = WeChatLearnedCoordinateResolver.resolve(
+            selector,
+            metrics.widthPixels,
+            metrics.heightPixels
+        ) ?: return false
+        val success = AccessibilityUtil.clickByCoordinate(service, coordinate.x, coordinate.y)
+        DebugLog.d(TAG) { "clickLearnedSelector: action=$action byPosition=$success" }
+        return success
+    }
+
+    private fun isSafeWeChatResourceId(value: String): Boolean =
+        value.matches(Regex("^com\\.tencent\\.mm:id/[A-Za-z0-9_]+$"))
 
     fun findNodeByExactText(
         root: AccessibilityNodeInfo?,

@@ -231,6 +231,7 @@ class VideoCallCoordinator(
             AutomationState.WAITING_CONTACT_RESULT -> "找到联系人，正在打开"
             AutomationState.WAITING_CONTACT_DETAIL -> "正在进入联系人详情"
             AutomationState.WAITING_VIDEO_OPTIONS -> "正在发起视频通话"
+            AutomationState.VERIFYING_CALL_STARTED -> "正在确认视频通话"
             AutomationState.RECOVERING -> "页面有变化，正在恢复"
             AutomationState.COMPLETED,
             AutomationState.FAILED,

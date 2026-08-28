@@ -18,7 +18,7 @@ class WeChatVideoTaskEngineTest {
     }
 
     @Test
-    fun taskEngineCompletesHappyPathFromSemanticPagesAndScoredContact() {
+    fun taskEngineAdvancesHappyPathToCallVerification() {
         val engine = WeChatVideoTaskEngine()
         var state = WeChatVideoTaskState(contactName = "妈妈")
 
@@ -45,7 +45,7 @@ class WeChatVideoTaskEngineTest {
 
         decision = engine.decide(state, result(WeChatSemanticPage.VIDEO_SHEET))
         assertEquals(WeChatVideoTaskAction.CONFIRM_VIDEO_CALL, decision.action)
-        assertEquals(WeChatVideoTaskStep.COMPLETED, decision.nextState.step)
+        assertEquals(WeChatVideoTaskStep.VERIFYING_CALL_STARTED, decision.nextState.step)
     }
 
     @Test

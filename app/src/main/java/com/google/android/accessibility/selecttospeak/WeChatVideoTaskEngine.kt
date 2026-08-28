@@ -85,6 +85,7 @@ internal enum class WeChatVideoTaskStep {
     WAITING_CONTACT_RESULT,
     WAITING_CONTACT_DETAIL,
     WAITING_VIDEO_OPTIONS,
+    VERIFYING_CALL_STARTED,
     COMPLETED,
     FAILED
 }
@@ -156,12 +157,14 @@ internal class WeChatVideoTaskEngine(
             WeChatVideoTaskStep.WAITING_VIDEO_OPTIONS -> when (page.page) {
                 WeChatSemanticPage.VIDEO_SHEET -> next(
                     state,
-                    WeChatVideoTaskStep.COMPLETED,
+                    WeChatVideoTaskStep.VERIFYING_CALL_STARTED,
                     WeChatVideoTaskAction.CONFIRM_VIDEO_CALL,
                     "video_sheet_ready"
                 )
                 else -> retryOrRecover(state, "need_video_sheet")
             }
+            WeChatVideoTaskStep.VERIFYING_CALL_STARTED ->
+                WeChatVideoTaskDecision(state, WeChatVideoTaskAction.WAIT, "verifying_call_started")
             WeChatVideoTaskStep.COMPLETED -> WeChatVideoTaskDecision(state, WeChatVideoTaskAction.COMPLETE, "completed")
             WeChatVideoTaskStep.FAILED -> WeChatVideoTaskDecision(state, WeChatVideoTaskAction.FAIL, "failed")
         }
