@@ -1,5 +1,6 @@
 package com.yinxing.launcher.feature.incoming
 
+import com.yinxing.launcher.feature.fall.FallCallTransitionContext
 import java.util.concurrent.CopyOnWriteArraySet
 
 internal enum class ManagedTelecomCallState {
@@ -42,7 +43,9 @@ internal data class ManagedTelecomCallCommandResult(
     val error: Throwable? = null
 )
 
-internal class ActiveTelecomCallController {
+internal class ActiveTelecomCallController(
+    private val onCallStateChanged: (Boolean) -> Unit = {}
+) {
     private val lock = Any()
     private val listeners = CopyOnWriteArraySet<(ActiveTelecomCallSnapshot) -> Unit>()
     private var activeCall: ManagedTelecomCall? = null
@@ -64,6 +67,7 @@ internal class ActiveTelecomCallController {
             )
             current
         }
+        onCallStateChanged(snapshot.hasCall)
         notifyListeners(snapshot)
     }
 
@@ -77,8 +81,10 @@ internal class ActiveTelecomCallController {
     }
 
     fun updateState(callId: String, state: ManagedTelecomCallState): Boolean {
+        var stateChanged = false
         val snapshot = synchronized(lock) {
             if (current.callId != callId) return false
+            stateChanged = current.state != state
             current = current.copy(
                 state = state,
                 answerConfirmed = current.answerConfirmed ||
@@ -87,6 +93,7 @@ internal class ActiveTelecomCallController {
             )
             current
         }
+        if (stateChanged) onCallStateChanged(snapshot.hasCall)
         notifyListeners(snapshot)
         return true
     }
@@ -162,6 +169,7 @@ internal class ActiveTelecomCallController {
             current = ActiveTelecomCallSnapshot(state = ManagedTelecomCallState.Disconnected)
             current
         }
+        onCallStateChanged(snapshot.hasCall)
         notifyListeners(snapshot)
     }
 
@@ -182,7 +190,9 @@ internal class ActiveTelecomCallController {
 }
 
 internal object ActiveTelecomCallSession {
-    private val controller = ActiveTelecomCallController()
+    private val controller = ActiveTelecomCallController { active ->
+        FallCallTransitionContext.updateCallState(active)
+    }
 
     fun attach(
         call: ManagedTelecomCall,

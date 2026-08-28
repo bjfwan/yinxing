@@ -5,6 +5,7 @@ import android.content.Context
 import android.content.Intent
 import com.yinxing.launcher.common.util.PermissionUtil
 import com.yinxing.launcher.feature.home.MainActivity
+import com.yinxing.launcher.feature.fall.FallDetectionService
 
 /**
  * 开机恢复入口。
@@ -19,6 +20,8 @@ class BootReceiver : BroadcastReceiver() {
         }
 
         IncomingCallForegroundService.ensureNotificationChannels(context)
+        FallDetectionService.ensureNotificationChannels(context)
+        FallDetectionService.reconcile(context)
 
         if (!PermissionUtil.isDefaultLauncher(context)) {
             return

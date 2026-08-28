@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools">
+    <application
+        android:name="com.yinxing.launcher.feature.fall.FallDetectionDeviceTestApplication"
+        tools:replace="android:name">
+        <activity
+            android:name="com.yinxing.launcher.feature.fall.FallDetectionDeviceTestBootstrapActivity"
+            android:exported="true" />
+        <receiver
+            android:name="com.yinxing.launcher.feature.fall.FallDetectionDeviceTestReceiver"
+            android:exported="true" />
+    </application>
+</manifest>

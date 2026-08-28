@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="settings_fall_detection_title">跌倒检测</string>
+    <string name="settings_fall_detection_summary_on">已开启，检测到疑似跌倒会在 30 秒后联系家属</string>
+    <string name="settings_fall_detection_summary_off">未开启，不会在后台检测跌倒</string>
+    <string name="settings_fall_contact_title">紧急联系人</string>
+    <string name="settings_fall_contact_summary_empty">请先填写家属电话号码</string>
+    <string name="settings_fall_contact_summary_value">家属电话：%1$s</string>
+    <string name="settings_fall_contact_dialog_title">设置紧急联系人</string>
+    <string name="settings_fall_contact_dialog_message">检测到疑似跌倒且 30 秒内未取消时，将自动拨打这个家属号码。</string>
+    <string name="settings_fall_contact_hint">请输入家属电话号码</string>
+    <string name="settings_fall_contact_invalid">请输入有效的家属号码，不能填写 110、119、120 或 122</string>
+    <string name="settings_fall_save">保存</string>
+    <string name="settings_fall_missing_call_permission">请先授予电话权限，再开启跌倒检测</string>
+    <string name="settings_fall_missing_notification_permission">请先授予通知权限，再开启跌倒检测</string>
+    <string name="settings_fall_sensor_unavailable">此设备没有可用的加速度传感器</string>
+    <string name="settings_elder_fall_summary_on">已开启，疑似跌倒会联系家属</string>
+    <string name="settings_elder_fall_summary_off">关闭</string>
+
+    <string name="fall_detection_channel_name">跌倒检测</string>
+    <string name="fall_detection_channel_description">持续检测手机是否出现疑似跌倒动作</string>
+    <string name="fall_alert_channel_name">跌倒求助提醒</string>
+    <string name="fall_alert_channel_description">检测到疑似跌倒时发出声音、振动并显示求助提醒</string>
+    <string name="fall_detection_notification_title">跌倒检测已开启</string>
+    <string name="fall_detection_notification_text">请将手机随身携带，检测才会生效</string>
+    <string name="fall_detection_sensor_unavailable_notification">当前设备无法读取加速度传感器</string>
+    <string name="fall_alert_notification_title">检测到可能跌倒</string>
+    <string name="fall_alert_notification_text">若无操作，将在 30 秒后自动联系家属</string>
+    <string name="fall_alert_cancel">我没事</string>
+    <string name="fall_alert_call_now">立即联系家人</string>
+
+    <string name="fall_alert_title">检测到可能跌倒</string>
+    <string name="fall_alert_message">如果您没事，请按下面的“我没事”。否则系统会自动联系家属。</string>
+    <string name="fall_alert_countdown">%1$d</string>
+    <string name="fall_alert_countdown_hint">秒后自动联系家属</string>
+    <string name="fall_alert_contact">将联系家属：%1$s</string>
+</resources>

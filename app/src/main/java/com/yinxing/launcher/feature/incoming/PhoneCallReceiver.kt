@@ -9,6 +9,7 @@ import com.yinxing.launcher.common.util.CallAudioStrategy
 import com.yinxing.launcher.common.util.DebugLog
 import com.yinxing.launcher.common.util.PermissionUtil
 import com.yinxing.launcher.data.home.LauncherPreferences
+import com.yinxing.launcher.feature.fall.FallCallTransitionContext
 import com.yinxing.launcher.feature.phone.PhoneContactManager
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
@@ -32,6 +33,15 @@ class PhoneCallReceiver : BroadcastReceiver() {
         if (state == null) {
             DebugLog.w(TAG, "Received PHONE_STATE_CHANGED without EXTRA_STATE; intent=$intent")
             return
+        }
+        when (state) {
+            TelephonyManager.EXTRA_STATE_RINGING,
+            TelephonyManager.EXTRA_STATE_OFFHOOK -> {
+                FallCallTransitionContext.updateCallState(active = true)
+            }
+            TelephonyManager.EXTRA_STATE_IDLE -> {
+                FallCallTransitionContext.updateCallState(active = false)
+            }
         }
         @Suppress("DEPRECATION")
         val rawIncomingNumber = intent.getStringExtra(TelephonyManager.EXTRA_INCOMING_NUMBER)

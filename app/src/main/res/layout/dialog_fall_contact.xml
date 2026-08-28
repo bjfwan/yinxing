@@ -1,0 +1,90 @@
+<?xml version="1.0" encoding="utf-8"?>
+<com.google.android.material.card.MaterialCardView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    style="@style/Widget.OldLauncher.DialogSurfaceCard"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:padding="@dimen/launcher_dialog_content_padding_compact">
+
+        <TextView
+            android:id="@+id/fall_contact_dialog_title"
+            style="@style/TextAppearance.OldLauncher.DialogTitle"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="@string/settings_fall_contact_dialog_title" />
+
+        <TextView
+            style="@style/TextAppearance.OldLauncher.DialogMessage"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/launcher_dialog_title_gap"
+            android:text="@string/settings_fall_contact_dialog_message" />
+
+        <EditText
+            android:id="@+id/fall_contact_input"
+            style="@style/TextAppearance.OldLauncher.DialogInput"
+            android:layout_width="match_parent"
+            android:layout_height="@dimen/launcher_dialog_control_height"
+            android:layout_marginTop="@dimen/launcher_dialog_section_gap"
+            android:background="@drawable/edit_text_background_focused"
+            android:hint="@string/settings_fall_contact_hint"
+            android:inputType="phone"
+            android:maxLength="24"
+            android:paddingStart="16dp"
+            android:paddingEnd="16dp"
+            android:singleLine="true" />
+
+        <TextView
+            android:id="@+id/fall_contact_error"
+            style="@style/TextAppearance.OldLauncher.DialogSupporting"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="6dp"
+            android:text="@string/settings_fall_contact_invalid"
+            android:textColor="@color/launcher_danger"
+            android:visibility="gone" />
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/launcher_dialog_section_gap"
+            android:orientation="horizontal">
+
+            <com.google.android.material.card.MaterialCardView
+                android:id="@+id/fall_contact_cancel"
+                style="@style/Widget.OldLauncher.DialogButtonSecondary"
+                android:layout_width="0dp"
+                android:layout_height="@dimen/launcher_dialog_button_height"
+                android:layout_weight="1">
+
+                <TextView
+                    style="@style/TextAppearance.OldLauncher.DialogActionSecondary"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:gravity="center"
+                    android:text="@string/action_cancel" />
+            </com.google.android.material.card.MaterialCardView>
+
+            <com.google.android.material.card.MaterialCardView
+                android:id="@+id/fall_contact_save"
+                style="@style/Widget.OldLauncher.DialogButtonPrimary"
+                android:layout_width="0dp"
+                android:layout_height="@dimen/launcher_dialog_button_height"
+                android:layout_marginStart="@dimen/launcher_dialog_action_gap"
+                android:layout_weight="1">
+
+                <TextView
+                    style="@style/TextAppearance.OldLauncher.DialogActionPrimary"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:gravity="center"
+                    android:text="@string/settings_fall_save" />
+            </com.google.android.material.card.MaterialCardView>
+        </LinearLayout>
+    </LinearLayout>
+</com.google.android.material.card.MaterialCardView>

@@ -10,7 +10,7 @@ import android.view.View
 import android.view.WindowManager
 import android.widget.TextView
 import android.widget.Toast
-import androidx.appcompat.app.AppCompatActivity
+import com.yinxing.launcher.common.ui.FontScaleActivity
 import androidx.cardview.widget.CardView
 import androidx.core.content.ContextCompat
 import androidx.core.view.isVisible
@@ -26,7 +26,7 @@ import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
-class IncomingCallActivity : AppCompatActivity() {
+class IncomingCallActivity : FontScaleActivity() {
 
     private lateinit var tvCaller: TextView
     private lateinit var tvSubtitle: TextView

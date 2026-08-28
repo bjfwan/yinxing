@@ -8,6 +8,22 @@ import org.junit.Test
 class ActiveTelecomCallControllerTest {
 
     @Test
+    fun telecomLifecycleReportsOnlyRealStateTransitions() {
+        val activeStates = mutableListOf<Boolean>()
+        val call = FakeManagedTelecomCall("call-transition")
+        val controller = ActiveTelecomCallController(
+            onCallStateChanged = activeStates::add
+        )
+
+        controller.attach(call, ManagedTelecomCallState.Connecting)
+        controller.updateState(call.id, ManagedTelecomCallState.Connecting)
+        controller.updateState(call.id, ManagedTelecomCallState.Active)
+        controller.detach(call.id)
+
+        assertEquals(listOf(true, true, false), activeStates)
+    }
+
+    @Test
     fun answerIsDispatchedOnlyOnceWhileCallIsRinging() {
         val call = FakeManagedTelecomCall("call-1")
         val controller = ActiveTelecomCallController()
