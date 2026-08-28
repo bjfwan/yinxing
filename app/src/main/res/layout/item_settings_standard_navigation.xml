@@ -7,25 +7,25 @@
     android:focusable="true"
     android:foreground="?android:attr/selectableItemBackground"
     android:gravity="center_vertical"
-    android:minHeight="72dp"
+    android:minHeight="@dimen/settings_overview_row_min_height"
     android:orientation="horizontal"
-    android:paddingStart="14dp"
-    android:paddingTop="10dp"
-    android:paddingEnd="14dp"
-    android:paddingBottom="10dp">
+    android:paddingStart="12dp"
+    android:paddingTop="@dimen/settings_overview_row_vertical_padding"
+    android:paddingEnd="12dp"
+    android:paddingBottom="@dimen/settings_overview_row_vertical_padding">
 
     <ImageView
         android:id="@+id/navigation_icon"
-        android:layout_width="40dp"
-        android:layout_height="40dp"
+        android:layout_width="32dp"
+        android:layout_height="32dp"
         android:background="@drawable/bg_settings_icon_plate"
         android:importantForAccessibility="no"
-        android:padding="10dp" />
+        android:padding="8dp" />
 
     <LinearLayout
         android:layout_width="0dp"
         android:layout_height="wrap_content"
-        android:layout_marginStart="14dp"
+        android:layout_marginStart="12dp"
         android:layout_weight="1"
         android:orientation="vertical">
 
@@ -35,7 +35,7 @@
             android:layout_height="wrap_content"
             android:textColor="@color/launcher_text_primary"
             android:textSize="16sp"
-            android:textStyle="bold" />
+            android:textStyle="normal" />
 
         <TextView
             android:id="@+id/navigation_summary"
@@ -43,14 +43,26 @@
             android:layout_height="wrap_content"
             android:layout_marginTop="2dp"
             android:ellipsize="end"
-            android:maxLines="2"
+            android:maxLines="1"
             android:textColor="@color/launcher_text_secondary"
-            android:textSize="12sp" />
+            android:textSize="12sp"
+            android:visibility="gone" />
     </LinearLayout>
 
+    <TextView
+        android:id="@+id/navigation_value"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="8dp"
+        android:ellipsize="end"
+        android:maxLines="1"
+        android:maxWidth="132dp"
+        android:textColor="@color/launcher_text_secondary"
+        android:textSize="13sp" />
+
     <ImageView
-        android:layout_width="20dp"
-        android:layout_height="20dp"
+        android:layout_width="18dp"
+        android:layout_height="18dp"
         android:importantForAccessibility="no"
         android:src="@drawable/ic_settings_action_forward"
         app:tint="@color/launcher_text_muted" />

@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:padding="16dp">
+
+    <TextView
+        style="@style/TextAppearance.OldLauncher.DialogSectionLabel"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="@string/settings_about_verification_title"
+        android:textSize="17sp" />
+
+    <TextView
+        style="@style/TextAppearance.OldLauncher.DialogSupporting"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="10dp"
+        android:text="@string/settings_about_verification_tests"
+        android:textColor="@color/launcher_text_primary"
+        android:textSize="14sp" />
+
+    <TextView
+        style="@style/TextAppearance.OldLauncher.DialogSupporting"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="8dp"
+        android:text="@string/settings_about_verification_device"
+        android:textColor="@color/launcher_text_primary"
+        android:textSize="14sp" />
+
+    <TextView
+        style="@style/TextAppearance.OldLauncher.DialogSupporting"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="8dp"
+        android:text="@string/settings_about_verification_perf"
+        android:textColor="@color/launcher_text_primary"
+        android:textSize="14sp" />
+
+    <TextView
+        style="@style/TextAppearance.OldLauncher.DialogSupporting"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="10dp"
+        android:lineSpacingExtra="3dp"
+        android:text="@string/settings_about_verification_sources" />
+
+    <TextView
+        style="@style/TextAppearance.OldLauncher.DialogSupporting"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="12dp"
+        android:background="@drawable/bg_settings_evidence_note"
+        android:padding="10dp"
+        android:text="@string/settings_about_verification_limit"
+        android:textColor="@color/launcher_text_primary" />
+</LinearLayout>

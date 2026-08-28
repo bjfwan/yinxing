@@ -1,0 +1,204 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:padding="16dp">
+
+    <TextView
+        style="@style/TextAppearance.OldLauncher.DialogSectionLabel"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="@string/settings_about_fall_title"
+        android:textSize="17sp" />
+
+    <TextView
+        style="@style/TextAppearance.OldLauncher.DialogSupporting"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="4dp"
+        android:text="@string/settings_about_fall_source"
+        android:textSize="12sp" />
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="12dp"
+        android:orientation="vertical">
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="@string/settings_about_fall_overview"
+            android:textColor="@color/launcher_text_primary"
+            android:textSize="14sp"
+            android:textStyle="bold" />
+    </LinearLayout>
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="14dp"
+        android:orientation="horizontal">
+
+        <TextView
+            style="@style/TextAppearance.OldLauncher.DialogSupporting"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="@string/settings_about_fall_detection_label" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/settings_about_fall_detection_value"
+            android:textColor="@color/launcher_action_dark"
+            android:textSize="15sp"
+            android:textStyle="bold" />
+    </LinearLayout>
+
+    <ProgressBar
+        style="?android:attr/progressBarStyleHorizontal"
+        android:layout_width="match_parent"
+        android:layout_height="8dp"
+        android:layout_marginTop="7dp"
+        android:max="10000"
+        android:progress="9423"
+        android:progressBackgroundTint="@color/launcher_surface_soft"
+        android:progressTint="@color/launcher_action_dark" />
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="12dp"
+        android:orientation="horizontal">
+
+        <TextView
+            style="@style/TextAppearance.OldLauncher.DialogSupporting"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="@string/settings_about_fall_adl_label" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/settings_about_fall_adl_value"
+            android:textColor="@color/launcher_action_dark"
+            android:textSize="15sp"
+            android:textStyle="bold" />
+    </LinearLayout>
+
+    <ProgressBar
+        style="?android:attr/progressBarStyleHorizontal"
+        android:layout_width="match_parent"
+        android:layout_height="8dp"
+        android:layout_marginTop="7dp"
+        android:max="10000"
+        android:progress="9703"
+        android:progressBackgroundTint="@color/launcher_surface_soft"
+        android:progressTint="@color/launcher_action_dark" />
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="14dp"
+        android:orientation="horizontal">
+
+        <TextView
+            style="@style/TextAppearance.OldLauncher.DialogSupporting"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1.2"
+            android:text="@string/settings_about_fall_table_header"
+            android:textStyle="bold" />
+
+        <TextView
+            style="@style/TextAppearance.OldLauncher.DialogSupporting"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="0.8"
+            android:gravity="end"
+            android:text="@string/settings_about_fall_table_detection"
+            android:textStyle="bold" />
+
+        <TextView
+            style="@style/TextAppearance.OldLauncher.DialogSupporting"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="0.8"
+            android:gravity="end"
+            android:text="@string/settings_about_fall_table_adl"
+            android:textStyle="bold" />
+    </LinearLayout>
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="8dp"
+        android:orientation="horizontal">
+
+        <TextView
+            style="@style/TextAppearance.OldLauncher.DialogSupporting"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1.2"
+            android:text="@string/settings_about_fall_dev_group" />
+
+        <TextView
+            style="@style/TextAppearance.OldLauncher.DialogSupporting"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="0.8"
+            android:gravity="end"
+            android:text="@string/settings_about_fall_dev_detection" />
+
+        <TextView
+            style="@style/TextAppearance.OldLauncher.DialogSupporting"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="0.8"
+            android:gravity="end"
+            android:text="@string/settings_about_fall_dev_adl" />
+    </LinearLayout>
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="7dp"
+        android:orientation="horizontal">
+
+        <TextView
+            style="@style/TextAppearance.OldLauncher.DialogSupporting"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1.2"
+            android:text="@string/settings_about_fall_holdout_group" />
+
+        <TextView
+            style="@style/TextAppearance.OldLauncher.DialogSupporting"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="0.8"
+            android:gravity="end"
+            android:text="@string/settings_about_fall_holdout_detection" />
+
+        <TextView
+            style="@style/TextAppearance.OldLauncher.DialogSupporting"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="0.8"
+            android:gravity="end"
+            android:text="@string/settings_about_fall_holdout_adl" />
+    </LinearLayout>
+
+    <TextView
+        style="@style/TextAppearance.OldLauncher.DialogSupporting"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="14dp"
+        android:background="@drawable/bg_settings_evidence_note"
+        android:padding="10dp"
+        android:text="@string/settings_about_fall_limit"
+        android:textColor="@color/launcher_text_primary" />
+</LinearLayout>

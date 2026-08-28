@@ -8,4 +8,8 @@ internal class SettingsRuntimeState {
     var permissionEntryStates: Map<PermissionEntry, PermissionEntryState> = emptyMap()
     var contactsSummaryJob: Job? = null
     var continueDefaultPhoneAfterNotification = false
+    var awaitingDefaultLauncherResult = false
+    var phonePermissionTraceId: String? = null
+    var notificationPermissionTraceId: String? = null
+    var defaultLauncherTraceId: String? = null
 }

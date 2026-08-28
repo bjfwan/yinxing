@@ -10,16 +10,21 @@ class SettingsScreenTest {
     }
 
     @Test
-    fun elderModeOpensElderOverview() {
-        assertEquals(SettingsScreen.ElderOverview, SettingsScreen.from("elder", null))
+    fun legacyElderModeUsesUnifiedOverview() {
+        assertEquals(SettingsScreen.StandardOverview, SettingsScreen.from("elder", null))
     }
 
     @Test
     fun sectionTakesPriorityOverMode() {
         assertEquals(SettingsScreen.Contacts, SettingsScreen.from("elder", "contacts"))
         assertEquals(SettingsScreen.Calls, SettingsScreen.from(null, "calls"))
+        assertEquals("diagnostics", SettingsScreen.from(null, "diagnostics").key)
         assertEquals(SettingsScreen.Permissions, SettingsScreen.from(null, "permissions"))
+        assertEquals("background", SettingsScreen.from(null, "background").key)
         assertEquals(SettingsScreen.Device, SettingsScreen.from(null, "device"))
+        assertEquals("display", SettingsScreen.from(null, "display").key)
+        assertEquals("weather", SettingsScreen.from(null, "weather").key)
         assertEquals(SettingsScreen.System, SettingsScreen.from(null, "system"))
+        assertEquals("safety", SettingsScreen.from(null, "safety").key)
     }
 }

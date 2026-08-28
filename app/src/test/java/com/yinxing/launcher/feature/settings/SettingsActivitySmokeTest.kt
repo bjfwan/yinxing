@@ -42,9 +42,54 @@ class SettingsActivitySmokeTest {
             activity.getString(R.string.settings_dark_mode_title),
             dialog.findViewById<TextView>(R.id.tv_dialog_title).text.toString()
         )
-        assertEquals(3, dialog.findViewById<LinearLayout>(R.id.layout_permission_items).childCount)
+        val choices = dialog.findViewById<LinearLayout>(R.id.layout_permission_items)
+        assertEquals(LinearLayout.HORIZONTAL, choices.orientation)
+        assertEquals(3, choices.childCount)
         assertNotNull(dialog.findViewById<View>(R.id.btn_close))
         dialog.dismiss()
+    }
+
+    @Test
+    fun displayScreenOffersFourAppFontSizeChoices() {
+        val activity = buildActivity()
+        activity.showScreen(SettingsScreen.Display)
+
+        assertTrue(activity.findDetailText("字体大小").isNotEmpty())
+        assertEquals("跟随系统", activity.detailRows().getChildAt(1).summaryText())
+
+        val dialog = activity.detailController.showFontScaleDialog()
+        val choices = dialog.findViewById<LinearLayout>(R.id.layout_permission_items)
+        assertEquals(LinearLayout.HORIZONTAL, choices.orientation)
+        assertEquals(4, choices.childCount)
+        dialog.dismiss()
+    }
+
+    @Test
+    fun selectedAppFontSizeAppliesToTheWholeActivityContext() {
+        LauncherPreferences.getInstance(context)
+            .setFontScaleMode(LauncherPreferences.FONT_SCALE_EXTRA_LARGE)
+
+        val activity = buildActivity()
+
+        assertEquals(1.30f, activity.resources.configuration.fontScale, 0.001f)
+    }
+
+    @Test
+    fun selectingAnAppFontSizePersistsAndReturnsToDisplaySettings() {
+        val activity = buildActivity()
+        val dialog = activity.detailController.showFontScaleDialog()
+        val choices = dialog.findViewById<LinearLayout>(R.id.layout_permission_items)
+
+        choices.getChildAt(2).performClick()
+
+        assertEquals(
+            LauncherPreferences.FONT_SCALE_LARGE,
+            LauncherPreferences.getInstance(context).getFontScaleMode()
+        )
+        assertEquals(
+            SettingsScreen.Display.key,
+            activity.intent.getStringExtra(SettingsActivity.EXTRA_SECTION)
+        )
     }
 
     @Test
@@ -128,8 +173,13 @@ class SettingsActivitySmokeTest {
         listOf(
             R.id.btn_detail_contacts,
             R.id.btn_detail_calls,
+            R.id.btn_detail_diagnostics,
+            R.id.btn_detail_safety,
             R.id.btn_detail_permissions,
+            R.id.btn_detail_background,
             R.id.btn_detail_device,
+            R.id.btn_detail_display,
+            R.id.btn_detail_weather,
             R.id.btn_detail_system
         ).forEach { assertNotNull(activity.findViewById<View>(it)) }
     }
@@ -146,12 +196,14 @@ class SettingsActivitySmokeTest {
     fun autoAnswerSummaryReflectsEnabledState() {
         val activity = buildActivity()
         idle()
-        assertEquals(
-            activity.getString(
-                R.string.settings_auto_answer_delay_summary,
-                LauncherPreferences.DEFAULT_AUTO_ANSWER_DELAY_SECONDS
-            ),
-            activity.findViewById<TextView>(R.id.tv_auto_answer_hub_summary).text.toString()
+        activity.showScreen(SettingsScreen.Calls)
+        assertTrue(
+            activity.findDetailText(
+                activity.getString(
+                    R.string.settings_auto_answer_delay_summary,
+                    LauncherPreferences.DEFAULT_AUTO_ANSWER_DELAY_SECONDS
+                )
+            ).isNotEmpty()
         )
     }
 
@@ -160,9 +212,11 @@ class SettingsActivitySmokeTest {
         LauncherPreferences.getInstance(context).setAutoAnswerEnabled(false)
         val activity = buildActivity()
         idle()
-        assertEquals(
-            activity.getString(R.string.settings_auto_answer_summary_off),
-            activity.findViewById<TextView>(R.id.tv_auto_answer_hub_summary).text.toString()
+        activity.showScreen(SettingsScreen.Calls)
+        assertTrue(
+            activity.findDetailText(
+                activity.getString(R.string.settings_auto_answer_summary_off)
+            ).isNotEmpty()
         )
     }
 
@@ -173,7 +227,10 @@ class SettingsActivitySmokeTest {
         listOf(
             R.id.btn_detail_contacts,
             R.id.btn_detail_permissions,
+            R.id.btn_detail_background,
             R.id.btn_detail_device,
+            R.id.btn_detail_display,
+            R.id.btn_detail_weather,
             R.id.btn_detail_system
         ).forEach { rootId ->
             val root = activity.findViewById<View>(rootId)
@@ -189,11 +246,79 @@ class SettingsActivitySmokeTest {
 
         val firstRow = activity.findViewById<LinearLayout>(R.id.settings_detail_rows).getChildAt(0)
         val status = firstRow.findViewById<TextView>(R.id.detail_row_action)
-        val expected = activity.permissionGroupRenderState(PermissionGroup.Call).badge
+        val expected = activity.permissionEntryBadge(
+            activity.permissionEntryStates.getValue(PermissionEntry.PhonePermission)
+        )
 
         assertEquals(View.VISIBLE, status.visibility)
         assertEquals(expected.text, status.text.toString())
         assertEquals(activity.getColor(expected.textColorResId), status.currentTextColor)
+    }
+
+    @Test
+    fun denseSettingsAreSplitIntoFocusedCards() {
+        val activity = buildActivity()
+
+        activity.showScreen(SettingsScreen.Calls)
+        assertEquals(1, activity.detailRows().childCount)
+        assertEquals(View.VISIBLE, activity.findViewById<View>(R.id.settings_detail_card_secondary).visibility)
+        assertEquals(2, activity.detailRows(R.id.settings_detail_rows_secondary).childCount)
+
+        activity.showScreen(SettingsScreen.CallDiagnostics)
+        assertEquals(1, activity.detailRows().childCount)
+        assertEquals(1, activity.detailRows(R.id.settings_detail_rows_secondary).childCount)
+
+        activity.showScreen(SettingsScreen.Permissions)
+        assertEquals(2, activity.detailRows().childCount)
+        assertEquals(2, activity.detailRows(R.id.settings_detail_rows_secondary).childCount)
+    }
+
+    @Test
+    fun navigableSettingRowsUseConciseSummariesAndChevrons() {
+        val activity = buildActivity()
+
+        activity.showScreen(SettingsScreen.Display)
+        val displayRows = activity.detailRows()
+        assertEquals("跟随系统", displayRows.getChildAt(1).summaryText())
+        assertEquals("跟随系统", displayRows.getChildAt(2).summaryText())
+        assertRowsUseChevronOnly(displayRows)
+
+        activity.showScreen(SettingsScreen.System)
+        assertRowsUseChevronOnly(activity.detailRows())
+
+        activity.showScreen(SettingsScreen.Weather)
+        assertRowsUseChevronOnly(activity.detailRows())
+
+        activity.showScreen(SettingsScreen.Safety)
+        val emergencyContactRow = activity.detailRows().getChildAt(1)
+        assertEquals(View.GONE, emergencyContactRow.findViewById<View>(R.id.detail_row_action).visibility)
+        assertEquals(View.VISIBLE, emergencyContactRow.findViewById<View>(R.id.detail_row_chevron).visibility)
+    }
+
+    @Test
+    fun callDiagnosticsKeepFullDetailsBehindACompactRow() {
+        val activity = buildActivity()
+        activity.showScreen(SettingsScreen.CallDiagnostics)
+
+        val traceRow = activity.detailRows(R.id.settings_detail_rows_secondary).getChildAt(0)
+
+        assertEquals("暂无记录，来电后显示链路结果", traceRow.summaryText())
+        assertEquals(View.VISIBLE, traceRow.findViewById<View>(R.id.detail_row_chevron).visibility)
+        assertTrue(traceRow.findViewById<View>(R.id.detail_row_click_target).isClickable)
+    }
+
+    @Test
+    fun aboutScreenUsesTabsAndKeepsNavigationRowsCompact() {
+        val activity = buildActivity()
+        activity.showScreen(SettingsScreen.About)
+
+        assertEquals(View.VISIBLE, activity.findViewById<View>(R.id.settings_about_tabs).visibility)
+        assertEquals(3, activity.detailRows().childCount)
+        assertRowsUseChevronOnly(activity.detailRows())
+
+        activity.findViewById<View>(R.id.settings_about_tab_service).performClick()
+        assertEquals(4, activity.detailRows().childCount)
+        assertRowsUseChevronOnly(activity.detailRows())
     }
 
     @Test
@@ -211,7 +336,7 @@ class SettingsActivitySmokeTest {
     }
 
     @Test
-    fun callsScreenShowsDefaultPhoneRoleAndVendorAdaptation() {
+    fun callsAndDiagnosticsScreensKeepTheirOwnFunctions() {
         val activity = buildActivity()
         activity.showScreen(SettingsScreen.Calls)
         val matches = arrayListOf<View>()
@@ -229,7 +354,46 @@ class SettingsActivitySmokeTest {
             activity.getString(R.string.settings_incoming_vendor_title),
             View.FIND_VIEWS_WITH_TEXT
         )
-        assertTrue(adaptationMatches.isNotEmpty())
+        assertTrue(adaptationMatches.isEmpty())
+
+        activity.showScreen(SettingsScreen.CallDiagnostics)
+        val diagnosticsMatches = arrayListOf<View>()
+        activity.findViewById<View>(android.R.id.content).findViewsWithText(
+            diagnosticsMatches,
+            activity.getString(R.string.settings_incoming_vendor_title),
+            View.FIND_VIEWS_WITH_TEXT
+        )
+        assertTrue(diagnosticsMatches.isNotEmpty())
+    }
+
+    @Test
+    fun safetyScreenOffersFallDetectionAndFamilyContactSetup() {
+        val activity = buildActivity()
+        activity.showScreen(SettingsScreen.Safety)
+
+        val fallDetectionMatches = arrayListOf<View>()
+        activity.findViewById<View>(android.R.id.content).findViewsWithText(
+            fallDetectionMatches,
+            activity.getString(R.string.settings_fall_detection_title),
+            View.FIND_VIEWS_WITH_TEXT
+        )
+        val contactMatches = arrayListOf<View>()
+        activity.findViewById<View>(android.R.id.content).findViewsWithText(
+            contactMatches,
+            activity.getString(R.string.settings_fall_contact_title),
+            View.FIND_VIEWS_WITH_TEXT
+        )
+
+        assertTrue(fallDetectionMatches.isNotEmpty())
+        assertTrue(contactMatches.isNotEmpty())
+    }
+
+    @Test
+    fun elderOverviewExposesFallDetectionSwitch() {
+        val activity = buildActivity()
+        activity.showScreen(SettingsScreen.ElderOverview)
+
+        assertNotNull(activity.findViewById<View>(R.id.switch_elder_fall_detection))
     }
 
     @Test
@@ -319,5 +483,25 @@ class SettingsActivitySmokeTest {
             .getDeclaredField("instance")
         field.isAccessible = true
         field.set(null, null)
+    }
+
+    private fun SettingsActivity.findDetailText(text: String): List<View> = arrayListOf<View>().also {
+        findViewById<View>(R.id.settings_detail_rows)
+            .findViewsWithText(it, text, View.FIND_VIEWS_WITH_TEXT)
+    }
+
+    private fun SettingsActivity.detailRows(
+        containerId: Int = R.id.settings_detail_rows
+    ): LinearLayout = findViewById(containerId)
+
+    private fun View.summaryText(): String =
+        findViewById<TextView>(R.id.detail_row_summary).text.toString()
+
+    private fun assertRowsUseChevronOnly(rows: LinearLayout) {
+        repeat(rows.childCount) { index ->
+            val row = rows.getChildAt(index)
+            assertEquals(View.GONE, row.findViewById<View>(R.id.detail_row_action).visibility)
+            assertEquals(View.VISIBLE, row.findViewById<View>(R.id.detail_row_chevron).visibility)
+        }
     }
 }

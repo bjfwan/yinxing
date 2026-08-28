@@ -15,6 +15,12 @@ import androidx.annotation.RequiresApi
 import androidx.appcompat.app.AlertDialog
 import androidx.core.view.updateLayoutParams
 import com.yinxing.launcher.R
+import com.yinxing.launcher.common.ui.LauncherDialogFactory
+import com.yinxing.launcher.common.lobster.LobsterClient
+import com.yinxing.launcher.common.lobster.LobsterPermissionTarget
+import com.yinxing.launcher.common.lobster.LobsterSettingEventFactory
+import com.yinxing.launcher.common.lobster.LobsterTrace
+import com.yinxing.launcher.common.lobster.withTrace
 import com.yinxing.launcher.common.util.DebugLog
 import com.yinxing.launcher.common.util.OemLauncherIconLoader
 import com.yinxing.launcher.common.util.OemLauncherPolicy
@@ -32,6 +38,13 @@ internal class SettingsActionController(
 ) {
     fun onPhonePermissionResult(results: Map<String, Boolean>) {
         val granted = results.values.all { it }
+        val traceId = activity.runtime.phonePermissionTraceId ?: LobsterTrace.newId()
+        activity.runtime.phonePermissionTraceId = null
+        LobsterClient.reportUsage(
+            activity,
+            LobsterSettingEventFactory.permissionResult(LobsterPermissionTarget.PHONE, granted)
+                .withTrace(traceId)
+        )
         if (granted) {
             Toast.makeText(
                 activity,
@@ -45,6 +58,13 @@ internal class SettingsActionController(
     }
 
     fun onNotificationPermissionResult(granted: Boolean) {
+        val traceId = activity.runtime.notificationPermissionTraceId ?: LobsterTrace.newId()
+        activity.runtime.notificationPermissionTraceId = null
+        LobsterClient.reportUsage(
+            activity,
+            LobsterSettingEventFactory.permissionResult(LobsterPermissionTarget.NOTIFICATION, granted)
+                .withTrace(traceId)
+        )
         if (granted) {
             Toast.makeText(
                 activity,
@@ -151,6 +171,13 @@ internal fun SettingsActivity.requestPhonePermissions() {
             add(Manifest.permission.ANSWER_PHONE_CALLS)
         }
     }
+    val traceId = LobsterTrace.newId()
+    runtime.phonePermissionTraceId = traceId
+    LobsterClient.reportUsage(
+        this,
+        LobsterSettingEventFactory.permissionRequested(LobsterPermissionTarget.PHONE)
+            .withTrace(traceId)
+    )
     phonePermissionLauncher.launch(permissions.toTypedArray())
 }
 
@@ -211,8 +238,7 @@ internal fun SettingsActivity.showIncomingCallVendorDialog(
             R.string.action_go_to_settings
         }
     )
-    val dialog = AlertDialog.Builder(this).setView(dialogView).create()
-    dialog.window?.setBackgroundDrawableResource(android.R.color.transparent)
+    val dialog = LauncherDialogFactory.create(this, dialogView, dismissOnTouchOutside = false)
     dialogView.findViewById<View>(R.id.btn_cancel).setOnClickListener { dialog.dismiss() }
     dialogView.findViewById<View>(R.id.btn_open_settings).setOnClickListener {
         dialog.dismiss()
@@ -241,6 +267,13 @@ internal fun SettingsActivity.requestNotificationPermission() {
     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU &&
         !PermissionUtil.hasNotificationPermission(this)
     ) {
+        val traceId = LobsterTrace.newId()
+        runtime.notificationPermissionTraceId = traceId
+        LobsterClient.reportUsage(
+            this,
+            LobsterSettingEventFactory.permissionRequested(LobsterPermissionTarget.NOTIFICATION)
+                .withTrace(traceId)
+        )
         notificationPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
     } else {
         PermissionUtil.openNotificationSettings(this)
@@ -265,10 +298,7 @@ internal fun SettingsActivity.showManualCheckDialog(item: IncomingGuardItem) {
     dialogView.findViewById<TextView>(R.id.tv_primary_label).text =
         getString(R.string.action_go_to_settings)
 
-    val dialog = AlertDialog.Builder(this)
-        .setView(dialogView)
-        .create()
-    dialog.window?.setBackgroundDrawableResource(android.R.color.transparent)
+    val dialog = LauncherDialogFactory.create(this, dialogView, dismissOnTouchOutside = false)
 
     dialogView.findViewById<View>(R.id.btn_cancel).setOnClickListener {
         dialog.dismiss()
@@ -338,10 +368,7 @@ internal fun SettingsActivity.showSetDefaultLauncherDialog(): AlertDialog {
         visibility = View.VISIBLE
     }
 
-    val dialog = AlertDialog.Builder(this)
-        .setView(dialogView)
-        .create()
-    dialog.window?.setBackgroundDrawableResource(android.R.color.transparent)
+    val dialog = LauncherDialogFactory.create(this, dialogView, dismissOnTouchOutside = false)
 
     if (hasSecondaryStep) {
         stackDialogActions(dialogView)
@@ -437,12 +464,16 @@ internal fun SettingsActivity.requestDefaultLauncherRoleByRoleManager(): Boolean
         return true
     }
     return runCatching {
+        runtime.awaitingDefaultLauncherResult = true
+        runtime.defaultLauncherTraceId = runtime.defaultLauncherTraceId ?: LobsterTrace.newId()
         defaultLauncherRoleLauncher.launch(roleManager.createRequestRoleIntent(RoleManager.ROLE_HOME))
         true
     }.getOrDefault(false)
 }
 
 internal fun SettingsActivity.openDefaultLauncherSettings() {
+    runtime.awaitingDefaultLauncherResult = true
+    runtime.defaultLauncherTraceId = runtime.defaultLauncherTraceId ?: LobsterTrace.newId()
     val intents = listOf(
         Intent(Settings.ACTION_HOME_SETTINGS),
         Intent(Settings.ACTION_MANAGE_DEFAULT_APPS_SETTINGS),

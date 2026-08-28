@@ -20,31 +20,42 @@ internal class SettingsOverviewController(
 ) {
     fun bindActions(
         onBack: () -> Unit,
+        onShowFamilySetup: () -> Unit,
         onShowIncomingGuard: () -> Unit,
         onShowContacts: () -> Unit,
         onShowCalls: () -> Unit,
+        onShowDiagnostics: () -> Unit,
+        onShowSafety: () -> Unit,
         onShowPermissions: () -> Unit,
+        onShowBackground: () -> Unit,
         onShowDevice: () -> Unit,
-        onShowSystem: () -> Unit
+        onShowDisplay: () -> Unit,
+        onShowWeather: () -> Unit,
+        onShowSystem: () -> Unit,
+        onShowAbout: () -> Unit
     ) {
         with(activity) {
             findViewById<View>(R.id.btn_back).setOnClickListener { onBack() }
+            findViewById<View>(R.id.btn_family_setup).setOnClickListener { onShowFamilySetup() }
             findViewById<View>(R.id.btn_card_incoming_guard).setOnClickListener { onShowIncomingGuard() }
             btnIncomingGuardAction.setOnClickListener { onShowIncomingGuard() }
             findViewById<View>(R.id.btn_detail_contacts).setOnClickListener { onShowContacts() }
-            findViewById<View>(R.id.btn_card_auto_answer).setOnClickListener { onShowCalls() }
             findViewById<View>(R.id.btn_detail_calls).setOnClickListener { onShowCalls() }
+            findViewById<View>(R.id.btn_detail_diagnostics).setOnClickListener { onShowDiagnostics() }
+            findViewById<View>(R.id.btn_detail_safety).setOnClickListener { onShowSafety() }
             findViewById<View>(R.id.btn_detail_permissions).setOnClickListener { onShowPermissions() }
+            findViewById<View>(R.id.btn_detail_background).setOnClickListener { onShowBackground() }
             findViewById<View>(R.id.btn_detail_device).setOnClickListener { onShowDevice() }
+            findViewById<View>(R.id.btn_detail_display).setOnClickListener { onShowDisplay() }
+            findViewById<View>(R.id.btn_detail_weather).setOnClickListener { onShowWeather() }
             findViewById<View>(R.id.btn_detail_system).setOnClickListener { onShowSystem() }
+            findViewById<View>(R.id.btn_detail_about).setOnClickListener { onShowAbout() }
         }
     }
 
     fun refreshOverviewUi() = activity.refreshOverviewUi()
 
     fun performOverviewRefresh() = activity.performOverviewRefresh()
-
-    fun updateAutoAnswerHubCard() = activity.updateAutoAnswerHubCard()
 
     fun updateSystemHubCard() = activity.updateSystemHubCard()
 
@@ -91,13 +102,11 @@ internal fun SettingsActivity.refreshOverviewUi() {
 
 internal fun SettingsActivity.performOverviewRefresh() {
     updateContactsHubSummary()
-    updateAutoAnswerHubCard()
     updateSystemHubCard()
     refreshAllPermissionUi()
 }
 
 internal fun SettingsActivity.updateContactsHubSummary() {
-    val homeAppCount = launcherPreferences.getSelectedPackages().size
     contactsSummaryJob?.cancel()
     contactsSummaryJob = lifecycleScope.launch {
         try {
@@ -105,8 +114,12 @@ internal fun SettingsActivity.updateContactsHubSummary() {
             navigationSummary(R.id.btn_detail_contacts).text = getString(
                 R.string.settings_contacts_hub_summary,
                 counts.phoneCount,
-                counts.videoCount,
-                homeAppCount
+                counts.videoCount
+            )
+            navigationValue(R.id.btn_detail_contacts).text = getString(
+                R.string.settings_contacts_hub_value,
+                counts.phoneCount,
+                counts.videoCount
             )
         } catch (cancelled: CancellationException) {
             throw cancelled
@@ -114,36 +127,26 @@ internal fun SettingsActivity.updateContactsHubSummary() {
             navigationSummary(R.id.btn_detail_contacts).text = getString(
                 R.string.settings_contacts_hub_summary,
                 0,
+                0
+            )
+            navigationValue(R.id.btn_detail_contacts).text = getString(
+                R.string.settings_contacts_hub_value,
                 0,
-                homeAppCount
+                0
             )
         }
     }
 }
 
-internal fun SettingsActivity.updateAutoAnswerHubCard() {
-    val enabled = launcherPreferences.isAutoAnswerEnabled()
-    tvAutoAnswerHubStatus.background = null
-    tvAutoAnswerHubStatus.text = getString(
-        if (enabled) R.string.settings_state_on else R.string.settings_state_off
-    )
-    tvAutoAnswerHubStatus.setTextColor(
-        getColor(if (enabled) R.color.launcher_action_dark else R.color.launcher_text_muted)
-    )
-    if (enabled) {
-        tvAutoAnswerHubSummary.text = getString(
-            R.string.settings_auto_answer_delay_summary,
-            launcherPreferences.getAutoAnswerDelaySeconds()
-        )
-    } else {
-        tvAutoAnswerHubSummary.text = getString(R.string.settings_auto_answer_summary_off)
-    }
-}
-
 internal fun SettingsActivity.updateSystemHubCard() {
-    navigationSummary(R.id.btn_detail_system).text = getString(
+    navigationSummary(R.id.btn_detail_weather).text = getString(
         R.string.settings_weather_city_summary,
         weatherPreferences.getCityName()
+    )
+    navigationValue(R.id.btn_detail_weather).text = weatherPreferences.getCityName()
+    navigationValue(R.id.btn_detail_calls).setText(
+        if (launcherPreferences.isAutoAnswerEnabled()) R.string.settings_state_on
+        else R.string.settings_state_off
     )
 }
 
@@ -243,7 +246,13 @@ internal fun SettingsActivity.buildPermissionEntryStates(
 }
 
 internal fun SettingsActivity.refreshPermissionHubCard() {
-    val states = permissionEntryStates.values.toList()
+    val permissionEntries = listOf(
+        PermissionEntry.PhonePermission,
+        PermissionEntry.NotificationPermission,
+        PermissionEntry.Accessibility,
+        PermissionEntry.Overlay
+    )
+    val states = permissionEntries.mapNotNull(permissionEntryStates::get)
     val blocker = states.firstOrNull { !it.isReady }
     navigationSummary(R.id.btn_detail_permissions).text = if (blocker == null) {
         getString(R.string.settings_permissions_hub_summary_ready)
@@ -252,6 +261,23 @@ internal fun SettingsActivity.refreshPermissionHubCard() {
             R.string.settings_permissions_hub_summary_pending,
             permissionEntryTitle(blocker.entry)
         )
+    }
+    navigationValue(R.id.btn_detail_permissions).text = if (blocker == null) {
+        getString(R.string.settings_guard_status_done)
+    } else {
+        getString(R.string.settings_pending_count_value, states.count { !it.isReady })
+    }
+
+    val backgroundEntries = listOf(
+        PermissionEntry.BatteryOptimization,
+        PermissionEntry.AutoStart,
+        PermissionEntry.BackgroundStart
+    )
+    val backgroundStates = backgroundEntries.mapNotNull(permissionEntryStates::get)
+    navigationValue(R.id.btn_detail_background).text = if (backgroundStates.all { it.isReady }) {
+        getString(R.string.settings_guard_status_done)
+    } else {
+        getString(R.string.settings_pending_count_value, backgroundStates.count { !it.isReady })
     }
 }
 
@@ -272,10 +298,15 @@ internal fun SettingsActivity.refreshDeviceHubCard() {
         defaultSummary,
         performanceSummary
     )
+    navigationValue(R.id.btn_detail_device).text = defaultSummary
 }
 
 private fun SettingsActivity.navigationSummary(rootId: Int): TextView {
     return findViewById<View>(rootId).findViewById(R.id.navigation_summary)
+}
+
+private fun SettingsActivity.navigationValue(rootId: Int): TextView {
+    return findViewById<View>(rootId).findViewById(R.id.navigation_value)
 }
 
 internal fun SettingsActivity.permissionGroupRenderState(group: PermissionGroup): GroupRenderState {

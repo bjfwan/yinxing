@@ -19,6 +19,8 @@
     <uses-permission android:name="android.permission.REQUEST_IGNORE_BATTERY_OPTIMIZATIONS" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_SPECIAL_USE" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_HEALTH" />
+    <uses-permission android:name="android.permission.HIGH_SAMPLING_RATE_SENSORS" />
     <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
 
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
@@ -86,11 +88,18 @@
             </intent-filter>
         </activity>
         <activity
+            android:name=".feature.setup.FamilySetupActivity"
+            android:exported="false"
+            android:launchMode="singleTop" />
+        <activity
             android:name=".feature.appmanage.AppManageActivity"
             android:exported="false"
             android:theme="@style/Theme.OldLauncher.AppManage" />
         <activity
             android:name=".feature.settings.SettingsActivity"
+            android:exported="false" />
+        <activity
+            android:name=".feature.settings.LegalDocumentActivity"
             android:exported="false" />
         <activity
             android:name=".feature.weather.WeatherDetailActivity"
@@ -128,6 +137,13 @@
             android:showOnLockScreen="true"
             android:turnScreenOn="true"
             android:showWhenLocked="true" />
+        <activity
+            android:name=".feature.fall.FallAlertActivity"
+            android:exported="false"
+            android:launchMode="singleTask"
+            android:showOnLockScreen="true"
+            android:showWhenLocked="true"
+            android:turnScreenOn="true" />
         <receiver
             android:name=".feature.incoming.PhoneCallReceiver"
             android:exported="true">
@@ -151,6 +167,10 @@
                 android:name="android.app.PROPERTY_SPECIAL_USE_FGS_SUBTYPE"
                 android:value="incoming_call_alert" />
         </service>
+        <service
+            android:name=".feature.fall.FallDetectionService"
+            android:exported="false"
+            android:foregroundServiceType="health" />
 
         <service
             android:name=".feature.incoming.YinxingInCallService"
@@ -175,6 +195,16 @@
                 android:name="android.accessibilityservice"
                 android:resource="@xml/accessibility_service_config" />
         </service>
+
+        <provider
+            android:name="androidx.core.content.FileProvider"
+            android:authorities="${applicationId}.fileprovider"
+            android:exported="false"
+            android:grantUriPermissions="true">
+            <meta-data
+                android:name="android.support.FILE_PROVIDER_PATHS"
+                android:resource="@xml/file_paths" />
+        </provider>
 
 
     </application>

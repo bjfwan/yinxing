@@ -8,7 +8,7 @@ import android.widget.FrameLayout
 import android.widget.TextView
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.addCallback
-import androidx.appcompat.app.AppCompatActivity
+import com.yinxing.launcher.common.ui.FontScaleActivity
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.updatePadding
@@ -16,15 +16,20 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
 import com.yinxing.launcher.R
+import com.yinxing.launcher.common.lobster.LobsterClient
+import com.yinxing.launcher.common.lobster.LobsterSettingEventFactory
+import com.yinxing.launcher.common.lobster.LobsterTrace
+import com.yinxing.launcher.common.lobster.withTrace
 import com.yinxing.launcher.data.home.LauncherPreferences
 import com.yinxing.launcher.data.weather.WeatherPreferences
 import com.yinxing.launcher.feature.incoming.IncomingGuardReadiness
+import com.yinxing.launcher.feature.setup.FamilySetupActivity
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
 
-class SettingsActivity : AppCompatActivity() {
+class SettingsActivity : FontScaleActivity() {
 
     internal lateinit var launcherPreferences: LauncherPreferences
     internal lateinit var weatherPreferences: WeatherPreferences
@@ -36,9 +41,6 @@ class SettingsActivity : AppCompatActivity() {
     internal val tvIncomingGuardSummary: TextView get() = findViewById(R.id.tv_incoming_guard_summary)
     internal val tvIncomingGuardAction: TextView get() = findViewById(R.id.tv_incoming_guard_action)
     internal val btnIncomingGuardAction: View get() = findViewById(R.id.btn_incoming_guard_action)
-    internal val tvAutoAnswerHubStatus: TextView get() = findViewById(R.id.tv_auto_answer_hub_status)
-    internal val tvAutoAnswerHubSummary: TextView get() = findViewById(R.id.tv_auto_answer_hub_summary)
-
     internal var incomingGuardReadiness: IncomingGuardReadiness
         get() = runtime.incomingGuardReadiness
         set(value) { runtime.incomingGuardReadiness = value }
@@ -92,20 +94,28 @@ class SettingsActivity : AppCompatActivity() {
 
         overviewController.bindActions(
             onBack = ::finish,
+            onShowFamilySetup = {
+                startActivity(FamilySetupActivity.createIntent(this))
+            },
             onShowIncomingGuard = dialogController::showIncomingGuardDialog,
             onShowContacts = { showScreen(SettingsScreen.Contacts) },
             onShowCalls = { showScreen(SettingsScreen.Calls) },
+            onShowDiagnostics = { showScreen(SettingsScreen.CallDiagnostics) },
+            onShowSafety = { showScreen(SettingsScreen.Safety) },
             onShowPermissions = { showScreen(SettingsScreen.Permissions) },
+            onShowBackground = { showScreen(SettingsScreen.Background) },
             onShowDevice = { showScreen(SettingsScreen.Device) },
-            onShowSystem = { showScreen(SettingsScreen.System) }
+            onShowDisplay = { showScreen(SettingsScreen.Display) },
+            onShowWeather = { showScreen(SettingsScreen.Weather) },
+            onShowSystem = { showScreen(SettingsScreen.System) },
+            onShowAbout = { showScreen(SettingsScreen.About) }
         )
         screenController.bindStandard()
         dialogController.playEntryAnimation()
         applySystemInsets()
 
         onBackPressedDispatcher.addCallback(this) {
-            if (currentScreen == SettingsScreen.StandardOverview) finish()
-            else showScreen(SettingsScreen.StandardOverview)
+            navigateBack()
         }
 
         currentScreen = SettingsScreen.from(
@@ -131,6 +141,7 @@ class SettingsActivity : AppCompatActivity() {
     override fun onResume() {
         super.onResume()
         SettingsReturnCoordinator.consumeDeviceSettingsReturn(this)
+        if (runtime.awaitingDefaultLauncherResult) scheduleDefaultLauncherRefresh()
         actionController.continueDefaultPhoneRoleIfReady()
         overviewController.refreshOverviewUi()
         if (currentScreen !in setOf(SettingsScreen.StandardOverview, SettingsScreen.ElderOverview)) {
@@ -141,6 +152,16 @@ class SettingsActivity : AppCompatActivity() {
     private fun scheduleDefaultLauncherRefresh() {
         window.decorView.postDelayed({
             if (isFinishing || isDestroyed) return@postDelayed
+            if (runtime.awaitingDefaultLauncherResult) {
+                runtime.awaitingDefaultLauncherResult = false
+                val traceId = runtime.defaultLauncherTraceId ?: LobsterTrace.newId()
+                runtime.defaultLauncherTraceId = null
+                LobsterClient.reportUsage(
+                    this,
+                    LobsterSettingEventFactory.defaultLauncherResult(isDefaultLauncher())
+                        .withTrace(traceId)
+                )
+            }
             overviewController.refreshOverviewUi()
             if (currentScreen !in setOf(SettingsScreen.StandardOverview, SettingsScreen.ElderOverview)) {
                 detailController.bind(currentScreen)
@@ -155,6 +176,7 @@ class SettingsActivity : AppCompatActivity() {
 
     internal fun showScreen(screen: SettingsScreen) {
         currentScreen = screen
+        LobsterClient.reportUsage(this, LobsterSettingEventFactory.screenOpened(screen.name))
         val overlay = findViewById<FrameLayout>(R.id.settings_overlay)
         findViewById<TextView>(R.id.settings_page_title).text = getString(screen.titleRes)
         if (screen == SettingsScreen.StandardOverview) {
@@ -179,6 +201,21 @@ class SettingsActivity : AppCompatActivity() {
         screenController.refreshActive()
     }
 
+    internal fun navigateBack() {
+        if (currentScreen == SettingsScreen.WeChatRules) {
+            showScreen(SettingsScreen.Contacts)
+            return
+        }
+        if (
+            currentScreen == SettingsScreen.StandardOverview ||
+            intent.getBooleanExtra(EXTRA_RETURN_TO_CALLER, false)
+        ) {
+            finish()
+        } else {
+            showScreen(SettingsScreen.StandardOverview)
+        }
+    }
+
     private fun applySystemInsets() {
         val root = findViewById<View>(R.id.settings_root)
         ViewCompat.setOnApplyWindowInsetsListener(root) { view, insets ->
@@ -192,6 +229,7 @@ class SettingsActivity : AppCompatActivity() {
         private const val DEFAULT_LAUNCHER_SETTLE_DELAY_MS = 300L
         const val EXTRA_MODE = "settings_mode"
         const val EXTRA_SECTION = "settings_section"
+        const val EXTRA_RETURN_TO_CALLER = "settings_return_to_caller"
 
         internal fun deviceSettingsIntent(context: Context): Intent {
             return Intent(context, SettingsActivity::class.java)

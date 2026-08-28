@@ -27,14 +27,11 @@ class SettingsNavigationSmokeTest {
     }
 
     @Test
-    fun opensStandardSettingsByDefaultAndCanSwitchToElderMode() {
+    fun opensUnifiedSettingsOverview() {
         val activity = buildActivity()
 
         assertEquals("设置", activity.findViewById<TextView>(R.id.settings_page_title).text.toString())
-        activity.findViewById<View>(R.id.btn_switch_mode).performClick()
-        idle()
-
-        assertEquals("老人设置", activity.findViewById<TextView>(R.id.settings_page_title).text.toString())
+        assertEquals(0, activity.findText("卡片样式").size)
     }
 
     @Test
@@ -44,7 +41,7 @@ class SettingsNavigationSmokeTest {
         activity.findViewById<View>(R.id.btn_detail_contacts).performClick()
         idle()
 
-        assertEquals("联系人与首页", activity.findViewById<TextView>(R.id.settings_page_title).text.toString())
+        assertEquals("联系人", activity.findViewById<TextView>(R.id.settings_page_title).text.toString())
         activity.onBackPressedDispatcher.onBackPressed()
         idle()
         assertEquals("设置", activity.findViewById<TextView>(R.id.settings_page_title).text.toString())
@@ -53,7 +50,7 @@ class SettingsNavigationSmokeTest {
     @Test
     fun elderContactEntryUsesCenteredDialog() {
         val activity = buildActivity()
-        activity.findViewById<View>(R.id.btn_switch_mode).performClick()
+        activity.showScreen(SettingsScreen.ElderOverview)
         idle()
 
         activity.findViewById<View>(R.id.btn_elder_contacts).performClick()
@@ -63,6 +60,10 @@ class SettingsNavigationSmokeTest {
     }
 
     private fun buildActivity() = Robolectric.buildActivity(SettingsActivity::class.java).setup().get()
+
+    private fun SettingsActivity.findText(text: String): List<View> = arrayListOf<View>().also {
+        findViewById<View>(android.R.id.content).findViewsWithText(it, text, View.FIND_VIEWS_WITH_TEXT)
+    }
 
     private fun idle() = shadowOf(Looper.getMainLooper()).idle()
 }

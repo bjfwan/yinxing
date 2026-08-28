@@ -1,15 +1,16 @@
 package com.yinxing.launcher.feature.settings
 
 import android.content.res.ColorStateList
-import android.graphics.drawable.ColorDrawable
 import android.view.View
-import android.view.ViewGroup
 import android.widget.ImageView
 import android.widget.TextView
-import androidx.appcompat.app.AlertDialog
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.lifecycleScope
 import com.yinxing.launcher.R
+import com.yinxing.launcher.common.ui.LauncherDialogFactory
+import com.yinxing.launcher.common.lobster.LobsterClient
+import com.yinxing.launcher.common.lobster.LobsterSetting
+import com.yinxing.launcher.common.lobster.LobsterSettingEventFactory
 import com.yinxing.launcher.feature.phone.PhoneContactActivity
 import com.yinxing.launcher.feature.videocall.VideoCallActivity
 import kotlinx.coroutines.CancellationException
@@ -17,6 +18,17 @@ import kotlinx.coroutines.launch
 
 internal class SettingsScreenController(private val activity: SettingsActivity) {
     fun bindStandard() = with(activity) {
+        configureNavigation(
+            R.id.btn_family_setup,
+            R.string.family_setup_reopen_title,
+            R.string.family_setup_reopen_summary,
+            R.drawable.ic_settings_category_contacts,
+            R.color.launcher_ginkgo_deep,
+            R.color.launcher_ginkgo_soft
+        )
+        findViewById<View>(R.id.btn_family_setup)
+            .findViewById<TextView>(R.id.navigation_value)
+            .setText(R.string.family_setup_reopen_value)
         configureNavigation(
             R.id.btn_detail_contacts,
             R.string.settings_contacts_title,
@@ -34,12 +46,20 @@ internal class SettingsScreenController(private val activity: SettingsActivity) 
             R.color.launcher_call_soft
         )
         configureNavigation(
-            R.id.btn_detail_permissions,
-            R.string.settings_permissions_title,
-            R.string.settings_permissions_summary,
-            R.drawable.ic_settings_category_permissions,
-            R.color.launcher_warning,
-            R.color.launcher_warning_soft
+            R.id.btn_detail_diagnostics,
+            R.string.settings_diagnostics_title,
+            R.string.settings_diagnostics_summary,
+            R.drawable.ic_settings_action_incoming_guard,
+            R.color.launcher_system,
+            R.color.launcher_system_soft
+        )
+        configureNavigation(
+            R.id.btn_detail_safety,
+            R.string.settings_safety_title,
+            R.string.settings_safety_summary,
+            R.drawable.ic_settings_action_warning,
+            R.color.launcher_danger,
+            R.color.launcher_danger_soft
         )
         configureNavigation(
             R.id.btn_detail_device,
@@ -50,6 +70,38 @@ internal class SettingsScreenController(private val activity: SettingsActivity) 
             R.color.launcher_contacts_soft
         )
         configureNavigation(
+            R.id.btn_detail_display,
+            R.string.settings_display_title,
+            R.string.settings_display_summary,
+            R.drawable.ic_settings_device_display,
+            R.color.launcher_system,
+            R.color.launcher_system_soft
+        )
+        configureNavigation(
+            R.id.btn_detail_permissions,
+            R.string.settings_permissions_title,
+            R.string.settings_permissions_summary,
+            R.drawable.ic_settings_category_permissions,
+            R.color.launcher_warning,
+            R.color.launcher_warning_soft
+        )
+        configureNavigation(
+            R.id.btn_detail_background,
+            R.string.settings_background_title,
+            R.string.settings_background_summary,
+            R.drawable.ic_settings_permission_background,
+            R.color.launcher_ginkgo_deep,
+            R.color.launcher_ginkgo_soft
+        )
+        configureNavigation(
+            R.id.btn_detail_weather,
+            R.string.settings_weather_title,
+            R.string.settings_weather_summary_short,
+            R.drawable.ic_weather_sun,
+            R.color.launcher_device,
+            R.color.launcher_device_soft
+        )
+        configureNavigation(
             R.id.btn_detail_system,
             R.string.settings_section_system_title,
             R.string.settings_system_summary_short,
@@ -57,11 +109,15 @@ internal class SettingsScreenController(private val activity: SettingsActivity) 
             R.color.launcher_system,
             R.color.launcher_system_soft
         )
+        configureNavigation(
+            R.id.btn_detail_about,
+            R.string.settings_about_title,
+            R.string.settings_about_summary,
+            R.drawable.ic_settings_permission_accessibility,
+            R.color.launcher_ginkgo_deep,
+            R.color.launcher_ginkgo_soft
+        )
 
-        findViewById<View>(R.id.btn_switch_mode).setOnClickListener {
-            showScreen(SettingsScreen.ElderOverview)
-        }
-        findViewById<View>(R.id.btn_check_update).setOnClickListener { checkAppUpdate() }
     }
 
     fun bindElder() = with(activity) {
@@ -87,13 +143,16 @@ internal class SettingsScreenController(private val activity: SettingsActivity) 
         findViewById<View>(R.id.btn_elder_system).setOnClickListener {
             dialogController.showSystemDialog()
         }
+        findViewById<View>(R.id.btn_elder_about).setOnClickListener {
+            showScreen(SettingsScreen.About)
+        }
         bindElderAutoAnswer()
+        bindElderFallDetection()
     }
 
     private fun SettingsActivity.showElderContactsDialog() {
         val content = layoutInflater.inflate(R.layout.dialog_settings_contacts, null, false)
-        val dialog = AlertDialog.Builder(this).setView(content).create()
-        dialog.window?.setBackgroundDrawable(ColorDrawable(android.graphics.Color.TRANSPARENT))
+        val dialog = LauncherDialogFactory.create(this, content)
         content.findViewById<View>(R.id.btn_dialog_phone_contacts).setOnClickListener {
             dialog.dismiss()
             startActivity(PhoneContactActivity.createIntent(this, true))
@@ -103,12 +162,6 @@ internal class SettingsScreenController(private val activity: SettingsActivity) 
             startActivity(VideoCallActivity.createIntent(this, true))
         }
         content.findViewById<View>(R.id.btn_dialog_contacts_cancel).setOnClickListener { dialog.dismiss() }
-        dialog.setOnShowListener {
-            dialog.window?.setLayout(
-                (resources.displayMetrics.widthPixels * 0.76f).toInt(),
-                ViewGroup.LayoutParams.WRAP_CONTENT
-            )
-        }
         dialog.show()
     }
 
@@ -138,7 +191,18 @@ internal class SettingsScreenController(private val activity: SettingsActivity) 
         findViewById<SettingsToggle>(R.id.switch_elder_auto_answer)
             .setOnCheckedChangeListener { _, checked ->
                 launcherPreferences.setAutoAnswerEnabled(checked)
+                LobsterClient.reportUsage(
+                    this,
+                    LobsterSettingEventFactory.toggleChanged(LobsterSetting.AUTO_ANSWER, checked)
+                )
                 overviewController.refreshOverviewUi()
+            }
+    }
+
+    private fun SettingsActivity.bindElderFallDetection() {
+        findViewById<SettingsToggle>(R.id.switch_elder_fall_detection)
+            .setOnCheckedChangeListener { _, checked ->
+                detailController.onFallDetectionToggle(checked)
             }
     }
 
@@ -174,6 +238,15 @@ internal class SettingsScreenController(private val activity: SettingsActivity) 
             getString(R.string.settings_auto_answer_summary_off)
         }
         bindElderAutoAnswer()
+
+        val fallSwitch = findViewById<SettingsToggle>(R.id.switch_elder_fall_detection)
+        fallSwitch.setOnCheckedChangeListener(null)
+        fallSwitch.isChecked = launcherPreferences.isFallDetectionEnabled()
+        findViewById<TextView>(R.id.tv_elder_fall_summary).setText(
+            if (fallSwitch.isChecked) R.string.settings_elder_fall_summary_on
+            else R.string.settings_elder_fall_summary_off
+        )
+        bindElderFallDetection()
 
         lifecycleScope.launch {
             try {
