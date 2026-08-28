@@ -1,6 +1,6 @@
 <div align="center">
 
-<img src="https://raw.githubusercontent.com/bjfwan/yinxing/main/docs/icon.png?v=20260828" width="140" height="140" alt="银杏图标" />
+<img src="https://raw.githubusercontent.com/bjfwan/yinxing/main/docs/icon.png" width="140" height="140" />
 
 <h1>银杏 · Yinxing Launcher</h1>
 
@@ -9,8 +9,8 @@
 [![License: MIT](https://img.shields.io/badge/license-MIT-B8882A?labelColor=1C1914&style=flat-square)](https://github.com/bjfwan/yinxing/blob/main/LICENSE)
 [![Release](https://img.shields.io/badge/-下载%20APK-B8882A?labelColor=1C1914&style=flat-square)](https://yx.likeyou.qzz.io)
 [![Platform](https://img.shields.io/badge/Android%207%2B-0369A1?labelColor=1C1914&style=flat-square&logo=android&logoColor=white)](#系统要求)
-[![APK](https://img.shields.io/badge/Release%20APK-2.60%20MiB-555?labelColor=1C1914&style=flat-square)](#)
-[![Source Version](https://img.shields.io/badge/source-v2.0.1-B8882A?labelColor=1C1914&style=flat-square)](https://github.com/bjfwan/yinxing/releases)
+[![APK](https://img.shields.io/badge/Release%20APK-2.61%20MiB-555?labelColor=1C1914&style=flat-square)](#)
+[![Source Version](https://img.shields.io/badge/source-v2.0.0-B8882A?labelColor=1C1914&style=flat-square)](https://github.com/bjfwan/yinxing/releases)
 [![Stars](https://img.shields.io/github/stars/bjfwan/yinxing?color=B8882A&labelColor=1C1914&style=flat-square)](https://github.com/bjfwan/yinxing/stargazers)
 [![Kotlin](https://img.shields.io/badge/Kotlin-7F52FF?logo=kotlin&logoColor=white&style=flat-square)](https://kotlinlang.org/)
 [![Made with Love](https://img.shields.io/badge/Made%20with-%E2%9D%A4%EF%B8%8F-red?style=flat-square)](#)
@@ -55,7 +55,7 @@
 | 项目 | 要求 |
 |:----:|------|
 | 系统版本 | Android 7.0 及以上 |
-| 安装包大小 | v2.0.1 Release 约 2.60 MiB |
+| 安装包大小 | v2.0.0 Release 约 2.61 MiB |
 | 权限需求 | 电话、联系人、相机（可选） |
 
 ---
@@ -66,7 +66,7 @@
 
 ### [📥 点击下载 APK](https://yx.likeyou.qzz.io)
 
-**最新版本：v2.0.1**
+**最新版本：v2.0.0**
 
 </div>
 
@@ -99,11 +99,11 @@
 - 暗色模式与低性能模式
 - TTS 播报、故障诊断与性能指标
 
-### v2.0.1 品牌图标更新 ✅
+### v2.0.0 发布前收尾 🚧
 
-- 全面更新桌面、圆形、自适应和主题单色图标
-- 统一系统安装、权限、最近任务与应用内品牌展示
-- 同步官网、README、下载 APK 与 GitHub Release
+- 首页最终视觉调整
+- 系统电话自动接听的真实 SIM 与多 ROM 验证
+- 完整设备级仪器测试与最终发布资产同步
 
 > 微信视频来电自动接听、远程协助和云同步不在当前版本交付范围内。
 ---
@@ -200,15 +200,6 @@ yinxing/
 
 ## 更新日志
 
-<details open>
-<summary>📋 v2.0.1（2026-08）</summary>
-
-- 重新设计银杏品牌图标，调整金色、浅色背景与叶脉细节
-- 修正 Android 自适应图标安全区，避免系统场景裁切
-- 同步官网图标、浏览器图标、README 与发布 APK
-
-</details>
-
 <details>
 <summary>📋 v2.0.0（2026-08）</summary>
 
@@ -255,7 +246,7 @@ yinxing/
 
 **用代码，陪伴那些被时代遗忘的人。**
 
-<img src="https://raw.githubusercontent.com/bjfwan/yinxing/main/docs/icon.png?v=20260828" width="60" height="60" alt="银杏图标" />
+<img src="https://raw.githubusercontent.com/bjfwan/yinxing/main/docs/icon.png" width="60" height="60" />
 
 *银杏 Yinxing Launcher · MIT License*
 

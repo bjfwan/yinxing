@@ -1,6 +1,6 @@
 {
-  "versionCode": 18,
-  "versionName": "2.0.1",
+  "versionCode": 17,
+  "versionName": "2.0.0",
   "apkUrl": "https://yx.likeyou.qzz.io/app-release.apk",
-  "releaseNotes": "重新设计银杏品牌图标，覆盖桌面、圆形、自适应和主题单色场景；修正 Android 自适应图标安全区，避免系统场景裁切；同步官网、README、下载 APK 与 GitHub Release。"
+  "releaseNotes": "银杏 2.0 完成主页、家属设置、电话与视频联系人升级，新增应用内天气详情、城市管理和当前位置；系统电话接听迁移到默认电话角色与 InCallService，微信视频主动拨号增强恢复、超时和诊断；同时清理旧页面与未使用资源。"
 }
