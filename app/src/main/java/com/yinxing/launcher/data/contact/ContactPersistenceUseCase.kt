@@ -2,6 +2,12 @@ package com.yinxing.launcher.data.contact
 
 import android.content.Context
 import android.net.Uri
+import com.yinxing.launcher.common.lobster.LobsterClient
+import com.yinxing.launcher.common.lobster.LobsterContactChange
+import com.yinxing.launcher.common.lobster.LobsterContactChannel
+import com.yinxing.launcher.common.lobster.LobsterSettingEventFactory
+import com.yinxing.launcher.common.lobster.LobsterTrace
+import com.yinxing.launcher.common.lobster.withTrace
 import java.util.UUID
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.NonCancellable
@@ -18,7 +24,8 @@ import kotlinx.coroutines.withContext
  */
 class ContactPersistenceUseCase(
     private val context: Context,
-    private val manager: ContactRepositoryHandle
+    private val manager: ContactRepositoryHandle,
+    private val channel: LobsterContactChannel
 ) {
     /** 抽象出 phone/video 两端各自的 [ContactManager]/[com.yinxing.launcher.feature.phone.PhoneContactManager] 调用差异。 */
     interface ContactRepositoryHandle {
@@ -41,6 +48,7 @@ class ContactPersistenceUseCase(
         selectedAvatarUri: String?,
         build: (avatarUri: String?, contactId: String) -> Contact
     ) = withContext(Dispatchers.IO + NonCancellable) {
+        val traceId = LobsterTrace.newId()
         val previousAvatar = original?.avatarUri
         val contactId = original?.id ?: UUID.randomUUID().toString()
         var createdAvatar: String? = null
@@ -58,6 +66,13 @@ class ContactPersistenceUseCase(
             } else {
                 manager.update(contact)
             }
+            LobsterClient.reportUsage(
+                context,
+                LobsterSettingEventFactory.contactChanged(
+                    channel,
+                    if (original == null) LobsterContactChange.ADDED else LobsterContactChange.UPDATED
+                ).withTrace(traceId)
+            )
             if (!previousAvatar.isNullOrBlank() && previousAvatar != resolvedAvatar) {
                 ContactAvatarStore.deleteOwnedAvatar(context, previousAvatar)
             }
@@ -65,14 +80,36 @@ class ContactPersistenceUseCase(
             if (!createdAvatar.isNullOrBlank()) {
                 ContactAvatarStore.deleteOwnedAvatar(context, createdAvatar)
             }
+            LobsterClient.reportUsage(
+                context,
+                LobsterSettingEventFactory.contactChangeFailed(
+                    channel,
+                    if (original == null) LobsterContactChange.ADDED else LobsterContactChange.UPDATED
+                ).withTrace(traceId)
+            )
             throw throwable
         }
     }
 
     /** 删除联系人 + 受管头像，单一 IO 上下文，整体不可取消。 */
     suspend fun deletePersisted(contact: Contact) = withContext(Dispatchers.IO + NonCancellable) {
-        manager.remove(contact.id)
-        ContactAvatarStore.deleteOwnedAvatar(context, contact.avatarUri)
+        val traceId = LobsterTrace.newId()
+        try {
+            manager.remove(contact.id)
+            ContactAvatarStore.deleteOwnedAvatar(context, contact.avatarUri)
+            LobsterClient.reportUsage(
+                context,
+                LobsterSettingEventFactory.contactChanged(channel, LobsterContactChange.DELETED)
+                    .withTrace(traceId)
+            )
+        } catch (throwable: Throwable) {
+            LobsterClient.reportUsage(
+                context,
+                LobsterSettingEventFactory.contactChangeFailed(channel, LobsterContactChange.DELETED)
+                    .withTrace(traceId)
+            )
+            throw throwable
+        }
     }
 
     companion object {
@@ -80,6 +117,7 @@ class ContactPersistenceUseCase(
         fun forWechat(context: Context, manager: ContactManager): ContactPersistenceUseCase {
             return ContactPersistenceUseCase(
                 context = context,
+                channel = LobsterContactChannel.WECHAT,
                 manager = object : ContactRepositoryHandle {
                     override suspend fun add(contact: Contact) = manager.addContact(contact)
                     override suspend fun update(contact: Contact) = manager.updateContact(contact)
@@ -97,6 +135,7 @@ class ContactPersistenceUseCase(
         ): ContactPersistenceUseCase {
             return ContactPersistenceUseCase(
                 context = context,
+                channel = LobsterContactChannel.PHONE,
                 manager = object : ContactRepositoryHandle {
                     override suspend fun add(contact: Contact) = adder(contact)
                     override suspend fun update(contact: Contact) = updater(contact)

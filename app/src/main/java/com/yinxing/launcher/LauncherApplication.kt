@@ -8,6 +8,8 @@ import androidx.appcompat.app.AppCompatDelegate
 import com.yinxing.launcher.common.lobster.LobsterClient
 import com.yinxing.launcher.common.lobster.LobsterCrashReporter
 import com.yinxing.launcher.common.lobster.LobsterUsageEvents
+import com.yinxing.launcher.common.lobster.LobsterMainThreadWatchdog
+import com.yinxing.launcher.common.lobster.LobsterProcessExitReporter
 import com.yinxing.launcher.common.media.MediaThumbnailLoader
 import com.yinxing.launcher.common.perf.LauncherTraceNames
 import com.yinxing.launcher.common.perf.traceAndReport
@@ -15,6 +17,7 @@ import com.yinxing.launcher.common.perf.traceBegin
 import com.yinxing.launcher.data.home.LauncherAppRepository
 import com.yinxing.launcher.data.home.LauncherPreferences
 import com.yinxing.launcher.feature.incoming.IncomingCallForegroundService
+import com.yinxing.launcher.feature.fall.FallDetectionService
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -27,11 +30,15 @@ class LauncherApplication : Application() {
         super.onCreate()
         traceBegin(LauncherTraceNames.APP_INIT)
         LobsterCrashReporter.install(this)
+        LobsterMainThreadWatchdog.start(this)
         LobsterClient.flushPendingReports(this)
+        appScope.launch { LobsterProcessExitReporter.reportPreviousAbnormalExit(this@LauncherApplication) }
         applyDarkModePreference()
         Handler(Looper.getMainLooper()).postDelayed(
             {
                 IncomingCallForegroundService.ensureNotificationChannels(this)
+                FallDetectionService.ensureNotificationChannels(this)
+                FallDetectionService.reconcile(this)
                 appScope.launch {
                     runCatching {
                         LauncherAppRepository.getInstance(this@LauncherApplication).prewarmInstalledApps()

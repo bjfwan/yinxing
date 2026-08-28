@@ -9,10 +9,12 @@ object LauncherTraceNames {
     const val APP_INIT = "oldlauncher.app.init"
     const val HOME_APP_LIST_LOAD = "oldlauncher.home.app_list.load"
     const val HOME_ICON_LOAD = "oldlauncher.home.icon.load"
+    const val HOME_APP_LAUNCH = "oldlauncher.home.app_launch"
     const val HOME_WEATHER_REQUEST = "oldlauncher.home.weather.request"
     const val WECHAT_VIDEO_TOTAL = "oldlauncher.wechat.video.total"
     const val WECHAT_VIDEO_FAILURE_TOTAL = "oldlauncher.wechat.video.failure.total"
     const val INCOMING_CALL_RESPONSE = "oldlauncher.incoming.call.response"
+    const val PHONE_PLACE_CALL = "oldlauncher.phone.place_call"
 }
 
 private val pendingTraces = ConcurrentHashMap<String, Long>()
@@ -37,16 +39,16 @@ inline fun <T> traceSection(name: String, block: () -> T): T {
     }
 }
 
-fun traceAndReport(context: Context, name: String) {
+fun traceAndReport(context: Context, name: String, traceId: String? = null) {
     val durationMs = traceEnd(name) ?: return
-    LobsterClient.reportMetrics(context, listOf(name to durationMs))
+    LobsterClient.reportMetrics(context, listOf(name to durationMs), traceId)
 }
 
-fun reportCollectedMetrics(context: Context, names: List<String>) {
+fun reportCollectedMetrics(context: Context, names: List<String>, traceId: String? = null) {
     val metrics = mutableListOf<Pair<String, Long>>()
     for (name in names) {
         val durationMs = traceEnd(name) ?: continue
         metrics.add(name to durationMs)
     }
-    LobsterClient.reportMetrics(context, metrics)
+    LobsterClient.reportMetrics(context, metrics, traceId)
 }
