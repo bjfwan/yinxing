@@ -1,29 +1,26 @@
 <?xml version="1.0" encoding="utf-8"?>
 <com.google.android.material.card.MaterialCardView xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
+    style="@style/Widget.OldLauncher.DialogContentCard"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:layout_marginTop="6dp"
+    android:layout_marginTop="8dp"
     android:clickable="true"
     android:focusable="true"
-    android:foreground="?android:attr/selectableItemBackground"
-    app:cardBackgroundColor="@color/launcher_surface_muted"
-    app:cardCornerRadius="14dp"
-    app:cardElevation="0dp"
-    app:strokeColor="@color/launcher_outline"
-    app:strokeWidth="1dp">
+    android:foreground="?android:attr/selectableItemBackground">
 
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:gravity="center_vertical"
+        android:minHeight="76dp"
         android:orientation="horizontal"
-        android:padding="12dp">
+        android:padding="14dp">
 
         <ImageView
             android:id="@+id/iv_permission_item_icon"
-            android:layout_width="40dp"
-            android:layout_height="40dp"
+            android:layout_width="44dp"
+            android:layout_height="44dp"
             android:layout_marginEnd="12dp"
             android:background="@drawable/bg_settings_icon_plate"
             android:importantForAccessibility="no"
@@ -44,33 +41,29 @@
 
                 <TextView
                     android:id="@+id/tv_permission_item_title"
+                    style="@style/TextAppearance.OldLauncher.DialogSectionLabel"
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
-                    android:layout_weight="1"
-                    android:textColor="@color/launcher_text_primary"
-                    android:textSize="16sp"
-                    android:textStyle="bold" />
+                    android:layout_weight="1" />
 
                 <TextView
                     android:id="@+id/tv_permission_item_status"
-                    style="@style/TextAppearance.OldLauncher.Badge"
+                    style="@style/TextAppearance.OldLauncher.DialogBadge"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:background="@drawable/edit_text_background"
                     android:paddingStart="10dp"
                     android:paddingTop="4dp"
                     android:paddingEnd="10dp"
-                    android:paddingBottom="4dp"
-                    android:textSize="13sp" />
+                    android:paddingBottom="4dp" />
             </LinearLayout>
 
             <TextView
                 android:id="@+id/tv_permission_item_summary"
+                style="@style/TextAppearance.OldLauncher.DialogSupporting"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="5dp"
-                android:textColor="@color/launcher_text_secondary"
-                android:textSize="13sp" />
+                android:layout_marginTop="6dp" />
         </LinearLayout>
     </LinearLayout>
 </com.google.android.material.card.MaterialCardView>

@@ -42,6 +42,8 @@
     <color name="launcher_warning_soft">#3F2D14</color>
     <color name="launcher_danger">#F87171</color>
     <color name="launcher_danger_soft">#3A1F22</color>
+    <color name="wechat_teaching_status_success">#6EE7B7</color>
+    <color name="wechat_teaching_status_error">#FCA5A5</color>
 
     <color name="launcher_ginkgo_deep">#E0BB7A</color>
     <color name="launcher_ginkgo_soft">#2A2418</color>

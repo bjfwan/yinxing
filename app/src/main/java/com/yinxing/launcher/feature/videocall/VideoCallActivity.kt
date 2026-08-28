@@ -9,7 +9,7 @@ import android.widget.TextView
 import android.widget.Toast
 import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.appcompat.app.AppCompatActivity
+import com.yinxing.launcher.common.ui.FontScaleActivity
 import androidx.core.view.isVisible
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
@@ -37,7 +37,7 @@ import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.launch
 
 
-class VideoCallActivity : AppCompatActivity() {
+class VideoCallActivity : FontScaleActivity() {
     companion object {
         private const val EXTRA_START_IN_MANAGE_MODE = "extra_start_in_manage_mode"
 

@@ -5,10 +5,10 @@ import android.content.Intent
 import android.os.Bundle
 import android.provider.ContactsContract
 import android.widget.Toast
-import androidx.appcompat.app.AppCompatActivity
+import com.yinxing.launcher.common.ui.FontScaleActivity
 import com.yinxing.launcher.R
 
-class PhoneActivity : AppCompatActivity() {
+class PhoneActivity : FontScaleActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 

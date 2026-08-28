@@ -2,7 +2,6 @@ package com.yinxing.launcher.feature.settings
 
 import android.content.res.ColorStateList
 import android.view.View
-import android.view.ViewGroup
 import android.widget.FrameLayout
 import android.widget.ImageView
 import android.widget.LinearLayout
@@ -10,6 +9,7 @@ import android.widget.TextView
 import androidx.appcompat.app.AlertDialog
 import androidx.core.content.ContextCompat
 import com.yinxing.launcher.R
+import com.yinxing.launcher.common.ui.LauncherDialogFactory
 
 internal class SettingsDialogController(
     private val activity: SettingsActivity
@@ -39,14 +39,7 @@ internal fun SettingsActivity.createListDialog(title: String, message: String): 
     val contentView = layoutInflater.inflate(R.layout.dialog_permission_group, FrameLayout(this), false)
     contentView.findViewById<TextView>(R.id.tv_dialog_title).text = title
     contentView.findViewById<TextView>(R.id.tv_dialog_message).text = message
-    val dialog = AlertDialog.Builder(this).setView(contentView).create()
-    dialog.window?.setBackgroundDrawableResource(android.R.color.transparent)
-    dialog.setOnShowListener {
-        dialog.window?.setLayout(
-            (resources.displayMetrics.widthPixels * 0.84f).toInt(),
-            ViewGroup.LayoutParams.WRAP_CONTENT
-        )
-    }
+    val dialog = LauncherDialogFactory.create(this, contentView)
     contentView.findViewById<View>(R.id.btn_close).setOnClickListener { dialog.dismiss() }
     return ListDialogContext(
         dialog = dialog,
@@ -92,6 +85,30 @@ internal fun SettingsActivity.addDialogEntry(
     if (compact) itemView.findViewById<TextView>(R.id.tv_permission_item_status).background = null
     itemView.setOnClickListener { onClick() }
     container.addView(itemView)
+}
+
+internal fun SettingsActivity.createChoiceDialog(title: String, message: String): ListDialogContext {
+    return createListDialog(title, message).also {
+        it.container.orientation = LinearLayout.HORIZONTAL
+    }
+}
+
+internal fun SettingsActivity.addDialogChoice(
+    context: ListDialogContext,
+    title: String,
+    badge: BadgeStyle,
+    onClick: () -> Unit
+) {
+    val itemView = layoutInflater.inflate(R.layout.item_settings_dialog_choice, context.container, false)
+    itemView.findViewById<TextView>(R.id.tv_dialog_choice_title).text = title
+    overviewController.applyInfoBadge(
+        tv = itemView.findViewById(R.id.tv_dialog_choice_status),
+        text = badge.text,
+        textColorResId = badge.textColorResId,
+        backgroundColorResId = badge.backgroundColorResId
+    )
+    itemView.setOnClickListener { onClick() }
+    context.container.addView(itemView)
 }
 
 internal fun SettingsActivity.addDialogSection(

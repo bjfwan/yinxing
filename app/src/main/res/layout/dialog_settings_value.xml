@@ -3,74 +3,79 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     style="@style/Widget.OldLauncher.DialogSurfaceCard"
     android:layout_width="match_parent"
-    android:layout_height="wrap_content"
-    android:layout_margin="16dp"
-    app:cardCornerRadius="18dp">
+    android:layout_height="wrap_content">
 
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="vertical"
-        android:padding="18dp">
+        android:padding="@dimen/launcher_dialog_content_padding_compact">
 
         <TextView
             android:id="@+id/value_dialog_title"
             style="@style/TextAppearance.OldLauncher.DialogTitle"
             android:layout_width="match_parent"
-            android:layout_height="wrap_content" />
+            android:layout_height="wrap_content"
+            android:gravity="center" />
 
-        <LinearLayout
+        <com.google.android.material.card.MaterialCardView
+            style="@style/Widget.OldLauncher.DialogContentCard"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginTop="16dp"
-            android:gravity="center"
-            android:orientation="horizontal">
+            android:layout_marginTop="@dimen/launcher_dialog_section_gap">
 
-            <TextView
-                android:id="@+id/value_dialog_minus"
-                android:layout_width="48dp"
-                android:layout_height="48dp"
-                android:background="@drawable/edit_text_background"
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
                 android:gravity="center"
-                android:text="−"
-                android:textColor="@color/launcher_primary_dark"
-                android:textSize="24sp"
-                android:textStyle="bold" />
+                android:orientation="horizontal"
+                android:padding="12dp">
 
-            <TextView
-                android:id="@+id/value_dialog_value"
-                android:layout_width="0dp"
-                android:layout_height="48dp"
-                android:layout_marginStart="14dp"
-                android:layout_marginEnd="14dp"
-                android:layout_weight="1"
-                android:gravity="center"
-                android:textColor="@color/launcher_text_primary"
-                android:textSize="20sp"
-                android:textStyle="bold" />
+                <TextView
+                    android:id="@+id/value_dialog_minus"
+                    android:layout_width="@dimen/launcher_dialog_control_height"
+                    android:layout_height="@dimen/launcher_dialog_control_height"
+                    android:background="@drawable/edit_text_background"
+                    android:gravity="center"
+                    android:text="−"
+                    android:textColor="@color/launcher_primary_dark"
+                    android:textSize="26sp"
+                    android:textStyle="bold" />
 
-            <TextView
-                android:id="@+id/value_dialog_plus"
-                android:layout_width="48dp"
-                android:layout_height="48dp"
-                android:background="@drawable/edit_text_background"
-                android:gravity="center"
-                android:text="+"
-                android:textColor="@color/launcher_primary_dark"
-                android:textSize="24sp"
-                android:textStyle="bold" />
-        </LinearLayout>
+                <TextView
+                    android:id="@+id/value_dialog_value"
+                    android:layout_width="0dp"
+                    android:layout_height="@dimen/launcher_dialog_control_height"
+                    android:layout_marginStart="12dp"
+                    android:layout_marginEnd="12dp"
+                    android:layout_weight="1"
+                    android:gravity="center"
+                    android:textColor="@color/launcher_text_primary"
+                    android:textSize="24sp"
+                    android:textStyle="bold" />
+
+                <TextView
+                    android:id="@+id/value_dialog_plus"
+                    android:layout_width="@dimen/launcher_dialog_control_height"
+                    android:layout_height="@dimen/launcher_dialog_control_height"
+                    android:background="@drawable/edit_text_background"
+                    android:gravity="center"
+                    android:text="+"
+                    android:textColor="@color/launcher_primary_dark"
+                    android:textSize="26sp"
+                    android:textStyle="bold" />
+            </LinearLayout>
+        </com.google.android.material.card.MaterialCardView>
 
         <com.google.android.material.card.MaterialCardView
             android:id="@+id/value_dialog_done"
             style="@style/Widget.OldLauncher.DialogButtonPrimary"
             android:layout_width="match_parent"
-            android:layout_height="46dp"
-            android:layout_marginTop="16dp"
-            app:cardCornerRadius="14dp">
+            android:layout_height="@dimen/launcher_dialog_button_height"
+            android:layout_marginTop="@dimen/launcher_dialog_section_gap">
 
             <TextView
-                style="@style/TextAppearance.OldLauncher.ButtonPrimary"
+                style="@style/TextAppearance.OldLauncher.DialogActionPrimary"
                 android:layout_width="match_parent"
                 android:layout_height="match_parent"
                 android:gravity="center"

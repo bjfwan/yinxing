@@ -6,17 +6,17 @@
     android:focusable="true"
     android:foreground="?android:attr/selectableItemBackground"
     android:gravity="center_vertical"
-    android:minHeight="64dp"
+    android:minHeight="72dp"
     android:orientation="horizontal"
     android:paddingStart="12dp"
-    android:paddingTop="8dp"
+    android:paddingTop="10dp"
     android:paddingEnd="12dp"
-    android:paddingBottom="8dp">
+    android:paddingBottom="10dp">
 
     <ImageView
         android:id="@+id/iv_permission_item_icon"
-        android:layout_width="36dp"
-        android:layout_height="36dp"
+        android:layout_width="40dp"
+        android:layout_height="40dp"
         android:layout_marginEnd="12dp"
         android:background="@drawable/bg_settings_icon_plate"
         android:importantForAccessibility="no"
@@ -31,28 +31,22 @@
 
         <TextView
             android:id="@+id/tv_permission_item_title"
+            style="@style/TextAppearance.OldLauncher.DialogSectionLabel"
             android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:textColor="@color/launcher_text_primary"
-            android:textSize="15sp"
-            android:textStyle="bold" />
+            android:layout_height="wrap_content" />
 
         <TextView
             android:id="@+id/tv_permission_item_summary"
+            style="@style/TextAppearance.OldLauncher.DialogSupporting"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginTop="3dp"
-            android:ellipsize="end"
-            android:maxLines="2"
-            android:textColor="@color/launcher_text_secondary"
-            android:textSize="12sp" />
+            android:layout_marginTop="4dp" />
     </LinearLayout>
 
     <TextView
         android:id="@+id/tv_permission_item_status"
+        style="@style/TextAppearance.OldLauncher.DialogBadge"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_marginStart="8dp"
-        android:textSize="12sp"
-        android:textStyle="bold" />
+        android:layout_marginStart="12dp" />
 </LinearLayout>

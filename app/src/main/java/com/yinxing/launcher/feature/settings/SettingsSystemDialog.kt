@@ -13,6 +13,7 @@ import androidx.appcompat.app.AlertDialog
 import androidx.lifecycle.lifecycleScope
 import com.yinxing.launcher.BuildConfig
 import com.yinxing.launcher.R
+import com.yinxing.launcher.common.ui.LauncherDialogFactory
 import com.yinxing.launcher.data.weather.WeatherRepository
 import kotlinx.coroutines.launch
 
@@ -55,29 +56,58 @@ internal fun SettingsActivity.showSystemDialog() {
         iconPlateResId = R.color.launcher_contacts_soft
     ) {
         dialog.dialog.dismiss()
-        checkAppUpdate()
+        showVersionDetailsDialog()
     }
     dialog.dialog.show()
 }
 
-internal fun SettingsActivity.checkAppUpdate() {
-    Toast.makeText(this, getString(R.string.settings_update_checking), Toast.LENGTH_SHORT).show()
+internal fun SettingsActivity.showVersionDetailsDialog(): AlertDialog {
+    val dialogView = layoutInflater.inflate(R.layout.dialog_version_details, FrameLayout(this), false)
+    val status = dialogView.findViewById<TextView>(R.id.tv_version_update_status)
+    val checkLabel = dialogView.findViewById<TextView>(R.id.tv_version_check_label)
+    val checkButton = dialogView.findViewById<android.view.View>(R.id.btn_version_check)
+    dialogView.findViewById<TextView>(R.id.tv_version_name).text = "v${BuildConfig.VERSION_NAME}"
+    dialogView.findViewById<TextView>(R.id.tv_version_code).text = BuildConfig.VERSION_CODE.toString()
+    status.setText(R.string.settings_update_not_checked)
+
+    val dialog = LauncherDialogFactory.create(this, dialogView)
+    dialogView.findViewById<android.view.View>(R.id.btn_version_close).setOnClickListener {
+        dialog.dismiss()
+    }
+    checkButton.setOnClickListener {
+        checkButton.isEnabled = false
+        checkButton.alpha = 0.65f
+        status.setText(R.string.settings_update_checking)
+        checkLabel.setText(R.string.settings_update_checking)
+        checkAppUpdate(dialog, status, checkLabel, checkButton)
+    }
+    dialog.show()
+    return dialog
+}
+
+private fun SettingsActivity.checkAppUpdate(
+    versionDialog: AlertDialog,
+    status: TextView,
+    checkLabel: TextView,
+    checkButton: android.view.View
+) {
     lifecycleScope.launch {
         when (val state = AppUpdateChecker().check()) {
             AppUpdateState.UpToDate -> {
-                Toast.makeText(
-                    this@checkAppUpdate,
-                    getString(R.string.settings_update_latest),
-                    Toast.LENGTH_SHORT
-                ).show()
+                status.setText(R.string.settings_update_latest)
+                checkLabel.setText(R.string.settings_update_recheck)
+                checkButton.isEnabled = true
+                checkButton.alpha = 1f
             }
-            is AppUpdateState.Available -> showUpdateDialog(state.info)
+            is AppUpdateState.Available -> {
+                versionDialog.dismiss()
+                showUpdateDialog(state.info)
+            }
             is AppUpdateState.Failed -> {
-                Toast.makeText(
-                    this@checkAppUpdate,
-                    getString(R.string.settings_update_failed),
-                    Toast.LENGTH_SHORT
-                ).show()
+                status.setText(R.string.settings_update_failed)
+                checkLabel.setText(R.string.settings_update_recheck)
+                checkButton.isEnabled = true
+                checkButton.alpha = 1f
             }
         }
     }
@@ -93,10 +123,7 @@ internal fun SettingsActivity.showUpdateDialog(info: AppUpdateInfo) {
     dialogView.findViewById<TextView>(R.id.tv_primary_label).text =
         getString(R.string.settings_update_download)
 
-    val dialog = AlertDialog.Builder(this)
-        .setView(dialogView)
-        .create()
-    dialog.window?.setBackgroundDrawableResource(android.R.color.transparent)
+    val dialog = LauncherDialogFactory.create(this, dialogView)
 
     dialogView.findViewById<android.view.View>(R.id.btn_cancel).setOnClickListener {
         dialog.dismiss()
@@ -119,10 +146,7 @@ internal fun SettingsActivity.showSetCityDialog() {
     etCity.setText(currentCity)
     etCity.setSelection(currentCity.length)
 
-    val dialog = AlertDialog.Builder(this)
-        .setView(dialogView)
-        .create()
-    dialog.window?.setBackgroundDrawableResource(android.R.color.transparent)
+    val dialog = LauncherDialogFactory.create(this, dialogView, dismissOnTouchOutside = false)
 
     dialogView.findViewById<androidx.cardview.widget.CardView>(R.id.btn_cancel)
         .setOnClickListener { dialog.dismiss() }

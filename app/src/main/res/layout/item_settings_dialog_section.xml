@@ -3,27 +3,21 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:layout_marginTop="16dp"
+    android:layout_marginTop="@dimen/launcher_dialog_section_gap"
     android:orientation="vertical">
 
     <TextView
         android:id="@+id/tv_section_title"
+        style="@style/TextAppearance.OldLauncher.DialogSectionLabel"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_marginStart="4dp"
-        android:textColor="@color/launcher_text_secondary"
-        android:textSize="14sp"
-        android:textStyle="bold" />
+        android:layout_marginStart="4dp" />
 
     <com.google.android.material.card.MaterialCardView
+        style="@style/Widget.OldLauncher.DialogContentCard"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginTop="8dp"
-        app:cardBackgroundColor="@color/launcher_surface_muted"
-        app:cardCornerRadius="14dp"
-        app:cardElevation="0dp"
-        app:strokeColor="@color/settings_outline"
-        app:strokeWidth="1dp">
+        android:layout_marginTop="8dp">
 
         <LinearLayout
             android:id="@+id/layout_section_items"

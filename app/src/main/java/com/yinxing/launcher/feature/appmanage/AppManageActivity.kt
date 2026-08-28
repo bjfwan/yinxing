@@ -9,7 +9,7 @@ import android.os.Bundle
 import android.view.View
 import android.widget.TextView
 
-import androidx.appcompat.app.AppCompatActivity
+import com.yinxing.launcher.common.ui.FontScaleActivity
 import androidx.core.view.isVisible
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
@@ -18,6 +18,10 @@ import androidx.recyclerview.widget.DefaultItemAnimator
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.yinxing.launcher.R
+import com.yinxing.launcher.common.lobster.LobsterClient
+import com.yinxing.launcher.common.lobster.LobsterSettingEventFactory
+import com.yinxing.launcher.common.lobster.LobsterTrace
+import com.yinxing.launcher.common.lobster.withTrace
 import com.yinxing.launcher.data.home.LauncherAppRepository
 import com.yinxing.launcher.data.home.LauncherPreferences
 import kotlinx.coroutines.CoroutineScope
@@ -26,7 +30,7 @@ import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.launch
 
-class AppManageActivity : AppCompatActivity() {
+class AppManageActivity : FontScaleActivity() {
     private lateinit var recyclerView: RecyclerView
     private lateinit var emptyView: TextView
     private lateinit var adapter: AppListAdapter
@@ -138,5 +142,9 @@ class AppManageActivity : AppCompatActivity() {
         launcherPreferences.setPackageSelected(packageName, isSelected)
         appRepository.invalidateSelections()
         adapter.updateSelection(packageName, isSelected)
+        LobsterClient.reportUsage(
+            this,
+            LobsterSettingEventFactory.homeAppSelectionChanged(isSelected).withTrace(LobsterTrace.newId())
+        )
     }
 }

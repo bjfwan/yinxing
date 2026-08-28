@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <dimen name="launcher_dialog_window_max_width">472dp</dimen>
+    <dimen name="launcher_dialog_surface_margin">16dp</dimen>
+    <dimen name="launcher_dialog_surface_corner">24dp</dimen>
+    <dimen name="launcher_dialog_content_padding">24dp</dimen>
+    <dimen name="launcher_dialog_content_padding_compact">20dp</dimen>
+    <dimen name="launcher_dialog_button_height">56dp</dimen>
+    <dimen name="launcher_dialog_control_height">56dp</dimen>
+    <dimen name="launcher_dialog_button_corner">16dp</dimen>
+    <dimen name="launcher_dialog_action_gap">12dp</dimen>
+    <dimen name="launcher_dialog_title_gap">12dp</dimen>
+    <dimen name="launcher_dialog_section_gap">20dp</dimen>
+</resources>

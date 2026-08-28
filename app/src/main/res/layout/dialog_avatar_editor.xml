@@ -2,43 +2,40 @@
 <com.google.android.material.card.MaterialCardView xmlns:android="http://schemas.android.com/apk/res/android"
     style="@style/Widget.OldLauncher.DialogSurfaceCard"
     android:layout_width="match_parent"
-    android:layout_height="wrap_content"
-    android:layout_margin="18dp">
+    android:layout_height="wrap_content">
 
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="vertical"
-        android:padding="20dp">
+        android:padding="@dimen/launcher_dialog_content_padding_compact">
 
         <TextView
             style="@style/TextAppearance.OldLauncher.DialogTitle"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:gravity="center"
-            android:text="@string/avatar_editor_title"
-            android:textSize="23sp" />
+            android:text="@string/avatar_editor_title" />
 
         <com.yinxing.launcher.common.ui.AvatarCropView
             android:id="@+id/avatar_crop_view"
             android:layout_width="match_parent"
-            android:layout_height="280dp"
-            android:layout_marginTop="16dp"
+            android:layout_height="260dp"
+            android:layout_marginTop="@dimen/launcher_dialog_section_gap"
             android:contentDescription="@string/avatar_crop_preview" />
 
         <TextView
+            style="@style/TextAppearance.OldLauncher.DialogSupporting"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginTop="10dp"
+            android:layout_marginTop="12dp"
             android:gravity="center"
-            android:text="@string/avatar_crop_tip"
-            android:textColor="@color/launcher_text_secondary"
-            android:textSize="14sp" />
+            android:text="@string/avatar_crop_tip" />
 
         <LinearLayout
             android:layout_width="match_parent"
-            android:layout_height="56dp"
-            android:layout_marginTop="16dp"
+            android:layout_height="@dimen/launcher_dialog_button_height"
+            android:layout_marginTop="@dimen/launcher_dialog_section_gap"
             android:orientation="horizontal">
 
             <com.google.android.material.card.MaterialCardView
@@ -50,7 +47,7 @@
                 android:layout_weight="1">
 
                 <TextView
-                    style="@style/TextAppearance.OldLauncher.ButtonSecondary"
+                    style="@style/TextAppearance.OldLauncher.DialogActionSecondary"
                     android:layout_width="match_parent"
                     android:layout_height="match_parent"
                     android:gravity="center"
@@ -67,7 +64,7 @@
 
                 <TextView
                     android:id="@+id/tv_avatar_confirm"
-                    style="@style/TextAppearance.OldLauncher.ButtonPrimary"
+                    style="@style/TextAppearance.OldLauncher.DialogActionPrimary"
                     android:layout_width="match_parent"
                     android:layout_height="match_parent"
                     android:gravity="center"

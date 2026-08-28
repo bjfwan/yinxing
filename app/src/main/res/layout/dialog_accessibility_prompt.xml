@@ -3,21 +3,20 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     style="@style/Widget.OldLauncher.DialogSurfaceCard"
     android:layout_width="match_parent"
-    android:layout_height="wrap_content"
-    android:layout_margin="24dp">
+    android:layout_height="wrap_content">
 
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="vertical"
-        android:padding="28dp">
+        android:padding="@dimen/launcher_dialog_content_padding">
 
         <ImageView
             android:id="@+id/iv_dialog_vendor_icon"
             android:layout_width="56dp"
             android:layout_height="56dp"
             android:layout_gravity="center_horizontal"
-            android:layout_marginBottom="14dp"
+            android:layout_marginBottom="16dp"
             android:contentDescription="@string/settings_vendor_icon_description"
             android:scaleType="fitCenter"
             android:visibility="gone" />
@@ -35,7 +34,7 @@
             style="@style/TextAppearance.OldLauncher.DialogMessage"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginTop="16dp"
+            android:layout_marginTop="@dimen/launcher_dialog_title_gap"
             android:gravity="center"
             android:text="@string/accessibility_dialog_message" />
 
@@ -44,7 +43,7 @@
             android:id="@+id/layout_dialog_actions"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginTop="28dp"
+            android:layout_marginTop="24dp"
             android:orientation="horizontal">
 
             <com.google.android.material.card.MaterialCardView
@@ -52,16 +51,16 @@
                 style="@style/Widget.OldLauncher.DialogButtonSecondary"
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
-                android:layout_marginEnd="8dp"
+                android:layout_marginEnd="6dp"
                 android:layout_weight="1">
 
                 <TextView
                     android:id="@+id/tv_cancel_label"
-                    style="@style/TextAppearance.OldLauncher.ButtonSecondary"
+                    style="@style/TextAppearance.OldLauncher.DialogActionSecondary"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:gravity="center"
-                    android:minHeight="54dp"
+                    android:minHeight="@dimen/launcher_dialog_button_height"
                     android:paddingStart="16dp"
                     android:paddingTop="14dp"
                     android:paddingEnd="16dp"
@@ -75,16 +74,16 @@
                 style="@style/Widget.OldLauncher.DialogButtonPrimary"
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
-                android:layout_marginStart="8dp"
+                android:layout_marginStart="6dp"
                 android:layout_weight="1">
 
                 <TextView
                     android:id="@+id/tv_primary_label"
-                    style="@style/TextAppearance.OldLauncher.ButtonPrimary"
+                    style="@style/TextAppearance.OldLauncher.DialogActionPrimary"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:gravity="center"
-                    android:minHeight="54dp"
+                    android:minHeight="@dimen/launcher_dialog_button_height"
                     android:paddingStart="16dp"
                     android:paddingTop="14dp"
                     android:paddingEnd="16dp"

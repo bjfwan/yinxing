@@ -15,7 +15,7 @@
     <string name="action_manage">管理</string>
     <string name="action_go_to_settings">去设置</string>
     <string name="action_clear">清空</string>
-    <string name="action_edit_avatar">选择并编辑头像</string>
+    <string name="action_edit_avatar">选择头像</string>
     <string name="avatar_editor_title">调整头像</string>
     <string name="avatar_crop_preview">头像裁切预览</string>
     <string name="avatar_crop_tip">单指移动，双指缩放</string>
@@ -32,13 +32,13 @@
     <string name="label_contact_name">桌面显示名</string>
     <string name="hint_wechat_contact_name">请输入桌面上显示的名字</string>
     <string name="label_wechat_search_name">微信搜索名</string>
-    <string name="hint_wechat_search_name">请输入微信里实际能搜到的备注或昵称</string>
+    <string name="hint_wechat_search_name">请输入微信备注或昵称</string>
 
     <string name="phone_contact_dialog_add_title">添加联系人</string>
     <string name="phone_contact_dialog_edit_title">编辑联系人</string>
     <string name="contact_dialog_add_title">新增联系人</string>
     <string name="contact_dialog_edit_title">编辑联系人</string>
-    <string name="contact_dialog_wechat_tip">如果默认用微信视频，请填写微信里实际能搜到对方的名称</string>
+    <string name="contact_dialog_wechat_tip">需填写微信里能搜到的名称</string>
 
     <string name="contact_card_action_phone_v2">拨打电话</string>
     <string name="contact_card_action_wechat_v2">视频</string>

@@ -6,13 +6,13 @@ import android.widget.EditText
 import android.widget.ImageView
 import android.widget.TextView
 import android.widget.Toast
-import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.cardview.widget.CardView
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.lifecycleScope
 import com.google.android.material.card.MaterialCardView
 import com.yinxing.launcher.R
+import com.yinxing.launcher.common.ui.LauncherDialogFactory
 import com.yinxing.launcher.common.media.MediaThumbnailLoader
 import com.yinxing.launcher.data.contact.Contact
 import kotlinx.coroutines.Job
@@ -54,10 +54,7 @@ class VideoContactDialogController(
 
     fun showDeleteDialog(contact: Contact) {
         val dialogView = activity.layoutInflater.inflate(R.layout.dialog_delete_contact, null)
-        val dialog = AlertDialog.Builder(activity)
-            .setView(dialogView)
-            .create()
-        dialog.window?.setBackgroundDrawableResource(android.R.color.transparent)
+        val dialog = LauncherDialogFactory.create(activity, dialogView, dismissOnTouchOutside = false)
         dialogView.findViewById<TextView>(R.id.tv_delete_message).text =
             activity.getString(R.string.video_contact_delete_message, contact.displayName)
         dialogView.findViewById<com.google.android.material.card.MaterialCardView>(R.id.btn_cancel)
@@ -72,11 +69,7 @@ class VideoContactDialogController(
 
     fun showAccessibilityDialog() {
         val dialogView = activity.layoutInflater.inflate(R.layout.dialog_accessibility_prompt, null)
-        val dialog = AlertDialog.Builder(activity)
-            .setView(dialogView)
-            .create()
-
-        dialog.window?.setBackgroundDrawableResource(android.R.color.transparent)
+        val dialog = LauncherDialogFactory.create(activity, dialogView, dismissOnTouchOutside = false)
         dialogView.findViewById<CardView>(R.id.btn_open_settings).setOnClickListener {
             onOpenAccessibilitySettings()
             dialog.dismiss()
@@ -89,10 +82,7 @@ class VideoContactDialogController(
 
     fun showOverlayPermissionDialog(contact: Contact) {
         val dialogView = activity.layoutInflater.inflate(R.layout.dialog_overlay_permission, null)
-        val dialog = AlertDialog.Builder(activity)
-            .setView(dialogView)
-            .create()
-        dialog.window?.setBackgroundDrawableResource(android.R.color.transparent)
+        val dialog = LauncherDialogFactory.create(activity, dialogView)
         dialogView.findViewById<com.google.android.material.card.MaterialCardView>(R.id.btn_go_to_settings)
             .setOnClickListener {
                 onOpenOverlaySettings()
@@ -110,11 +100,7 @@ class VideoContactDialogController(
 
     private fun showEditorDialog(initialContact: Contact?) {
         val dialogView = activity.layoutInflater.inflate(R.layout.dialog_add_contact, null)
-        val dialog = AlertDialog.Builder(activity)
-            .setView(dialogView)
-            .create()
-
-        dialog.window?.setBackgroundDrawableResource(android.R.color.transparent)
+        val dialog = LauncherDialogFactory.create(activity, dialogView, dismissOnTouchOutside = false)
         dialogView.findViewById<TextView>(R.id.tv_dialog_title).text = activity.getString(
             if (initialContact == null) R.string.contact_dialog_add_title else R.string.contact_dialog_edit_title
         )
@@ -164,10 +150,6 @@ class VideoContactDialogController(
         }
 
         dialog.show()
-        dialog.window?.setLayout(
-            (activity.resources.displayMetrics.widthPixels * 0.92f).toInt(),
-            android.view.WindowManager.LayoutParams.WRAP_CONTENT
-        )
     }
 
     private fun renderSelectedPhoto() {

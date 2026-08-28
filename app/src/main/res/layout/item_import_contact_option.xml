@@ -10,7 +10,7 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:gravity="center_vertical"
-        android:minHeight="72dp"
+        android:minHeight="80dp"
         android:orientation="horizontal"
         android:paddingStart="16dp"
         android:paddingTop="14dp"
@@ -33,15 +33,13 @@
 
             <TextView
                 android:id="@+id/tv_contact_name"
-                style="@style/TextAppearance.OldLauncher.ListTitle"
+                style="@style/TextAppearance.OldLauncher.DialogSectionLabel"
                 android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:ellipsize="end"
-                android:maxLines="1" />
+                android:layout_height="wrap_content" />
 
             <TextView
                 android:id="@+id/tv_contact_phone"
-                style="@style/TextAppearance.OldLauncher.Meta"
+                style="@style/TextAppearance.OldLauncher.DialogSupporting"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="4dp"
@@ -52,7 +50,7 @@
 
         <TextView
             android:id="@+id/tv_imported_badge"
-            style="@style/TextAppearance.OldLauncher.Badge"
+            style="@style/TextAppearance.OldLauncher.DialogBadge"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginStart="12dp"

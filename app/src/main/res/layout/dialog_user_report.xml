@@ -1,9 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 <com.google.android.material.card.MaterialCardView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     style="@style/Widget.OldLauncher.DialogSurfaceCard"
     android:layout_width="match_parent"
-    android:layout_height="wrap_content"
-    android:layout_margin="24dp">
+    android:layout_height="wrap_content">
 
     <ScrollView
         android:layout_width="match_parent"
@@ -14,7 +14,7 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="vertical"
-            android:padding="28dp">
+            android:padding="@dimen/launcher_dialog_content_padding_compact">
 
             <TextView
                 style="@style/TextAppearance.OldLauncher.DialogTitle"
@@ -22,28 +22,71 @@
                 android:layout_height="wrap_content"
                 android:text="@string/settings_user_report_title" />
 
-            <TextView
-                style="@style/TextAppearance.OldLauncher.DialogMessage"
+            <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="12dp"
-                android:text="@string/settings_user_report_message" />
+                android:layout_marginTop="@dimen/launcher_dialog_title_gap"
+                android:gravity="center_vertical"
+                android:orientation="horizontal">
 
-            <Spinner
-                android:id="@+id/user_report_type"
+                <TextView
+                    android:id="@+id/user_report_privacy_warning"
+                    style="@style/TextAppearance.OldLauncher.DialogMessage"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:text="@string/settings_user_report_message" />
+
+                <TextView
+                    android:id="@+id/user_report_privacy_toggle"
+                    style="@style/TextAppearance.OldLauncher.DialogSectionLabel"
+                    android:layout_width="wrap_content"
+                    android:layout_height="@dimen/launcher_dialog_control_height"
+                    android:layout_marginStart="10dp"
+                    android:clickable="true"
+                    android:focusable="true"
+                    android:foreground="?android:attr/selectableItemBackgroundBorderless"
+                    android:gravity="center"
+                    android:paddingStart="8dp"
+                    android:paddingEnd="8dp"
+                    android:text="@string/settings_user_report_privacy_show"
+                    android:textColor="@color/launcher_action_dark" />
+            </LinearLayout>
+
+            <TextView
+                android:id="@+id/user_report_privacy_details"
+                style="@style/TextAppearance.OldLauncher.DialogSupporting"
                 android:layout_width="match_parent"
-                android:layout_height="56dp"
-                android:layout_marginTop="20dp"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="6dp"
+                android:accessibilityLiveRegion="polite"
+                android:text="@string/settings_user_report_privacy_details"
+                android:visibility="gone" />
+
+            <TextView
+                android:id="@+id/user_report_type"
+                style="@style/TextAppearance.OldLauncher.DialogInput"
+                android:layout_width="match_parent"
+                android:layout_height="@dimen/launcher_dialog_control_height"
+                android:layout_marginTop="@dimen/launcher_dialog_section_gap"
                 android:background="@drawable/edit_text_background"
+                android:clickable="true"
                 android:contentDescription="@string/settings_user_report_type"
+                android:drawableEnd="@drawable/ic_settings_expand_more"
+                android:drawablePadding="10dp"
+                android:drawableTint="@color/launcher_text_secondary"
+                android:focusable="true"
+                android:foreground="?android:attr/selectableItemBackground"
+                android:gravity="center_vertical"
                 android:paddingStart="12dp"
-                android:paddingEnd="12dp" />
+                android:paddingEnd="12dp"
+                android:text="@string/settings_user_report_type_default" />
 
             <EditText
                 android:id="@+id/user_report_description"
-                style="@style/TextAppearance.OldLauncher.Input"
+                style="@style/TextAppearance.OldLauncher.DialogInput"
                 android:layout_width="match_parent"
-                android:layout_height="112dp"
+                android:layout_height="96dp"
                 android:layout_marginTop="12dp"
                 android:background="@drawable/edit_text_background"
                 android:gravity="start|top"
@@ -54,7 +97,7 @@
 
             <TextView
                 android:id="@+id/user_report_error"
-                style="@style/TextAppearance.OldLauncher.DialogMessage"
+                style="@style/TextAppearance.OldLauncher.DialogSupporting"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="6dp"
@@ -64,9 +107,9 @@
 
             <EditText
                 android:id="@+id/user_report_steps"
-                style="@style/TextAppearance.OldLauncher.Input"
+                style="@style/TextAppearance.OldLauncher.DialogInput"
                 android:layout_width="match_parent"
-                android:layout_height="96dp"
+                android:layout_height="80dp"
                 android:layout_marginTop="12dp"
                 android:background="@drawable/edit_text_background"
                 android:gravity="start|top"
@@ -78,24 +121,21 @@
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="24dp"
+                android:layout_marginTop="@dimen/launcher_dialog_section_gap"
                 android:orientation="horizontal">
 
                 <com.google.android.material.card.MaterialCardView
                     android:id="@+id/user_report_cancel"
                     style="@style/Widget.OldLauncher.DialogButtonSecondary"
                     android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:layout_marginEnd="8dp"
+                    android:layout_height="@dimen/launcher_dialog_button_height"
                     android:layout_weight="1">
 
                     <TextView
-                        style="@style/TextAppearance.OldLauncher.ButtonSecondary"
+                        style="@style/TextAppearance.OldLauncher.DialogActionSecondary"
                         android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
+                        android:layout_height="match_parent"
                         android:gravity="center"
-                        android:minHeight="54dp"
-                        android:padding="14dp"
                         android:text="@string/action_cancel" />
                 </com.google.android.material.card.MaterialCardView>
 
@@ -103,17 +143,15 @@
                     android:id="@+id/user_report_submit"
                     style="@style/Widget.OldLauncher.DialogButtonPrimary"
                     android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:layout_marginStart="8dp"
+                    android:layout_height="@dimen/launcher_dialog_button_height"
+                    android:layout_marginStart="@dimen/launcher_dialog_action_gap"
                     android:layout_weight="1">
 
                     <TextView
-                        style="@style/TextAppearance.OldLauncher.ButtonPrimary"
+                        style="@style/TextAppearance.OldLauncher.DialogActionPrimary"
                         android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
+                        android:layout_height="match_parent"
                         android:gravity="center"
-                        android:minHeight="54dp"
-                        android:padding="14dp"
                         android:text="@string/settings_user_report_submit" />
                 </com.google.android.material.card.MaterialCardView>
             </LinearLayout>

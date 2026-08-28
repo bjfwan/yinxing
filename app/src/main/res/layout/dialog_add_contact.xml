@@ -3,8 +3,7 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     style="@style/Widget.OldLauncher.DialogSurfaceCard"
     android:layout_width="match_parent"
-    android:layout_height="wrap_content"
-    android:layout_margin="18dp">
+    android:layout_height="wrap_content">
 
     <ScrollView
         android:layout_width="match_parent"
@@ -16,7 +15,7 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="vertical"
-            android:padding="20dp">
+            android:padding="@dimen/launcher_dialog_content_padding_compact">
 
             <TextView
                 android:id="@+id/tv_dialog_title"
@@ -24,50 +23,56 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:gravity="center"
-                android:maxLines="1"
-                android:text="@string/contact_dialog_add_title"
-                android:textSize="23sp" />
+                android:text="@string/contact_dialog_add_title" />
 
-            <com.google.android.material.imageview.ShapeableImageView
-                android:id="@+id/iv_photo_preview"
-                android:layout_width="124dp"
-                android:layout_height="124dp"
-                android:layout_gravity="center_horizontal"
-                android:layout_marginTop="14dp"
-                android:background="@color/launcher_surface_soft"
-                android:contentDescription="@string/contact_photo_preview"
-                android:padding="26dp"
-                android:scaleType="centerCrop"
-                android:src="@drawable/ic_contact_avatar_placeholder"
-                app:shapeAppearanceOverlay="@style/ShapeAppearance.OldLauncher.ContactPhoto" />
-
-            <TextView
+            <LinearLayout
+                android:id="@+id/layout_contact_identity"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="7dp"
-                android:gravity="center"
-                android:maxLines="1"
-                android:text="@string/contact_dialog_avatar_tip_short"
-                android:textColor="@color/launcher_text_secondary"
-                android:textSize="14sp" />
+                android:layout_marginTop="14dp"
+                android:gravity="center_vertical"
+                android:orientation="horizontal">
 
-            <com.google.android.material.card.MaterialCardView
-                android:id="@+id/btn_select_photo"
-                style="@style/Widget.OldLauncher.DialogButtonSecondary"
-                android:layout_width="match_parent"
-                android:layout_height="50dp"
-                android:layout_marginTop="12dp">
+                <com.google.android.material.imageview.ShapeableImageView
+                    android:id="@+id/iv_photo_preview"
+                    android:layout_width="88dp"
+                    android:layout_height="88dp"
+                    android:background="@color/launcher_surface_soft"
+                    android:contentDescription="@string/contact_photo_preview"
+                    android:padding="20dp"
+                    android:scaleType="centerCrop"
+                    android:src="@drawable/ic_contact_avatar_placeholder"
+                    app:shapeAppearanceOverlay="@style/ShapeAppearance.OldLauncher.ContactPhoto" />
 
-                <TextView
-                    android:layout_width="match_parent"
-                    android:layout_height="match_parent"
-                    android:gravity="center"
-                    android:maxLines="1"
-                    android:text="@string/action_edit_avatar"
-                    android:textColor="@color/launcher_primary_dark"
-                    android:textSize="15sp"
-                    android:textStyle="bold" />
-            </com.google.android.material.card.MaterialCardView>
+                <LinearLayout
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="14dp"
+                    android:layout_weight="1"
+                    android:orientation="vertical">
+
+                    <TextView
+                        style="@style/TextAppearance.OldLauncher.DialogSupporting"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:text="@string/contact_dialog_avatar_tip_short" />
+
+                    <com.google.android.material.card.MaterialCardView
+                        android:id="@+id/btn_select_photo"
+                        style="@style/Widget.OldLauncher.DialogButtonSecondary"
+                        android:layout_width="match_parent"
+                        android:layout_height="@dimen/launcher_dialog_button_height"
+                        android:layout_marginTop="8dp">
+
+                        <TextView
+                            style="@style/TextAppearance.OldLauncher.DialogActionSecondary"
+                            android:layout_width="match_parent"
+                            android:layout_height="match_parent"
+                            android:gravity="center"
+                            android:text="@string/action_edit_avatar" />
+                    </com.google.android.material.card.MaterialCardView>
+                </LinearLayout>
+            </LinearLayout>
 
             <LinearLayout
                 android:layout_width="match_parent"
@@ -78,19 +83,17 @@
                 android:padding="14dp">
 
                 <TextView
+                    style="@style/TextAppearance.OldLauncher.DialogSectionLabel"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="@string/label_contact_name"
-                    android:textColor="@color/launcher_text_primary"
-                    android:textSize="15sp"
-                    android:textStyle="bold" />
+                    android:text="@string/label_contact_name" />
 
                 <EditText
                     android:id="@+id/et_contact_name"
-                    style="@style/TextAppearance.OldLauncher.Input"
+                    style="@style/TextAppearance.OldLauncher.DialogInput"
                     android:layout_width="match_parent"
-                    android:layout_height="54dp"
-                    android:layout_marginTop="7dp"
+                    android:layout_height="@dimen/launcher_dialog_control_height"
+                    android:layout_marginTop="8dp"
                     android:autofillHints="personName"
                     android:background="@drawable/edit_text_background_focused"
                     android:hint="@string/hint_wechat_contact_name"
@@ -101,20 +104,18 @@
                     android:paddingEnd="16dp" />
 
                 <TextView
+                    style="@style/TextAppearance.OldLauncher.DialogSectionLabel"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:layout_marginTop="11dp"
-                    android:text="@string/label_wechat_search_name"
-                    android:textColor="@color/launcher_text_primary"
-                    android:textSize="15sp"
-                    android:textStyle="bold" />
+                    android:layout_marginTop="14dp"
+                    android:text="@string/label_wechat_search_name" />
 
                 <EditText
                     android:id="@+id/et_wechat_name"
-                    style="@style/TextAppearance.OldLauncher.Input"
+                    style="@style/TextAppearance.OldLauncher.DialogInput"
                     android:layout_width="match_parent"
-                    android:layout_height="54dp"
-                    android:layout_marginTop="7dp"
+                    android:layout_height="@dimen/launcher_dialog_control_height"
+                    android:layout_marginTop="8dp"
                     android:autofillHints="nickname"
                     android:background="@drawable/edit_text_background_focused"
                     android:hint="@string/hint_wechat_search_name"
@@ -125,18 +126,17 @@
                     android:paddingEnd="16dp" />
 
                 <TextView
+                    style="@style/TextAppearance.OldLauncher.DialogSupporting"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="8dp"
-                    android:text="@string/contact_dialog_wechat_tip"
-                    android:textColor="@color/launcher_text_secondary"
-                    android:textSize="12sp" />
+                    android:text="@string/contact_dialog_wechat_tip" />
             </LinearLayout>
 
             <LinearLayout
                 android:layout_width="match_parent"
-                android:layout_height="56dp"
-                android:layout_marginTop="14dp"
+                android:layout_height="@dimen/launcher_dialog_button_height"
+                android:layout_marginTop="@dimen/launcher_dialog_section_gap"
                 android:orientation="horizontal">
 
                 <com.google.android.material.card.MaterialCardView
@@ -149,7 +149,7 @@
 
                     <TextView
                         android:id="@+id/btn_cancel_label"
-                        style="@style/TextAppearance.OldLauncher.ButtonSecondary"
+                        style="@style/TextAppearance.OldLauncher.DialogActionSecondary"
                         android:layout_width="match_parent"
                         android:layout_height="match_parent"
                         android:gravity="center"
@@ -165,7 +165,7 @@
                     android:layout_weight="1">
 
                     <TextView
-                        style="@style/TextAppearance.OldLauncher.ButtonPrimary"
+                        style="@style/TextAppearance.OldLauncher.DialogActionPrimary"
                         android:layout_width="match_parent"
                         android:layout_height="match_parent"
                         android:gravity="center"

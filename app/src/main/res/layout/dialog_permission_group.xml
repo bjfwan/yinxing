@@ -3,37 +3,34 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     style="@style/Widget.OldLauncher.DialogSurfaceCard"
     android:layout_width="match_parent"
-    android:layout_height="wrap_content"
-    android:layout_margin="16dp"
-    app:cardCornerRadius="18dp">
+    android:layout_height="wrap_content">
 
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="vertical"
-        android:padding="16dp">
+        android:padding="@dimen/launcher_dialog_content_padding_compact">
 
         <TextView
             android:id="@+id/tv_dialog_title"
             style="@style/TextAppearance.OldLauncher.DialogTitle"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:gravity="start"
-            android:textSize="21sp" />
+            android:gravity="start" />
 
         <TextView
             android:id="@+id/tv_dialog_message"
             style="@style/TextAppearance.OldLauncher.DialogMessage"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginTop="8dp"
-            android:gravity="start"
-            android:textSize="15sp" />
+            android:layout_marginTop="@dimen/launcher_dialog_title_gap"
+            android:gravity="start" />
 
         <ScrollView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginTop="2dp"
+            android:layout_marginTop="12dp"
+            android:clipToPadding="false"
             android:fadeScrollbars="false"
             android:overScrollMode="ifContentScrolls"
             android:scrollbars="vertical">
@@ -50,19 +47,18 @@
             style="@style/Widget.OldLauncher.DialogButtonSecondary"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginTop="14dp"
-            app:cardCornerRadius="14dp">
+            android:layout_marginTop="20dp">
 
             <TextView
-                style="@style/TextAppearance.OldLauncher.ButtonSecondary"
+                style="@style/TextAppearance.OldLauncher.DialogActionSecondary"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:gravity="center"
-                android:minHeight="46dp"
+                android:minHeight="@dimen/launcher_dialog_button_height"
                 android:paddingStart="16dp"
-                android:paddingTop="11dp"
+                android:paddingTop="14dp"
                 android:paddingEnd="16dp"
-                android:paddingBottom="11dp"
+                android:paddingBottom="14dp"
                 android:text="@string/settings_permission_dialog_close" />
         </com.google.android.material.card.MaterialCardView>
     </LinearLayout>

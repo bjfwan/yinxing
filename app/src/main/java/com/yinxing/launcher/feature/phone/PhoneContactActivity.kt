@@ -6,6 +6,7 @@ import android.content.Intent
 import android.content.pm.PackageManager
 import android.net.Uri
 import android.os.Bundle
+import android.os.SystemClock
 import android.view.View
 import android.view.ViewGroup
 import android.widget.CheckBox
@@ -15,8 +16,7 @@ import android.widget.TextView
 import android.widget.Toast
 import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.appcompat.app.AlertDialog
-import androidx.appcompat.app.AppCompatActivity
+import com.yinxing.launcher.common.ui.FontScaleActivity
 import androidx.appcompat.widget.SwitchCompat
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
@@ -34,8 +34,14 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.google.android.material.card.MaterialCardView
 import com.yinxing.launcher.R
+import com.yinxing.launcher.common.ui.LauncherDialogFactory
 import com.yinxing.launcher.common.lobster.LobsterClient
 import com.yinxing.launcher.common.lobster.LobsterUsageEvents
+import com.yinxing.launcher.common.lobster.LobsterPermissionTarget
+import com.yinxing.launcher.common.lobster.LobsterSettingEventFactory
+import com.yinxing.launcher.common.lobster.LobsterTrace
+import com.yinxing.launcher.common.lobster.withTrace
+import com.yinxing.launcher.common.perf.LauncherTraceNames
 import com.yinxing.launcher.common.media.MediaThumbnailLoader
 import com.yinxing.launcher.common.ui.PageStateView
 import com.yinxing.launcher.common.ui.AvatarEditorController
@@ -137,7 +143,7 @@ private class ImportCandidateAdapter(
     }
 }
 
-class PhoneContactActivity : AppCompatActivity() {
+class PhoneContactActivity : FontScaleActivity() {
     companion object {
         private const val EXTRA_START_IN_MANAGE_MODE = "extra_start_in_manage_mode"
 
@@ -170,6 +176,8 @@ class PhoneContactActivity : AppCompatActivity() {
     private var dialogPhotoJob: Job? = null
     private var selectedAvatarUri: String? = null
     private var pendingCallContact: Contact? = null
+    private var pendingCallTraceId: String? = null
+    private var pendingContactsPermissionTraceId: String? = null
     private var searchInputUpdating = false
 
 
@@ -185,11 +193,21 @@ class PhoneContactActivity : AppCompatActivity() {
         ActivityResultContracts.RequestPermission()
     ) { granted ->
         val contact = pendingCallContact
+        val traceId = pendingCallTraceId ?: LobsterTrace.newId()
         pendingCallContact = null
+        pendingCallTraceId = null
         if (granted && contact != null) {
-            makeCall(contact)
+            LobsterClient.reportUsage(
+                this,
+                LobsterSettingEventFactory.permissionResult(LobsterPermissionTarget.PHONE, true)
+                    .withTrace(traceId)
+            )
+            makeCall(contact, traceId)
         } else {
-            LobsterClient.reportUsage(this, LobsterUsageEvents.CALL_PERMISSION_DENIED)
+            LobsterClient.reportUsage(
+                this,
+                LobsterUsageEvents.CALL_PERMISSION_DENIED.withTrace(traceId)
+            )
             showToast(getString(R.string.phone_call_permission_required))
         }
     }
@@ -400,8 +418,7 @@ class PhoneContactActivity : AppCompatActivity() {
 
     private fun showLayoutChoiceDialog() {
         val sheetView = layoutInflater.inflate(R.layout.dialog_phone_layout_choice, null)
-        val dialog = AlertDialog.Builder(this).setView(sheetView).create()
-        dialog.window?.setBackgroundDrawableResource(android.R.color.transparent)
+        val dialog = LauncherDialogFactory.create(this, sheetView)
 
         val largeOption = sheetView.findViewById<MaterialCardView>(R.id.option_layout_large)
         val gridOption = sheetView.findViewById<MaterialCardView>(R.id.option_layout_grid)
@@ -438,10 +455,6 @@ class PhoneContactActivity : AppCompatActivity() {
         sheetView.findViewById<View>(R.id.btn_layout_cancel).setOnClickListener { dialog.dismiss() }
         renderSelection()
         dialog.show()
-        dialog.window?.setLayout(
-            (resources.displayMetrics.widthPixels * 0.92f).toInt(),
-            android.view.WindowManager.LayoutParams.WRAP_CONTENT
-        )
     }
 
     private fun setLayoutStyle(style: PhoneContactLayoutStyle) {
@@ -463,24 +476,36 @@ class PhoneContactActivity : AppCompatActivity() {
         )
     }
 
-    private fun makeCall(contact: Contact) {
+    private fun makeCall(contact: Contact, traceId: String = LobsterTrace.newId()) {
         val number = contact.phoneNumber?.takeIf { it.isNotBlank() } ?: return
         if (
             ActivityCompat.checkSelfPermission(this, Manifest.permission.CALL_PHONE)
             != PackageManager.PERMISSION_GRANTED
         ) {
             pendingCallContact = contact
+            pendingCallTraceId = traceId
+            LobsterClient.reportUsage(
+                this,
+                LobsterSettingEventFactory.permissionRequested(LobsterPermissionTarget.PHONE)
+                    .withTrace(traceId)
+            )
             callPermissionLauncher.launch(Manifest.permission.CALL_PHONE)
             return
         }
         val intent = Intent(Intent.ACTION_CALL, Uri.fromParts("tel", number, null))
+        val startedAt = SystemClock.elapsedRealtime()
         runCatching { startActivity(intent) }.onFailure {
-            LobsterClient.reportUsage(this, LobsterUsageEvents.OUTGOING_CALL_FAILED)
+            LobsterClient.reportUsage(this, LobsterUsageEvents.OUTGOING_CALL_FAILED.withTrace(traceId))
             showToast(getString(R.string.dial_failed, it.message ?: ""))
         }.onSuccess {
-            LobsterClient.reportUsage(this, LobsterUsageEvents.OUTGOING_CALL_STARTED)
+            LobsterClient.reportUsage(this, LobsterUsageEvents.OUTGOING_CALL_STARTED.withTrace(traceId))
             viewModel.incrementCallCountAsync(contact.id)
         }
+        LobsterClient.reportMetrics(
+            this,
+            listOf(LauncherTraceNames.PHONE_PLACE_CALL to (SystemClock.elapsedRealtime() - startedAt)),
+            traceId
+        )
     }
 
     private fun showImportFromContacts() {
@@ -488,6 +513,13 @@ class PhoneContactActivity : AppCompatActivity() {
             ContextCompat.checkSelfPermission(this, Manifest.permission.READ_CONTACTS)
             != PackageManager.PERMISSION_GRANTED
         ) {
+            val traceId = LobsterTrace.newId()
+            pendingContactsPermissionTraceId = traceId
+            LobsterClient.reportUsage(
+                this,
+                LobsterSettingEventFactory.permissionRequested(LobsterPermissionTarget.CONTACTS)
+                    .withTrace(traceId)
+            )
             ActivityCompat.requestPermissions(this, arrayOf(Manifest.permission.READ_CONTACTS), 101)
             return
         }
@@ -496,10 +528,7 @@ class PhoneContactActivity : AppCompatActivity() {
 
     private fun showImportDialog(candidates: List<PhoneImportCandidate>) {
         val dialogView = layoutInflater.inflate(R.layout.dialog_import_contacts, null)
-        val dialog = AlertDialog.Builder(this)
-            .setView(dialogView)
-            .create()
-        dialog.window?.setBackgroundDrawableResource(android.R.color.transparent)
+        val dialog = LauncherDialogFactory.create(this, dialogView, dismissOnTouchOutside = false)
 
         val listView = dialogView.findViewById<RecyclerView>(R.id.layout_import_list)
         val toggleButton = dialogView.findViewById<MaterialCardView>(R.id.btn_toggle_select)
@@ -539,10 +568,6 @@ class PhoneContactActivity : AppCompatActivity() {
         }
 
         dialog.show()
-        dialog.window?.setLayout(
-            (resources.displayMetrics.widthPixels * 0.92f).toInt(),
-            android.view.WindowManager.LayoutParams.WRAP_CONTENT
-        )
     }
 
     override fun onRequestPermissionsResult(
@@ -551,8 +576,16 @@ class PhoneContactActivity : AppCompatActivity() {
         grantResults: IntArray
     ) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults)
-        if (requestCode == 101 && grantResults.firstOrNull() == PackageManager.PERMISSION_GRANTED) {
-            showImportFromContacts()
+        if (requestCode == 101) {
+            val granted = grantResults.firstOrNull() == PackageManager.PERMISSION_GRANTED
+            val traceId = pendingContactsPermissionTraceId ?: LobsterTrace.newId()
+            pendingContactsPermissionTraceId = null
+            LobsterClient.reportUsage(
+                this,
+                LobsterSettingEventFactory.permissionResult(LobsterPermissionTarget.CONTACTS, granted)
+                    .withTrace(traceId)
+            )
+            if (granted) showImportFromContacts()
         }
     }
 
@@ -560,8 +593,7 @@ class PhoneContactActivity : AppCompatActivity() {
         selectedAvatarUri = initial?.avatarUri
 
         val dialogView = layoutInflater.inflate(R.layout.dialog_phone_contact, null)
-        val dialog = AlertDialog.Builder(this).setView(dialogView).create()
-        dialog.window?.setBackgroundDrawableResource(android.R.color.transparent)
+        val dialog = LauncherDialogFactory.create(this, dialogView, dismissOnTouchOutside = false)
 
         dialogView.findViewById<TextView>(R.id.tv_dialog_title).text = getString(
             if (initial == null) R.string.phone_contact_dialog_add_title else R.string.phone_contact_dialog_edit_title
@@ -626,10 +658,6 @@ class PhoneContactActivity : AppCompatActivity() {
         }
 
         dialog.show()
-        dialog.window?.setLayout(
-            (resources.displayMetrics.widthPixels * 0.92f).toInt(),
-            android.view.WindowManager.LayoutParams.WRAP_CONTENT
-        )
     }
 
     private fun applySystemInsets() {
@@ -648,10 +676,7 @@ class PhoneContactActivity : AppCompatActivity() {
 
     private fun showDeleteDialog(contact: Contact) {
         val dialogView = layoutInflater.inflate(R.layout.dialog_delete_contact, null)
-        val dialog = AlertDialog.Builder(this)
-            .setView(dialogView)
-            .create()
-        dialog.window?.setBackgroundDrawableResource(android.R.color.transparent)
+        val dialog = LauncherDialogFactory.create(this, dialogView, dismissOnTouchOutside = false)
         dialogView.findViewById<TextView>(R.id.tv_delete_message).text =
             getString(R.string.video_contact_delete_message, contact.name)
         dialogView.findViewById<MaterialCardView>(R.id.btn_cancel)

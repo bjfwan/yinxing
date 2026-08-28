@@ -4,7 +4,6 @@ import android.graphics.Bitmap
 import android.net.Uri
 import android.widget.TextView
 import android.widget.Toast
-import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.lifecycleScope
 import com.google.android.material.card.MaterialCardView
@@ -37,9 +36,8 @@ class AvatarEditorController(
         val view = activity.layoutInflater.inflate(R.layout.dialog_avatar_editor, null)
         val cropView = view.findViewById<AvatarCropView>(R.id.avatar_crop_view)
         val confirm = view.findViewById<MaterialCardView>(R.id.btn_avatar_confirm)
-        val dialog = AlertDialog.Builder(activity).setView(view).create()
+        val dialog = LauncherDialogFactory.create(activity, view, dismissOnTouchOutside = false)
         cropView.setBitmap(bitmap)
-        dialog.window?.setBackgroundDrawableResource(android.R.color.transparent)
         view.findViewById<MaterialCardView>(R.id.btn_avatar_cancel).setOnClickListener { dialog.dismiss() }
         confirm.setOnClickListener {
             confirm.isClickable = false
@@ -60,10 +58,6 @@ class AvatarEditorController(
             }
         }
         dialog.show()
-        dialog.window?.setLayout(
-            (activity.resources.displayMetrics.widthPixels * 0.92f).toInt(),
-            android.view.WindowManager.LayoutParams.WRAP_CONTENT
-        )
     }
 
     private fun saveTemporaryCrop(bitmap: Bitmap): Uri? {
