@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="family_setup_toolbar_title">家属首次配置</string>
+    <string name="family_setup_title">请家人完成3项设置</string>
+    <string name="family_setup_description">设置完成后，老人就能直接联系家人，并随时回到银杏首页。</string>
+    <string name="family_setup_progress">已完成 %1$d / %2$d</string>
+
+    <string name="family_setup_contacts_title">常用联系人</string>
+    <string name="family_setup_contacts_description">至少添加一位家人，老人才能一键拨打电话。</string>
+    <string name="family_setup_contacts_checking">正在检查联系人…</string>
+    <string name="family_setup_contacts_pending">未完成：还没有电话联系人</string>
+    <string name="family_setup_contacts_ready">已完成：已添加 %1$d 位联系人</string>
+    <string name="family_setup_action_contacts">添加或管理联系人</string>
+
+    <string name="family_setup_permission_title">电话权限</string>
+    <string name="family_setup_permission_description">开启后，点击家人头像即可拨打电话。</string>
+    <string name="family_setup_permission_pending">未完成：需要开启电话权限</string>
+    <string name="family_setup_permission_ready">已完成：电话权限已开启</string>
+    <string name="family_setup_action_permission">检查电话权限</string>
+
+    <string name="family_setup_launcher_title">默认桌面</string>
+    <string name="family_setup_launcher_description">设置后，老人按 Home 键会回到银杏首页。</string>
+    <string name="family_setup_launcher_pending">未完成：银杏还不是默认桌面</string>
+    <string name="family_setup_launcher_ready">已完成：银杏已是默认桌面</string>
+    <string name="family_setup_action_launcher">设置默认桌面</string>
+
+    <string name="family_setup_finish">进入老人首页</string>
+    <string name="family_setup_finish_pending">完成上面3项后即可进入</string>
+    <string name="family_setup_finish_ready">准备完成，可以交给老人使用</string>
+    <string name="family_setup_optional_note">字体、微信视频和其他功能，可以稍后在“家人设置”中调整。</string>
+
+    <string name="family_setup_reopen_title">家属配置清单</string>
+    <string name="family_setup_reopen_summary">检查联系人、电话权限和默认桌面</string>
+    <string name="family_setup_reopen_value">重新检查</string>
+</resources>
