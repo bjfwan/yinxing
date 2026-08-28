@@ -12,6 +12,8 @@ const releasesPath = path.join(docsRoot, "releases.json")
 const cssPath = path.join(docsRoot, "assets", "css", "style.css")
 const jsPath = path.join(docsRoot, "assets", "js", "main.js")
 const versionsJsPath = path.join(docsRoot, "assets", "js", "versions.js")
+const robotsPath = path.join(docsRoot, "robots.txt")
+const sitemapPath = path.join(docsRoot, "sitemap.xml")
 const releaseSyncPath = path.join(projectRoot, "scripts", "sync-release-history.mjs")
 const releaseWorkflowPath = path.join(projectRoot, ".github", "workflows", "sync-release-history.yml")
 
@@ -260,4 +262,55 @@ test("marketing copy avoids retired design-document patterns", async () => {
   assert.equal((html.match(/class="eyebrow"/g) || []).length, 1)
   assert.doesNotMatch(html, /设计 Token|section-kicker|Designed for elders/)
   assert.equal((html.match(/>免费下载 APK</g) || []).length, 3)
+})
+
+test("search engines receive canonical URLs, crawl rules, sitemap, and site identity", async () => {
+  const html = await readFile(htmlPath, "utf8")
+  const versions = await readFile(versionsPath, "utf8")
+  const robots = await readFile(robotsPath, "utf8")
+  const sitemap = await readFile(sitemapPath, "utf8")
+
+  assert.match(html, /<link rel="canonical" href="https:\/\/yinxing\.722688\.xyz\/" \/>/)
+  assert.match(versions, /<link rel="canonical" href="https:\/\/yinxing\.722688\.xyz\/versions" \/>/)
+  assert.match(versions, /<meta property="og:url" content="https:\/\/yinxing\.722688\.xyz\/versions" \/>/)
+
+  const structuredData = [...html.matchAll(/<script type="application\/ld\+json">\s*([\s\S]*?)\s*<\/script>/g)]
+    .map((match) => JSON.parse(match[1]))
+  const graph = structuredData.flatMap((entry) => entry["@graph"] || [entry])
+  const website = graph.find((entry) => entry["@type"] === "WebSite")
+  const application = graph.find((entry) => entry["@type"] === "SoftwareApplication")
+  const versionsStructuredData = [...versions.matchAll(/<script type="application\/ld\+json">\s*([\s\S]*?)\s*<\/script>/g)]
+    .map((match) => JSON.parse(match[1]))
+  const collectionPage = versionsStructuredData.find((entry) => entry["@type"] === "CollectionPage")
+
+  assert.deepEqual(
+    {
+      name: website?.name,
+      alternateName: website?.alternateName,
+      url: website?.url,
+      language: website?.inLanguage,
+    },
+    {
+      name: "银杏",
+      alternateName: ["银杏 Yinxing", "Yinxing Launcher"],
+      url: "https://yinxing.722688.xyz/",
+      language: "zh-CN",
+    }
+  )
+  assert.equal(application?.operatingSystem, "Android 7.0 or later")
+  assert.equal(application?.isPartOf?.["@id"], "https://yinxing.722688.xyz/#website")
+  assert.equal(collectionPage?.url, "https://yinxing.722688.xyz/versions")
+  assert.equal(collectionPage?.about?.["@id"], "https://yinxing.722688.xyz/#software")
+
+  assert.match(robots, /^User-agent: \*\r?\nAllow: \/\r?\n\r?\nSitemap: https:\/\/yinxing\.722688\.xyz\/sitemap\.xml\r?\n?$/)
+  assert.deepEqual(
+    [...sitemap.matchAll(/<loc>(.*?)<\/loc>/g)].map((match) => match[1]),
+    [
+      "https://yinxing.722688.xyz/",
+      "https://yinxing.722688.xyz/versions",
+      "https://yinxing.722688.xyz/privacy",
+      "https://yinxing.722688.xyz/terms",
+    ]
+  )
+  assert.doesNotMatch(sitemap, /pages\.dev|likeyou\.qzz\.io|versions\.html/)
 })
