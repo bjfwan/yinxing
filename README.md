@@ -6,7 +6,7 @@
 
 <p>专为长辈设计的 Android 简洁桌面</p>
 
-[![License: MIT](https://img.shields.io/badge/license-MIT-B8882A?labelColor=1C1914&style=flat-square)](https://github.com/bjfwan/yinxing/blob/main/LICENSE)
+[![License: PolyForm Noncommercial](https://img.shields.io/badge/license-PolyForm%20NC-B8882A?labelColor=1C1914&style=flat-square)](https://github.com/bjfwan/yinxing/blob/main/LICENSE)
 [![Release](https://img.shields.io/badge/-下载%20APK-B8882A?labelColor=1C1914&style=flat-square)](https://yx.likeyou.qzz.io)
 [![Platform](https://img.shields.io/badge/Android%207%2B-0369A1?labelColor=1C1914&style=flat-square&logo=android&logoColor=white)](#系统要求)
 [![APK](https://img.shields.io/badge/Release%20APK-2.60%20MiB-555?labelColor=1C1914&style=flat-square)](#)
@@ -15,7 +15,7 @@
 [![Kotlin](https://img.shields.io/badge/Kotlin-7F52FF?logo=kotlin&logoColor=white&style=flat-square)](https://kotlinlang.org/)
 [![Made with Love](https://img.shields.io/badge/Made%20with-%E2%9D%A4%EF%B8%8F-red?style=flat-square)](#)
 
-**开源 / 免费 / 轻量 / 简洁**
+**源码可见 / 个人免费 / 轻量 / 简洁**
 
 </div>
 
@@ -124,7 +124,7 @@
 
 ## 参与贡献
 
-银杏是开源项目，欢迎每一位有相同想法的朋友参与：
+银杏源码公开，欢迎每一位有相同想法的朋友参与。代码 PR 合并前需要确认贡献授权：
 
 ```
 ⭐ Star → 关注项目进展
@@ -243,6 +243,14 @@ yinxing/
 
 ---
 
+## 许可
+
+银杏采用 [PolyForm Noncommercial License 1.0.0](LICENSE)：个人和非商业用途免费；任何商业用途必须事先取得付费书面授权。完整边界见 [许可说明](LICENSING.md)。
+
+此前已按 MIT 发布的历史版本仍适用其原有许可，本次变更不追溯收回既有授权。
+
+---
+
 ## 联系方式
 
 有任何想法、建议，或者你也想为身边的老人做点什么：
@@ -257,6 +265,6 @@ yinxing/
 
 <img src="https://raw.githubusercontent.com/bjfwan/yinxing/main/docs/icon.png?v=20260828" width="60" height="60" alt="银杏图标" />
 
-*银杏 Yinxing Launcher · MIT License*
+*银杏 Yinxing Launcher · PolyForm Noncommercial License 1.0.0*
 
 </div>
