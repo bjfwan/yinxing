@@ -1,0 +1,325 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <title>历史版本 | 银杏 Yinxing</title>
+  <meta name="description" content="查看银杏 Android 长辈桌面从 v1.0.0 到当前版本的完整发布记录，并下载需要的 APK。" />
+  <meta name="author" content="bjfwan" />
+  <meta name="robots" content="index, follow" />
+  <meta name="theme-color" content="#ecefeb" media="(prefers-color-scheme: light)" />
+  <meta name="theme-color" content="#141915" media="(prefers-color-scheme: dark)" />
+  <link rel="canonical" href="https://yx.likeyou.qzz.io/versions.html" />
+  <meta property="og:type" content="website" />
+  <meta property="og:title" content="历史版本 | 银杏 Yinxing" />
+  <meta property="og:description" content="银杏从 v1.0.0 到当前版本的完整发布记录。" />
+  <meta property="og:url" content="https://yx.likeyou.qzz.io/versions.html" />
+  <meta property="og:site_name" content="银杏 Yinxing" />
+  <link rel="icon" type="image/png" href="./icon.png?v=20260828" />
+  <link rel="stylesheet" href="./assets/css/style.css" />
+  <script type="module" src="./assets/js/versions.js"></script>
+</head>
+<body class="versions-page">
+  <a class="skip-link" href="#main">跳到主要内容</a>
+
+  <header class="site-header">
+    <a class="brand" href="./index.html" aria-label="返回银杏首页">
+      <img class="brand-logo" src="./icon.png?v=20260828" width="48" height="48" alt="" />
+      <span>
+        <strong>银杏</strong>
+        <small>Yinxing Launcher</small>
+      </span>
+    </a>
+
+    <nav class="site-nav" aria-label="历史版本导航">
+      <a href="#latest">当前版本</a>
+      <a href="#all-releases">全部版本</a>
+      <a href="./index.html#support-scope">支持范围</a>
+    </nav>
+
+    <a class="header-download" data-latest-download href="./app-release.apk" download="银杏.apk">下载最新版</a>
+  </header>
+
+  <main id="main" class="versions-main">
+    <section class="versions-summary" id="latest" aria-labelledby="versions-title">
+      <div>
+        <h1 id="versions-title">历史版本</h1>
+        <p>查看银杏的正式发布记录。仅支持 Android 7+，日常使用建议安装当前稳定版。</p>
+      </div>
+      <div class="versions-current" aria-label="当前版本信息">
+        <span>当前稳定版</span>
+        <strong data-latest-version>v2.0.0</strong>
+        <time data-latest-date datetime="2026-08-27">2026.08.27</time>
+        <a class="button button-primary" data-latest-download href="./app-release.apk" download="银杏.apk">下载当前版本</a>
+      </div>
+    </section>
+
+    <section class="release-ledger" id="all-releases" aria-labelledby="release-ledger-title">
+      <div class="release-ledger-head">
+        <h2 id="release-ledger-title">发布记录</h2>
+        <p><span data-release-count>16</span> 个正式版本，每页显示 5 个。<span data-release-sync aria-live="polite">正在同步 GitHub 发布记录。</span></p>
+      </div>
+
+      <ol class="release-list" data-release-list>
+        <li>
+          <article class="release-entry release-entry-current">
+            <div class="release-meta">
+              <time datetime="2026-08-27">2026.08.27</time>
+              <span class="release-status">当前版本</span>
+            </div>
+            <div class="release-content">
+              <h3><span>v2.0.0</span> 完整产品与工程升级</h3>
+              <p>重做主页、家属设置与联系人界面，补齐天气、系统电话接听和微信视频任务恢复能力。</p>
+              <ul>
+                <li>家属维护与联系人管理更完整</li>
+                <li>421 项测试通过，发布包完成签名校验</li>
+              </ul>
+            </div>
+            <div class="release-actions">
+              <a class="release-download" href="https://github.com/bjfwan/yinxing/releases/download/v2.0.0/app-release.apk">下载 APK</a>
+              <a href="https://github.com/bjfwan/yinxing/releases/tag/v2.0.0" target="_blank" rel="noopener noreferrer">完整说明</a>
+            </div>
+          </article>
+        </li>
+
+        <li>
+          <article class="release-entry">
+            <div class="release-meta"><time datetime="2026-05-09">2026.05.09</time></div>
+            <div class="release-content">
+              <h3><span>v1.9.0</span> 微信自动化任务引擎</h3>
+              <p>引入页面语义识别、联系人评分、任务恢复和失败样本回放，来电兼容性判断更集中。</p>
+            </div>
+            <div class="release-actions">
+              <a class="release-download" href="https://github.com/bjfwan/yinxing/releases/download/v1.9.0/app-release.apk">下载 APK</a>
+              <a href="https://github.com/bjfwan/yinxing/releases/tag/v1.9.0" target="_blank" rel="noopener noreferrer">完整说明</a>
+            </div>
+          </article>
+        </li>
+
+        <li>
+          <article class="release-entry">
+            <div class="release-meta"><time datetime="2026-05-07">2026.05.07</time></div>
+            <div class="release-content">
+              <h3><span>v1.8.1</span> 稳定性与隐私修正</h3>
+              <p>加强微信视频异常恢复与诊断，设备标识改为应用内随机标识，并加入手动检查更新。</p>
+            </div>
+            <div class="release-actions">
+              <a class="release-download" href="https://github.com/bjfwan/yinxing/releases/download/v1.8.1/app-release.apk">下载 APK</a>
+              <a href="https://github.com/bjfwan/yinxing/releases/tag/v1.8.1" target="_blank" rel="noopener noreferrer">完整说明</a>
+            </div>
+          </article>
+        </li>
+
+        <li>
+          <article class="release-entry">
+            <div class="release-meta"><time datetime="2026-05-03">2026.05.03</time></div>
+            <div class="release-content">
+              <h3><span>v1.8.0</span> 微信链路与工程重构</h3>
+              <p>修复无障碍节点泄漏，统一日志入口，拆分微信识别、失败诊断和设置控制代码。</p>
+            </div>
+            <div class="release-actions">
+              <a class="release-download" href="https://github.com/bjfwan/yinxing/releases/download/v1.8.0/app-release.apk">下载 APK</a>
+              <a href="https://github.com/bjfwan/yinxing/releases/tag/v1.8.0" target="_blank" rel="noopener noreferrer">完整说明</a>
+            </div>
+          </article>
+        </li>
+
+        <li>
+          <article class="release-entry">
+            <div class="release-meta"><time datetime="2026-05-01">2026.05.01</time></div>
+            <div class="release-content">
+              <h3><span>v1.7.2</span> 视频通话启动修复</h3>
+              <p>修复微信视频入口任务栈异常，并补齐首页点击、页面打开和关闭的诊断日志。</p>
+            </div>
+            <div class="release-actions">
+              <a class="release-download" href="https://github.com/bjfwan/yinxing/releases/download/v1.7.2/app-release.apk">下载 APK</a>
+              <a href="https://github.com/bjfwan/yinxing/releases/tag/v1.7.2" target="_blank" rel="noopener noreferrer">完整说明</a>
+            </div>
+          </article>
+        </li>
+
+        <li>
+          <article class="release-entry">
+            <div class="release-meta"><time datetime="2026-04-30">2026.04.30</time></div>
+            <div class="release-content">
+              <h3><span>v1.7.1</span> 移除云端 Pro 链路</h3>
+              <p>移除智能守护 Pro、AI Gateway 与激活体系，来电和视频通话回归更直接的本地流程。</p>
+            </div>
+            <div class="release-actions">
+              <a class="release-download" href="https://github.com/bjfwan/yinxing/releases/download/v1.7.1/app-release.apk">下载 APK</a>
+              <a href="https://github.com/bjfwan/yinxing/releases/tag/v1.7.1" target="_blank" rel="noopener noreferrer">完整说明</a>
+            </div>
+          </article>
+        </li>
+
+        <li>
+          <article class="release-entry">
+            <div class="release-meta"><time datetime="2026-04-28">2026.04.28</time></div>
+            <div class="release-content">
+              <h3><span>v1.7.0</span> 智能守护实验版本</h3>
+              <p>曾加入智能守护、未知来电风险提醒和微信视频步骤辅助，这些云端能力已在下一版移除。</p>
+            </div>
+            <div class="release-actions">
+              <a class="release-download" href="https://github.com/bjfwan/yinxing/releases/download/v1.7.0/app-release.apk">下载 APK</a>
+              <a href="https://github.com/bjfwan/yinxing/releases/tag/v1.7.0" target="_blank" rel="noopener noreferrer">完整说明</a>
+            </div>
+          </article>
+        </li>
+
+        <li>
+          <article class="release-entry">
+            <div class="release-meta"><time datetime="2026-04-28">2026.04.28</time></div>
+            <div class="release-content">
+              <h3><span>v1.6.0</span> 架构与启动性能优化</h3>
+              <p>重构主页、天气、联系人与来电链路，增加性能埋点、基准测试和持续集成。</p>
+            </div>
+            <div class="release-actions">
+              <a class="release-download" href="https://github.com/bjfwan/yinxing/releases/download/v1.6.0/app-release.apk">下载 APK</a>
+              <a href="https://github.com/bjfwan/yinxing/releases/tag/v1.6.0" target="_blank" rel="noopener noreferrer">完整说明</a>
+            </div>
+          </article>
+        </li>
+
+        <li>
+          <article class="release-entry">
+            <div class="release-meta"><time datetime="2026-04-26">2026.04.26</time></div>
+            <div class="release-content">
+              <h3><span>v1.5.0</span> 暗色模式与维护中心</h3>
+              <p>加入三档主题、全局动效、联系人卡片优化和家属维护教程，并为低性能设备自动降级。</p>
+            </div>
+            <div class="release-actions">
+              <a class="release-download" href="https://github.com/bjfwan/yinxing/releases/download/v1.5.0/app-release.apk">下载 APK</a>
+              <a href="https://github.com/bjfwan/yinxing/releases/tag/v1.5.0" target="_blank" rel="noopener noreferrer">完整说明</a>
+            </div>
+          </article>
+        </li>
+
+        <li>
+          <article class="release-entry">
+            <div class="release-meta"><time datetime="2026-04-25">2026.04.25</time></div>
+            <div class="release-content">
+              <h3><span>v1.4.0</span> 联系人存储与诊断增强</h3>
+              <p>统一电话和微信联系人存储，补齐来电诊断、天气并发保护与头像异常处理。</p>
+            </div>
+            <div class="release-actions">
+              <a class="release-download" href="https://github.com/bjfwan/yinxing/releases/download/v1.4.0/app-release.apk">下载 APK</a>
+              <a href="https://github.com/bjfwan/yinxing/releases/tag/v1.4.0" target="_blank" rel="noopener noreferrer">完整说明</a>
+            </div>
+          </article>
+        </li>
+
+        <li>
+          <article class="release-entry">
+            <div class="release-meta"><time datetime="2026-04-24">2026.04.24</time></div>
+            <div class="release-content">
+              <h3><span>v1.3.0</span> 联系人与主页稳定性修复</h3>
+              <p>修复来电号码匹配和广播处理，改进联系人管理、应用拖拽与媒体缩略图。</p>
+            </div>
+            <div class="release-actions">
+              <a class="release-download" href="https://github.com/bjfwan/yinxing/releases/download/v1.3.0/app-release.apk">下载 APK</a>
+              <a href="https://github.com/bjfwan/yinxing/releases/tag/v1.3.0" target="_blank" rel="noopener noreferrer">完整说明</a>
+            </div>
+          </article>
+        </li>
+
+        <li>
+          <article class="release-entry">
+            <div class="release-meta"><time datetime="2026-04-23">2026.04.23</time></div>
+            <div class="release-content">
+              <h3><span>v1.2.2</span> 首页与联系人界面更新</h3>
+              <p>统一主页和联系人视觉，修复默认启动器状态，并增强权限请求兼容性。</p>
+            </div>
+            <div class="release-actions">
+              <a class="release-download" href="https://github.com/bjfwan/yinxing/releases/download/v1.2.2/app-release.apk">下载 APK</a>
+              <a href="https://github.com/bjfwan/yinxing/releases/tag/v1.2.2" target="_blank" rel="noopener noreferrer">完整说明</a>
+            </div>
+          </article>
+        </li>
+
+        <li>
+          <article class="release-entry">
+            <div class="release-meta"><time datetime="2026-04-23">2026.04.23</time></div>
+            <div class="release-content">
+              <h3><span>v1.2.1</span> 启动性能优化</h3>
+              <p>重新生成基线配置，优化低端设备冷启动、首页滑动与页面切换表现。</p>
+            </div>
+            <div class="release-actions">
+              <a class="release-download" href="https://github.com/bjfwan/yinxing/releases/download/v1.2.1/app-release.apk">下载 APK</a>
+              <a href="https://github.com/bjfwan/yinxing/releases/tag/v1.2.1" target="_blank" rel="noopener noreferrer">完整说明</a>
+            </div>
+          </article>
+        </li>
+
+        <li>
+          <article class="release-entry">
+            <div class="release-meta"><time datetime="2026-04-22">2026.04.22</time></div>
+            <div class="release-content">
+              <h3><span>v1.2.0</span> 崩溃收集与包名迁移</h3>
+              <p>接入崩溃日志，应用包名迁移至 com.yinxing.launcher，并明确 Android 7.0+ 要求。</p>
+            </div>
+            <div class="release-actions">
+              <a class="release-download" href="https://github.com/bjfwan/yinxing/releases/download/v1.2.0/app-release.apk">下载 APK</a>
+              <a href="https://github.com/bjfwan/yinxing/releases/tag/v1.2.0" target="_blank" rel="noopener noreferrer">完整说明</a>
+            </div>
+          </article>
+        </li>
+
+        <li>
+          <article class="release-entry">
+            <div class="release-meta"><time datetime="2026-04-22">2026.04.22</time></div>
+            <div class="release-content">
+              <h3><span>v1.1.0</span> 显示大小与桌面切换</h3>
+              <p>加入图标和文字缩放、取消默认桌面入口，并优化自动接听延迟调节。</p>
+            </div>
+            <div class="release-actions">
+              <a class="release-download" href="https://github.com/bjfwan/yinxing/releases/download/v1.1.0/app-release.apk">下载 APK</a>
+              <a href="https://github.com/bjfwan/yinxing/releases/tag/v1.1.0" target="_blank" rel="noopener noreferrer">完整说明</a>
+            </div>
+          </article>
+        </li>
+
+        <li>
+          <article class="release-entry">
+            <div class="release-meta"><time datetime="2026-04-22">2026.04.22</time></div>
+            <div class="release-content">
+              <h3><span>v1.0.0</span> 首个正式版本</h3>
+              <p>提供桌面主页、应用管理、电话联系人、微信视频联系人和基础系统设置。</p>
+            </div>
+            <div class="release-actions">
+              <a class="release-download" href="https://github.com/bjfwan/yinxing/releases/download/v1.0.0/app-release.apk">下载 APK</a>
+              <a href="https://github.com/bjfwan/yinxing/releases/tag/v1.0.0" target="_blank" rel="noopener noreferrer">完整说明</a>
+            </div>
+          </article>
+        </li>
+      </ol>
+
+      <div class="release-pagination-shell" data-pagination-shell hidden>
+        <p id="release-page-status" data-release-page-status aria-live="polite"></p>
+        <nav class="release-pagination" data-release-pagination aria-label="版本列表分页"></nav>
+      </div>
+      <noscript><p class="release-noscript">浏览器未启用脚本，当前显示全部版本。</p></noscript>
+    </section>
+
+    <aside class="versions-notice" aria-label="安装提醒">
+      <strong>安装旧版本前</strong>
+      <p>Android 通常不允许直接覆盖安装更低版本。请先备份需要保留的设置，再卸载当前版本。遇到问题可联系作者。</p>
+      <a href="mailto:2632507193@qq.com">联系作者</a>
+    </aside>
+  </main>
+
+  <footer class="site-footer">
+    <a class="brand footer-brand" href="./index.html" aria-label="返回银杏首页">
+      <img class="brand-logo" src="./icon.png?v=20260828" width="48" height="48" alt="" loading="lazy" />
+      <span>
+        <strong>银杏</strong>
+        <small>让手机更简单</small>
+      </span>
+    </a>
+    <div class="footer-links">
+      <a href="./index.html">官网首页</a>
+      <a href="mailto:2632507193@qq.com">联系作者</a>
+      <a href="https://github.com/bjfwan/yinxing" target="_blank" rel="noopener noreferrer">源码仓库</a>
+    </div>
+  </footer>
+</body>
+</html>
