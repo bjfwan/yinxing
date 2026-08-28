@@ -1,8 +1,11 @@
 package com.yinxing.launcher.feature.home
 
+import android.view.HapticFeedbackConstants
 import android.view.LayoutInflater
+import android.view.MotionEvent
 import android.view.View
 import android.view.ViewGroup
+import android.view.ViewConfiguration
 import android.view.animation.DecelerateInterpolator
 import android.widget.ImageView
 import android.widget.TextView
@@ -14,6 +17,7 @@ import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
 import com.yinxing.launcher.R
 import com.yinxing.launcher.common.media.MediaThumbnailLoader
+import com.yinxing.launcher.data.home.LauncherPreferences
 import java.util.Collections
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
@@ -22,6 +26,8 @@ class HomeAppAdapter(
     private val scope: LifecycleCoroutineScope,
     private var lowPerformanceMode: Boolean,
     private var iconScale: Int = 100,
+    private var homeLayoutLocked: Boolean = false,
+    private var homeLongPressResponse: String = LauncherPreferences.HOME_LONG_PRESS_STANDARD,
     private val onItemClick: (HomeAppItem) -> Unit,
     private val onOrderChanged: (List<HomeAppItem>) -> Unit
 ) : ListAdapter<HomeAppItem, RecyclerView.ViewHolder>(DiffCallback), ItemTouchHelperAdapter {
@@ -71,6 +77,12 @@ class HomeAppAdapter(
         var iconJob: Job? = null
         var boundStableId: Long = Long.MIN_VALUE
         var uiKey: Int = Int.MIN_VALUE
+        var pendingDragRunnable: Runnable? = null
+
+        fun cancelPendingDrag() {
+            pendingDragRunnable?.let(icon::removeCallbacks)
+            pendingDragRunnable = null
+        }
     }
 
     override fun getItemCount(): Int = displayedItems().size
@@ -110,12 +122,29 @@ class HomeAppAdapter(
     override fun onViewRecycled(holder: RecyclerView.ViewHolder) {
         if (holder is AppViewHolder) {
             holder.iconJob?.cancel()
+            holder.cancelPendingDrag()
             holder.iconJob = null
             holder.boundStableId = Long.MIN_VALUE
             holder.icon.animate().cancel()
             holder.icon.setImageDrawable(null)
         }
         super.onViewRecycled(holder)
+    }
+
+    fun setHomeLayoutLocked(locked: Boolean) {
+        if (homeLayoutLocked == locked) return
+        homeLayoutLocked = locked
+        if (locked) {
+            dragItems = null
+            dragChanged = false
+        }
+        notifyItemRangeChanged(0, itemCount, PAYLOAD_UI)
+    }
+
+    fun setHomeLongPressResponse(response: String) {
+        if (homeLongPressResponse == response) return
+        homeLongPressResponse = response
+        notifyItemRangeChanged(0, itemCount, PAYLOAD_UI)
     }
 
     override fun onViewDetachedFromWindow(holder: RecyclerView.ViewHolder) {
@@ -198,16 +227,70 @@ class HomeAppAdapter(
             holder.icon.alpha = 1f
         }
         holder.icon.setOnLongClickListener(null)
+        holder.icon.setOnTouchListener(null)
+        holder.cancelPendingDrag()
         holder.card.setOnLongClickListener(null)
         val clickListener = View.OnClickListener { onItemClick(item) }
         holder.card.setOnClickListener(clickListener)
         holder.itemView.setOnClickListener(clickListener)
         holder.icon.setOnClickListener(clickListener)
         holder.name.setOnClickListener(clickListener)
-        if (item.type == HomeAppItem.Type.APP) {
-            holder.icon.setOnLongClickListener {
-                touchHelper?.startDrag(holder)
-                true
+        if (HomeLayoutDragPolicy.canDrag(item.type, homeLayoutLocked)) {
+            if (HomeLongPressPolicy.usesExtendedDelay(homeLongPressResponse)) {
+                bindExtendedLongPress(holder, item)
+            } else {
+                holder.icon.setOnLongClickListener {
+                    touchHelper?.startDrag(holder)
+                    true
+                }
+            }
+        }
+    }
+
+    private fun bindExtendedLongPress(holder: AppViewHolder, item: HomeAppItem) {
+        val touchSlop = ViewConfiguration.get(holder.icon.context).scaledTouchSlop
+        var downX = 0f
+        var downY = 0f
+        var dragStarted = false
+        holder.icon.setOnTouchListener { view, event ->
+            when (event.actionMasked) {
+                MotionEvent.ACTION_DOWN -> {
+                    holder.cancelPendingDrag()
+                    dragStarted = false
+                    downX = event.x
+                    downY = event.y
+                    val runnable = Runnable {
+                        holder.pendingDragRunnable = null
+                        if (
+                            holder.boundStableId == item.stableId &&
+                            HomeLayoutDragPolicy.canDrag(item.type, homeLayoutLocked)
+                        ) {
+                            dragStarted = true
+                            view.performHapticFeedback(HapticFeedbackConstants.LONG_PRESS)
+                            touchHelper?.startDrag(holder)
+                        }
+                    }
+                    holder.pendingDragRunnable = runnable
+                    view.postDelayed(runnable, HomeLongPressPolicy.EXTENDED_DELAY_MILLIS)
+                    false
+                }
+                MotionEvent.ACTION_MOVE -> {
+                    if (
+                        !dragStarted &&
+                        (kotlin.math.abs(event.x - downX) > touchSlop ||
+                            kotlin.math.abs(event.y - downY) > touchSlop)
+                    ) {
+                        holder.cancelPendingDrag()
+                    }
+                    dragStarted
+                }
+                MotionEvent.ACTION_UP, MotionEvent.ACTION_CANCEL -> {
+                    holder.cancelPendingDrag()
+                    val consume = dragStarted
+                    dragStarted = false
+                    consume
+                }
+                else -> dragStarted
             }
         }
     }
@@ -231,7 +314,9 @@ class HomeAppAdapter(
     }
 
     override fun canMoveItem(position: Int): Boolean =
-        itemAtOrNull(position)?.type == HomeAppItem.Type.APP
+        itemAtOrNull(position)?.let {
+            HomeLayoutDragPolicy.canDrag(it.type, homeLayoutLocked)
+        } == true
 
     override fun onDragStarted(position: Int) {
         if (!canMoveItem(position) || dragItems != null) {

@@ -24,7 +24,7 @@
     <string name="settings_default_launcher_pending">未设置</string>
     <string name="clear_default_launcher_choose_other">请在系统设置中选择其他桌面应用</string>
 
-    <string name="settings_icon_scale_title">图标与文字大小</string>
+    <string name="settings_icon_scale_title">首页显示大小</string>
     <string name="settings_icon_scale_summary">%d%%（默认 100%%）</string>
 
 </resources>

@@ -6,8 +6,11 @@ import android.content.pm.ActivityInfo
 import android.content.pm.ApplicationInfo
 import android.content.pm.ResolveInfo
 import android.os.Looper
+import android.text.TextUtils
+import android.view.Gravity
 import android.view.View
 import android.view.ViewGroup
+import android.widget.LinearLayout
 import android.widget.TextView
 import androidx.core.graphics.Insets
 import androidx.core.content.ContextCompat
@@ -29,6 +32,7 @@ import com.yinxing.launcher.feature.settings.SettingsActivity
 import com.yinxing.launcher.feature.appmanage.AppManageActivity
 import org.junit.Assert.assertEquals
 
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNotNull
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
@@ -244,7 +248,7 @@ class MainActivitySmokeTest {
         )
 
         assertEquals(View.VISIBLE, binding.cardWeather.ivWeatherIcon.visibility)
-        assertEquals(R.drawable.weather_rain, shadowOf(binding.cardWeather.ivWeatherIcon.drawable).createdFromResId)
+        assertEquals(R.drawable.weather_icon_rain, shadowOf(binding.cardWeather.ivWeatherIcon.drawable).createdFromResId)
     }
 
     @Test
@@ -292,6 +296,23 @@ class MainActivitySmokeTest {
         assertEquals(ViewGroup.LayoutParams.WRAP_CONTENT, binding.cardWeather.tvWeatherCity.layoutParams.width)
         assertTrue(header.indexOfChild(binding.cardWeather.ivWeatherIcon) < header.indexOfChild(binding.cardWeather.tvWeatherCity))
         assertTrue(binding.cardWeather.tvWeatherUpdate.parent !== header)
+    }
+
+    @Test
+    fun weatherRowsCenterTheirOwnContentRegardlessOfTextLength() {
+        val activity = Robolectric.buildActivity(MainActivity::class.java).setup().get()
+        val binding = ActivityMainBinding.bind(activity.findViewById(R.id.layout_home_root))
+        val primaryParams = binding.cardWeather.layoutWeatherPrimary.layoutParams as LinearLayout.LayoutParams
+        val updateParams = binding.cardWeather.tvWeatherUpdate.layoutParams as LinearLayout.LayoutParams
+
+        assertEquals(ViewGroup.LayoutParams.WRAP_CONTENT, primaryParams.width)
+        assertEquals(Gravity.CENTER_HORIZONTAL, primaryParams.gravity and Gravity.HORIZONTAL_GRAVITY_MASK)
+        assertEquals(ViewGroup.LayoutParams.WRAP_CONTENT, updateParams.width)
+        assertEquals(Gravity.CENTER_HORIZONTAL, updateParams.gravity and Gravity.HORIZONTAL_GRAVITY_MASK)
+        assertEquals(1, binding.cardWeather.tvWeatherUpdate.maxLines)
+        assertEquals(TextUtils.TruncateAt.END, binding.cardWeather.tvWeatherUpdate.ellipsize)
+        assertFalse(binding.cardWeather.tvWeatherUpdate.includeFontPadding)
+        assertEquals(0, updateParams.topMargin)
     }
 
     @Test

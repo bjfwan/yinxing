@@ -1,13 +1,17 @@
 package com.yinxing.launcher.feature.home
 
 import android.content.Intent
+import android.os.SystemClock
 import android.widget.TextView
 import android.widget.Toast
-import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import com.yinxing.launcher.R
+import com.yinxing.launcher.common.ui.LauncherDialogFactory
 import com.yinxing.launcher.common.lobster.LobsterClient
 import com.yinxing.launcher.common.lobster.LobsterUsageEvents
+import com.yinxing.launcher.common.lobster.LobsterTrace
+import com.yinxing.launcher.common.lobster.withTrace
+import com.yinxing.launcher.common.perf.LauncherTraceNames
 import com.yinxing.launcher.feature.appmanage.AppManageActivity
 import com.yinxing.launcher.feature.phone.PhoneContactActivity
 import com.yinxing.launcher.feature.settings.SettingsActivity
@@ -18,12 +22,18 @@ class HomeNavigator(
     private val activity: AppCompatActivity
 ) {
     fun openWeatherEntry() {
-        LobsterClient.reportUsage(activity, LobsterUsageEvents.HOME_WEATHER_OPENED)
+        LobsterClient.reportUsage(
+            activity,
+            LobsterUsageEvents.HOME_WEATHER_OPENED.withTrace(LobsterTrace.newId())
+        )
         activity.startActivity(Intent(activity, WeatherDetailActivity::class.java))
     }
 
     fun openAppManager() {
-        LobsterClient.reportUsage(activity, LobsterUsageEvents.HOME_APP_MANAGER_OPENED)
+        LobsterClient.reportUsage(
+            activity,
+            LobsterUsageEvents.HOME_APP_MANAGER_OPENED.withTrace(LobsterTrace.newId())
+        )
         activity.startActivity(Intent(activity, AppManageActivity::class.java))
     }
 
@@ -37,14 +47,14 @@ class HomeNavigator(
             activity.getString(R.string.home_caregiver_dialog_cancel)
         dialogView.findViewById<TextView>(R.id.tv_primary_label).text =
             activity.getString(R.string.home_caregiver_dialog_confirm)
-        val dialog = AlertDialog.Builder(activity)
-            .setView(dialogView)
-            .create()
-        dialog.window?.setBackgroundDrawableResource(android.R.color.transparent)
+        val dialog = LauncherDialogFactory.create(activity, dialogView)
         dialogView.findViewById<android.view.View>(R.id.btn_cancel).setOnClickListener { dialog.dismiss() }
         dialogView.findViewById<android.view.View>(R.id.btn_open_settings).setOnClickListener {
             dialog.dismiss()
-            LobsterClient.reportUsage(activity, LobsterUsageEvents.CAREGIVER_SETTINGS_OPENED)
+            LobsterClient.reportUsage(
+                activity,
+                LobsterUsageEvents.CAREGIVER_SETTINGS_OPENED.withTrace(LobsterTrace.newId())
+            )
             activity.startActivity(Intent(activity, SettingsActivity::class.java))
         }
         dialog.show()
@@ -54,7 +64,10 @@ class HomeNavigator(
         when (item.type) {
             HomeAppItem.Type.APP -> openApp(item)
             HomeAppItem.Type.PHONE -> {
-                LobsterClient.reportUsage(activity, LobsterUsageEvents.HOME_PHONE_OPENED)
+                LobsterClient.reportUsage(
+                    activity,
+                    LobsterUsageEvents.HOME_PHONE_OPENED.withTrace(LobsterTrace.newId())
+                )
                 activity.startActivity(Intent(activity, PhoneContactActivity::class.java))
             }
             HomeAppItem.Type.WECHAT_VIDEO -> {
@@ -69,20 +82,27 @@ class HomeNavigator(
     }
 
     private fun openApp(item: HomeAppItem) {
+        val traceId = LobsterTrace.newId()
+        val startedAt = SystemClock.elapsedRealtime()
         val intent = activity.packageManager.getLaunchIntentForPackage(item.packageName)
         if (intent != null) {
             runCatching { activity.startActivity(intent) }
                 .onSuccess {
-                    LobsterClient.reportUsage(activity, LobsterUsageEvents.APP_OPENED)
+                    LobsterClient.reportUsage(activity, LobsterUsageEvents.APP_OPENED.withTrace(traceId))
                 }
                 .onFailure {
-                    LobsterClient.reportUsage(activity, LobsterUsageEvents.APP_OPEN_FAILED)
+                    LobsterClient.reportUsage(activity, LobsterUsageEvents.APP_OPEN_FAILED.withTrace(traceId))
                     showOpenAppFailed(item)
                 }
         } else {
-            LobsterClient.reportUsage(activity, LobsterUsageEvents.APP_OPEN_FAILED)
+            LobsterClient.reportUsage(activity, LobsterUsageEvents.APP_OPEN_FAILED.withTrace(traceId))
             showOpenAppFailed(item)
         }
+        LobsterClient.reportMetrics(
+            activity,
+            listOf(LauncherTraceNames.HOME_APP_LAUNCH to (SystemClock.elapsedRealtime() - startedAt)),
+            traceId
+        )
     }
 
     private fun showOpenAppFailed(item: HomeAppItem) {

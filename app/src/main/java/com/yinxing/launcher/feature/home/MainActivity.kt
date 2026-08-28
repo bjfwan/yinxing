@@ -12,7 +12,9 @@ import android.view.animation.DecelerateInterpolator
 import android.widget.Toast
 import androidx.activity.OnBackPressedCallback
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.appcompat.app.AppCompatActivity
+import com.yinxing.launcher.common.ui.FontScaleActivity
+import com.yinxing.launcher.common.ui.AnchoredHintAlignment
+import com.yinxing.launcher.common.ui.AnchoredHintPopup
 import androidx.core.content.ContextCompat
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
@@ -23,16 +25,23 @@ import androidx.recyclerview.widget.DefaultItemAnimator
 import androidx.recyclerview.widget.GridLayoutManager
 import androidx.recyclerview.widget.ItemTouchHelper
 import com.yinxing.launcher.R
+import com.yinxing.launcher.common.lobster.LobsterClient
+import com.yinxing.launcher.common.lobster.LobsterPermissionTarget
+import com.yinxing.launcher.common.lobster.LobsterSettingEventFactory
+import com.yinxing.launcher.common.lobster.LobsterTrace
+import com.yinxing.launcher.common.lobster.withTrace
 import com.yinxing.launcher.databinding.ActivityMainBinding
 import com.yinxing.launcher.data.weather.WeatherLocationResolver
 import com.yinxing.launcher.data.weather.WeatherPreferences
 import com.yinxing.launcher.data.weather.WeatherRepository
 import com.yinxing.launcher.feature.settings.SettingsActivity
 import com.yinxing.launcher.feature.settings.SettingsReturnCoordinator
+import com.yinxing.launcher.feature.setup.FamilySetupActivity
+import com.yinxing.launcher.feature.setup.FamilySetupPreferences
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
 
-class MainActivity : AppCompatActivity() {
+class MainActivity : FontScaleActivity() {
 
     private val returnToDeviceSettings = Runnable {
         if (!isFinishing && !isDestroyed) {
@@ -51,9 +60,37 @@ class MainActivity : AppCompatActivity() {
     private var tickerJob: Job? = null
     private var fullyDrawnReported = false
     private val weatherPreferences by lazy { WeatherPreferences.getInstance(this) }
+    private var locationPermissionTraceId: String? = null
+    private var initialWeatherFlowStarted = false
+    private var homeResumed = false
+    private var weatherAvailableForHint = false
+    private var weatherDetailHintScheduled = false
+    private val familySetupPreferences by lazy { FamilySetupPreferences(this) }
+    private val weatherDetailHintPreferences by lazy { WeatherDetailHintPreferences(this) }
+    private lateinit var weatherDetailHintPopup: AnchoredHintPopup
+    private val showWeatherDetailHintRunnable = Runnable {
+        weatherDetailHintScheduled = false
+        showWeatherDetailHintAfterLayout()
+    }
+    private val familySetupLauncher = registerForActivityResult(
+        ActivityResultContracts.StartActivityForResult(),
+    ) {
+        if (FamilySetupPreferences(this).isCompleted()) {
+            startInitialWeatherLocationFlowOnce()
+        } else if (FamilySetupPreferences(this).shouldLaunchAutomatically()) {
+            binding.root.post(::launchFamilySetup)
+        }
+    }
     private val locationPermissionLauncher = registerForActivityResult(
         ActivityResultContracts.RequestPermission(),
     ) { granted ->
+        val traceId = locationPermissionTraceId ?: LobsterTrace.newId()
+        locationPermissionTraceId = null
+        LobsterClient.reportUsage(
+            this,
+            LobsterSettingEventFactory.permissionResult(LobsterPermissionTarget.LOCATION, granted)
+                .withTrace(traceId)
+        )
         if (granted) resolveInitialWeatherLocation() else viewModel.maybeRefreshWeather()
     }
 
@@ -70,6 +107,13 @@ class MainActivity : AppCompatActivity() {
         setupSafeArea()
         viewModel = ViewModelProvider(this, HomeViewModel.Factory(this))[HomeViewModel::class.java]
         navigator = HomeNavigator(this)
+        weatherDetailHintPopup = AnchoredHintPopup(
+            activity = this,
+            anchor = binding.cardWeather.root,
+            textRes = R.string.home_weather_detail_hint,
+            alignment = AnchoredHintAlignment.End,
+            onClick = ::openWeatherDetails,
+        )
         headerController = WeatherHeaderController(binding)
         statusController = HomeStatusController(
             binding = binding,
@@ -83,6 +127,22 @@ class MainActivity : AppCompatActivity() {
         registerPackageReceiver()
         playEntryAnimation()
         binding.recyclerHome.post { viewModel.refreshApps() }
+        if (FamilySetupPreferences(this).shouldLaunchAutomatically()) {
+            binding.root.post(::launchFamilySetup)
+        } else {
+            startInitialWeatherLocationFlowOnce()
+        }
+    }
+
+    private fun launchFamilySetup() {
+        if (!isFinishing && !isDestroyed) {
+            familySetupLauncher.launch(FamilySetupActivity.createIntent(this))
+        }
+    }
+
+    private fun startInitialWeatherLocationFlowOnce() {
+        if (initialWeatherFlowStarted) return
+        initialWeatherFlowStarted = true
         binding.root.post(::startInitialWeatherLocationFlow)
     }
 
@@ -97,6 +157,13 @@ class MainActivity : AppCompatActivity() {
         ) {
             InitialWeatherLocationAction.RequestPermission -> {
                 weatherPreferences.markInitialLocationPermissionRequested()
+                val traceId = LobsterTrace.newId()
+                locationPermissionTraceId = traceId
+                LobsterClient.reportUsage(
+                    this,
+                    LobsterSettingEventFactory.permissionRequested(LobsterPermissionTarget.LOCATION)
+                        .withTrace(traceId)
+                )
                 locationPermissionLauncher.launch(Manifest.permission.ACCESS_COARSE_LOCATION)
             }
             InitialWeatherLocationAction.ResolveLocation -> resolveInitialWeatherLocation()
@@ -150,6 +217,7 @@ class MainActivity : AppCompatActivity() {
 
     override fun onResume() {
         super.onResume()
+        homeResumed = true
         if (SettingsReturnCoordinator.consumeDeviceSettingsReturn(this)) {
             binding.root.postDelayed(returnToDeviceSettings, DEFAULT_LAUNCHER_SETTLE_DELAY_MS)
         }
@@ -163,9 +231,14 @@ class MainActivity : AppCompatActivity() {
         ) {
             viewModel.maybeRefreshWeather()
         }
+        maybeShowWeatherDetailHint()
     }
 
     override fun onPause() {
+        homeResumed = false
+        weatherDetailHintScheduled = false
+        binding.cardWeather.root.removeCallbacks(showWeatherDetailHintRunnable)
+        weatherDetailHintPopup.dismiss()
         tickerJob?.cancel()
         tickerJob = null
         viewModel.cancelPendingWeatherRefresh()
@@ -174,6 +247,8 @@ class MainActivity : AppCompatActivity() {
 
     override fun onDestroy() {
         binding.root.removeCallbacks(returnToDeviceSettings)
+        binding.cardWeather.root.removeCallbacks(showWeatherDetailHintRunnable)
+        weatherDetailHintPopup.dismiss()
         if (packageReceiverRegistered) {
             unregisterReceiver(packageChangeReceiver)
         }
@@ -202,8 +277,16 @@ class MainActivity : AppCompatActivity() {
             scope = lifecycleScope,
             lowPerformanceMode = settings.lowPerformanceMode,
             iconScale = settings.iconScale,
+            homeLayoutLocked = settings.homeLayoutLocked,
+            homeLongPressResponse = settings.homeLongPressResponse,
             onItemClick = navigator::openHomeItem,
-            onOrderChanged = viewModel::saveAppOrder
+            onOrderChanged = { items ->
+                viewModel.saveAppOrder(items)
+                LobsterClient.reportUsage(
+                    this,
+                    LobsterSettingEventFactory.homeAppsReordered().withTrace(LobsterTrace.newId())
+                )
+            }
         )
         binding.recyclerHome.layoutManager = GridLayoutManager(this, 2)
         binding.recyclerHome.setHasFixedSize(false)
@@ -218,7 +301,7 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun setupActions() {
-        binding.cardWeather.root.setOnClickListener { navigator.openWeatherEntry() }
+        binding.cardWeather.root.setOnClickListener { openWeatherDetails() }
         binding.btnFamilySettings.setOnClickListener { navigator.showCaregiverEntryDialog() }
         binding.btnAdjustHome.setOnClickListener { navigator.openAppManager() }
     }
@@ -232,8 +315,48 @@ class MainActivity : AppCompatActivity() {
         }
         lifecycleScope.launch {
             viewModel.weatherState.collect { state ->
-                state?.let(headerController::renderWeather)
+                state?.let {
+                    headerController.renderWeather(it)
+                    weatherAvailableForHint = it.now != null
+                    maybeShowWeatherDetailHint()
+                }
             }
+        }
+    }
+
+    private fun openWeatherDetails() {
+        weatherDetailHintPopup.dismiss()
+        navigator.openWeatherEntry()
+    }
+
+    private fun maybeShowWeatherDetailHint() {
+        if (
+            !shouldRevealWeatherDetailHint(
+                weatherAvailable = weatherAvailableForHint,
+                hostResumed = homeResumed,
+                familySetupPending = familySetupPreferences.shouldLaunchAutomatically(),
+                alreadyShown = weatherDetailHintPreferences.hasBeenShown(),
+            ) || weatherDetailHintScheduled || weatherDetailHintPopup.isShowing
+        ) {
+            return
+        }
+        weatherDetailHintScheduled = true
+        binding.cardWeather.root.post(showWeatherDetailHintRunnable)
+    }
+
+    private fun showWeatherDetailHintAfterLayout() {
+        if (
+            !shouldRevealWeatherDetailHint(
+                weatherAvailable = weatherAvailableForHint,
+                hostResumed = homeResumed,
+                familySetupPending = familySetupPreferences.shouldLaunchAutomatically(),
+                alreadyShown = weatherDetailHintPreferences.hasBeenShown(),
+            ) || !binding.cardWeather.root.isAttachedToWindow || binding.cardWeather.root.width == 0
+        ) {
+            return
+        }
+        if (weatherDetailHintPreferences.markShownIfFirstTime()) {
+            weatherDetailHintPopup.show(viewModel.settings.value.lowPerformanceMode)
         }
     }
 
@@ -249,6 +372,8 @@ class MainActivity : AppCompatActivity() {
         binding.recyclerHome.itemAnimator = if (settings.lowPerformanceMode) null else DefaultItemAnimator()
         adapter.setLowPerformanceMode(settings.lowPerformanceMode)
         adapter.setIconScale(settings.iconScale)
+        adapter.setHomeLayoutLocked(settings.homeLayoutLocked)
+        adapter.setHomeLongPressResponse(settings.homeLongPressResponse)
         itemMoveCallback.setAnimateDrag(!settings.lowPerformanceMode)
         headerController.applyScale(settings.iconScale)
     }
