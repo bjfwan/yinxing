@@ -17,6 +17,20 @@
         android:textColor="@color/launcher_text_primary"
         android:textSize="11sp" />
 
+    <CheckBox
+        android:id="@+id/wechat_teaching_upload_choice"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="3dp"
+        android:buttonTint="@color/launcher_action"
+        android:checked="true"
+        android:gravity="center_vertical"
+        android:minHeight="48dp"
+        android:text="@string/settings_wechat_teaching_upload_choice"
+        android:textColor="@color/launcher_text_secondary"
+        android:textSize="12sp"
+        android:visibility="gone" />
+
     <TextView
         android:id="@+id/wechat_teaching_primary"
         android:layout_width="match_parent"

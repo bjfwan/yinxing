@@ -10,17 +10,21 @@ import androidx.core.content.ContextCompat
 import com.yinxing.launcher.R
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
+import org.junit.After
 import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.Robolectric
 import org.robolectric.RobolectricTestRunner
+import org.robolectric.android.controller.ActivityController
 import org.robolectric.shadows.ShadowAlertDialog
 import org.robolectric.Shadows.shadowOf
 import com.yinxing.launcher.data.weather.WeatherPreferences
 
 @RunWith(RobolectricTestRunner::class)
 class WeatherCityManagerActivitySmokeTest {
+    private var activityController: ActivityController<WeatherCityManagerActivity>? = null
+
     @Before
     fun setUp() {
         val context = ApplicationProvider.getApplicationContext<Context>()
@@ -31,9 +35,16 @@ class WeatherCityManagerActivitySmokeTest {
         WeatherPreferences.resetForTest()
     }
 
+    @After
+    fun tearDown() {
+        activityController?.destroy()
+        activityController = null
+        WeatherPreferences.resetForTest()
+    }
+
     @Test
     fun `city manager keeps only a simple add city action at the bottom`() {
-        val activity = Robolectric.buildActivity(WeatherCityManagerActivity::class.java).setup().get()
+        val activity = buildActivity()
 
         assertEquals(
             "添加城市",
@@ -56,7 +67,7 @@ class WeatherCityManagerActivitySmokeTest {
 
     @Test
     fun `city manager respects top and bottom safe areas`() {
-        val activity = Robolectric.buildActivity(WeatherCityManagerActivity::class.java).setup().get()
+        val activity = buildActivity()
         val root = activity.findViewById<android.view.View>(R.id.weather_city_root)
         val insets = WindowInsetsCompat.Builder()
             .setInsets(WindowInsetsCompat.Type.systemBars(), Insets.of(0, 72, 0, 96))
@@ -70,7 +81,7 @@ class WeatherCityManagerActivitySmokeTest {
 
     @Test
     fun `current location uses the system permission flow without an app dialog`() {
-        val activity = Robolectric.buildActivity(WeatherCityManagerActivity::class.java).setup().get()
+        val activity = buildActivity()
 
         activity.findViewById<android.view.View>(R.id.btn_use_current_location).performClick()
 
@@ -79,7 +90,7 @@ class WeatherCityManagerActivitySmokeTest {
 
     @Test
     fun `city manager uses the project light surface and dark text hierarchy`() {
-        val activity = Robolectric.buildActivity(WeatherCityManagerActivity::class.java).setup().get()
+        val activity = buildActivity()
 
         assertEquals(
             ContextCompat.getColor(activity, R.color.launcher_text_primary),
@@ -93,7 +104,7 @@ class WeatherCityManagerActivitySmokeTest {
 
     @Test
     fun `city manager toolbar actions use bounded rounded feedback`() {
-        val activity = Robolectric.buildActivity(WeatherCityManagerActivity::class.java).setup().get()
+        val activity = buildActivity()
 
         listOf(R.id.btn_back, R.id.btn_manage).forEach { viewId ->
             val background = activity.findViewById<android.view.View>(viewId).background
@@ -103,7 +114,7 @@ class WeatherCityManagerActivitySmokeTest {
 
     @Test
     fun `system back returns a changed city result`() {
-        val activity = Robolectric.buildActivity(WeatherCityManagerActivity::class.java).setup().get()
+        val activity = buildActivity()
         WeatherCityManagerActivity::class.java.getDeclaredField("selectionChanged").apply {
             isAccessible = true
             setBoolean(activity, true)
@@ -114,4 +125,10 @@ class WeatherCityManagerActivitySmokeTest {
         assertEquals(Activity.RESULT_OK, shadowOf(activity).resultCode)
         assertTrue(activity.isFinishing)
     }
+
+    private fun buildActivity(): WeatherCityManagerActivity =
+        Robolectric.buildActivity(WeatherCityManagerActivity::class.java)
+            .setup()
+            .also { activityController = it }
+            .get()
 }

@@ -199,7 +199,7 @@ class SettingsWechatTeachingTest {
     }
 
     @Test
-    fun verifiedBuiltInStepsAreClearlyShownAsRecordedInsteadOfMissing() {
+    fun verifiedBuiltInStepsAreShownAsCalibrationFallbacks() {
         val context = ApplicationProvider.getApplicationContext<android.content.Context>()
         val fingerprint = WeChatTeachingFingerprint(
             manufacturer = "vivo",
@@ -250,18 +250,79 @@ class SettingsWechatTeachingTest {
 
         val content = activity.findViewById<View>(android.R.id.content)
         val recordedTitle = arrayListOf<View>()
-        val recordedSummary = arrayListOf<View>()
+        val calibrationSummary = arrayListOf<View>()
         content.findViewsWithText(
             recordedTitle,
             activity.getString(R.string.settings_wechat_rules_recorded_title),
             View.FIND_VIEWS_WITH_TEXT
         )
         content.findViewsWithText(
-            recordedSummary,
-            activity.getString(R.string.settings_wechat_rules_no_difference_summary, 3),
+            calibrationSummary,
+            activity.getString(
+                R.string.settings_wechat_rules_selector_text,
+                activity.getString(R.string.settings_wechat_teaching_rule_more),
+                90
+            ),
             View.FIND_VIEWS_WITH_TEXT
         )
         assertFalse(recordedTitle.isEmpty())
-        assertFalse(recordedSummary.isEmpty())
+        assertFalse(calibrationSummary.isEmpty())
+    }
+
+    @Test
+    fun pendingCandidatesAreVisibleButNotPresentedAsExecutableRules() {
+        val context = ApplicationProvider.getApplicationContext<android.content.Context>()
+        val fingerprint = WeChatTeachingFingerprint(
+            manufacturer = "oppo",
+            model = "OPD2506",
+            androidSdk = 36,
+            screenWidth = 1272,
+            screenHeight = 2800,
+            densityDpi = 560,
+            fontScalePermille = 1000,
+            localeTag = "zh-CN",
+            weChatVersionName = "8.0.66",
+            weChatVersionCode = 2980
+        )
+        val pending = WeChatTeachingProfile(
+            fingerprint = fingerprint,
+            steps = listOf(
+                WeChatTeachingStep(
+                    action = WeChatTeachingAction.OPEN_MORE,
+                    windowClass = "com.tencent.mm.ui.chatting.ChattingUI",
+                    expectedWindowClass = "com.tencent.mm.ui.chatting.ChattingUI",
+                    selector = WeChatTeachingSelector(
+                        resourceId = "com.tencent.mm:id/device_more",
+                        nodeClass = "android.widget.ImageView",
+                        semanticLabel = null,
+                        clickableAncestorDepth = 0,
+                        centerXRatio = 0.9f,
+                        centerYRatio = 0.1f
+                    )
+                )
+            ),
+            reliabilityScore = 70,
+            reliability = WeChatTeachingReliability.USABLE_WITH_POSITION_FALLBACK,
+            createdAtEpochMs = 12_000L
+        )
+        WeChatTeachingStore(context).savePendingCandidates(
+            WeChatTeachingResult.Incomplete(
+                setOf(com.yinxing.launcher.automation.wechat.teaching.WeChatTeachingRequirement.CALL_PAGE_REACHED),
+                pending
+            ),
+            fingerprint,
+            12_000L
+        )
+        val activity = Robolectric.buildActivity(SettingsActivity::class.java).setup().get()
+
+        activity.showScreen(SettingsScreen.WeChatRules)
+
+        val pendingSummary = arrayListOf<View>()
+        activity.findViewById<View>(android.R.id.content).findViewsWithText(
+            pendingSummary,
+            activity.getString(R.string.settings_wechat_rules_pending_summary, 1),
+            View.FIND_VIEWS_WITH_TEXT
+        )
+        assertFalse(pendingSummary.isEmpty())
     }
 }

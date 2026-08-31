@@ -57,6 +57,19 @@ class FallAlertActivityTest {
         controller.destroy()
     }
 
+    @Test
+    @Config(sdk = [24])
+    fun alertCanOpenOnAndroidSevenWithoutCallingNewerPlatformApis() {
+        val controller = Robolectric.buildActivity(FallAlertActivity::class.java).setup()
+
+        assertEquals(
+            "30",
+            controller.get().findViewById<TextView>(R.id.fall_alert_countdown).text.toString()
+        )
+
+        controller.destroy()
+    }
+
     private fun resetLauncherPreferencesSingleton() {
         val field = Class.forName("com.yinxing.launcher.data.home.LauncherPreferences")
             .getDeclaredField("instance")

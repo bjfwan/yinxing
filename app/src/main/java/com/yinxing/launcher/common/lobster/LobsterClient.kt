@@ -50,7 +50,7 @@ object LobsterClient {
 
     private val endpoint: String
         get() = BuildConfig.LOBSTER_UPLOAD_URL.trim().ifBlank {
-            "https://log.likeyou.qzz.io/api/upload"
+            "https://log.722688.xyz/api/upload"
         }
 
     private val baseEndpoint: String

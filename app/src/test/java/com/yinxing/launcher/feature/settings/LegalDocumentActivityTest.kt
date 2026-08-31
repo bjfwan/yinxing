@@ -23,7 +23,7 @@ class LegalDocumentActivityTest {
         val webView = activity.findViewById<WebView>(R.id.legal_document_web_view)
 
         assertEquals("隐私政策", activity.findViewById<TextView>(R.id.legal_document_title).text.toString())
-        assertEquals("https://yx.likeyou.qzz.io/privacy.html", shadowOf(webView).lastLoadedUrl)
+        assertEquals("https://yinxing.722688.xyz/privacy", shadowOf(webView).lastLoadedUrl)
         assertFalse(webView.settings.javaScriptEnabled)
         assertFalse(webView.settings.allowFileAccess)
         assertFalse(webView.settings.allowContentAccess)
@@ -35,7 +35,7 @@ class LegalDocumentActivityTest {
         val webView = activity.findViewById<WebView>(R.id.legal_document_web_view)
 
         assertEquals("服务条款", activity.findViewById<TextView>(R.id.legal_document_title).text.toString())
-        assertEquals("https://yx.likeyou.qzz.io/terms.html", shadowOf(webView).lastLoadedUrl)
+        assertEquals("https://yinxing.722688.xyz/terms", shadowOf(webView).lastLoadedUrl)
     }
 
     @Test

@@ -82,6 +82,16 @@ class IncomingCallForegroundServiceTest {
     }
 
     @Test
+    fun ongoingCallStyleKeepsAFullScreenIntentForModernAndroidEligibility() {
+        val notification = IncomingCallNotificationController.buildOngoing(
+            application,
+            callerName = "李阿姨"
+        )
+
+        assertNotNull(notification.fullScreenIntent)
+    }
+
+    @Test
     fun notificationActionsLaunchIncomingCallActivityWithAcceptAndDeclineTriggers() {
         val service = startService(callerName = "赵大爷", autoAnswer = false)
         val notification = foregroundNotificationOf(service)

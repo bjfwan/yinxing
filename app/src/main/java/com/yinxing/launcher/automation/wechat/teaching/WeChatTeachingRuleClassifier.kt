@@ -35,7 +35,11 @@ object WeChatTeachingRuleClassifier {
             WeChatTeachingAction.OPEN_MORE ->
                 selector.semanticLabel == WeChatTeachingSemanticLabel.MORE ||
                     selector.resourceId in WeChatViewIds.MORE_BUTTON_FALLBACK_IDS
-            WeChatTeachingAction.OPEN_VIDEO_MENU,
+            WeChatTeachingAction.OPEN_VIDEO_MENU ->
+                selector.semanticLabel in setOf(
+                    WeChatTeachingSemanticLabel.AUDIO_VIDEO_MENU,
+                    WeChatTeachingSemanticLabel.VIDEO_CALL
+                )
             WeChatTeachingAction.START_VIDEO_CALL ->
                 selector.semanticLabel == WeChatTeachingSemanticLabel.VIDEO_CALL
         }

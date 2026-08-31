@@ -22,6 +22,7 @@
 - [测试策略](testing/test-strategy.md)
 - [项目路线图](roadmap/project-roadmap.md)
 - [发布检查清单](release/release-checklist.md)
+- [微信视频语义能力迁移](specs/wechat-capability-behavior-tree-migration.md)
 
 ## 文档维护原则
 

@@ -39,7 +39,49 @@ object WeChatTeachingObservationExtractor {
                     recycleSafely(source)
                 }
             }
+            AccessibilityEvent.TYPE_VIEW_TEXT_CHANGED -> structuralObservation(
+                event = event,
+                kind = WeChatTeachingObservationKind.INPUT_CONTACT,
+                activeWindowClass = activeWindowClass,
+                screenWidth = screenWidth,
+                screenHeight = screenHeight,
+                elapsedMs = elapsedMs
+            )
+            AccessibilityEvent.TYPE_VIEW_SCROLLED -> structuralObservation(
+                event = event,
+                kind = WeChatTeachingObservationKind.SCROLL,
+                activeWindowClass = activeWindowClass,
+                screenWidth = screenWidth,
+                screenHeight = screenHeight,
+                elapsedMs = elapsedMs
+            )
             else -> null
+        }
+    }
+
+    private fun structuralObservation(
+        event: AccessibilityEvent,
+        kind: WeChatTeachingObservationKind,
+        activeWindowClass: String?,
+        screenWidth: Int,
+        screenHeight: Int,
+        elapsedMs: Long
+    ): WeChatTeachingObservation? {
+        val source = event.source ?: return null
+        return try {
+            val selector = selectorFromNode(source, screenWidth, screenHeight)
+            WeChatTeachingObservation(
+                kind = kind,
+                windowClass = safeClassName(activeWindowClass),
+                selector = if (kind == WeChatTeachingObservationKind.INPUT_CONTACT) {
+                    selector.copy(semanticLabel = null)
+                } else {
+                    selector
+                },
+                elapsedMs = elapsedMs.coerceAtLeast(0L)
+            )
+        } finally {
+            recycleSafely(source)
         }
     }
 

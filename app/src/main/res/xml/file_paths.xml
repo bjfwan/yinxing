@@ -3,4 +3,7 @@
     <cache-path
         name="diagnostics"
         path="diagnostics/" />
+    <cache-path
+        name="oplus_home_compat"
+        path="oplus_home_compat/" />
 </paths>

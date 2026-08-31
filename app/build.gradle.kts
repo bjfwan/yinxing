@@ -121,3 +121,10 @@ dependencies {
     androidTestImplementation(libs.androidx.espresso.core)
     androidTestImplementation(libs.androidx.test.runner)
 }
+
+tasks.withType<org.gradle.api.tasks.testing.Test>().configureEach {
+    // Robolectric keeps a sandbox per loaded test class. Recycle the worker in
+    // long suites so settings/weather UI tests cannot exhaust one shared heap.
+    maxParallelForks = 1
+    forkEvery = 40
+}

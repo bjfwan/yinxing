@@ -22,7 +22,9 @@ internal data class WeChatFailureSnapshot(
     val lastAnnouncedMessage: String?,
     val lastSemanticPage: String? = null,
     val taskStep: String? = null,
-    val taskReason: String? = null
+    val taskReason: String? = null,
+    val capabilityId: String? = null,
+    val capabilityFailure: String? = null
 )
 
 internal data class WeChatFailureReplay(
@@ -59,6 +61,8 @@ internal object WeChatFailureDiagnostics {
                 append(", lastSemanticPage=").append(session.lastSemanticPage)
                 append(", taskStep=").append(session.taskStep)
                 append(", taskReason=").append(session.taskReason)
+                append(", capabilityId=").append(session.capabilityId)
+                append(", capabilityFailure=").append(session.capabilityFailure)
             }
             append("\nroot=").append(AccessibilityUtil.summarizeNode(root))
             append("\nwindows=").append(describeWindows(service))
@@ -149,6 +153,8 @@ internal object WeChatFailureDiagnostics {
             .put("lastSemanticPage", session.lastSemanticPage)
             .put("taskStep", session.taskStep)
             .put("taskReason", session.taskReason)
+            .put("capabilityId", session.capabilityId)
+            .put("capabilityFailure", session.capabilityFailure)
     }
 
     private fun sessionFromJson(json: JSONObject): WeChatFailureSnapshot {
@@ -165,7 +171,9 @@ internal object WeChatFailureDiagnostics {
             lastAnnouncedMessage = json.optString("lastAnnouncedMessage").takeIf { it.isNotEmpty() },
             lastSemanticPage = json.optString("lastSemanticPage").takeIf { it.isNotEmpty() },
             taskStep = json.optString("taskStep").takeIf { it.isNotEmpty() },
-            taskReason = json.optString("taskReason").takeIf { it.isNotEmpty() }
+            taskReason = json.optString("taskReason").takeIf { it.isNotEmpty() },
+            capabilityId = json.optString("capabilityId").takeIf { it.isNotEmpty() },
+            capabilityFailure = json.optString("capabilityFailure").takeIf { it.isNotEmpty() }
         )
     }
 

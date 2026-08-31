@@ -131,6 +131,102 @@ class WeChatUiSnapshotAnalyzerTest {
     }
 
     @Test
+    fun verifiesTargetConversationFromTitleEvidenceInsteadOfMessageText() {
+        val messageOnly = node(
+            children = listOf(
+                node(text = "妈妈"),
+                node(contentDescription = "更多"),
+                node(editable = true)
+            )
+        )
+        val titledChat = node(
+            children = listOf(
+                node(
+                    text = "妈妈",
+                    viewIdResourceName = "com.tencent.mm:id/odf"
+                ),
+                node(contentDescription = "更多"),
+                node(editable = true)
+            )
+        )
+        val contactDetail = node(
+            children = listOf(
+                node(text = "妈妈"),
+                node(text = "音视频通话")
+            )
+        )
+
+        assertFalse(WeChatUiSnapshotAnalyzer.isVerifiedTargetConversation(messageOnly, listOf("妈妈")))
+        assertTrue(WeChatUiSnapshotAnalyzer.isVerifiedTargetConversation(titledChat, listOf("妈妈")))
+        assertTrue(WeChatUiSnapshotAnalyzer.isVerifiedTargetConversation(contactDetail, listOf("妈妈")))
+    }
+
+    @Test
+    fun verifiesKnownConversationTitleWhenSnapshotBodyIsTruncated() {
+        val truncatedChatHeader = node(
+            children = listOf(
+                node(
+                    text = "wan.",
+                    viewIdResourceName = "com.tencent.mm:id/kbq"
+                )
+            )
+        )
+
+        assertTrue(
+            WeChatUiSnapshotAnalyzer.isVerifiedTargetConversation(
+                truncatedChatHeader,
+                listOf("wan.")
+            )
+        )
+    }
+
+    @Test
+    fun verifiesUnknownConversationTitleOnlyInsideTopTitleBand() {
+        val rootBounds = WeChatUiBounds(0, 0, 1080, 2400)
+        val topTitle = node(
+            bounds = rootBounds,
+            children = listOf(
+                node(
+                    text = "wan.",
+                    viewIdResourceName = "com.tencent.mm:id/new_title",
+                    bounds = WeChatUiBounds(300, 80, 780, 180)
+                )
+            )
+        )
+        val messageBody = node(
+            bounds = rootBounds,
+            children = listOf(
+                node(
+                    text = "wan.",
+                    viewIdResourceName = "com.tencent.mm:id/message_text",
+                    bounds = WeChatUiBounds(300, 900, 780, 1020)
+                )
+            )
+        )
+
+        assertTrue(WeChatUiSnapshotAnalyzer.isVerifiedTargetConversation(topTitle, listOf("wan.")))
+        assertFalse(WeChatUiSnapshotAnalyzer.isVerifiedTargetConversation(messageBody, listOf("wan.")))
+    }
+
+    @Test
+    fun sharesSafeTitleBandPolicyWithLiveConversationDetection() {
+        val rootBounds = WeChatUiBounds(0, 0, 2120, 3000)
+
+        assertTrue(
+            WeChatConversationTitlePolicy.isInsideTitleBand(
+                rootBounds,
+                WeChatUiBounds(700, 90, 1420, 230)
+            )
+        )
+        assertFalse(
+            WeChatConversationTitlePolicy.isInsideTitleBand(
+                rootBounds,
+                WeChatUiBounds(500, 900, 1620, 1050)
+            )
+        )
+    }
+
+    @Test
     fun requiresKnownTitleOrSecondaryFieldForSearchResultDisplayName() {
         val genericExactTextSnapshot = node(
             clickable = true,
@@ -219,7 +315,9 @@ class WeChatUiSnapshotAnalyzerTest {
                 lastAnnouncedMessage = "正在搜索",
                 lastSemanticPage = "NO_RESULT",
                 taskStep = "WAITING_CONTACT_RESULT",
-                taskReason = "no_contact_result"
+                taskReason = "no_contact_result",
+                capabilityId = "OPEN_SEARCH_RESULT",
+                capabilityFailure = "SEARCH_RESULT_NOT_FOUND"
             ),
             root = node(
                 children = listOf(
@@ -238,6 +336,8 @@ class WeChatUiSnapshotAnalyzerTest {
         assertEquals("NO_RESULT", decoded.session?.lastSemanticPage)
         assertEquals("WAITING_CONTACT_RESULT", decoded.session?.taskStep)
         assertEquals("no_contact_result", decoded.session?.taskReason)
+        assertEquals("OPEN_SEARCH_RESULT", decoded.session?.capabilityId)
+        assertEquals("SEARCH_RESULT_NOT_FOUND", decoded.session?.capabilityFailure)
         assertTrue(decoded.root?.let(WeChatUiSnapshotAnalyzer::hasNoSearchResult) == true)
     }
 
@@ -248,6 +348,7 @@ class WeChatUiSnapshotAnalyzerTest {
         className: String? = null,
         clickable: Boolean = false,
         editable: Boolean = false,
+        bounds: WeChatUiBounds? = null,
         children: List<WeChatUiSnapshot> = emptyList()
     ): WeChatUiSnapshot {
         return WeChatUiSnapshot(
@@ -257,6 +358,7 @@ class WeChatUiSnapshotAnalyzerTest {
             className = className,
             clickable = clickable,
             editable = editable,
+            bounds = bounds,
             children = children
         )
     }

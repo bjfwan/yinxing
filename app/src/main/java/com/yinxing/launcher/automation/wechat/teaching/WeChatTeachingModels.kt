@@ -2,7 +2,11 @@ package com.yinxing.launcher.automation.wechat.teaching
 
 enum class WeChatTeachingObservationKind {
     CLICK,
-    WINDOW
+    WINDOW,
+    LAUNCH,
+    INPUT_CONTACT,
+    SCROLL,
+    BACK
 }
 
 enum class WeChatTeachingObservationSource {
@@ -13,6 +17,7 @@ enum class WeChatTeachingObservationSource {
 enum class WeChatTeachingSemanticLabel {
     SEARCH,
     MORE,
+    AUDIO_VIDEO_MENU,
     VIDEO_CALL,
     VOICE_CALL;
 
@@ -23,7 +28,8 @@ enum class WeChatTeachingSemanticLabel {
             return when {
                 normalized == "搜索" || normalized == "Search" || normalized == "搜索联系人" -> SEARCH
                 normalized.contains("更多功能按钮") || normalized == "更多" || normalized == "更多功能" -> MORE
-                normalized == "视频通话" || normalized == "音视频通话" -> VIDEO_CALL
+                normalized == "音视频通话" -> AUDIO_VIDEO_MENU
+                normalized == "视频通话" -> VIDEO_CALL
                 normalized == "语音通话" -> VOICE_CALL
                 else -> null
             }

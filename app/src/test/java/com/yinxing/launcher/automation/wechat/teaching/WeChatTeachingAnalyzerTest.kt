@@ -165,7 +165,7 @@ class WeChatTeachingAnalyzerTest {
     fun weakSemanticBuiltInStepIsKeptForVerificationButStillFailsRuleQuality() {
         val weakVideoMenu = click(
             windowClass = "com.tencent.mm.ui.chatting.ChattingUI",
-            label = WeChatTeachingSemanticLabel.VIDEO_CALL,
+            label = WeChatTeachingSemanticLabel.AUDIO_VIDEO_MENU,
             id = null,
             x = 0.62f,
             y = 0.72f
@@ -174,7 +174,7 @@ class WeChatTeachingAnalyzerTest {
             selector = WeChatTeachingSelector(
                 resourceId = null,
                 nodeClass = null,
-                semanticLabel = WeChatTeachingSemanticLabel.VIDEO_CALL,
+                semanticLabel = WeChatTeachingSemanticLabel.AUDIO_VIDEO_MENU,
                 clickableAncestorDepth = -1,
                 centerXRatio = 0.62f,
                 centerYRatio = 0.72f
@@ -236,7 +236,7 @@ class WeChatTeachingAnalyzerTest {
         )
         val visibleBuiltInCandidate = click(
             windowClass = "com.tencent.mm.ui.chatting.ChattingUI",
-            label = WeChatTeachingSemanticLabel.VIDEO_CALL,
+            label = WeChatTeachingSemanticLabel.AUDIO_VIDEO_MENU,
             id = null,
             x = 0.5f,
             y = 0.5f
@@ -352,7 +352,7 @@ class WeChatTeachingAnalyzerTest {
         )
         val videoMenu = click(
             windowClass = "com.tencent.mm.ui.chatting.ChattingUI",
-            label = WeChatTeachingSemanticLabel.VIDEO_CALL,
+            label = WeChatTeachingSemanticLabel.AUDIO_VIDEO_MENU,
             id = "com.tencent.mm:id/video_call_menu",
             x = 0.62f,
             y = 0.72f
@@ -446,7 +446,7 @@ class WeChatTeachingAnalyzerTest {
         ),
         click(
             windowClass = "com.tencent.mm.ui.chatting.ChattingUI",
-            label = WeChatTeachingSemanticLabel.VIDEO_CALL,
+            label = WeChatTeachingSemanticLabel.AUDIO_VIDEO_MENU,
             id = "com.tencent.mm:id/video_call_menu",
             x = 0.18f,
             y = 0.78f

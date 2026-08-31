@@ -10,6 +10,11 @@ internal object WeChatTeachingSummaryFormatter {
     fun format(context: Context, snapshot: WeChatTeachingSnapshot): String = when (snapshot.status) {
         WeChatTeachingProfileStatus.NOT_TAUGHT ->
             context.getString(R.string.settings_wechat_teaching_summary_not_taught)
+        WeChatTeachingProfileStatus.CANDIDATES_PENDING ->
+            context.getString(
+                R.string.settings_wechat_teaching_summary_candidates_pending,
+                snapshot.pendingActions.size
+            )
         WeChatTeachingProfileStatus.VIDEO_CONFIRMED_NO_RULES -> if (
             snapshot.verifiedActions.isEmpty()
         ) {

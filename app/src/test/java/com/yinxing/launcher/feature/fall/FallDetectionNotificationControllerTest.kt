@@ -50,4 +50,15 @@ class FallDetectionNotificationControllerTest {
         assertEquals(2, notification.actions.size)
         assertTrue(notification.flags and Notification.FLAG_ONGOING_EVENT != 0)
     }
+
+    @Test
+    @Config(sdk = [24])
+    fun androidSevenSkipsNotificationChannelsAndStillBuildsMonitoringNotification() {
+        FallDetectionNotificationController.ensureChannels(application)
+
+        val notification = FallDetectionNotificationController.buildMonitoring(application)
+
+        assertEquals(Notification.CATEGORY_SERVICE, notification.category)
+        assertNotNull(notification.contentIntent)
+    }
 }

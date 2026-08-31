@@ -25,6 +25,7 @@ data class LauncherSettings(
     val homeLongPressResponse: String = LauncherSettingsDataStore.DEFAULT_HOME_LONG_PRESS_RESPONSE,
     val autoAnswerEnabled: Boolean = true,
     val autoAnswerDelaySeconds: Int = LauncherSettingsDataStore.DEFAULT_AUTO_ANSWER_DELAY_SECONDS,
+    val returnHomeAfterCallEnabled: Boolean = true,
     val fullCardTapEnabled: Boolean = false,
     val darkMode: String = LauncherSettingsDataStore.DARK_MODE_SYSTEM,
     val fontScaleMode: String = LauncherSettingsDataStore.FONT_SCALE_SYSTEM,
@@ -97,6 +98,7 @@ class LauncherSettingsDataStore private constructor(context: Context) {
         private val KEY_HOME_LONG_PRESS_RESPONSE = stringPreferencesKey("home_long_press_response")
         private val KEY_AUTO_ANSWER_ENABLED = booleanPreferencesKey("auto_answer_enabled")
         private val KEY_AUTO_ANSWER_DELAY_SECONDS = intPreferencesKey("auto_answer_delay_seconds")
+        private val KEY_RETURN_HOME_AFTER_CALL_ENABLED = booleanPreferencesKey("return_home_after_call_enabled")
         private val KEY_FULL_CARD_TAP_ENABLED = booleanPreferencesKey("full_card_tap_enabled")
         private val KEY_DARK_MODE = stringPreferencesKey("dark_mode")
         private val KEY_FONT_SCALE_MODE = stringPreferencesKey("font_scale_mode")
@@ -174,6 +176,13 @@ class LauncherSettingsDataStore private constructor(context: Context) {
         mutate(
             update = { it.copy(iconScale = normalized) },
             persist = { it[KEY_ICON_SCALE] = normalized }
+        )
+    }
+
+    fun setReturnHomeAfterCallEnabled(enabled: Boolean) {
+        mutate(
+            update = { it.copy(returnHomeAfterCallEnabled = enabled) },
+            persist = { it[KEY_RETURN_HOME_AFTER_CALL_ENABLED] = enabled }
         )
     }
 
@@ -317,6 +326,7 @@ class LauncherSettingsDataStore private constructor(context: Context) {
             autoAnswerEnabled = this[KEY_AUTO_ANSWER_ENABLED] ?: true,
             autoAnswerDelaySeconds = (this[KEY_AUTO_ANSWER_DELAY_SECONDS] ?: DEFAULT_AUTO_ANSWER_DELAY_SECONDS)
                 .coerceIn(1, 30),
+            returnHomeAfterCallEnabled = this[KEY_RETURN_HOME_AFTER_CALL_ENABLED] ?: true,
             fullCardTapEnabled = this[KEY_FULL_CARD_TAP_ENABLED] ?: false,
             darkMode = normalizeDarkMode(this[KEY_DARK_MODE]),
             fontScaleMode = normalizeFontScaleMode(this[KEY_FONT_SCALE_MODE]),

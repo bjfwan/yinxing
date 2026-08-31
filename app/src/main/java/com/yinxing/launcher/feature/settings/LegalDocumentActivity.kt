@@ -196,12 +196,12 @@ internal enum class LegalDocument(
     @param:StringRes val titleRes: Int,
     val url: String
 ) {
-    PRIVACY("privacy", R.string.settings_about_privacy_title, "https://yx.likeyou.qzz.io/privacy.html"),
-    TERMS("terms", R.string.settings_about_terms_title, "https://yx.likeyou.qzz.io/terms.html");
+    PRIVACY("privacy", R.string.settings_about_privacy_title, "https://yinxing.722688.xyz/privacy"),
+    TERMS("terms", R.string.settings_about_terms_title, "https://yinxing.722688.xyz/terms");
 
     companion object {
         fun from(value: String?): LegalDocument? = entries.firstOrNull { it.value == value }
     }
 }
 
-private const val LEGAL_DOCUMENT_HOST = "yx.likeyou.qzz.io"
+private const val LEGAL_DOCUMENT_HOST = "yinxing.722688.xyz"

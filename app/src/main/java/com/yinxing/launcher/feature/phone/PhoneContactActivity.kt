@@ -48,6 +48,8 @@ import com.yinxing.launcher.common.ui.AvatarEditorController
 
 import com.yinxing.launcher.data.contact.Contact
 import com.yinxing.launcher.data.home.LauncherPreferences
+import com.yinxing.launcher.feature.callreturn.CallReturnCoordinator
+import com.yinxing.launcher.feature.callreturn.CallReturnOrigin
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
 
@@ -494,7 +496,9 @@ class PhoneContactActivity : FontScaleActivity() {
         }
         val intent = Intent(Intent.ACTION_CALL, Uri.fromParts("tel", number, null))
         val startedAt = SystemClock.elapsedRealtime()
+        CallReturnCoordinator.arm(this, CallReturnOrigin.SYSTEM_PHONE, traceId)
         runCatching { startActivity(intent) }.onFailure {
+            CallReturnCoordinator.cancel(CallReturnOrigin.SYSTEM_PHONE, traceId)
             LobsterClient.reportUsage(this, LobsterUsageEvents.OUTGOING_CALL_FAILED.withTrace(traceId))
             showToast(getString(R.string.dial_failed, it.message ?: ""))
         }.onSuccess {

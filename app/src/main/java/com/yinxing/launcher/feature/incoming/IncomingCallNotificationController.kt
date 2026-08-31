@@ -110,6 +110,7 @@ internal object IncomingCallNotificationController {
         )
         val person = Person.Builder().setName(callerLabel).setImportant(true).build()
         val endPendingIntent = activityPendingIntent(context, 111, endIntent)
+        val openPendingIntent = activityPendingIntent(context, 110, openIntent)
 
         return NotificationCompat.Builder(context, CHANNEL_ID)
             .setSmallIcon(android.R.drawable.sym_action_call)
@@ -119,7 +120,8 @@ internal object IncomingCallNotificationController {
             .setPriority(NotificationCompat.PRIORITY_HIGH)
             .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
             .setOngoing(true)
-            .setContentIntent(activityPendingIntent(context, 110, openIntent))
+            .setContentIntent(openPendingIntent)
+            .setFullScreenIntent(openPendingIntent, true)
             .setStyle(NotificationCompat.CallStyle.forOngoingCall(person, endPendingIntent))
             .build()
     }

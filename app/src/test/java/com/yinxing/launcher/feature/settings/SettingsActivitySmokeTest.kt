@@ -198,7 +198,7 @@ class SettingsActivitySmokeTest {
         idle()
         activity.showScreen(SettingsScreen.Calls)
         assertTrue(
-            activity.findDetailText(
+            activity.findAnyDetailText(
                 activity.getString(
                     R.string.settings_auto_answer_delay_summary,
                     LauncherPreferences.DEFAULT_AUTO_ANSWER_DELAY_SECONDS
@@ -214,8 +214,26 @@ class SettingsActivitySmokeTest {
         idle()
         activity.showScreen(SettingsScreen.Calls)
         assertTrue(
-            activity.findDetailText(
+            activity.findAnyDetailText(
                 activity.getString(R.string.settings_auto_answer_summary_off)
+            ).isNotEmpty()
+        )
+    }
+
+    @Test
+    fun callsScreenShowsReturnHomeAfterCallSwitch() {
+        val activity = buildActivity()
+        idle()
+        activity.showScreen(SettingsScreen.Calls)
+
+        assertTrue(
+            activity.findAnyDetailText(
+                activity.getString(R.string.settings_return_home_after_call_title)
+            ).isNotEmpty()
+        )
+        assertTrue(
+            activity.findAnyDetailText(
+                activity.getString(R.string.settings_return_home_after_call_summary_on)
             ).isNotEmpty()
         )
     }
@@ -262,7 +280,7 @@ class SettingsActivitySmokeTest {
         activity.showScreen(SettingsScreen.Calls)
         assertEquals(1, activity.detailRows().childCount)
         assertEquals(View.VISIBLE, activity.findViewById<View>(R.id.settings_detail_card_secondary).visibility)
-        assertEquals(2, activity.detailRows(R.id.settings_detail_rows_secondary).childCount)
+        assertEquals(3, activity.detailRows(R.id.settings_detail_rows_secondary).childCount)
 
         activity.showScreen(SettingsScreen.CallDiagnostics)
         assertEquals(1, activity.detailRows().childCount)
@@ -429,6 +447,38 @@ class SettingsActivitySmokeTest {
     }
 
     @Test
+    fun deviceSettingsExplainTheCurrentVendorAndOfferOptionalHomeRedirect() {
+        val originalManufacturer = Build.MANUFACTURER
+        ShadowBuild.setManufacturer("vivo")
+        try {
+            val activity = buildActivity()
+            activity.showScreen(SettingsScreen.Device)
+
+            assertTrue(activity.findDetailText("vivo / iQOO：先设置默认桌面，并完成系统安全授权").isNotEmpty())
+            assertTrue(activity.findDetailText("Home 辅助返回").isNotEmpty())
+            assertTrue(activity.findDetailText("默认关闭；仅在系统不允许更换桌面时使用").isNotEmpty())
+            assertTrue(activity.findDetailText("OPPO 桌面兼容组件").isEmpty())
+        } finally {
+            ShadowBuild.setManufacturer(originalManufacturer)
+        }
+    }
+
+    @Test
+    fun oplusDeviceOffersItsVerifiedCompatibilityComponent() {
+        val originalManufacturer = Build.MANUFACTURER
+        ShadowBuild.setManufacturer("OPPO")
+        try {
+            val activity = buildActivity()
+            activity.showScreen(SettingsScreen.Device)
+
+            assertTrue(activity.findDetailText("OPPO / realme / OnePlus：优先尝试默认桌面，不支持时使用兼容方案").isNotEmpty())
+            assertTrue(activity.findDetailText("OPPO 桌面兼容组件").isNotEmpty())
+        } finally {
+            ShadowBuild.setManufacturer(originalManufacturer)
+        }
+    }
+
+    @Test
     fun lifecycleTransitionsDoNotFinishActivity() {
         val controller = Robolectric.buildActivity(SettingsActivity::class.java).setup()
         idle()
@@ -488,6 +538,17 @@ class SettingsActivitySmokeTest {
     private fun SettingsActivity.findDetailText(text: String): List<View> = arrayListOf<View>().also {
         findViewById<View>(R.id.settings_detail_rows)
             .findViewsWithText(it, text, View.FIND_VIEWS_WITH_TEXT)
+    }
+
+    private fun SettingsActivity.findAnyDetailText(text: String): List<View> = arrayListOf<View>().also { matches ->
+        listOf(
+            R.id.settings_detail_rows,
+            R.id.settings_detail_rows_secondary,
+            R.id.settings_detail_rows_tertiary
+        ).forEach { containerId ->
+            findViewById<View>(containerId)
+                .findViewsWithText(matches, text, View.FIND_VIEWS_WITH_TEXT)
+        }
     }
 
     private fun SettingsActivity.detailRows(

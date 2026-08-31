@@ -30,6 +30,38 @@ class WeChatAutomationRecoveryPolicyTest {
     }
 
     @Test
+    fun `verified query advances once then defers to result handler`() {
+        assertEquals(
+            SearchResultWaitDecision.ADVANCE_TO_RESULTS,
+            WeChatSearchResultWaitPolicy.decide(
+                queryVerified = true,
+                inSearchInputStep = true,
+                inSearchResultStep = false
+            )
+        )
+        assertEquals(
+            SearchResultWaitDecision.DEFER_TO_RESULT_HANDLER,
+            WeChatSearchResultWaitPolicy.decide(
+                queryVerified = true,
+                inSearchInputStep = false,
+                inSearchResultStep = true
+            )
+        )
+    }
+
+    @Test
+    fun `unverified query never advances to result handler`() {
+        assertEquals(
+            SearchResultWaitDecision.KEEP_WAITING,
+            WeChatSearchResultWaitPolicy.decide(
+                queryVerified = false,
+                inSearchInputStep = true,
+                inSearchResultStep = false
+            )
+        )
+    }
+
+    @Test
     fun `relaunches WeChat only after another app remains foreground`() {
         assertEquals(
             ForegroundRecoveryDecision.WAIT,

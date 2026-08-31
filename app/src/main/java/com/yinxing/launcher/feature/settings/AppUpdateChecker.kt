@@ -20,8 +20,10 @@ internal sealed class AppUpdateState {
     data class Failed(val message: String) : AppUpdateState()
 }
 
+internal const val DEFAULT_APP_UPDATE_ENDPOINT = "https://yinxing.722688.xyz/update.json"
+
 internal class AppUpdateChecker(
-    private val endpoint: String = "https://yx.likeyou.qzz.io/update.json"
+    private val endpoint: String = DEFAULT_APP_UPDATE_ENDPOINT
 ) {
     suspend fun check(): AppUpdateState = withContext(Dispatchers.IO) {
         var connection: HttpURLConnection? = null

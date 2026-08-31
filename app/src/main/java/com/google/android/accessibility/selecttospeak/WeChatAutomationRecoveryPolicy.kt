@@ -16,6 +16,25 @@ internal object WeChatSearchInputPolicy {
     }
 }
 
+internal enum class SearchResultWaitDecision {
+    ADVANCE_TO_RESULTS,
+    DEFER_TO_RESULT_HANDLER,
+    KEEP_WAITING
+}
+
+internal object WeChatSearchResultWaitPolicy {
+    fun decide(
+        queryVerified: Boolean,
+        inSearchInputStep: Boolean,
+        inSearchResultStep: Boolean
+    ): SearchResultWaitDecision = when {
+        !queryVerified -> SearchResultWaitDecision.KEEP_WAITING
+        inSearchInputStep -> SearchResultWaitDecision.ADVANCE_TO_RESULTS
+        inSearchResultStep -> SearchResultWaitDecision.DEFER_TO_RESULT_HANDLER
+        else -> SearchResultWaitDecision.KEEP_WAITING
+    }
+}
+
 internal enum class ForegroundRecoveryDecision { WAIT, RELAUNCH, FAIL }
 
 internal object WeChatForegroundRecoveryPolicy {

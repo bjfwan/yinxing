@@ -4,6 +4,7 @@ import android.app.KeyguardManager
 import android.content.Context
 import android.content.Intent
 import android.os.Bundle
+import android.os.Build
 import android.os.CountDownTimer
 import android.os.VibrationEffect
 import android.os.Vibrator
@@ -90,24 +91,37 @@ class FallAlertActivity : FontScaleActivity() {
         }
         vibrator = getSystemService(Vibrator::class.java)?.also { vibration ->
             runCatching {
-                vibration.vibrate(
-                    VibrationEffect.createWaveform(
-                        longArrayOf(0L, 700L, 350L, 700L, 350L, 1_000L),
-                        1
+                val pattern = longArrayOf(0L, 700L, 350L, 700L, 350L, 1_000L)
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                    vibration.vibrate(
+                        VibrationEffect.createWaveform(pattern, 1)
                     )
-                )
+                } else {
+                    @Suppress("DEPRECATION")
+                    vibration.vibrate(pattern, 1)
+                }
             }
         }
     }
 
     private fun configureLockScreenWindow() {
         window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
-        setShowWhenLocked(true)
-        setTurnScreenOn(true)
-        getSystemService(KeyguardManager::class.java)?.requestDismissKeyguard(
-            this,
-            object : KeyguardManager.KeyguardDismissCallback() {}
-        )
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O_MR1) {
+            setShowWhenLocked(true)
+            setTurnScreenOn(true)
+        } else {
+            @Suppress("DEPRECATION")
+            window.addFlags(
+                WindowManager.LayoutParams.FLAG_SHOW_WHEN_LOCKED or
+                    WindowManager.LayoutParams.FLAG_TURN_SCREEN_ON
+            )
+        }
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            getSystemService(KeyguardManager::class.java)?.requestDismissKeyguard(
+                this,
+                object : KeyguardManager.KeyguardDismissCallback() {}
+            )
+        }
     }
 
     private fun maskNumber(number: String): String {

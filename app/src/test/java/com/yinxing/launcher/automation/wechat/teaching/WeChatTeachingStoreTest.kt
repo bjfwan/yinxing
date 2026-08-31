@@ -179,7 +179,7 @@ class WeChatTeachingStoreTest {
     }
 
     @Test
-    fun builtInSelectorsAreRecordedAsVerifiedButNeverAddedToReplayProfile() {
+    fun builtInSelectorsAreKeptAsVerifiedCalibrationFallbacks() {
         val builtInProfile = profile().let { original ->
             original.copy(
                 steps = original.steps.map { step ->
@@ -201,10 +201,94 @@ class WeChatTeachingStoreTest {
             6_000L
         )
 
-        assertNull(store.load())
+        assertEquals(builtInProfile.steps, store.load()?.steps)
         assertEquals(WeChatTeachingAction.entries.toSet(), record.verifiedActions)
-        assertTrue(record.learnedActions.isEmpty())
+        assertEquals(WeChatTeachingAction.entries.toSet(), record.learnedActions)
         assertTrue(record.addedActions.isEmpty())
+        assertEquals(WeChatTeachingProfileStatus.READY, store.status(builtInProfile.fingerprint))
+    }
+
+    @Test
+    fun incompleteDemonstrationKeepsSelectorsPendingButNeverActivatesThem() {
+        val partial = differenceProfile().copy(
+            steps = differenceProfile().steps.take(2),
+            reliabilityScore = 72
+        )
+        val result = WeChatTeachingResult.Incomplete(
+            missing = setOf(WeChatTeachingRequirement.CALL_PAGE_REACHED),
+            profile = partial
+        )
+
+        val pendingActions = store.savePendingCandidates(
+            result = result,
+            fingerprint = partial.fingerprint,
+            createdAtEpochMs = 6_500L
+        )
+
+        assertEquals(partial.steps.mapTo(linkedSetOf()) { it.action }, pendingActions)
+        assertNull(store.loadCompatible(partial.fingerprint))
+        assertEquals(partial.steps, store.loadPendingCandidates(partial.fingerprint)?.steps)
+        val snapshot = store.snapshot(partial.fingerprint)
+        assertEquals(WeChatTeachingProfileStatus.CANDIDATES_PENDING, snapshot.status)
+        assertEquals(pendingActions, snapshot.pendingActions)
+    }
+
+    @Test
+    fun successfulVideoPromotesCurrentCalibrationAndClearsPendingCandidates() {
+        val full = differenceProfile()
+        val pending = full.copy(steps = full.steps.take(2), reliabilityScore = 70)
+        store.savePendingCandidates(
+            WeChatTeachingResult.Incomplete(
+                setOf(WeChatTeachingRequirement.CALL_PAGE_REACHED),
+                pending
+            ),
+            full.fingerprint,
+            6_500L
+        )
+
+        store.saveVideoOutcome(
+            WeChatTeachingResult.Complete(full),
+            full.fingerprint,
+            7_000L
+        )
+
+        assertEquals(full.steps, store.loadCompatible(full.fingerprint)?.steps)
+        assertNull(store.loadPendingCandidates(full.fingerprint))
+        assertTrue(store.snapshot(full.fingerprint).pendingActions.isEmpty())
+    }
+
+    @Test
+    fun successfulPartialVideoKeepsPendingActionsNotObservedInThatRun() {
+        val full = differenceProfile()
+        val pending = full.copy(
+            steps = full.steps.take(3),
+            reliabilityScore = 70
+        )
+        store.savePendingCandidates(
+            WeChatTeachingResult.Incomplete(
+                setOf(WeChatTeachingRequirement.CALL_PAGE_REACHED),
+                pending
+            ),
+            full.fingerprint,
+            6_500L
+        )
+        val successfulTail = full.copy(
+            steps = full.steps.takeLast(2),
+            reliabilityScore = 85
+        )
+
+        store.saveVideoOutcome(
+            WeChatTeachingResult.Complete(successfulTail),
+            full.fingerprint,
+            7_000L
+        )
+
+        assertEquals(successfulTail.steps, store.loadCompatible(full.fingerprint)?.steps)
+        assertEquals(pending.steps, store.loadPendingCandidates(full.fingerprint)?.steps)
+        assertEquals(
+            pending.steps.mapTo(linkedSetOf()) { it.action },
+            store.snapshot(full.fingerprint).pendingActions
+        )
     }
 
     @Test

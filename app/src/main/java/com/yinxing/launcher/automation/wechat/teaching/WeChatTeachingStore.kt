@@ -4,6 +4,7 @@ import android.content.Context
 
 enum class WeChatTeachingProfileStatus {
     NOT_TAUGHT,
+    CANDIDATES_PENDING,
     VIDEO_CONFIRMED_NO_RULES,
     PARTIAL,
     READY,
@@ -15,7 +16,8 @@ data class WeChatTeachingSnapshot(
     val learnedActions: Set<WeChatTeachingAction>,
     val reliabilityScore: Int?,
     val verifiedActions: Set<WeChatTeachingAction> = emptySet(),
-    val addedActions: Set<WeChatTeachingAction> = emptySet()
+    val addedActions: Set<WeChatTeachingAction> = emptySet(),
+    val pendingActions: Set<WeChatTeachingAction> = emptySet()
 )
 
 class WeChatTeachingStore(context: Context) {
@@ -40,24 +42,66 @@ class WeChatTeachingStore(context: Context) {
     fun loadRecord(): WeChatTeachingRecord? =
         WeChatTeachingRecordCodec.decode(preferences.getString(KEY_RECORD, null))
 
+    fun loadPendingCandidates(): WeChatTeachingProfile? = WeChatTeachingProfileCodec.decode(
+        preferences.getString(KEY_PENDING_PROFILE, null)
+    )
+
+    fun loadPendingCandidates(
+        fingerprint: WeChatTeachingFingerprint
+    ): WeChatTeachingProfile? = loadPendingCandidates()
+        ?.takeIf { it.fingerprint == fingerprint }
+
+    fun savePendingCandidates(
+        result: WeChatTeachingResult,
+        fingerprint: WeChatTeachingFingerprint,
+        createdAtEpochMs: Long
+    ): Set<WeChatTeachingAction> {
+        val candidate = result.learnedProfileOrNull()
+            ?.takeIf { it.fingerprint == fingerprint && it.steps.isNotEmpty() }
+            ?: return emptySet()
+        val merged = mergeProfiles(
+            loadPendingCandidates(fingerprint),
+            candidate,
+            createdAtEpochMs
+        ) ?: return emptySet()
+        preferences.edit().putString(
+            KEY_PENDING_PROFILE,
+            WeChatTeachingProfileCodec.encode(merged)
+        ).apply()
+        return merged.steps.mapTo(linkedSetOf()) { it.action }
+    }
+
     fun deleteLearnedAction(
         fingerprint: WeChatTeachingFingerprint,
         action: WeChatTeachingAction
     ): Boolean {
         val profile = load()?.takeIf { it.fingerprint == fingerprint }
+        val pending = loadPendingCandidates(fingerprint)
         val record = loadRecord()?.takeIf { it.fingerprint == fingerprint }
         val profileContainsAction = profile?.steps?.any { it.action == action } == true
+        val pendingContainsAction = pending?.steps?.any { it.action == action } == true
         val recordContainsAction = action in record?.learnedActions.orEmpty()
-        if (!profileContainsAction && !recordContainsAction) return false
+        if (!profileContainsAction && !pendingContainsAction && !recordContainsAction) return false
 
         val remainingProfile = profile?.copy(
             steps = profile.steps.filterNot { it.action == action }
+        )
+        val remainingPending = pending?.copy(
+            steps = pending.steps.filterNot { it.action == action }
         )
         preferences.edit().apply {
             when {
                 remainingProfile == null -> Unit
                 remainingProfile.steps.isEmpty() -> remove(KEY_PROFILE)
                 else -> putString(KEY_PROFILE, WeChatTeachingProfileCodec.encode(remainingProfile))
+            }
+            when {
+                remainingPending == null -> Unit
+                remainingPending.steps.isEmpty() -> remove(KEY_PENDING_PROFILE)
+                else -> putString(
+                    KEY_PENDING_PROFILE,
+                    WeChatTeachingProfileCodec.encode(remainingPending)
+                )
             }
             record?.let {
                 putString(
@@ -76,11 +120,20 @@ class WeChatTeachingStore(context: Context) {
 
     fun clearLearnedRules(fingerprint: WeChatTeachingFingerprint): Boolean {
         val profile = load()?.takeIf { it.fingerprint == fingerprint }
+        val pending = loadPendingCandidates(fingerprint)
         val record = loadRecord()?.takeIf { it.fingerprint == fingerprint }
-        if (profile == null && record?.learnedActions.orEmpty().isEmpty()) return false
+        val hasLegacyRoutes = preferences.contains(KEY_ROUTES)
+        if (
+            profile == null &&
+            pending == null &&
+            record?.learnedActions.orEmpty().isEmpty() &&
+            !hasLegacyRoutes
+        ) return false
 
         preferences.edit().apply {
             if (profile != null) remove(KEY_PROFILE)
+            if (pending != null) remove(KEY_PENDING_PROFILE)
+            if (hasLegacyRoutes) remove(KEY_ROUTES)
             record?.let {
                 putString(
                     KEY_RECORD,
@@ -97,10 +150,17 @@ class WeChatTeachingStore(context: Context) {
     }
 
     fun resetAll(): Boolean {
-        if (!preferences.contains(KEY_PROFILE) && !preferences.contains(KEY_RECORD)) return false
+        if (
+            !preferences.contains(KEY_PROFILE) &&
+            !preferences.contains(KEY_PENDING_PROFILE) &&
+            !preferences.contains(KEY_RECORD) &&
+            !preferences.contains(KEY_ROUTES)
+        ) return false
         preferences.edit()
             .remove(KEY_PROFILE)
+            .remove(KEY_PENDING_PROFILE)
             .remove(KEY_RECORD)
+            .remove(KEY_ROUTES)
             .apply()
         return true
     }
@@ -112,13 +172,18 @@ class WeChatTeachingStore(context: Context) {
     ): WeChatTeachingRecord {
         val candidate = result.learnedProfileOrNull()
             ?.takeIf { it.fingerprint == fingerprint }
+        val promotedActions = candidate?.steps
+            ?.mapTo(linkedSetOf()) { it.action }
+            .orEmpty()
+        val remainingPending = loadPendingCandidates(fingerprint)?.let { pending ->
+            pending.copy(
+                steps = pending.steps.filterNot { it.action in promotedActions }
+            )
+        }
         val classification = WeChatTeachingRuleClassifier.classify(candidate)
-        val differenceProfile = candidate
-            ?.copy(steps = classification.learnedSteps)
-            ?.takeIf { it.steps.isNotEmpty() }
         val merged = mergeProfiles(
             loadCompatible(fingerprint),
-            differenceProfile,
+            candidate,
             createdAtEpochMs
         )
         val actions = merged?.steps
@@ -137,6 +202,14 @@ class WeChatTeachingStore(context: Context) {
             if (merged != null) {
                 putString(KEY_PROFILE, WeChatTeachingProfileCodec.encode(merged))
             }
+            if (remainingPending == null || remainingPending.steps.isEmpty()) {
+                remove(KEY_PENDING_PROFILE)
+            } else {
+                putString(
+                    KEY_PENDING_PROFILE,
+                    WeChatTeachingProfileCodec.encode(remainingPending)
+                )
+            }
             putString(KEY_RECORD, WeChatTeachingRecordCodec.encode(record))
         }.apply()
         return record
@@ -152,7 +225,10 @@ class WeChatTeachingStore(context: Context) {
     fun snapshot(fingerprint: WeChatTeachingFingerprint): WeChatTeachingSnapshot {
         val record = loadRecord()
         val profile = load()
-        val newestFingerprint = record?.fingerprint ?: profile?.fingerprint
+        val pending = WeChatTeachingProfileCodec.decode(
+            preferences.getString(KEY_PENDING_PROFILE, null)
+        )
+        val newestFingerprint = record?.fingerprint ?: profile?.fingerprint ?: pending?.fingerprint
         if (newestFingerprint == null) {
             return WeChatTeachingSnapshot(
                 WeChatTeachingProfileStatus.NOT_TAUGHT,
@@ -168,10 +244,13 @@ class WeChatTeachingStore(context: Context) {
             )
         }
         val compatibleProfile = profile?.takeIf { it.fingerprint == fingerprint }
+        val compatiblePending = pending?.takeIf { it.fingerprint == fingerprint }
         val learnedActions = record?.takeIf { it.fingerprint == fingerprint }?.learnedActions
             ?: compatibleProfile?.steps?.mapTo(linkedSetOf()) { it.action }
             ?: emptySet()
         val status = when {
+            learnedActions.isEmpty() && compatiblePending?.steps.orEmpty().isNotEmpty() ->
+                WeChatTeachingProfileStatus.CANDIDATES_PENDING
             learnedActions.isEmpty() && record?.videoConfirmed == true ->
                 WeChatTeachingProfileStatus.VIDEO_CONFIRMED_NO_RULES
             learnedActions.size >= WeChatTeachingAction.entries.size ->
@@ -182,9 +261,13 @@ class WeChatTeachingStore(context: Context) {
         return WeChatTeachingSnapshot(
             status = status,
             learnedActions = learnedActions,
-            reliabilityScore = compatibleProfile?.reliabilityScore,
+            reliabilityScore = compatibleProfile?.reliabilityScore
+                ?: compatiblePending?.reliabilityScore,
             verifiedActions = record?.verifiedActions.orEmpty(),
-            addedActions = record?.addedActions.orEmpty()
+            addedActions = record?.addedActions.orEmpty(),
+            pendingActions = compatiblePending?.steps
+                ?.mapTo(linkedSetOf()) { it.action }
+                .orEmpty()
         )
     }
 
@@ -219,6 +302,8 @@ class WeChatTeachingStore(context: Context) {
     private companion object {
         const val PREFS_NAME = "wechat_teaching_profile"
         const val KEY_PROFILE = "profile"
+        const val KEY_PENDING_PROFILE = "pending_profile"
         const val KEY_RECORD = "record"
+        const val KEY_ROUTES = "routes_v2"
     }
 }

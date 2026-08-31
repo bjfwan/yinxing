@@ -2,9 +2,11 @@ package com.google.android.accessibility.selecttospeak
 
 import android.accessibilityservice.AccessibilityService
 import android.content.Intent
+import android.graphics.Rect
 import android.media.AudioDeviceInfo
 import android.media.AudioManager
 import android.os.Build
+import android.os.SystemClock
 import android.view.accessibility.AccessibilityEvent
 import android.view.accessibility.AccessibilityNodeInfo
 import com.yinxing.launcher.R
@@ -16,8 +18,13 @@ import com.yinxing.launcher.automation.wechat.model.AutomationState
 import com.yinxing.launcher.automation.wechat.teaching.WeChatLearnedRulePolicy
 import com.yinxing.launcher.automation.wechat.teaching.WeChatTeachingAction
 import com.yinxing.launcher.automation.wechat.teaching.WeChatTeachingAnalyzer
+import com.yinxing.launcher.automation.wechat.teaching.WeChatTeachingBackInference
+import com.yinxing.launcher.automation.wechat.teaching.WeChatTeachingCapturePolicy
 import com.yinxing.launcher.automation.wechat.teaching.WeChatTeachingFingerprint
 import com.yinxing.launcher.automation.wechat.teaching.WeChatTeachingFingerprintFactory
+import com.yinxing.launcher.automation.wechat.teaching.WeChatTeachingGenericAnalyzer
+import com.yinxing.launcher.automation.wechat.teaching.WeChatTeachingGenericFailure
+import com.yinxing.launcher.automation.wechat.teaching.WeChatTeachingGenericResult
 import com.yinxing.launcher.automation.wechat.teaching.WeChatTeachingObservation
 import com.yinxing.launcher.automation.wechat.teaching.WeChatTeachingObservationExtractor
 import com.yinxing.launcher.automation.wechat.teaching.WeChatTeachingObservationKind
@@ -25,12 +32,17 @@ import com.yinxing.launcher.automation.wechat.teaching.WeChatTeachingProfile
 import com.yinxing.launcher.automation.wechat.teaching.WeChatTeachingProgress
 import com.yinxing.launcher.automation.wechat.teaching.WeChatTeachingProgressTracker
 import com.yinxing.launcher.automation.wechat.teaching.WeChatTeachingResult
-import com.yinxing.launcher.automation.wechat.teaching.WeChatTeachingRuleClassifier
+import com.yinxing.launcher.automation.wechat.teaching.WeChatTeachingReplayResult
+import com.yinxing.launcher.automation.wechat.teaching.WeChatTeachingRoute
+import com.yinxing.launcher.automation.wechat.teaching.WeChatTeachingRouteUploadFactory
+import com.yinxing.launcher.automation.wechat.teaching.WeChatTeachingStateFingerprint
 import com.yinxing.launcher.automation.wechat.teaching.WeChatTeachingStore
-import com.yinxing.launcher.automation.wechat.teaching.WeChatTeachingUploadFactory
+import com.yinxing.launcher.automation.wechat.teaching.WeChatTeachingUploadFailureReason
+import com.yinxing.launcher.automation.wechat.teaching.WeChatTeachingUploadOutcome
 import com.yinxing.launcher.automation.wechat.teaching.learnedProfileOrNull
 import com.yinxing.launcher.automation.wechat.util.AccessibilityUtil
 import com.yinxing.launcher.common.lobster.LobsterClient
+import com.yinxing.launcher.common.lobster.LobsterFailureSampleStore
 import com.yinxing.launcher.common.lobster.LobsterReportStatus
 import com.yinxing.launcher.common.lobster.LobsterReportDetails
 import com.yinxing.launcher.common.lobster.LobsterStepOutcome
@@ -38,8 +50,16 @@ import com.yinxing.launcher.common.lobster.LobsterTraceStep
 import com.yinxing.launcher.common.perf.LauncherTraceNames
 import com.yinxing.launcher.common.util.CallAudioStrategy
 import com.yinxing.launcher.common.util.DebugLog
+import com.yinxing.launcher.common.util.HomeRedirectPolicy
+import com.yinxing.launcher.common.util.HomeRedirectPreferences
+import com.yinxing.launcher.common.util.PermissionUtil
 import com.yinxing.launcher.common.ui.FloatingStatusView
 import com.yinxing.launcher.feature.home.MainActivity
+import com.yinxing.launcher.feature.callreturn.CallReturnCoordinator
+import com.yinxing.launcher.feature.callreturn.CallReturnOrigin
+import com.yinxing.launcher.feature.callreturn.CallReturnWindowAction
+import com.yinxing.launcher.feature.callreturn.WeChatCallWindowTracker
+import com.yinxing.launcher.feature.callreturn.WeChatCallEndPolicy
 
 
 import kotlinx.coroutines.CoroutineScope
@@ -53,6 +73,7 @@ import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
 import java.util.TimeZone
+import java.util.UUID
 
 
 class SelectToSpeakService : AccessibilityService(), WeChatRequestHost {
@@ -126,6 +147,8 @@ class SelectToSpeakService : AccessibilityService(), WeChatRequestHost {
         sessionStillActive = { currentSession != null }
     )
     private var wechatWaitJob: Job? = null
+    private var wechatCallEndJob: Job? = null
+    private var lastWeChatWindowClassForReturn: String? = null
     private lateinit var timeoutManager: TimeoutManager
     private var floatingView: FloatingStatusView? = null
     private var currentSession: VideoCallSession? = null
@@ -136,10 +159,16 @@ class SelectToSpeakService : AccessibilityService(), WeChatRequestHost {
     private var activeTeachingProfile: WeChatTeachingProfile? = null
     private var lastMissingRootLogAt = 0L
     private val rootProvider = WeChatRootProvider(this)
-    private val elementLocator = WeChatElementLocator(this) { activeTeachingProfile }
-    private val taskEngine = WeChatVideoTaskEngine(maxAttemptsPerStep = MAX_STEP_RECOVERY_ATTEMPTS)
+    private val elementLocator = WeChatElementLocator(
+        service = this,
+        learnedProfileProvider = { activeTeachingProfile },
+        currentWindowClassProvider = { rootProvider.lastObservedClassName }
+    )
+    private val capabilityTree = WeChatCapabilityBehaviorTree()
 
     private var wechatVersionTagged = false
+    private val homeRedirectPreferences by lazy { HomeRedirectPreferences(this) }
+    private var lastHomeRedirectAtMs = 0L
 
 
 
@@ -162,6 +191,17 @@ class SelectToSpeakService : AccessibilityService(), WeChatRequestHost {
 
         if (event?.eventType == AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED && pkg != null) {
             DebugLog.d(TAG) { "[EVENT] WindowStateChanged: pkg=$pkg, class=$className" }
+            lastWeChatWindowClassForReturn = WeChatCallWindowTracker.remember(
+                previousClass = lastWeChatWindowClassForReturn,
+                packageName = pkg,
+                observedClass = className
+            )
+            when (CallReturnCoordinator.observeWindow(this, pkg, className)) {
+                CallReturnWindowAction.CHECK_WECHAT_ENDED -> scheduleWeChatCallEndCheck()
+                CallReturnWindowAction.USER_ESCAPED -> wechatCallEndJob?.cancel()
+                CallReturnWindowAction.IGNORE -> Unit
+            }
+            if (redirectSystemLauncher(pkg, className)) return
         }
 
         if (pkg != WeChatPackage.NAME) {
@@ -170,6 +210,13 @@ class SelectToSpeakService : AccessibilityService(), WeChatRequestHost {
         rootProvider.rememberClassName(className)
 
         rootProvider.updateFromEvent(event.source)
+
+        if (
+            CallReturnCoordinator.hasConfirmedSession(CallReturnOrigin.WECHAT_VIDEO) &&
+            event.eventType == AccessibilityEvent.TYPE_WINDOW_CONTENT_CHANGED
+        ) {
+            scheduleWeChatCallEndCheck()
+        }
 
         recordTeachingEvent(event, className)
 
@@ -209,7 +256,42 @@ class SelectToSpeakService : AccessibilityService(), WeChatRequestHost {
 
     override fun onInterrupt() {
         cancelSession(true, "无障碍服务已中断，请重新开启后再试")
+        CallReturnCoordinator.cancel(CallReturnOrigin.WECHAT_VIDEO)
+        wechatCallEndJob?.cancel()
         closeTeachingSession()
+    }
+
+    private fun redirectSystemLauncher(packageName: String, className: String?): Boolean {
+        val nowMs = SystemClock.elapsedRealtime()
+        if (!HomeRedirectPolicy.shouldRedirect(
+                userEnabled = homeRedirectPreferences.isEnabled(),
+                nativeHomeActive = PermissionUtil.isDefaultLauncher(this),
+                manufacturer = Build.MANUFACTURER,
+                packageName = packageName,
+                className = className,
+                nowMs = nowMs,
+                lastRedirectAtMs = lastHomeRedirectAtMs
+            )
+        ) {
+            return false
+        }
+
+        lastHomeRedirectAtMs = nowMs
+        val intent = Intent(this, MainActivity::class.java).apply {
+            addFlags(
+                Intent.FLAG_ACTIVITY_NEW_TASK or
+                    Intent.FLAG_ACTIVITY_REORDER_TO_FRONT or
+                    Intent.FLAG_ACTIVITY_RESET_TASK_IF_NEEDED
+            )
+        }
+        return runCatching {
+            startActivity(intent)
+            DebugLog.i(TAG) { "[HOME_REDIRECT] system launcher -> Yinxing; manufacturer=${Build.MANUFACTURER}" }
+            true
+        }.getOrElse { error ->
+            DebugLog.w(TAG, "[HOME_REDIRECT] failed: ${error.message}")
+            false
+        }
     }
 
     override fun onDestroy() {
@@ -219,6 +301,8 @@ class SelectToSpeakService : AccessibilityService(), WeChatRequestHost {
         floatingView?.hide()
         floatingView = null
         teachingOverlay = null
+        CallReturnCoordinator.cancel(CallReturnOrigin.WECHAT_VIDEO)
+        wechatCallEndJob?.cancel()
         serviceScope.cancel()
         super.onDestroy()
     }
@@ -266,6 +350,8 @@ class SelectToSpeakService : AccessibilityService(), WeChatRequestHost {
             secondaryText = null,
             onPrimary = { startTeachingRecording(session) },
             onSecondary = null,
+            uploadChecked = session.uploadAnonymousData,
+            onUploadCheckedChange = { checked -> session.uploadAnonymousData = checked },
             messageColorRes = when {
                 isError -> R.color.wechat_teaching_status_error
                 isSuccess -> R.color.wechat_teaching_status_success
@@ -286,8 +372,28 @@ class SelectToSpeakService : AccessibilityService(), WeChatRequestHost {
         }
         session.state = TeachingState.RECORDING
         session.startedAt = System.currentTimeMillis()
-        session.currentWindowClass = rootProvider.lastObservedClassName
+        val initialRoot = getWeChatRoot()
+        val initialState = try {
+            initialRoot?.let {
+                WeChatTeachingStateSnapshotFactory.create(
+                    windowClass = resolveCurrentWeChatClass(it),
+                    snapshot = teachingSnapshotOf(it)
+                ).copy(resourceIds = emptySet())
+            }
+        } finally {
+            AccessibilityUtil.safeRecycle(initialRoot)
+        }
+        session.initialState = initialState
+        session.currentWindowClass = initialState?.windowClass ?: rootProvider.lastObservedClassName
         session.observations.clear()
+        session.currentWindowClass?.let { windowClass ->
+            session.observations += WeChatTeachingObservation(
+                kind = WeChatTeachingObservationKind.WINDOW,
+                windowClass = windowClass,
+                selector = null,
+                elapsedMs = 0L
+            )
+        }
         session.visibleCaptureTracker.reset()
         session.progress = WeChatTeachingProgress.WECHAT_OPENED
         session.selectedCallLabel = null
@@ -334,12 +440,20 @@ class SelectToSpeakService : AccessibilityService(), WeChatRequestHost {
         }
         if (session.state != TeachingState.RECORDING) return
         val previousWindowClass = session.currentWindowClass
+        val captureDecision = WeChatTeachingCapturePolicy.decide(
+            videoCallConfirmed = session.videoCallConfirmed,
+            currentWindowClass = session.currentWindowClass,
+            observedWindowClass = eventClassName.takeIf {
+                event.eventType == AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED
+            }
+        )
+        session.currentWindowClass = captureDecision.currentWindowClass
         if (event.eventType == AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED) {
-            session.currentWindowClass = eventClassName
             if (eventClassName == WeChatClassNames.CHATTING_UI) {
                 session.selectedCallLabel = null
             }
         }
+        if (!captureDecision.shouldCapture) return
         val metrics = resources.displayMetrics
         val teachingRoot = rootInActiveWindow
         val snapshot = try {
@@ -366,6 +480,22 @@ class SelectToSpeakService : AccessibilityService(), WeChatRequestHost {
             } else {
                 it
             }
+        }
+        if (
+            observation?.kind == WeChatTeachingObservationKind.WINDOW &&
+            WeChatTeachingBackInference.shouldInfer(
+                history = session.observations,
+                previousWindowClass = previousWindowClass,
+                currentWindowClass = observation.windowClass
+            ) &&
+            session.observations.size < MAX_TEACHING_OBSERVATIONS - 1
+        ) {
+            session.observations += WeChatTeachingObservation(
+                kind = WeChatTeachingObservationKind.BACK,
+                windowClass = previousWindowClass,
+                selector = null,
+                elapsedMs = observation.elapsedMs
+            )
         }
         if (observation != null) {
             if (
@@ -492,56 +622,153 @@ class SelectToSpeakService : AccessibilityService(), WeChatRequestHost {
     private fun finishTeachingRecording(session: TeachingSession) {
         if (teachingSession !== session || session.state != TeachingState.RECORDING) return
         teachingTimeoutJob?.cancel()
+        val finishedAt = System.currentTimeMillis()
         val result = WeChatTeachingAnalyzer.analyze(
             observations = session.observations.toList(),
             fingerprint = session.fingerprint,
-            createdAtEpochMs = System.currentTimeMillis()
+            createdAtEpochMs = finishedAt
         )
-        val classification = WeChatTeachingRuleClassifier.classify(result.learnedProfileOrNull())
-        val learnedRuleCount = classification.learnedSteps.size
+        val genericResult = WeChatTeachingGenericAnalyzer.analyze(
+            observations = session.observations.toList(),
+            fingerprint = session.fingerprint,
+            videoCallConfirmed = session.videoCallConfirmed,
+            createdAtEpochMs = finishedAt,
+            initialState = session.initialState
+        )
+        val candidateRoute = when (genericResult) {
+            is WeChatTeachingGenericResult.Complete -> genericResult.route
+            is WeChatTeachingGenericResult.Incomplete -> genericResult.route
+        }
+        val calibrationCount = result.learnedProfileOrNull()?.steps.orEmpty().size
         val finishDecision = WeChatTeachingFinishPolicy.decide(
             callMode = if (session.videoCallConfirmed) {
                 WeChatTeachingCallMode.VIDEO
             } else {
                 session.lastCallMode
             },
-            learnedRuleCount = learnedRuleCount
+            learnedRuleCount = calibrationCount
         )
         when (finishDecision) {
             WeChatTeachingFinishDecision.SAVE_RULE -> {
                 val record = teachingStore.saveVideoOutcome(
                     result = result,
                     fingerprint = session.fingerprint,
-                    createdAtEpochMs = System.currentTimeMillis()
+                    createdAtEpochMs = finishedAt
                 )
                 val profile = requireNotNull(teachingStore.loadCompatible(session.fingerprint))
                 session.state = TeachingState.COMPLETE
-                showTeachingComplete(session, profile, record.addedActions.size)
+                reportTeachingCapture(
+                    session = session,
+                    route = candidateRoute,
+                    outcome = WeChatTeachingUploadOutcome.SUCCEEDED,
+                    failureReason = genericFailureReason(genericResult)
+                )
+                showTeachingCalibrationSaved(
+                    session = session,
+                    calibratedActionCount = record.learnedActions.size,
+                    deviceRuleCount = record.addedActions.size
+                )
                 DebugLog.i(TAG) {
-                    "[微信示教] 差异规则已保存 builtIn=${record.verifiedActions.size} added=${record.addedActions.size} active=${record.learnedActions.size} reliability=${profile.reliabilityScore}"
+                    "[微信示教] 语义校准已保存 builtIn=${record.verifiedActions.size} " +
+                        "device=${record.addedActions.size} active=${record.learnedActions.size} " +
+                        "reliability=${profile.reliabilityScore}"
                 }
             }
             WeChatTeachingFinishDecision.ACCEPT_WITHOUT_RULE -> {
                 val record = teachingStore.saveVideoOutcome(
                     result = result,
                     fingerprint = session.fingerprint,
-                    createdAtEpochMs = System.currentTimeMillis()
+                    createdAtEpochMs = finishedAt
                 )
                 val missing = (result as? WeChatTeachingResult.Incomplete)?.missing.orEmpty()
                 DebugLog.i(TAG) {
                     "[微信示教] 视频已打通，未新增差异规则 builtIn=${record.verifiedActions.size} missing=$missing"
                 }
+                reportTeachingCapture(
+                    session = session,
+                    route = candidateRoute,
+                    outcome = WeChatTeachingUploadOutcome.SUCCEEDED,
+                    failureReason = genericFailureReason(genericResult)
+                )
                 showTeachingAcceptedWithoutRule(session, record.verifiedActions.size)
             }
             WeChatTeachingFinishDecision.FAIL -> {
                 val missing = (result as? WeChatTeachingResult.Incomplete)?.missing.orEmpty()
-                DebugLog.i(TAG) { "[微信示教] 演示失败 mode=${session.lastCallMode} missing=$missing" }
+                val pendingActions = teachingStore.savePendingCandidates(
+                    result = result,
+                    fingerprint = session.fingerprint,
+                    createdAtEpochMs = finishedAt
+                )
+                DebugLog.i(TAG) {
+                    "[微信示教] 演示未完成 mode=${session.lastCallMode} missing=$missing " +
+                        "pending=${pendingActions.size}"
+                }
+                reportTeachingCapture(
+                    session = session,
+                    route = candidateRoute,
+                    outcome = WeChatTeachingUploadOutcome.FAILED,
+                    failureReason = genericFailureReason(genericResult)
+                )
                 showTeachingIncomplete(
                     session,
-                    getString(R.string.settings_wechat_teaching_incomplete)
+                    if (pendingActions.isEmpty()) {
+                        getString(R.string.settings_wechat_teaching_incomplete)
+                    } else {
+                        getString(
+                            R.string.settings_wechat_teaching_candidates_saved,
+                            pendingActions.size
+                        )
+                    }
                 )
             }
         }
+    }
+
+    private fun genericFailureReason(
+        result: WeChatTeachingGenericResult
+    ): WeChatTeachingUploadFailureReason = when ((result as? WeChatTeachingGenericResult.Incomplete)?.reason) {
+        WeChatTeachingGenericFailure.VIDEO_NOT_CONFIRMED ->
+            WeChatTeachingUploadFailureReason.VIDEO_NOT_CONFIRMED
+        WeChatTeachingGenericFailure.LOW_RELIABILITY ->
+            WeChatTeachingUploadFailureReason.LOW_RELIABILITY
+        WeChatTeachingGenericFailure.NO_REUSABLE_STEPS ->
+            WeChatTeachingUploadFailureReason.UNKNOWN
+        null -> WeChatTeachingUploadFailureReason.NONE
+    }
+
+    private fun reportTeachingCapture(
+        session: TeachingSession,
+        route: WeChatTeachingRoute?,
+        outcome: WeChatTeachingUploadOutcome,
+        failureReason: WeChatTeachingUploadFailureReason,
+        replayResult: WeChatTeachingReplayResult = WeChatTeachingReplayResult.NOT_RUN
+    ) {
+        session.captureReported = true
+        if (!session.uploadAnonymousData) return
+        val missingEventCount = session.observations.count {
+            it.source == com.yinxing.launcher.automation.wechat.teaching.WeChatTeachingObservationSource.VISIBLE_CONTROL
+        }
+        val event = if (route != null) {
+            WeChatTeachingRouteUploadFactory.create(
+                route = route,
+                sessionId = session.sessionId,
+                outcome = outcome,
+                replayResult = replayResult,
+                failureReason = failureReason,
+                missingEventCount = missingEventCount
+            )
+        } else {
+            WeChatTeachingRouteUploadFactory.createUnknown(
+                fingerprint = session.fingerprint,
+                sessionId = session.sessionId,
+                outcome = outcome,
+                replayResult = replayResult,
+                failureReason = failureReason,
+                missingEventCount = missingEventCount,
+                createdAtEpochMs = System.currentTimeMillis()
+            )
+        }
+        LobsterClient.reportUsage(this, event)
     }
 
     private fun showTeachingAcceptedWithoutRule(
@@ -568,34 +795,68 @@ class SelectToSpeakService : AccessibilityService(), WeChatRequestHost {
         )
     }
 
-    private fun showTeachingComplete(
+    private fun showTeachingCalibrationSaved(
         session: TeachingSession,
-        profile: WeChatTeachingProfile,
-        addedRuleCount: Int
+        calibratedActionCount: Int,
+        deviceRuleCount: Int
     ) {
         teachingOverlay?.show(
             message = getString(
-                R.string.settings_wechat_teaching_complete_upload_message,
-                addedRuleCount
+                R.string.settings_wechat_teaching_calibration_saved,
+                calibratedActionCount,
+                deviceRuleCount
             ),
-            primaryText = getString(R.string.settings_wechat_teaching_upload_short),
+            primaryText = getString(R.string.settings_wechat_teaching_exit),
             primaryBackgroundRes = R.drawable.bg_settings_primary_capsule,
-            secondaryText = getString(R.string.settings_wechat_teaching_local_only),
-            onPrimary = {
-                if (teachingSession === session && session.state == TeachingState.COMPLETE) {
-                    LobsterClient.reportUsage(this, WeChatTeachingUploadFactory.create(profile))
-                    closeTeachingSession()
-                }
-            },
-            onSecondary = ::closeTeachingSession
+            secondaryText = null,
+            onPrimary = ::closeTeachingSession,
+            onSecondary = null
         )
     }
 
     private fun showTeachingIncomplete(session: TeachingSession, message: String) {
         teachingTimeoutJob?.cancel()
+        var pendingActionCount = 0
+        if (!session.captureReported && session.startedAt > 0L) {
+            val createdAt = System.currentTimeMillis()
+            val semanticResult = WeChatTeachingAnalyzer.analyze(
+                observations = session.observations.toList(),
+                fingerprint = session.fingerprint,
+                createdAtEpochMs = createdAt
+            )
+            pendingActionCount = teachingStore.savePendingCandidates(
+                result = semanticResult,
+                fingerprint = session.fingerprint,
+                createdAtEpochMs = createdAt
+            ).size
+            val genericResult = WeChatTeachingGenericAnalyzer.analyze(
+                observations = session.observations.toList(),
+                fingerprint = session.fingerprint,
+                videoCallConfirmed = session.videoCallConfirmed,
+                createdAtEpochMs = createdAt,
+                initialState = session.initialState
+            )
+            val route = when (genericResult) {
+                is WeChatTeachingGenericResult.Complete -> genericResult.route
+                is WeChatTeachingGenericResult.Incomplete -> genericResult.route
+            }
+            reportTeachingCapture(
+                session = session,
+                route = route,
+                outcome = WeChatTeachingUploadOutcome.FAILED,
+                failureReason = genericFailureReason(genericResult)
+            )
+        }
         session.state = TeachingState.INCOMPLETE
         teachingOverlay?.show(
-            message = message,
+            message = if (pendingActionCount > 0) {
+                getString(
+                    R.string.settings_wechat_teaching_candidates_saved,
+                    pendingActionCount
+                )
+            } else {
+                message
+            },
             primaryText = getString(R.string.settings_wechat_teaching_retry),
             primaryBackgroundRes = R.drawable.bg_settings_primary_capsule,
             secondaryText = getString(R.string.settings_wechat_teaching_exit),
@@ -607,6 +868,9 @@ class SelectToSpeakService : AccessibilityService(), WeChatRequestHost {
                     session.selectedCallLabel = null
                     session.lastCallMode = WeChatTeachingCallMode.UNKNOWN
                     session.videoCallConfirmed = false
+                    session.captureReported = false
+                    session.initialState = null
+                    session.sessionId = UUID.randomUUID().toString()
                     showTeachingPrepared(session, getString(R.string.settings_wechat_teaching_prepared_message))
                 }
             },
@@ -741,9 +1005,10 @@ class SelectToSpeakService : AccessibilityService(), WeChatRequestHost {
         cancelSession(false)
         lastMissingRootLogAt = 0L
         tagWeChatVersionOnce()
+        val currentTeachingFingerprint = WeChatTeachingFingerprintFactory.capture(this)
         activeTeachingProfile = WeChatLearnedRulePolicy.compatibleProfile(
             profile = teachingStore.load(),
-            currentFingerprint = WeChatTeachingFingerprintFactory.capture(this)
+            currentFingerprint = currentTeachingFingerprint
         )
         if (activeTeachingProfile != null) {
             DebugLog.i(TAG) { "[微信自动] 当前设备学习规则已启用为兜底" }
@@ -955,7 +1220,73 @@ class SelectToSpeakService : AccessibilityService(), WeChatRequestHost {
         if (page != WeChatPage.CHAT && page != WeChatPage.CONTACT_DETAIL) {
             return false
         }
-        return containsContactName(root, contactNames)
+        val snapshot = snapshotOf(root)
+        if (
+            snapshot != null &&
+            WeChatUiSnapshotAnalyzer.isVerifiedTargetConversation(snapshot, contactNames)
+        ) {
+            return true
+        }
+        val normalizedNames = contactNames.map { it.trim() }.filter { it.isNotEmpty() }.distinct()
+        val matchedKnownTitleId = normalizedNames.any { contactName ->
+            val titleNode = elementLocator.findNodeByExactText(
+                root,
+                contactName,
+                WeChatViewIds.CONTACT_TITLE_SECONDARY,
+                WeChatViewIds.CONTACT_TITLE_PRIMARY
+            )
+            if (titleNode == null) {
+                false
+            } else {
+                AccessibilityUtil.safeRecycle(titleNode)
+                true
+            }
+        }
+        if (matchedKnownTitleId) {
+            return true
+        }
+        return hasLiveTargetConversationTitle(root, normalizedNames)
+    }
+
+    private fun hasLiveTargetConversationTitle(
+        root: AccessibilityNodeInfo,
+        contactNames: Collection<String>
+    ): Boolean {
+        val rootRect = Rect()
+        root.getBoundsInScreen(rootRect)
+        if (rootRect.isEmpty) return false
+        val rootBounds = WeChatUiBounds(rootRect.left, rootRect.top, rootRect.right, rootRect.bottom)
+
+        return contactNames.any { contactName ->
+            val textNodes = AccessibilityUtil.findAllByText(root, contactName)
+            val descriptionNodes = AccessibilityUtil.findNodesByContentDescription(
+                root,
+                contactName,
+                exactMatch = true
+            )
+            val candidates = (textNodes + descriptionNodes).distinct()
+            val matched = candidates.any { node ->
+                val exactMatch = node.text?.toString() == contactName ||
+                    node.contentDescription?.toString() == contactName
+                if (!exactMatch) {
+                    false
+                } else {
+                    val nodeRect = Rect()
+                    node.getBoundsInScreen(nodeRect)
+                    WeChatConversationTitlePolicy.isInsideTitleBand(
+                        rootBounds,
+                        if (nodeRect.isEmpty) null else WeChatUiBounds(
+                            nodeRect.left,
+                            nodeRect.top,
+                            nodeRect.right,
+                            nodeRect.bottom
+                        )
+                    )
+                }
+            }
+            candidates.forEach(AccessibilityUtil::safeRecycle)
+            matched
+        }
     }
 
     private fun sessionContactNames(session: VideoCallSession): List<String> {
@@ -967,42 +1298,6 @@ class SelectToSpeakService : AccessibilityService(), WeChatRequestHost {
                 ?.let(::add)
         }
     }
-
-    private fun containsContactName(root: AccessibilityNodeInfo?, contactNames: Collection<String>): Boolean {
-        val normalizedNames = contactNames.map { it.trim() }.filter { it.isNotEmpty() }.distinct()
-        if (normalizedNames.isEmpty()) {
-            return false
-        }
-        val snapshot = snapshotOf(root)
-        if (snapshot != null && WeChatUiSnapshotAnalyzer.containsAnyContactName(snapshot, normalizedNames)) {
-            return true
-        }
-        normalizedNames.forEach { contactName ->
-            val titleNode = elementLocator.findNodeByExactText(
-                root,
-                contactName,
-                WeChatViewIds.CONTACT_TITLE_SECONDARY,
-                WeChatViewIds.CONTACT_TITLE_PRIMARY
-            )
-            if (titleNode != null) {
-                AccessibilityUtil.safeRecycle(titleNode)
-                return true
-            }
-            val exactNode = AccessibilityUtil.findBestTextNode(
-                root,
-                contactName,
-                exactMatch = true,
-                preferBottom = false,
-                excludeEditable = false
-            )
-            if (exactNode != null) {
-                AccessibilityUtil.safeRecycle(exactNode)
-                return true
-            }
-        }
-        return false
-    }
-
 
     private fun updateProgress(
         session: VideoCallSession,
@@ -1090,7 +1385,6 @@ class SelectToSpeakService : AccessibilityService(), WeChatRequestHost {
     ) {
         recordStepHistory(session, nextStep)
         session.step = nextStep
-        syncTaskState(session, nextStep)
         session.stepStartedAt = System.currentTimeMillis()
         resetForStepEntry(session, nextStep)
         session.moreButtonClickedAt = 0L
@@ -1266,7 +1560,7 @@ class SelectToSpeakService : AccessibilityService(), WeChatRequestHost {
             "processCurrentWindow: step=${session.step} class=$currentClass rawClass=${root.className} lastUiClass=${rootProvider.lastObservedClassName}"
         }
 
-        if (session.step != Step.VERIFYING_CALL_STARTED && applyTaskDecision(session, root, currentClass)) {
+        if (session.step != Step.VERIFYING_CALL_STARTED && applyCapabilityDecision(session, root, currentClass)) {
             return
         }
 
@@ -1293,63 +1587,242 @@ class SelectToSpeakService : AccessibilityService(), WeChatRequestHost {
         )
     }
 
-    private fun applyTaskDecision(
+    private fun applyCapabilityDecision(
         session: VideoCallSession,
         root: AccessibilityNodeInfo,
         currentClass: String?
     ): Boolean {
         val snapshot = snapshotOf(root)
-        val semantic = snapshot?.let(WeChatSemanticPageRecognizer::recognize)
-            ?: WeChatSemanticPageResult(WeChatSemanticPage.UNKNOWN, 0, listOf("missing_snapshot"))
-        val contactScore = if (session.step == Step.WAITING_CONTACT_RESULT && snapshot != null) {
-            WeChatUiSnapshotAnalyzer.scoreContactSearchResult(snapshot, session.contactName)
+        val semantic = WeChatSemanticPageRecognizer.recognize(
+            snapshot = snapshot,
+            currentClass = currentClass,
+            expectingVideoSheet = session.step == Step.WAITING_VIDEO_OPTIONS
+        )
+        val contactScore = if (semantic.page == WeChatSemanticPage.SEARCH) {
+            WeChatUiSnapshot.fromNode(root, maxDepth = 32, maxNodes = 420)?.let { searchSnapshot ->
+                WeChatUiSnapshotAnalyzer.scoreContactSearchResult(searchSnapshot, session.contactName)
+            }
         } else {
             null
         }
-        val taskState = session.taskState.copy(
-            step = session.step.toTaskStep(),
-            contactName = session.contactName
+        val contactNames = sessionContactNames(session)
+        val semanticTitleVerified = snapshot != null &&
+            WeChatUiSnapshotAnalyzer.isVerifiedTargetConversation(snapshot, contactNames)
+        val legacyExactTitleVerified =
+            (semantic.page == WeChatSemanticPage.CHAT || semantic.page == WeChatSemanticPage.CONTACT_DETAIL) &&
+                isTargetConversationPage(root, currentClass, contactNames)
+        val targetConversationVerified = WeChatConversationVerificationPolicy.isVerified(
+            page = semantic.page,
+            semanticTitleVerified = semanticTitleVerified,
+            legacyExactTitleVerified = legacyExactTitleVerified
         )
-        val decision = taskEngine.decide(taskState, semantic, contactScore)
-        session.taskState = decision.nextState
+        val searchQueryVerified = semantic.page == WeChatSemanticPage.SEARCH &&
+            session.searchTextApplied &&
+            elementLocator.verifySearchInputFilled(root, session.contactName)
+        val observation = WeChatCapabilityObservation(
+            page = semantic,
+            targetConversationVerified = targetConversationVerified,
+            searchQueryVerified = searchQueryVerified,
+            contactAccepted = contactScore?.accepted == true
+        )
+        val plannedDecision = capabilityTree.decide(
+            state = session.behaviorState,
+            observation = observation
+        )
+        val observedResult = capabilityTree.capability(plannedDecision.capabilityId)
+            .observeResult(observation)
+        val decision = if (plannedDecision.status == WeChatCapabilityStatus.READY) {
+            plannedDecision.copy(
+                status = observedResult.status,
+                failure = plannedDecision.failure ?: observedResult.failure
+            )
+        } else {
+            plannedDecision
+        }
+        session.behaviorState = decision.nextState
         session.lastSemanticPage = semantic
-        session.lastTaskDecisionReason = decision.reason
-        DebugLog.d(TAG) {
-            "taskEngine: step=${taskState.step}, semantic=${semantic.page}/${semantic.confidence}, " +
-                "action=${decision.action}, reason=${decision.reason}, next=${decision.nextState.step}, score=${contactScore?.score}"
+        session.lastCapabilityId = decision.capabilityId
+        session.lastCapabilityReason = decision.reason
+        session.lastCapabilityFailure = decision.failure
+        logCapabilityDecision(session, semantic, decision, contactScore)
+        if (decision.failure == WeChatCapabilityFailure.PRECONDITION_NOT_MET) {
+            recoverToHome(session, root, currentClass, "capabilityTree: precondition_not_met")
+            return true
         }
-        return when (decision.action) {
-            WeChatVideoTaskAction.FAIL -> {
-                failAndHide("未找到联系人: ${session.contactName}", root)
+        return when (decision.capabilityId) {
+            WeChatCapabilityId.RECOVER_HOME -> {
+                recoverToHome(session, root, currentClass, "capabilityTree: ${decision.reason}")
                 true
             }
-            WeChatVideoTaskAction.RECOVER_HOME -> {
-                recoverToHome(session, root, currentClass, "taskEngine: ${decision.reason}")
+            WeChatCapabilityId.OPEN_RECENT_CONVERSATION,
+            WeChatCapabilityId.OPEN_SEARCH -> {
+                if (session.step == Step.WAITING_HOME) {
+                    session.launcherPrepared = false
+                    session.searchTextApplied = false
+                    transitionTo(session, Step.WAITING_LAUNCHER_UI, "正在查找联系人")
+                    true
+                } else {
+                    false
+                }
+            }
+            WeChatCapabilityId.TYPE_CONTACT -> when (session.step) {
+                Step.WAITING_HOME -> {
+                    session.launcherPrepared = false
+                    session.searchTextApplied = false
+                    transitionTo(session, Step.WAITING_SEARCH_FALLBACK, "正在搜索联系人")
+                    true
+                }
+                Step.WAITING_CONTACT_RESULT -> {
+                    rerouteTo(session, Step.WAITING_SEARCH_FALLBACK, "正在重新输入联系人")
+                    true
+                }
+                else -> false
+            }
+            WeChatCapabilityId.OPEN_VIDEO_ENTRY -> {
+                if (session.step != Step.WAITING_CONTACT_DETAIL && targetConversationVerified) {
+                    transitionTo(session, Step.WAITING_CONTACT_DETAIL, "已确认目标联系人")
+                    true
+                } else {
+                    false
+                }
+            }
+            WeChatCapabilityId.SELECT_VIDEO -> {
+                if (session.step != Step.WAITING_VIDEO_OPTIONS) {
+                    transitionTo(session, Step.WAITING_VIDEO_OPTIONS, "正在选择视频通话")
+                    true
+                } else {
+                    false
+                }
+            }
+            WeChatCapabilityId.OPEN_SEARCH_RESULT,
+            WeChatCapabilityId.CONFIRM_CALL_STARTED,
+            WeChatCapabilityId.VERIFY_TARGET_CONVERSATION,
+            WeChatCapabilityId.LAUNCH_WECHAT -> false
+            WeChatCapabilityId.WAIT -> {
+                if (decision.reason == "waiting_search_result") {
+                    return when (
+                        WeChatSearchResultWaitPolicy.decide(
+                            queryVerified = searchQueryVerified,
+                            inSearchInputStep = session.step == Step.WAITING_SEARCH_FALLBACK,
+                            inSearchResultStep = session.step == Step.WAITING_CONTACT_RESULT
+                        )
+                    ) {
+                        SearchResultWaitDecision.ADVANCE_TO_RESULTS -> {
+                            markCapabilitySucceeded(session, WeChatCapabilityId.TYPE_CONTACT)
+                            transitionTo(session, Step.WAITING_CONTACT_RESULT, "正在查找联系人")
+                            true
+                        }
+                        SearchResultWaitDecision.DEFER_TO_RESULT_HANDLER -> false
+                        SearchResultWaitDecision.KEEP_WAITING -> {
+                            scheduleAdaptiveProcess(session, DelayProfile.STABLE)
+                            true
+                        }
+                    }
+                }
+                when (decision.failure) {
+                    WeChatCapabilityFailure.SEARCH_RESULT_NOT_FOUND ->
+                        failAndHide("未找到联系人: ${session.contactName}", root)
+                    WeChatCapabilityFailure.LOW_PAGE_CONFIDENCE,
+                    WeChatCapabilityFailure.TARGET_NOT_VERIFIED -> {
+                        val attempt = incrementActionAttempt(session, "capability_page_observe")
+                        when (
+                            WeChatLowConfidenceRecoveryPolicy.decide(
+                                currentClass = currentClass,
+                                observeAttempt = attempt,
+                                conversationRecoveries = session.conversationPageRecoveries
+                            )
+                        ) {
+                            WeChatLowConfidenceAction.WAIT -> scheduleAdaptiveProcess(
+                                session,
+                                DelayProfile.STABLE,
+                                attemptKey = "capability_page_observe"
+                            )
+                            WeChatLowConfidenceAction.RECOVER_HOME -> {
+                                if (WeChatLowConfidenceRecoveryPolicy.isConversationClass(currentClass)) {
+                                    session.conversationPageRecoveries += 1
+                                    if (session.behaviorState.selectedRoute == WeChatRouteId.RECENT_MESSAGES) {
+                                        markCapabilityFailed(
+                                            session,
+                                            WeChatCapabilityId.OPEN_RECENT_CONVERSATION,
+                                            WeChatCapabilityFailure.ACTION_FAILED
+                                        )
+                                    }
+                                }
+                                recoverToHome(
+                                    session,
+                                    root,
+                                    currentClass,
+                                    "capabilityTree: ${decision.reason}"
+                                )
+                            }
+                            WeChatLowConfidenceAction.FAIL_SAFE -> failAndHide(
+                                "微信聊天页面暂时无法识别，请重试",
+                                root
+                            )
+                        }
+                    }
+                    else -> scheduleAdaptiveProcess(session, DelayProfile.STABLE)
+                }
                 true
             }
-            else -> false
         }
     }
 
-    private fun Step.toTaskStep(): WeChatVideoTaskStep {
-        return when (this) {
-            Step.WAITING_HOME,
-            Step.WAITING_LAUNCHER_UI -> WeChatVideoTaskStep.WAITING_HOME
-            Step.WAITING_SEARCH_FALLBACK -> WeChatVideoTaskStep.WAITING_SEARCH
-            Step.WAITING_CONTACT_RESULT -> WeChatVideoTaskStep.WAITING_CONTACT_RESULT
-            Step.WAITING_CONTACT_DETAIL -> WeChatVideoTaskStep.WAITING_CONTACT_DETAIL
-            Step.WAITING_VIDEO_OPTIONS -> WeChatVideoTaskStep.WAITING_VIDEO_OPTIONS
-            Step.VERIFYING_CALL_STARTED -> WeChatVideoTaskStep.VERIFYING_CALL_STARTED
+    private fun logCapabilityDecision(
+        session: VideoCallSession,
+        page: WeChatSemanticPageResult,
+        decision: WeChatBehaviorDecision,
+        contactScore: WeChatTargetScore?
+    ) {
+        val logKey = listOf(
+            decision.capabilityId.name,
+            decision.status.name,
+            decision.failure?.name.orEmpty(),
+            decision.nextState.selectedRoute?.name.orEmpty(),
+            page.page.name,
+            decision.reason
+        ).joinToString(":")
+        if (session.lastCapabilityLogKey == logKey) return
+        session.lastCapabilityLogKey = logKey
+        val details = buildString {
+            append("page=").append(page.page.name)
+            append(" confidence=").append(page.confidence)
+            append(" route=").append(decision.nextState.selectedRoute?.name ?: "NONE")
+            append(" failure=").append(decision.failure?.name ?: "NONE")
+            contactScore?.score?.let { append(" targetScore=").append(it) }
+            append(" reason=").append(decision.reason)
         }
-    }
-
-    private fun syncTaskState(session: VideoCallSession, step: Step) {
-        session.taskState = session.taskState.copy(
-            step = step.toTaskStep(),
-            contactName = session.contactName,
-            attempts = emptyMap(),
-            resolvedDisplayName = session.resolvedContactTitle ?: session.taskState.resolvedDisplayName
+        DebugLog.i(TAG) {
+            "[微信能力] capability=${decision.capabilityId.name} result=${decision.status.name} $details"
+        }
+        LobsterClient.log(
+            "[微信能力] capability=${decision.capabilityId.name} result=${decision.status.name} $details"
         )
+        logStep(
+            session = session,
+            action = "capability.${decision.capabilityId.name.lowercase()}",
+            result = decision.status.name,
+            extra = details
+        )
+    }
+
+    private fun markCapabilityFailed(
+        session: VideoCallSession,
+        capabilityId: WeChatCapabilityId,
+        failure: WeChatCapabilityFailure
+    ) {
+        session.behaviorState = session.behaviorState.markFailed(capabilityId, failure)
+        session.lastCapabilityId = capabilityId
+        session.lastCapabilityFailure = failure
+    }
+
+    private fun markCapabilitySucceeded(
+        session: VideoCallSession,
+        capabilityId: WeChatCapabilityId
+    ) {
+        session.behaviorState = session.behaviorState.markSucceeded(capabilityId)
+        session.lastCapabilityId = capabilityId
+        session.lastCapabilityFailure = null
     }
 
     private fun tryDismissTransientUi(session: VideoCallSession, root: AccessibilityNodeInfo?): Boolean {
@@ -1505,13 +1978,10 @@ class SelectToSpeakService : AccessibilityService(), WeChatRequestHost {
                 )
             }
             WeChatPage.SEARCH -> {
-                logStep(session, "detectPage", "SEARCH", "搜索页意外出现，回首页")
-                recoverToHome(
-                    session = session,
-                    root = root,
-                    currentClass = currentClass,
-                    reason = "WAITING_HOME: 当前在搜索页"
-                )
+                logStep(session, "detectPage", "SEARCH", "已在搜索页，直接接续")
+                session.launcherPrepared = false
+                session.searchTextApplied = false
+                transitionTo(session, Step.WAITING_SEARCH_FALLBACK, "正在搜索联系人")
             }
             WeChatPage.VIDEO_SHEET -> {
                 logStep(session, "detectPage", "VIDEO_SHEET", "视频弹窗意外出现，回首页")
@@ -1546,6 +2016,7 @@ class SelectToSpeakService : AccessibilityService(), WeChatRequestHost {
 
         if (page == WeChatPage.SEARCH) {
             logStep(session, "detectPage", "SEARCH", "搜索页已打开，直接进搜索阶段")
+            markCapabilitySucceeded(session, WeChatCapabilityId.OPEN_SEARCH)
             session.launcherPrepared = false
             transitionTo(session, Step.WAITING_SEARCH_FALLBACK, "正在打开搜索")
             return
@@ -1559,7 +2030,8 @@ class SelectToSpeakService : AccessibilityService(), WeChatRequestHost {
             return
         }
 
-        if (!session.launcherPrepared) {
+        val searchRouteSelected = session.behaviorState.selectedRoute == WeChatRouteId.SEARCH
+        if (!searchRouteSelected && !session.launcherPrepared) {
             session.launcherPrepared = true
             val tabClicked = elementLocator.clickMessageTab(root)
             logStep(session, "clickMessageTab", tabClicked)
@@ -1570,24 +2042,33 @@ class SelectToSpeakService : AccessibilityService(), WeChatRequestHost {
             return
         }
 
-        val contactNames = sessionContactNames(session)
-        val contactNode = elementLocator.findContactInMessageList(root, contactNames)
-        if (contactNode != null) {
-            val success = AccessibilityUtil.performClick(this, contactNode)
-            logStep(session, "clickContactInList", success, "contacts=$contactNames node=${AccessibilityUtil.summarizeNode(contactNode)}")
-            AccessibilityUtil.safeRecycle(contactNode)
-            if (success) {
-                transitionTo(session, Step.WAITING_CONTACT_DETAIL, "正在打开聊天")
-                return
+        if (!searchRouteSelected) {
+            val contactNames = sessionContactNames(session)
+            val contactNode = elementLocator.findContactInMessageList(root, contactNames)
+            if (contactNode != null) {
+                val success = AccessibilityUtil.performClick(this, contactNode)
+                logStep(session, "clickContactInList", success, "contacts=$contactNames node=${AccessibilityUtil.summarizeNode(contactNode)}")
+                AccessibilityUtil.safeRecycle(contactNode)
+                if (success) {
+                    markCapabilitySucceeded(session, WeChatCapabilityId.OPEN_RECENT_CONVERSATION)
+                    transitionTo(session, Step.WAITING_CONTACT_DETAIL, "正在打开聊天")
+                    return
+                }
+            } else {
+                logStep(session, "findContactInList", false, "消息列表未找到 contacts=$contactNames，转搜索路径")
             }
-        } else {
-            logStep(session, "findContactInList", false, "消息列表未找到 contacts=$contactNames，转搜索路径")
+            markCapabilityFailed(
+                session,
+                WeChatCapabilityId.OPEN_RECENT_CONVERSATION,
+                WeChatCapabilityFailure.RECENT_TARGET_NOT_FOUND
+            )
         }
 
         updateProgress(session, "消息列表未找到，正在打开搜索")
         val searchClicked = elementLocator.clickTopSearchBar(root)
         logStep(session, "clickTopSearchBar", searchClicked)
         if (searchClicked) {
+            session.behaviorState = session.behaviorState.copy(selectedRoute = WeChatRouteId.SEARCH)
             session.searchTextApplied = false
             transitionTo(session, Step.WAITING_SEARCH_FALLBACK, "正在打开搜索")
             return
@@ -1632,7 +2113,10 @@ class SelectToSpeakService : AccessibilityService(), WeChatRequestHost {
             elapsedMs = now - session.searchInputSubmittedAt,
             failedAttempts = session.actionAttempts["search_input"] ?: 0
         )) {
-            SearchInputDecision.COMPLETE -> transitionTo(session, Step.WAITING_CONTACT_RESULT, "正在查找联系人")
+            SearchInputDecision.COMPLETE -> {
+                markCapabilitySucceeded(session, WeChatCapabilityId.TYPE_CONTACT)
+                transitionTo(session, Step.WAITING_CONTACT_RESULT, "正在查找联系人")
+            }
             SearchInputDecision.WAIT_FOR_VERIFICATION -> scheduleAdaptiveProcess(session, DelayProfile.STABLE)
             SearchInputDecision.SUBMIT -> {
                 val submitted = elementLocator.fillSearchInput(root, session.contactName)
@@ -1696,6 +2180,7 @@ class SelectToSpeakService : AccessibilityService(), WeChatRequestHost {
         val contactClicked = clickContactResult(root, session)
         logStep(session, "clickContactResult", contactClicked, "contact=${session.contactName}, resolved=${session.resolvedContactTitle}")
         if (contactClicked) {
+            markCapabilitySucceeded(session, WeChatCapabilityId.OPEN_SEARCH_RESULT)
             transitionTo(session, Step.WAITING_CONTACT_DETAIL, "正在打开联系人")
             return
         }
@@ -1894,9 +2379,9 @@ class SelectToSpeakService : AccessibilityService(), WeChatRequestHost {
         recordStepSuccess(oldStep, duration)
         recordStepHistory(session, nextStep)
         session.step = nextStep
-        syncTaskState(session, nextStep)
         session.stepStartedAt = System.currentTimeMillis()
         resetForStepEntry(session, nextStep)
+        session.actionAttempts.clear()
 
         DebugLog.i(TAG) { "[微信自动] 状态流转: $oldStep -> $nextStep | 消息: $message" }
 
@@ -1914,6 +2399,39 @@ class SelectToSpeakService : AccessibilityService(), WeChatRequestHost {
         scheduleAdaptiveProcess(session, DelayProfile.TRANSITION)
     }
 
+    private fun scheduleWeChatCallEndCheck() {
+        if (!CallReturnCoordinator.hasConfirmedSession(CallReturnOrigin.WECHAT_VIDEO)) return
+        wechatCallEndJob?.cancel()
+        wechatCallEndJob = serviceScope.launch {
+            delay(1_200L)
+            repeat(4) { attempt ->
+                if (!CallReturnCoordinator.hasConfirmedSession(CallReturnOrigin.WECHAT_VIDEO)) {
+                    return@launch
+                }
+                val root = rootInActiveWindow
+                val packageName = root?.packageName?.toString()
+                AccessibilityUtil.safeRecycle(root)
+                val className = lastWeChatWindowClassForReturn
+                val audioManager = getSystemService(AUDIO_SERVICE) as? AudioManager
+                val audioMode = audioManager?.mode ?: AudioManager.MODE_NORMAL
+                val ended = WeChatCallEndPolicy.shouldComplete(
+                    packageName = packageName,
+                    className = className,
+                    videoActivityVisible = className == "com.tencent.mm.plugin.voip.ui.VideoActivity",
+                    audioMode = audioMode
+                )
+                DebugLog.d(TAG) {
+                    "[通话返回] 微信结束检查 attempt=$attempt class=$className audioMode=$audioMode ended=$ended"
+                }
+                if (ended) {
+                    CallReturnCoordinator.complete(this@SelectToSpeakService, CallReturnOrigin.WECHAT_VIDEO)
+                    return@launch
+                }
+                delay(500L)
+            }
+        }
+    }
+
 
 
     private fun finishVideoCallStarted(session: VideoCallSession) {
@@ -1921,11 +2439,9 @@ class SelectToSpeakService : AccessibilityService(), WeChatRequestHost {
         session.stepDurations[session.step.name.lowercase()] = stepElapsed
         recordStepSuccess(session.step, stepElapsed)
         session.moreButtonClickedAt = 0L
-        session.taskState = session.taskState.copy(
-            step = WeChatVideoTaskStep.COMPLETED,
-            attempts = emptyMap()
-        )
-        session.lastTaskDecisionReason = "completed"
+        markCapabilitySucceeded(session, WeChatCapabilityId.SELECT_VIDEO)
+        markCapabilitySucceeded(session, WeChatCapabilityId.CONFIRM_CALL_STARTED)
+        session.lastCapabilityReason = "call_started_confirmed"
         
         val totalElapsed = System.currentTimeMillis() - session.startedAt
         DebugLog.banner(
@@ -1951,6 +2467,7 @@ class SelectToSpeakService : AccessibilityService(), WeChatRequestHost {
         )
         reportTerminalMetrics(session, success = true)
         applyWeChatCallAudioStrategy()
+        CallReturnCoordinator.confirm(CallReturnOrigin.WECHAT_VIDEO)
         floatingView?.updateMessage("视频通话已发起")
         notifyState(session, "视频通话已发起", success = true, terminal = true)
         currentSession = null
@@ -2119,6 +2636,23 @@ class SelectToSpeakService : AccessibilityService(), WeChatRequestHost {
         }
         val sessionSnapshot = session?.failureSnapshot()
         val rootSnapshot = snapshotOf(root)
+        val suffix = if (message.contains("超时")) "TIMEOUT" else "FAILED"
+        val errorCode = session?.let { "WECHAT_${it.step.name}_$suffix" }
+        val failureFingerprint = activeTeachingProfile?.fingerprint
+            ?: WeChatTeachingFingerprintFactory.capture(this)
+        val failureSample = if (sessionSnapshot != null && errorCode != null) {
+            WeChatFailureSampleFactory.create(
+                errorCode = errorCode,
+                session = sessionSnapshot,
+                route = session.behaviorState.selectedRoute?.name,
+                root = rootSnapshot,
+                windowClass = rootProvider.lastObservedClassName,
+                targetVersionName = failureFingerprint?.weChatVersionName,
+                targetVersionCode = failureFingerprint?.weChatVersionCode,
+            )
+        } else {
+            null
+        }
         val diagnostics = WeChatFailureDiagnostics.build(
             message = message,
             session = sessionSnapshot,
@@ -2133,23 +2667,29 @@ class SelectToSpeakService : AccessibilityService(), WeChatRequestHost {
                 session = sessionSnapshot,
                 root = rootSnapshot
             )
-        }
-        LobsterClient.log("[微信自动] 失败诊断:\n$diagnostics")
-        if (session != null) {
-            reportTerminalMetrics(session, success = false)
-            val failedStep = session.step.name.lowercase()
-            val suffix = if (message.contains("超时")) "TIMEOUT" else "FAILED"
-            LobsterClient.report(
-                this,
-                "微信视频",
-                LobsterReportStatus.ERROR,
-                message,
-                LobsterReportDetails(
+            if (session != null && failureSample != null) {
+                LobsterFailureSampleStore.save(
+                    context = this@SelectToSpeakService,
+                    sample = failureSample,
                     traceId = session.requestId,
-                    errorCode = "WECHAT_${session.step.name}_$suffix",
-                    failedStep = failedStep,
+                )
+            }
+        }
+        if (failureSample != null) {
+            LobsterClient.log(
+                "[微信自动] 失败样本已生成 fingerprint=${failureSample.fingerprint} " +
+                    "error=${failureSample.failureCode}"
+            )
+        }
+        if (session != null && failureSample != null) {
+            reportTerminalMetrics(session, success = false)
+            LobsterClient.reportUsage(
+                this,
+                WeChatFailureReportFactory.create(
+                    sample = failureSample,
+                    traceId = session.requestId,
+                    contactName = session.contactName,
                     steps = session.structuredSteps,
-                    sensitiveValues = listOf(session.contactName)
                 )
             )
         }
@@ -2312,8 +2852,10 @@ class SelectToSpeakService : AccessibilityService(), WeChatRequestHost {
             lastProgressAt = lastProgressAt,
             lastAnnouncedMessage = lastAnnouncedMessage,
             lastSemanticPage = lastSemanticPage?.page?.name,
-            taskStep = taskState.step.name,
-            taskReason = lastTaskDecisionReason
+            taskStep = step.name,
+            taskReason = lastCapabilityReason,
+            capabilityId = lastCapabilityId?.name,
+            capabilityFailure = lastCapabilityFailure?.name
         )
     }
 
@@ -2343,8 +2885,12 @@ class SelectToSpeakService : AccessibilityService(), WeChatRequestHost {
         var dismissingUntil: Long = 0L,
         var dismissAttempts: Int = 0,
         var lastSemanticPage: WeChatSemanticPageResult? = null,
-        var taskState: WeChatVideoTaskState = WeChatVideoTaskState(contactName = contactName),
-        var lastTaskDecisionReason: String? = null,
+        var behaviorState: WeChatBehaviorTreeState = WeChatBehaviorTreeState(),
+        var lastCapabilityId: WeChatCapabilityId? = null,
+        var lastCapabilityReason: String? = null,
+        var lastCapabilityFailure: WeChatCapabilityFailure? = null,
+        var lastCapabilityLogKey: String? = null,
+        var conversationPageRecoveries: Int = 0,
         var callVerificationState: WeChatCallVerificationState = WeChatCallVerificationState(),
         var callVerificationPollCount: Int = 0,
         var lastCallVerificationLogKey: String? = null
@@ -2352,8 +2898,10 @@ class SelectToSpeakService : AccessibilityService(), WeChatRequestHost {
 
     private data class TeachingSession(
         val fingerprint: WeChatTeachingFingerprint,
+        var sessionId: String = UUID.randomUUID().toString(),
         var state: TeachingState = TeachingState.PREPARED,
         var startedAt: Long = 0L,
+        var initialState: WeChatTeachingStateFingerprint? = null,
         var currentWindowClass: String? = null,
         val observations: MutableList<WeChatTeachingObservation> = mutableListOf(),
         val visibleCaptureTracker: WeChatTeachingVisibleCaptureTracker =
@@ -2362,7 +2910,9 @@ class SelectToSpeakService : AccessibilityService(), WeChatRequestHost {
         var weChatEntered: Boolean = false,
         var selectedCallLabel: com.yinxing.launcher.automation.wechat.teaching.WeChatTeachingSemanticLabel? = null,
         var lastCallMode: WeChatTeachingCallMode = WeChatTeachingCallMode.UNKNOWN,
-        var videoCallConfirmed: Boolean = false
+        var videoCallConfirmed: Boolean = false,
+        var uploadAnonymousData: Boolean = true,
+        var captureReported: Boolean = false
     )
 
     private enum class TeachingState {

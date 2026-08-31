@@ -6,6 +6,7 @@ import android.app.NotificationManager
 import android.app.PendingIntent
 import android.content.Context
 import android.content.Intent
+import android.os.Build
 import androidx.core.app.NotificationCompat
 import com.yinxing.launcher.R
 import com.yinxing.launcher.feature.settings.SettingsActivity
@@ -17,6 +18,7 @@ internal object FallDetectionNotificationController {
     const val ALERT_CHANNEL_ID = "fall_detection_alerts"
 
     fun ensureChannels(context: Context) {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) return
         val manager = context.getSystemService(NotificationManager::class.java) ?: return
         if (manager.getNotificationChannel(MONITORING_CHANNEL_ID) == null) {
             manager.createNotificationChannel(

@@ -11,7 +11,7 @@ import java.net.URL
 object BenchmarkReporter {
     private const val TAG = "BenchmarkReporter"
 
-    private const val ENDPOINT = "https://log.likeyou.qzz.io/api/metrics"
+    private const val ENDPOINT = "https://log.722688.xyz/api/metrics"
 
     fun report(scenario: String, metrics: List<Pair<String, Long>>) {
         if (metrics.isEmpty()) return

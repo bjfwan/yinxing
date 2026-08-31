@@ -53,7 +53,7 @@ class WeChatTeachingSummaryFormatterTest {
     @Test
     fun partialOutcomeNamesTheRulesThatWereSaved() {
         assertEquals(
-            "内置可用 3 步，新增 1 条规则（现有 2 条）",
+            "已校准 2 步（内置匹配 3，设备适配 1）",
             WeChatTeachingSummaryFormatter.format(
                 context,
                 WeChatTeachingSnapshot(
@@ -69,6 +69,25 @@ class WeChatTeachingSummaryFormatterTest {
                         WeChatTeachingAction.START_VIDEO_CALL
                     ),
                     addedActions = setOf(WeChatTeachingAction.START_VIDEO_CALL)
+                )
+            )
+        )
+    }
+
+    @Test
+    fun unfinishedTeachingReportsInactivePendingCandidates() {
+        assertEquals(
+            "已保留 2 个待验证候选，不会自动执行",
+            WeChatTeachingSummaryFormatter.format(
+                context,
+                WeChatTeachingSnapshot(
+                    status = WeChatTeachingProfileStatus.CANDIDATES_PENDING,
+                    learnedActions = emptySet(),
+                    reliabilityScore = null,
+                    pendingActions = linkedSetOf(
+                        WeChatTeachingAction.OPEN_MORE,
+                        WeChatTeachingAction.OPEN_VIDEO_MENU
+                    )
                 )
             )
         )

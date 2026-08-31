@@ -27,6 +27,7 @@ data class LobsterReportDetails(
     val userDescription: String? = null,
     val reproductionSteps: String? = null,
     val steps: List<LobsterTraceStep> = emptyList(),
+    val failureSample: LobsterFailureSample? = null,
     val sensitiveValues: List<String> = emptyList()
 ) {
     fun toJson(): JSONObject = JSONObject().apply {
@@ -55,6 +56,7 @@ data class LobsterReportDetails(
                 }
             })
         }
+        failureSample?.let { put("failure_sample", it.toJson()) }
     }
 }
 

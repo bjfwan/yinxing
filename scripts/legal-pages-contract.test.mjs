@@ -69,3 +69,18 @@ test("legal layout provides a responsive sticky navigation and avoids side-strip
   assert.match(css, /scroll-margin-top:/)
   assert.doesNotMatch(css, /border-left:\s*[2-9]/)
 })
+
+test("wechat teaching disclosure states purpose scope retention withdrawal and no cross-device sharing", async () => {
+  const privacy = await readFile(privacyPath, "utf8")
+  const terms = await readFile(termsPath, "utf8")
+
+  assert.match(privacy, /微信视频示教/)
+  assert.match(privacy, /控件类名、资源 ID、固定语义标签、相对位置、页面类名和状态指纹/)
+  assert.match(privacy, /不包含联系人姓名、搜索文字、聊天内容、头像、图片、截图、录音或视频/)
+  assert.match(privacy, /普通日志保存 30 天/)
+  assert.match(privacy, /撤回.*同意/)
+  assert.match(terms, /上传本次匿名演示数据.*默认勾选/)
+  assert.match(terms, /开始前取消/)
+  assert.match(terms, /不影响本地保存、验证和使用/)
+  assert.match(terms, /不会自动下发或跨设备共享/)
+})

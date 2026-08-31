@@ -7,10 +7,10 @@ import org.junit.Test
 
 class FamilySetupReadinessTest {
     @Test
-    fun allThreeRequiredItemsMustBeReadyBeforeFamilyCanFinish() {
+    fun twoRequiredItemsLetFamilyFinishWhenLauncherIsReady() {
         val readiness = familySetupReadiness(1, phonePermissionGranted = true, defaultLauncher = true)
 
-        assertEquals(3, readiness.completedCount)
+        assertEquals(2, readiness.completedCount)
         assertTrue(readiness.canFinish)
     }
 
@@ -18,7 +18,7 @@ class FamilySetupReadinessTest {
     fun missingContactKeepsSetupIncomplete() {
         val readiness = familySetupReadiness(0, phonePermissionGranted = true, defaultLauncher = true)
 
-        assertEquals(2, readiness.completedCount)
+        assertEquals(1, readiness.completedCount)
         assertFalse(readiness.canFinish)
     }
 
@@ -26,15 +26,15 @@ class FamilySetupReadinessTest {
     fun missingPermissionKeepsSetupIncomplete() {
         val readiness = familySetupReadiness(1, phonePermissionGranted = false, defaultLauncher = true)
 
-        assertEquals(2, readiness.completedCount)
+        assertEquals(1, readiness.completedCount)
         assertFalse(readiness.canFinish)
     }
 
     @Test
-    fun missingDefaultLauncherKeepsSetupIncomplete() {
+    fun missingDefaultLauncherDoesNotBlockEnteringHome() {
         val readiness = familySetupReadiness(1, phonePermissionGranted = true, defaultLauncher = false)
 
         assertEquals(2, readiness.completedCount)
-        assertFalse(readiness.canFinish)
+        assertTrue(readiness.canFinish)
     }
 }

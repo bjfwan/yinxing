@@ -36,16 +36,16 @@ class SettingsClassificationTest {
         assertTrue(activity.findDetailText("首页应用").isEmpty())
 
         activity.showScreen(SettingsScreen.Calls)
-        assertTrue(activity.findDetailText("来电自动接听").isNotEmpty())
-        assertTrue(activity.findDetailText("最近来电状态").isEmpty())
-        assertTrue(activity.findDetailText("当前手机来电适配").isEmpty())
-        assertTrue(activity.findDetailText("跌倒检测").isEmpty())
-        assertTrue(activity.findDetailText("整卡可点击拨打").isEmpty())
+        assertTrue(activity.findAnyDetailText("来电自动接听").isNotEmpty())
+        assertTrue(activity.findAnyDetailText("最近来电状态").isEmpty())
+        assertTrue(activity.findAnyDetailText("当前手机来电适配").isEmpty())
+        assertTrue(activity.findAnyDetailText("跌倒检测").isEmpty())
+        assertTrue(activity.findAnyDetailText("整卡可点击拨打").isEmpty())
 
         activity.showScreen(SettingsScreen.from(null, "diagnostics"))
-        assertTrue(activity.findDetailText("当前手机来电适配").isNotEmpty())
-        assertTrue(activity.findDetailText("最近来电状态").isNotEmpty())
-        assertTrue(activity.findDetailText("来电自动接听").isEmpty())
+        assertTrue(activity.findAnyDetailText("当前手机来电适配").isNotEmpty())
+        assertTrue(activity.findAnyDetailText("最近来电状态").isNotEmpty())
+        assertTrue(activity.findAnyDetailText("来电自动接听").isEmpty())
     }
 
     @Test
@@ -117,6 +117,17 @@ class SettingsClassificationTest {
 
     private fun SettingsActivity.findDetailText(text: String): List<View> = arrayListOf<View>().also {
         findViewById<View>(R.id.settings_detail_rows).findViewsWithText(it, text, View.FIND_VIEWS_WITH_TEXT)
+    }
+
+    private fun SettingsActivity.findAnyDetailText(text: String): List<View> = arrayListOf<View>().also { matches ->
+        listOf(
+            R.id.settings_detail_rows,
+            R.id.settings_detail_rows_secondary,
+            R.id.settings_detail_rows_tertiary
+        ).forEach { containerId ->
+            findViewById<View>(containerId)
+                .findViewsWithText(matches, text, View.FIND_VIEWS_WITH_TEXT)
+        }
     }
 
     private fun SettingsActivity.findSecondaryDetailText(text: String): List<View> =

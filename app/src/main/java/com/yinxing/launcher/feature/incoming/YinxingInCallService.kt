@@ -15,6 +15,9 @@ import com.yinxing.launcher.common.util.CallAudioStrategy
 import com.yinxing.launcher.common.util.DebugLog
 import com.yinxing.launcher.common.util.PermissionUtil
 import com.yinxing.launcher.data.home.LauncherPreferences
+import com.yinxing.launcher.feature.callreturn.CallReturnCoordinator
+import com.yinxing.launcher.feature.callreturn.CallReturnOrigin
+import com.yinxing.launcher.feature.callreturn.SystemCallReturnEligibility
 import com.yinxing.launcher.feature.phone.PhoneContactManager
 import java.util.IdentityHashMap
 import kotlinx.coroutines.CancellationException
@@ -47,6 +50,9 @@ class YinxingInCallService : InCallService() {
     private val callbacks = IdentityHashMap<Call, Call.Callback>()
     private val presentations = IdentityHashMap<Call, CallPresentation>()
     private val callStates = IdentityHashMap<Call, ManagedTelecomCallState>()
+    private val callDirections = IdentityHashMap<Call, Int?>()
+    private val callsObservedRinging = IdentityHashMap<Call, Boolean>()
+    private val returnConfirmedCalls = IdentityHashMap<Call, Boolean>()
     private val preparationJobs = mutableMapOf<String, Job>()
     private var selectedCall: Call? = null
     private var availableCallEndpoints: List<CallEndpoint> = emptyList()
@@ -58,7 +64,10 @@ class YinxingInCallService : InCallService() {
         super.onCallAdded(call)
         val presentation = presentationFrom(call.details)
         presentations[call] = presentation
-        callStates[call] = callState(call)
+        val initialState = callState(call)
+        callStates[call] = initialState
+        callDirections[call] = callDirection(call.details)
+        callsObservedRinging[call] = initialState == ManagedTelecomCallState.Ringing
 
         val callback = object : Call.Callback() {
             override fun onStateChanged(changedCall: Call, newState: Int) {
@@ -76,13 +85,21 @@ class YinxingInCallService : InCallService() {
 
     override fun onCallRemoved(call: Call) {
         val removedCallId = callId(call)
+        val returnConfirmed = returnConfirmedCalls.remove(call) == true
+        val returnEligible = isReturnEligibleOutgoing(call)
         callbacks.remove(call)?.let(call::unregisterCallback)
         presentations.remove(call)
         callStates.remove(call)
+        callDirections.remove(call)
+        callsObservedRinging.remove(call)
         preparationJobs.remove(removedCallId)?.cancel()
         if (selectedCall === call) selectedCall = null
         if (speakerRoutingCallId == removedCallId) clearSpeakerRoutingRequest()
         refreshSelectedCall()
+        when {
+            returnConfirmed -> CallReturnCoordinator.complete(this, CallReturnOrigin.SYSTEM_PHONE)
+            returnEligible -> CallReturnCoordinator.cancel(CallReturnOrigin.SYSTEM_PHONE)
+        }
         super.onCallRemoved(call)
     }
 
@@ -115,6 +132,9 @@ class YinxingInCallService : InCallService() {
         callbacks.clear()
         presentations.clear()
         callStates.clear()
+        callDirections.clear()
+        callsObservedRinging.clear()
+        returnConfirmedCalls.clear()
         preparationJobs.values.forEach(Job::cancel)
         preparationJobs.clear()
         selectedCall = null
@@ -125,6 +145,7 @@ class YinxingInCallService : InCallService() {
     }
 
     private fun handleDetailsChanged(call: Call, details: Call.Details) {
+        callDirections[call] = callDirection(details)
         val previous = presentations[call] ?: CallPresentation(null, "")
         val latest = presentationFrom(details, previous)
         if (latest == previous) return
@@ -236,11 +257,20 @@ class YinxingInCallService : InCallService() {
         }
         callStates[call] = state
         if (state == ManagedTelecomCallState.Ringing) {
+            callsObservedRinging[call] = true
             ActiveTelecomCallSession.expireAnswerRequest(callId)
         } else if (state == ManagedTelecomCallState.Active ||
             state == ManagedTelecomCallState.Disconnected
         ) {
             preparationJobs.remove(callId)?.cancel()
+        }
+
+        if (state == ManagedTelecomCallState.Active && isReturnEligibleOutgoing(call)) {
+            if (CallReturnCoordinator.confirm(CallReturnOrigin.SYSTEM_PHONE)) {
+                returnConfirmedCalls[call] = true
+            }
+        } else if (state == ManagedTelecomCallState.Disconnected && returnConfirmedCalls.remove(call) == true) {
+            CallReturnCoordinator.complete(this, CallReturnOrigin.SYSTEM_PHONE)
         }
 
         refreshSelectedCall(preferredCall = call)
@@ -421,6 +451,17 @@ class YinxingInCallService : InCallService() {
 
     @Suppress("DEPRECATION")
     private fun callState(call: Call): ManagedTelecomCallState = mapCallState(call.state)
+
+    private fun isReturnEligibleOutgoing(call: Call): Boolean =
+        CallReturnCoordinator.hasSession(CallReturnOrigin.SYSTEM_PHONE) &&
+            SystemCallReturnEligibility.shouldConfirm(
+                sdkInt = Build.VERSION.SDK_INT,
+                callDirection = callDirections[call],
+                wasEverRinging = callsObservedRinging[call] == true
+            )
+
+    private fun callDirection(details: Call.Details): Int? =
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) details.callDirection else null
 
     private fun callId(call: Call): String = "telecom-${System.identityHashCode(call)}"
 

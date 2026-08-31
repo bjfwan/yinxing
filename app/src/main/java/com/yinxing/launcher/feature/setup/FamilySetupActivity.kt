@@ -189,7 +189,7 @@ class FamilySetupActivity : FontScaleActivity() {
     }
 
     companion object {
-        private const val REQUIRED_ITEM_COUNT = 3
+        private const val REQUIRED_ITEM_COUNT = 2
 
         fun createIntent(context: Context): Intent = Intent(context, FamilySetupActivity::class.java)
     }
@@ -201,10 +201,10 @@ internal data class FamilySetupReadiness(
     val defaultLauncher: Boolean,
 ) {
     val completedCount: Int
-        get() = listOf(hasPhoneContact, phonePermissionGranted, defaultLauncher).count { it }
+        get() = listOf(hasPhoneContact, phonePermissionGranted).count { it }
 
     val canFinish: Boolean
-        get() = completedCount == 3
+        get() = hasPhoneContact && phonePermissionGranted
 }
 
 internal fun familySetupReadiness(

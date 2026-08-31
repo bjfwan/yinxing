@@ -37,10 +37,10 @@ class FamilySetupActivitySmokeTest {
         val activity = Robolectric.buildActivity(FamilySetupActivity::class.java).setup().get()
 
         assertEquals("家属首次配置", activity.findViewById<TextView>(R.id.tv_setup_toolbar_title).text.toString())
-        assertEquals("请家人完成3项设置", activity.findViewById<TextView>(R.id.tv_setup_title).text.toString())
+        assertEquals("请家人完成2项必要设置", activity.findViewById<TextView>(R.id.tv_setup_title).text.toString())
         assertEquals("常用联系人", activity.findViewById<TextView>(R.id.tv_setup_contacts_title).text.toString())
         assertEquals("电话权限", activity.findViewById<TextView>(R.id.tv_setup_permission_title).text.toString())
-        assertEquals("默认桌面", activity.findViewById<TextView>(R.id.tv_setup_launcher_title).text.toString())
+        assertEquals("默认桌面（推荐）", activity.findViewById<TextView>(R.id.tv_setup_launcher_title).text.toString())
         assertFalse(activity.findViewById<View>(R.id.btn_setup_finish).isEnabled)
     }
 

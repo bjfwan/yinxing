@@ -25,10 +25,20 @@ object WeChatLearnedRulePolicy {
         profile: WeChatTeachingProfile?,
         action: WeChatTeachingAction,
         currentWindowClass: String?
-    ): WeChatTeachingSelector? {
-        val step = profile?.steps?.firstOrNull { it.action == action } ?: return null
-        return step.selector.takeIf {
-            currentWindowClass != null && currentWindowClass == step.windowClass
-        }
+    ): WeChatTeachingSelector? = stepForWindowFallback(
+        profile = profile,
+        action = action,
+        currentWindowClass = currentWindowClass
+    )?.selector
+
+    fun stepForWindowFallback(
+        profile: WeChatTeachingProfile?,
+        action: WeChatTeachingAction,
+        currentWindowClass: String?
+    ): WeChatTeachingStep? {
+        if (currentWindowClass == null) return null
+        return profile?.steps
+            ?.firstOrNull { it.action == action }
+            ?.takeIf { it.windowClass == currentWindowClass }
     }
 }

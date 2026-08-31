@@ -129,7 +129,10 @@ object WeChatTeachingAnalyzer {
                             window.startsWith(WECHAT_VIDEO_DIALOG_PREFIX)
                         }
                     } else {
-                        observation.selector.semanticLabel == WeChatTeachingSemanticLabel.VIDEO_CALL ||
+                        observation.selector.semanticLabel in setOf(
+                            WeChatTeachingSemanticLabel.AUDIO_VIDEO_MENU,
+                            WeChatTeachingSemanticLabel.VIDEO_CALL
+                        ) ||
                             transitionsToPrefix(observations, index, WECHAT_VIDEO_DIALOG_PREFIX)
                     }
             WeChatTeachingAction.START_VIDEO_CALL ->
@@ -156,14 +159,14 @@ object WeChatTeachingAnalyzer {
                 (
                     observation.kind == WeChatTeachingObservationKind.CLICK &&
                         observation.windowClass == WECHAT_CHAT &&
-                        observation.selector?.semanticLabel == WeChatTeachingSemanticLabel.VIDEO_CALL
+                        observation.selector?.semanticLabel == WeChatTeachingSemanticLabel.AUDIO_VIDEO_MENU
                     )
         }
         ?.let { evidence ->
             evidence.kind == WeChatTeachingObservationKind.CLICK &&
                 evidence.source == WeChatTeachingObservationSource.VISIBLE_CONTROL &&
                 evidence.windowClass == WECHAT_CHAT &&
-                evidence.selector?.semanticLabel == WeChatTeachingSemanticLabel.VIDEO_CALL
+                evidence.selector?.semanticLabel == WeChatTeachingSemanticLabel.AUDIO_VIDEO_MENU
         } == true
 
     private fun reachesWindowBeforeAnotherRealClick(
@@ -254,7 +257,11 @@ object WeChatTeachingAnalyzer {
             step.selector.resourceId in CONTACT_RESULT_IDS
         WeChatTeachingAction.OPEN_MORE ->
             step.selector.semanticLabel == WeChatTeachingSemanticLabel.MORE
-        WeChatTeachingAction.OPEN_VIDEO_MENU,
+        WeChatTeachingAction.OPEN_VIDEO_MENU ->
+            step.selector.semanticLabel in setOf(
+                WeChatTeachingSemanticLabel.AUDIO_VIDEO_MENU,
+                WeChatTeachingSemanticLabel.VIDEO_CALL
+            )
         WeChatTeachingAction.START_VIDEO_CALL ->
             step.selector.semanticLabel == WeChatTeachingSemanticLabel.VIDEO_CALL
     }

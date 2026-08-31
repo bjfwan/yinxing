@@ -20,6 +20,7 @@ import com.yinxing.launcher.common.lobster.LobsterClient
 import com.yinxing.launcher.common.lobster.LobsterSettingEventFactory
 import com.yinxing.launcher.common.lobster.LobsterTrace
 import com.yinxing.launcher.common.lobster.withTrace
+import com.yinxing.launcher.common.util.HomeRedirectPreferences
 import com.yinxing.launcher.data.home.LauncherPreferences
 import com.yinxing.launcher.data.weather.WeatherPreferences
 import com.yinxing.launcher.feature.incoming.IncomingGuardReadiness
@@ -33,6 +34,7 @@ class SettingsActivity : FontScaleActivity() {
 
     internal lateinit var launcherPreferences: LauncherPreferences
     internal lateinit var weatherPreferences: WeatherPreferences
+    internal lateinit var homeRedirectPreferences: HomeRedirectPreferences
 
     internal val runtime = SettingsRuntimeState()
 
@@ -85,6 +87,7 @@ class SettingsActivity : FontScaleActivity() {
 
         launcherPreferences = LauncherPreferences.getInstance(this)
         weatherPreferences = WeatherPreferences.getInstance(this)
+        homeRedirectPreferences = HomeRedirectPreferences(this)
 
         overviewController = SettingsOverviewController(this)
         actionController = SettingsActionController(this)

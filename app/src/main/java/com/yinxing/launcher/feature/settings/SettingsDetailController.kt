@@ -42,6 +42,7 @@ import com.yinxing.launcher.common.util.AccessibilityServiceMatcher
 import com.yinxing.launcher.common.util.OemLauncherIconLoader
 import com.yinxing.launcher.common.util.OemLauncherPolicy
 import com.yinxing.launcher.common.util.OemLauncherSupport
+import com.yinxing.launcher.common.util.OplusHomeCompatibility
 import com.yinxing.launcher.common.util.PermissionUtil
 import com.yinxing.launcher.data.home.LauncherPreferences
 import com.yinxing.launcher.feature.fall.FallDetectionService
@@ -142,7 +143,8 @@ internal class SettingsDetailController(private val activity: SettingsActivity) 
         val store = WeChatTeachingStore(this)
         val record = store.loadRecord()
         val profile = store.load()
-        val fingerprint = record?.fingerprint ?: profile?.fingerprint
+        val pendingProfile = store.loadPendingCandidates()
+        val fingerprint = record?.fingerprint ?: profile?.fingerprint ?: pendingProfile?.fingerprint
         val statusSummary = when {
             record?.videoConfirmed == true -> getString(
                 R.string.settings_wechat_rules_status_confirmed,
@@ -153,10 +155,14 @@ internal class SettingsDetailController(private val activity: SettingsActivity) 
                 R.string.settings_wechat_rules_status_saved,
                 profile.steps.size
             )
+            pendingProfile != null -> getString(
+                R.string.settings_wechat_rules_pending_summary,
+                pendingProfile.steps.size
+            )
             else -> getString(R.string.settings_wechat_rules_status_none)
         }
         addRow(
-            if (record == null && profile == null) {
+            if (record == null && profile == null && pendingProfile == null) {
                 R.string.settings_wechat_rules_status_title
             } else {
                 R.string.settings_wechat_rules_recorded_title
@@ -231,7 +237,20 @@ internal class SettingsDetailController(private val activity: SettingsActivity) 
             }
         }
 
-        if (profile != null || record != null) {
+        if (pendingProfile != null) {
+            addRow(
+                R.string.settings_wechat_rules_pending_title,
+                getString(
+                    R.string.settings_wechat_rules_pending_summary,
+                    pendingProfile.steps.size
+                ),
+                R.drawable.ic_settings_action_video,
+                R.color.launcher_system,
+                R.color.launcher_system_soft
+            )
+        }
+
+        if (profile != null || record != null || pendingProfile != null) {
             useRowsContainer(R.id.settings_detail_rows_tertiary, R.id.settings_detail_card_tertiary)
             if (learnedSteps.isNotEmpty()) {
                 addRow(
@@ -424,6 +443,23 @@ internal class SettingsDetailController(private val activity: SettingsActivity) 
             )
             bind(SettingsScreen.Calls)
             overviewController.refreshOverviewUi()
+        }
+        addSwitchRow(
+            R.string.settings_return_home_after_call_title,
+            if (launcherPreferences.isReturnHomeAfterCallEnabled()) {
+                R.string.settings_return_home_after_call_summary_on
+            } else {
+                R.string.settings_return_home_after_call_summary_off
+            },
+            R.drawable.ic_settings_category_calls,
+            launcherPreferences.isReturnHomeAfterCallEnabled()
+        ) {
+            launcherPreferences.setReturnHomeAfterCallEnabled(it)
+            LobsterClient.reportUsage(
+                this,
+                LobsterSettingEventFactory.toggleChanged(LobsterSetting.RETURN_HOME_AFTER_CALL, it)
+            )
+            bind(SettingsScreen.Calls)
         }
         addRow(
             R.string.settings_auto_answer_delay_title,
@@ -683,6 +719,53 @@ internal class SettingsDetailController(private val activity: SettingsActivity) 
             imageTintList = null
         }
         addRow(
+            R.string.settings_home_vendor_title,
+            getString(launcherProfile.vendorSummaryRes()),
+            R.drawable.ic_settings_category_device,
+            R.color.launcher_device,
+            R.color.launcher_device_soft
+        )
+        if (OplusHomeCompatibility.isSupportedManufacturer(Build.MANUFACTURER)) {
+            val compatibilityInstalled = OplusHomeCompatibility.isInstalled(this)
+            addRow(
+                R.string.settings_oplus_compat_title,
+                if (compatibilityInstalled) {
+                    R.string.settings_oplus_compat_summary_on
+                } else {
+                    R.string.settings_oplus_compat_summary_off
+                },
+                R.drawable.ic_settings_permission_overlay,
+                R.color.launcher_device,
+                R.color.launcher_device_soft,
+                chevron = true
+            ) {
+                actionController.showOplusHomeCompatibilityDialog()
+            }
+        }
+        val redirectEnabled = homeRedirectPreferences.isEnabled()
+        addSwitchRow(
+            R.string.settings_home_redirect_title,
+            when {
+                isDefaultLauncher -> R.string.settings_home_redirect_summary_unneeded
+                redirectEnabled -> R.string.settings_home_redirect_summary_on
+                else -> R.string.settings_home_redirect_summary_off
+            },
+            R.drawable.ic_settings_category_device,
+            redirectEnabled && !isDefaultLauncher
+        ) { enabled ->
+            if (enabled && actionController.isDefaultLauncher()) {
+                homeRedirectPreferences.setEnabled(false)
+                Toast.makeText(
+                    this,
+                    R.string.settings_home_redirect_already_default,
+                    Toast.LENGTH_SHORT
+                ).show()
+            } else {
+                homeRedirectPreferences.setEnabled(enabled)
+            }
+            bind(SettingsScreen.Device)
+        }
+        addRow(
             R.string.settings_manage_home_apps_title,
             R.string.settings_manage_home_apps_summary,
             R.drawable.ic_settings_permission_overlay,
@@ -710,6 +793,17 @@ internal class SettingsDetailController(private val activity: SettingsActivity) 
             bind(SettingsScreen.Device)
         }
     }
+
+    private fun com.yinxing.launcher.common.util.OemLauncherProfile.vendorSummaryRes(): Int =
+        when (vendorKey) {
+            "vivo" -> R.string.settings_home_vendor_vivo
+            "xiaomi" -> R.string.settings_home_vendor_xiaomi
+            "huawei" -> R.string.settings_home_vendor_huawei
+            "honor" -> R.string.settings_home_vendor_honor
+            "oplus" -> R.string.settings_home_vendor_oplus
+            "samsung" -> R.string.settings_home_vendor_samsung
+            else -> R.string.settings_home_vendor_standard
+        }
 
     private fun bindDisplay() = with(activity) {
         addRow(

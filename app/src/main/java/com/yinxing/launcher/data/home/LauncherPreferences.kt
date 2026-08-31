@@ -27,6 +27,7 @@ class LauncherPreferences(context: Context) {
         private const val KEY_HOME_LONG_PRESS_RESPONSE = "home_long_press_response"
         private const val KEY_AUTO_ANSWER_ENABLED = "auto_answer_enabled"
         private const val KEY_AUTO_ANSWER_DELAY_SECONDS = "auto_answer_delay_seconds"
+        private const val KEY_RETURN_HOME_AFTER_CALL_ENABLED = "return_home_after_call_enabled"
         const val DEFAULT_AUTO_ANSWER_DELAY_SECONDS = 5
         private const val KEY_FULL_CARD_TAP_ENABLED = "full_card_tap_enabled"
         private const val KEY_DARK_MODE = "dark_mode"
@@ -56,6 +57,7 @@ class LauncherPreferences(context: Context) {
             KEY_HOME_LONG_PRESS_RESPONSE,
             KEY_AUTO_ANSWER_ENABLED,
             KEY_AUTO_ANSWER_DELAY_SECONDS,
+            KEY_RETURN_HOME_AFTER_CALL_ENABLED,
             KEY_FULL_CARD_TAP_ENABLED,
             KEY_DARK_MODE,
             KEY_FONT_SCALE_MODE,
@@ -181,6 +183,15 @@ class LauncherPreferences(context: Context) {
         if (getFontScaleMode() == normalized) return
         settingsStore.setFontScaleMode(normalized)
         notifyPreferenceChanged(KEY_FONT_SCALE_MODE)
+    }
+
+    fun isReturnHomeAfterCallEnabled(): Boolean =
+        settingsStore.snapshot().returnHomeAfterCallEnabled
+
+    fun setReturnHomeAfterCallEnabled(enabled: Boolean) {
+        if (settingsStore.snapshot().returnHomeAfterCallEnabled == enabled) return
+        settingsStore.setReturnHomeAfterCallEnabled(enabled)
+        notifyPreferenceChanged(KEY_RETURN_HOME_AFTER_CALL_ENABLED)
     }
 
     fun isFontScaleModeKey(key: String?): Boolean = key == KEY_FONT_SCALE_MODE

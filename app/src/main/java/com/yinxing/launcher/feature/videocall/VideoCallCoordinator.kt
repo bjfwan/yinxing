@@ -17,6 +17,8 @@ import com.yinxing.launcher.common.util.PermissionUtil
 import com.yinxing.launcher.common.util.AccessibilityServiceMatcher
 import com.yinxing.launcher.data.contact.Contact
 import com.yinxing.launcher.data.contact.ContactManager
+import com.yinxing.launcher.feature.callreturn.CallReturnCoordinator
+import com.yinxing.launcher.feature.callreturn.CallReturnOrigin
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
@@ -41,6 +43,7 @@ class VideoCallCoordinator(
     private var activeRequestId: String? = null
     private var activeRequestToken = 0L
     private var requestWatchdogJob: Job? = null
+    private var activeReturnSessionId: String? = null
 
     fun start(contact: Contact) {
         if (!NetworkUtil.isNetworkAvailable(activity)) {
@@ -97,6 +100,10 @@ class VideoCallCoordinator(
         LobsterClient.log("[微信视频] 流程开始: 联系人=${contact.displayName}")
 
         val requestToken = ++activeRequestToken
+        val returnSessionId = "wechat-video-$requestToken"
+        activeReturnSessionId = returnSessionId.takeIf {
+            CallReturnCoordinator.arm(activity, CallReturnOrigin.WECHAT_VIDEO, it)
+        }
         var requestId: String? = null
         var pendingTerminalUpdate: VideoCallStateUpdate? = null
         var terminalHandled = false
@@ -112,6 +119,10 @@ class VideoCallCoordinator(
             requestId?.let(automationGateway::clearRequestListener)
             if (update.success) {
                 persistSuccessfulCall(contact.id)
+                activeReturnSessionId = null
+            } else {
+                CallReturnCoordinator.cancel(CallReturnOrigin.WECHAT_VIDEO, returnSessionId)
+                if (activeReturnSessionId == returnSessionId) activeReturnSessionId = null
             }
         }
 
@@ -169,6 +180,10 @@ class VideoCallCoordinator(
 
     fun clear() {
         ttsService.stop()
+        activeReturnSessionId?.let {
+            CallReturnCoordinator.cancel(CallReturnOrigin.WECHAT_VIDEO, it)
+        }
+        activeReturnSessionId = null
         activeRequestToken++
         requestWatchdogJob?.cancel()
         requestWatchdogJob = null
@@ -185,6 +200,8 @@ class VideoCallCoordinator(
             }
             activeRequestId = null
             automationGateway.clearRequestListener(requestId)
+            CallReturnCoordinator.cancel(CallReturnOrigin.WECHAT_VIDEO)
+            activeReturnSessionId = null
             val message = activity.getString(R.string.video_call_request_timeout)
             LobsterClient.log("[微信视频] 请求级超时: 联系人=$contactName, requestId=$requestId")
             LobsterClient.report(

@@ -2,6 +2,7 @@ package com.yinxing.launcher.common.lobster
 
 enum class LobsterSetting(val action: String, val label: String) {
     AUTO_ANSWER("change_auto_answer", "自动接听"),
+    RETURN_HOME_AFTER_CALL("change_return_home_after_call", "通话结束返回首页"),
     FALL_DETECTION("change_fall_detection", "跌倒检测"),
     LOW_PERFORMANCE_MODE("change_low_performance_mode", "低性能模式"),
     FULL_CARD_TAP("change_full_card_tap", "整卡点击")

@@ -26,6 +26,13 @@
 - 处理剩余的高价值 Lint 建议；纯 API 风格建议不阻塞当前版本。
 - 后续版本继续补齐权限拒绝与跨页面仪器测试。
 
+### OPPO 默认桌面兼容
+
+- 复现设备：OPPO OPD2506 / Android 16。
+- 现象：系统 `RoleManager` 返回银杏已持有 `ROLE_HOME`，但按 Home 仍进入 `com.android.launcher`，系统 HOME 解析结果也仍是系统桌面。
+- 原因：当前 `PermissionUtil.isDefaultLauncher()` 在 Android 10 以上只检查 `ROLE_HOME`，会把厂商状态不一致误判为成功。
+- 待办：默认桌面成功条件改为“角色持有且实际 HOME 解析为银杏”；不一致时保留未完成状态并提供 OPPO 手动设置引导，同时补充回归测试和真机复测。
+
 ## 3. 暂缓事项
 
 - 微信视频来电自动接听：缺少稳定、跨版本的来电处理链路。

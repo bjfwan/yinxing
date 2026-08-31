@@ -9,6 +9,7 @@ import android.view.View
 import android.view.ViewConfiguration
 import android.view.WindowManager
 import android.widget.FrameLayout
+import android.widget.CheckBox
 import android.widget.TextView
 import androidx.annotation.ColorRes
 import androidx.annotation.DrawableRes
@@ -32,10 +33,12 @@ internal class WeChatTeachingOverlay(private val service: AccessibilityService) 
         secondaryText: String?,
         onPrimary: () -> Unit,
         onSecondary: (() -> Unit)?,
+        uploadChecked: Boolean? = null,
+        onUploadCheckedChange: ((Boolean) -> Unit)? = null,
         @ColorRes messageColorRes: Int = R.color.launcher_text_primary
     ): Boolean {
         return runCatching {
-            val compact = secondaryText == null
+            val compact = secondaryText == null && uploadChecked == null
             val target = view ?: LayoutInflater.from(service).inflate(
                     R.layout.floating_wechat_teaching,
                     FrameLayout(service),
@@ -70,6 +73,12 @@ internal class WeChatTeachingOverlay(private val service: AccessibilityService) 
                 text = secondaryText.orEmpty()
                 visibility = if (secondaryText == null || onSecondary == null) View.GONE else View.VISIBLE
                 setOnClickListener { onSecondary?.invoke() }
+            }
+            target.findViewById<CheckBox>(R.id.wechat_teaching_upload_choice).apply {
+                setOnCheckedChangeListener(null)
+                visibility = if (uploadChecked == null) View.GONE else View.VISIBLE
+                isChecked = uploadChecked == true
+                setOnCheckedChangeListener { _, checked -> onUploadCheckedChange?.invoke(checked) }
             }
             target.post { keepInsideScreen(target) }
             true

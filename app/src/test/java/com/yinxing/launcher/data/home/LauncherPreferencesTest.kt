@@ -86,6 +86,15 @@ class LauncherPreferencesTest {
     }
 
     @Test
+    fun returnHomeAfterCallDefaultsOnAndCanBeDisabled() {
+        assertTrue(preferences.isReturnHomeAfterCallEnabled())
+
+        preferences.setReturnHomeAfterCallEnabled(false)
+
+        assertFalse(LauncherPreferences(context).isReturnHomeAfterCallEnabled())
+    }
+
+    @Test
     fun autoStartConfirmationDefaultsToFalse() {
         assertFalse(preferences.isAutoStartConfirmed())
     }

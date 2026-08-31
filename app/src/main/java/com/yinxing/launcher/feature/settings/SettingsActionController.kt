@@ -26,6 +26,7 @@ import com.yinxing.launcher.common.util.OemLauncherIconLoader
 import com.yinxing.launcher.common.util.OemLauncherPolicy
 import com.yinxing.launcher.common.util.OemLauncherProfile
 import com.yinxing.launcher.common.util.OemLauncherSupport
+import com.yinxing.launcher.common.util.OplusHomeCompatibility
 import com.yinxing.launcher.common.util.PermissionUtil
 import com.yinxing.launcher.feature.incoming.DefaultPhoneRoleController
 import com.yinxing.launcher.feature.incoming.IncomingGuardItem
@@ -36,6 +37,59 @@ private const val TAG = "SettingsActionController"
 internal class SettingsActionController(
     private val activity: SettingsActivity
 ) {
+    fun showOplusHomeCompatibilityDialog(): AlertDialog {
+        val installed = OplusHomeCompatibility.isInstalled(activity)
+        val dialogView = activity.layoutInflater.inflate(R.layout.dialog_accessibility_prompt, null)
+        dialogView.findViewById<TextView>(R.id.tv_dialog_title).setText(
+            R.string.settings_oplus_compat_title
+        )
+        dialogView.findViewById<TextView>(R.id.tv_dialog_message).setText(
+            if (installed) R.string.settings_oplus_compat_uninstall_message
+            else R.string.settings_oplus_compat_install_message
+        )
+        dialogView.findViewById<TextView>(R.id.tv_cancel_label).setText(
+            if (installed) R.string.settings_oplus_compat_close
+            else R.string.settings_oplus_compat_cancel
+        )
+        dialogView.findViewById<TextView>(R.id.tv_primary_label).setText(
+            if (installed) R.string.settings_oplus_compat_uninstall
+            else R.string.settings_oplus_compat_install
+        )
+        val dialog = LauncherDialogFactory.create(activity, dialogView, dismissOnTouchOutside = false)
+        dialogView.findViewById<View>(R.id.btn_cancel).setOnClickListener { dialog.dismiss() }
+        dialogView.findViewById<View>(R.id.btn_open_settings).setOnClickListener {
+            dialog.dismiss()
+            if (installed) {
+                if (!OplusHomeCompatibility.launchUninstall(activity)) {
+                    Toast.makeText(
+                        activity,
+                        R.string.settings_oplus_compat_uninstall_failed,
+                        Toast.LENGTH_SHORT
+                    ).show()
+                }
+            } else {
+                when (OplusHomeCompatibility.launchInstall(activity)) {
+                    OplusHomeCompatibility.InstallLaunchResult.UNKNOWN_SOURCE_SETTINGS_OPENED ->
+                        Toast.makeText(
+                            activity,
+                            R.string.settings_oplus_compat_unknown_source,
+                            Toast.LENGTH_LONG
+                        ).show()
+                    OplusHomeCompatibility.InstallLaunchResult.FAILED,
+                    OplusHomeCompatibility.InstallLaunchResult.UNSUPPORTED ->
+                        Toast.makeText(
+                            activity,
+                            R.string.settings_oplus_compat_install_failed,
+                            Toast.LENGTH_SHORT
+                        ).show()
+                    OplusHomeCompatibility.InstallLaunchResult.INSTALLER_OPENED -> Unit
+                }
+            }
+        }
+        dialog.show()
+        return dialog
+    }
+
     fun onPhonePermissionResult(results: Map<String, Boolean>) {
         val granted = results.values.all { it }
         val traceId = activity.runtime.phonePermissionTraceId ?: LobsterTrace.newId()

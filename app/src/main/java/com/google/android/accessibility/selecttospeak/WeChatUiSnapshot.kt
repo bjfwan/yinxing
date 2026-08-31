@@ -15,6 +15,20 @@ internal data class WeChatUiBounds(
         get() = (top + bottom) / 2
 }
 
+internal object WeChatConversationTitlePolicy {
+    fun isInsideTitleBand(
+        rootBounds: WeChatUiBounds?,
+        candidateBounds: WeChatUiBounds?
+    ): Boolean {
+        val root = rootBounds ?: return false
+        val candidate = candidateBounds ?: return false
+        val height = root.bottom - root.top
+        if (height <= 0) return false
+        val titleBandBottom = root.top + (height * 12 / 100)
+        return candidate.centerY in root.top..titleBandBottom
+    }
+}
+
 internal data class WeChatUiSnapshot(
     val text: String? = null,
     val contentDescription: String? = null,
@@ -23,9 +37,11 @@ internal data class WeChatUiSnapshot(
     val clickable: Boolean = false,
     val editable: Boolean = false,
     val bounds: WeChatUiBounds? = null,
-    val children: List<WeChatUiSnapshot> = emptyList()
+    val children: List<WeChatUiSnapshot> = emptyList(),
+    val visibleToUser: Boolean = true
 ) {
     fun flatten(): Sequence<WeChatUiSnapshot> = sequence {
+        if (!visibleToUser) return@sequence
         yield(this@WeChatUiSnapshot)
         children.forEach { child ->
             yieldAll(child.flatten())
@@ -73,7 +89,8 @@ internal data class WeChatUiSnapshot(
                         right = bounds.right,
                         bottom = bounds.bottom
                     ),
-                    children = children
+                    children = children,
+                    visibleToUser = node.isVisibleToUser
                 )
             }
 
@@ -151,6 +168,28 @@ internal object WeChatUiSnapshotAnalyzer {
             val description = node.contentDescription?.trim()
             normalizedNames.any { name -> text == name || description == name }
         }
+    }
+
+    fun isVerifiedTargetConversation(
+        snapshot: WeChatUiSnapshot,
+        contactNames: Collection<String>
+    ): Boolean {
+        val normalizedNames = contactNames.map { it.trim() }.filter { it.isNotEmpty() }.toSet()
+        if (normalizedNames.isEmpty()) {
+            return false
+        }
+        val exactMatches = snapshot.flatten().filter { node ->
+            val text = node.text?.trim()
+            val description = node.contentDescription?.trim()
+            normalizedNames.any { name -> text == name || description == name }
+        }.toList()
+        if (exactMatches.any { node -> node.viewIdResourceName in contactResultTitleIds }) {
+            return true
+        }
+        if (exactMatches.any { node -> isInsideConversationTitleBand(snapshot, node) }) {
+            return true
+        }
+        return isContactInfoPage(snapshot) && exactMatches.isNotEmpty()
     }
 
     fun findContactSearchResultDisplayName(snapshot: WeChatUiSnapshot, contactName: String): String? {
@@ -267,6 +306,13 @@ internal object WeChatUiSnapshotAnalyzer {
     private fun readableText(node: WeChatUiSnapshot): String? {
         return node.text?.trim()?.takeIf { it.isNotEmpty() }
             ?: node.contentDescription?.trim()?.takeIf { it.isNotEmpty() }
+    }
+
+    private fun isInsideConversationTitleBand(
+        snapshot: WeChatUiSnapshot,
+        node: WeChatUiSnapshot
+    ): Boolean {
+        return WeChatConversationTitlePolicy.isInsideTitleBand(snapshot.bounds, node.bounds)
     }
 
     private fun hasConversationChrome(snapshot: WeChatUiSnapshot): Boolean {

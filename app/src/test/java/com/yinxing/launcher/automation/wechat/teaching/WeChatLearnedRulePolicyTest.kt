@@ -86,6 +86,34 @@ class WeChatLearnedRulePolicyTest {
     }
 
     @Test
+    fun learnedFallbackReturnsOnlyTheStepRecordedForTheCurrentPage() {
+        val profile = profile()
+
+        assertEquals(
+            profile.steps.first(),
+            WeChatLearnedRulePolicy.stepForWindowFallback(
+                profile = profile,
+                action = WeChatTeachingAction.OPEN_SEARCH,
+                currentWindowClass = "com.tencent.mm.ui.LauncherUI"
+            )
+        )
+        assertNull(
+            WeChatLearnedRulePolicy.stepForWindowFallback(
+                profile = profile,
+                action = WeChatTeachingAction.OPEN_SEARCH,
+                currentWindowClass = "com.tencent.mm.ui.chatting.ChattingUI"
+            )
+        )
+        assertNull(
+            WeChatLearnedRulePolicy.stepForWindowFallback(
+                profile = profile,
+                action = WeChatTeachingAction.OPEN_SEARCH,
+                currentWindowClass = null
+            )
+        )
+    }
+
+    @Test
     fun learnedRatiosResolveAgainstTheSameFullScreenCoordinateSpace() {
         val selector = profile().steps.first().selector
 

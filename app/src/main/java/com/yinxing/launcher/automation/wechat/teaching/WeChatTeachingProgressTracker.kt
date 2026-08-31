@@ -41,7 +41,10 @@ object WeChatTeachingProgressTracker {
 
     private fun isVideoClick(observation: WeChatTeachingObservation): Boolean =
         observation.kind == WeChatTeachingObservationKind.CLICK &&
-            observation.selector?.semanticLabel == WeChatTeachingSemanticLabel.VIDEO_CALL
+            observation.selector?.semanticLabel in setOf(
+                WeChatTeachingSemanticLabel.AUDIO_VIDEO_MENU,
+                WeChatTeachingSemanticLabel.VIDEO_CALL
+            )
 
     private fun isVideoDialog(observation: WeChatTeachingObservation): Boolean =
         observation.kind == WeChatTeachingObservationKind.WINDOW &&

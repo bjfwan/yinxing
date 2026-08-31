@@ -71,14 +71,17 @@ internal object WeChatTeachingVisibleControlCollector {
                     screenWidth,
                     screenHeight
                 ) { node ->
-                    node.viewIdResourceName in WeChatViewIds.MORE_BUTTON_FALLBACK_IDS ||
+                    (
+                        node.viewIdResourceName in WeChatViewIds.MORE_BUTTON_FALLBACK_IDS &&
+                            node.bounds?.centerY?.let { it >= screenHeight * 4 / 5 } == true
+                        ) ||
                         semantic(node) == WeChatTeachingSemanticLabel.MORE ||
                         node.text == "+" || node.contentDescription == "+"
                 },
                 findControl(
                     nodes,
                     WeChatTeachingAction.OPEN_VIDEO_MENU,
-                    WeChatTeachingSemanticLabel.VIDEO_CALL,
+                    WeChatTeachingSemanticLabel.AUDIO_VIDEO_MENU,
                     screenWidth,
                     screenHeight
                 ) { node ->
@@ -94,7 +97,7 @@ internal object WeChatTeachingVisibleControlCollector {
                 findControl(
                     nodes,
                     WeChatTeachingAction.OPEN_VIDEO_MENU,
-                    WeChatTeachingSemanticLabel.VIDEO_CALL,
+                    WeChatTeachingSemanticLabel.AUDIO_VIDEO_MENU,
                     screenWidth,
                     screenHeight
                 ) { node -> node.text == "音视频通话" || node.contentDescription == "音视频通话" }

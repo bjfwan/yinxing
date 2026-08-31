@@ -5,8 +5,10 @@ import android.graphics.Rect
 import android.view.accessibility.AccessibilityNodeInfo
 import com.yinxing.launcher.automation.wechat.WeChatViewIds
 import com.yinxing.launcher.automation.wechat.teaching.WeChatTeachingAction
+import com.yinxing.launcher.automation.wechat.teaching.WeChatLearnedRulePolicy
 import com.yinxing.launcher.automation.wechat.teaching.WeChatLearnedCoordinateResolver
 import com.yinxing.launcher.automation.wechat.teaching.WeChatTeachingProfile
+import com.yinxing.launcher.automation.wechat.teaching.WeChatTeachingSemanticLabel
 import com.yinxing.launcher.automation.wechat.teaching.WeChatTeachingSelector
 import com.yinxing.launcher.automation.wechat.util.AccessibilityUtil
 import com.yinxing.launcher.common.util.DebugLog
@@ -17,19 +19,36 @@ internal data class ContactResultTarget(
 )
 
 internal data class SearchResultSections(
-    val contactHeaderCenterY: Int?,
     val groupHeaderCenterY: Int?,
     val networkHeaderCenterY: Int?
 )
 
+internal object WeChatSearchResultSectionPolicy {
+    fun isAllowed(
+        candidateCenterY: Int,
+        groupHeaderCenterY: Int?,
+        networkHeaderCenterY: Int?
+    ): Boolean {
+        groupHeaderCenterY?.let { if (candidateCenterY >= it) return false }
+        networkHeaderCenterY?.let { if (candidateCenterY >= it) return false }
+        return true
+    }
+}
+
+internal object WeChatContactResultTraversalPolicy {
+    private const val MAX_VERIFIED_ROW_ANCESTOR_DEPTH = 5
+
+    fun shouldInspect(depth: Int): Boolean = depth in 0..MAX_VERIFIED_ROW_ANCESTOR_DEPTH
+}
+
 internal class WeChatElementLocator(
     private val service: AccessibilityService,
-    private val learnedProfileProvider: () -> WeChatTeachingProfile? = { null }
+    private val learnedProfileProvider: () -> WeChatTeachingProfile? = { null },
+    private val currentWindowClassProvider: () -> String? = { null }
 ) {
 
     private companion object {
         const val TAG = "WeChatElementLocator"
-        const val MATCH_PARENT_LOOKUP_DEPTH = 4
         val DIALOG_CLOSE_TEXTS = listOf("关闭", "我知道了", "稍后再说", "以后再说", "暂不")
         val SEARCH_ENTRY_HINT_TEXTS = listOf("搜索", "Search", "搜索联系人")
         val MORE_BUTTON_HINT_TEXTS = listOf("更多", "更多功能")
@@ -344,8 +363,12 @@ internal class WeChatElementLocator(
     fun findContactResultTarget(root: AccessibilityNodeInfo?, contactName: String): ContactResultTarget? {
         if (root == null) return null
         val sections = resolveSearchResultSections(root)
-        val learnedId = learnedProfileProvider()
-            ?.selectorFor(WeChatTeachingAction.OPEN_CONTACT)
+        val learnedId = WeChatLearnedRulePolicy.stepForWindowFallback(
+            profile = learnedProfileProvider(),
+            action = WeChatTeachingAction.OPEN_CONTACT,
+            currentWindowClass = currentWindowClassProvider()
+        )
+            ?.selector
             ?.resourceId
             ?.takeIf(::isSafeWeChatResourceId)
         (WeChatViewIds.CONTACT_RESULT_TITLE_IDS + listOfNotNull(learnedId)).forEach { id ->
@@ -377,18 +400,135 @@ internal class WeChatElementLocator(
         root: AccessibilityNodeInfo?,
         action: WeChatTeachingAction
     ): Boolean {
-        val selector = learnedProfileProvider()?.selectorFor(action) ?: return false
+        val currentWindowClass = currentWindowClassProvider()
+        val step = WeChatLearnedRulePolicy.stepForWindowFallback(
+            profile = learnedProfileProvider(),
+            action = action,
+            currentWindowClass = currentWindowClass
+        )
+        if (step == null) {
+            DebugLog.d(TAG) {
+                "clickLearnedSelector: action=$action rejected for window=$currentWindowClass"
+            }
+            return false
+        }
+        return clickTeachingSelector(root, step.selector, action)
+    }
+
+    fun clickTeachingSelector(
+        root: AccessibilityNodeInfo?,
+        selector: WeChatTeachingSelector
+    ): Boolean = clickTeachingSelector(root, selector, null)
+
+    private fun clickTeachingSelector(
+        root: AccessibilityNodeInfo?,
+        selector: WeChatTeachingSelector,
+        learnedAction: WeChatTeachingAction?
+    ): Boolean {
+        val expectedSemantic = selector.semanticLabel
         val resourceId = selector.resourceId?.takeIf(::isSafeWeChatResourceId)
         if (resourceId != null) {
-            val node = AccessibilityUtil.findNodeById(root, resourceId)
+            val candidates = AccessibilityUtil.findAllById(root, resourceId)
+            val node = candidates.firstOrNull { candidate ->
+                matchesTeachingSelector(candidate, selector)
+            }
+            candidates.forEach { candidate ->
+                if (candidate !== node) AccessibilityUtil.safeRecycle(candidate)
+            }
             if (node != null) {
                 val success = AccessibilityUtil.performClick(service, node)
                 AccessibilityUtil.safeRecycle(node)
-                DebugLog.d(TAG) { "clickLearnedSelector: action=$action byId=$success" }
+                learnedAction?.let { action ->
+                    DebugLog.d(TAG) { "clickLearnedSelector: action=$action byId=$success" }
+                }
                 if (success) return true
             }
         }
-        return clickLearnedCoordinate(action, selector)
+        if (expectedSemantic != null) {
+            val semanticNode = findTeachingSemanticNode(root, expectedSemantic)
+            if (semanticNode != null) {
+                val success = AccessibilityUtil.performClick(service, semanticNode)
+                AccessibilityUtil.safeRecycle(semanticNode)
+                if (success) return true
+            }
+            DebugLog.w(
+                TAG,
+                "clickTeachingSelector: expected=$expectedSemantic not visible; refusing blind click"
+            )
+        }
+        if (!WeChatTeachingSelectorSafety.allowsCoordinateFallback(selector)) return false
+        return clickLearnedCoordinate(
+            learnedAction ?: WeChatTeachingAction.OPEN_SEARCH,
+            selector
+        )
+    }
+
+    private fun matchesTeachingSelector(
+        node: AccessibilityNodeInfo,
+        selector: WeChatTeachingSelector
+    ): Boolean {
+        val snapshot = WeChatUiSnapshot.fromNode(node, maxDepth = 4, maxNodes = 40)
+        return WeChatTeachingSelectorSafety.allowsResourceCandidate(
+            selector = selector,
+            isVisible = node.isVisibleToUser,
+            visibleValues = snapshot?.flatten()?.flatMap { candidate ->
+                sequenceOf(candidate.text, candidate.contentDescription)
+            } ?: emptySequence()
+        )
+    }
+
+    private fun matchesTeachingSemantic(
+        node: AccessibilityNodeInfo,
+        expected: WeChatTeachingSemanticLabel?
+    ): Boolean {
+        val snapshot = WeChatUiSnapshot.fromNode(node, maxDepth = 4, maxNodes = 40)
+            ?: return expected == null
+        return WeChatTeachingSelectorSafety.matchesExpectedSemantic(
+            expected = expected,
+            visibleValues = snapshot.flatten().flatMap { candidate ->
+                sequenceOf(candidate.text, candidate.contentDescription)
+            }
+        )
+    }
+
+    private fun findTeachingSemanticNode(
+        root: AccessibilityNodeInfo?,
+        label: WeChatTeachingSemanticLabel
+    ): AccessibilityNodeInfo? {
+        val hints = when (label) {
+            WeChatTeachingSemanticLabel.SEARCH -> listOf("搜索", "Search", "搜索联系人")
+            WeChatTeachingSemanticLabel.MORE -> listOf("更多功能按钮", "更多", "更多功能")
+            WeChatTeachingSemanticLabel.AUDIO_VIDEO_MENU -> listOf("音视频通话")
+            WeChatTeachingSemanticLabel.VIDEO_CALL -> listOf("视频通话")
+            WeChatTeachingSemanticLabel.VOICE_CALL -> listOf("语音通话")
+        }
+        for (hint in hints) {
+            val candidate = AccessibilityUtil.findBestTextNode(
+                root = root,
+                text = hint,
+                exactMatch = false,
+                preferBottom = label == WeChatTeachingSemanticLabel.MORE,
+                excludeEditable = false
+            ) ?: continue
+            if (candidate.isVisibleToUser && matchesTeachingSemantic(candidate, label)) {
+                return candidate
+            }
+            AccessibilityUtil.safeRecycle(candidate)
+        }
+        return null
+    }
+
+    fun scrollTeachingSelector(
+        root: AccessibilityNodeInfo?,
+        selector: WeChatTeachingSelector?
+    ): Boolean {
+        val byId = selector?.resourceId
+            ?.takeIf(::isSafeWeChatResourceId)
+            ?.let { AccessibilityUtil.findNodeById(root, it) }
+        val target = byId ?: root ?: return false
+        val success = target.performAction(AccessibilityNodeInfo.ACTION_SCROLL_FORWARD)
+        if (byId != null) AccessibilityUtil.safeRecycle(byId)
+        return success
     }
 
     private fun clickLearnedCoordinate(
@@ -443,7 +583,7 @@ internal class WeChatElementLocator(
     ): Boolean {
         var current: AccessibilityNodeInfo? = AccessibilityNodeInfo.obtain(node)
         var depth = 0
-        while (current != null && depth < MATCH_PARENT_LOOKUP_DEPTH) {
+        while (current != null && WeChatContactResultTraversalPolicy.shouldInspect(depth)) {
             val snapshot = WeChatUiSnapshot.fromNode(current)
             if (snapshot != null &&
                 WeChatUiSnapshotAnalyzer.findContactSearchResultDisplayName(snapshot, contactName) == displayName
@@ -470,7 +610,6 @@ internal class WeChatElementLocator(
 
     private fun resolveSearchResultSections(root: AccessibilityNodeInfo?): SearchResultSections {
         return SearchResultSections(
-            contactHeaderCenterY = findSectionHeaderCenterY(root, "联系人"),
             groupHeaderCenterY = findSectionHeaderCenterY(root, "群聊"),
             networkHeaderCenterY = findSectionHeaderCenterY(root, "搜索网络结果")
         )
@@ -499,11 +638,10 @@ internal class WeChatElementLocator(
         if (bounds.isEmpty) {
             return false
         }
-        val centerY = bounds.centerY()
-        val contactHeaderCenterY = sections.contactHeaderCenterY ?: return false
-        if (centerY <= contactHeaderCenterY) return false
-        sections.groupHeaderCenterY?.let { if (centerY >= it) return false }
-        sections.networkHeaderCenterY?.let { if (centerY >= it) return false }
-        return true
+        return WeChatSearchResultSectionPolicy.isAllowed(
+            candidateCenterY = bounds.centerY(),
+            groupHeaderCenterY = sections.groupHeaderCenterY,
+            networkHeaderCenterY = sections.networkHeaderCenterY
+        )
     }
 }

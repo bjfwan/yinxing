@@ -4,11 +4,13 @@ import android.graphics.Rect
 import android.view.accessibility.AccessibilityEvent
 import android.view.accessibility.AccessibilityNodeInfo
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
+import org.robolectric.Shadows.shadowOf
 
 @RunWith(RobolectricTestRunner::class)
 class WeChatTeachingObservationExtractorTest {
@@ -86,5 +88,57 @@ class WeChatTeachingObservationExtractorTest {
 
         assertEquals(WeChatTeachingObservationKind.WINDOW, observation?.kind)
         assertEquals("com.tencent.mm.plugin.voip.ui.VideoActivity", observation?.windowClass)
+    }
+
+    @Test
+    fun textChangeBecomesContactPlaceholderWithoutKeepingEnteredText() {
+        val node = AccessibilityNodeInfo.obtain().apply {
+            className = "android.widget.EditText"
+            viewIdResourceName = "com.tencent.mm:id/search_input"
+            text = "视频通话"
+            isEditable = true
+        }
+        val event = AccessibilityEvent.obtain(AccessibilityEvent.TYPE_VIEW_TEXT_CHANGED).apply {
+            packageName = "com.tencent.mm"
+            className = "android.widget.EditText"
+            text.add("视频通话")
+        }
+        shadowOf(event).setSourceNode(node)
+
+        val observation = WeChatTeachingObservationExtractor.extract(
+            event,
+            "com.tencent.mm.plugin.fts.ui.FTSMainUI",
+            1000,
+            2000,
+            20L
+        )
+
+        assertEquals(WeChatTeachingObservationKind.INPUT_CONTACT, observation?.kind)
+        assertNull(observation?.selector?.semanticLabel)
+        assertFalse(observation.toString().contains("视频通话"))
+    }
+
+    @Test
+    fun scrollEventBecomesStructuralObservation() {
+        val node = AccessibilityNodeInfo.obtain().apply {
+            className = "androidx.recyclerview.widget.RecyclerView"
+            viewIdResourceName = "com.tencent.mm:id/result_list"
+            isScrollable = true
+        }
+        val event = AccessibilityEvent.obtain(AccessibilityEvent.TYPE_VIEW_SCROLLED).apply {
+            packageName = "com.tencent.mm"
+            className = "androidx.recyclerview.widget.RecyclerView"
+        }
+        shadowOf(event).setSourceNode(node)
+
+        val observation = WeChatTeachingObservationExtractor.extract(
+            event,
+            "com.tencent.mm.plugin.fts.ui.FTSMainUI",
+            1000,
+            2000,
+            20L
+        )
+
+        assertEquals(WeChatTeachingObservationKind.SCROLL, observation?.kind)
     }
 }

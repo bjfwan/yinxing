@@ -111,7 +111,7 @@
     <string name="settings_about_contact_summary">2632507193@qq.com</string>
     <string name="settings_about_privacy_title">隐私政策</string>
     <string name="settings_about_privacy_summary">了解信息收集、使用与保护方式</string>
-    <string name="settings_about_privacy_message">生效日期：2026 年 8 月 28 日\n\n银杏会在手机本地保存联系人、紧急联系人、天气城市和应用设置。天气、版本更新等功能需要联网。为排查问题和改进稳定性，应用会向项目维护的日志服务发送设备型号、Android 版本、随机安装标识、应用版本、使用与性能事件，以及经过脱敏处理的诊断日志。\n\n银杏不提供广告，不出售个人信息。电话、联系人、通话记录、位置、无障碍和传感器权限仅用于对应功能。需要咨询、查询或删除相关数据时，可通过“联系作者”发送邮件。</string>
+    <string name="settings_about_privacy_message">生效日期：2026 年 8 月 29 日\n\n银杏会在手机本地保存联系人、紧急联系人、天气城市、应用设置和微信视频示教路线。天气、版本更新等功能需要联网。为排查问题和改进稳定性，应用会向项目维护的日志服务发送设备型号、Android 版本、随机安装标识、应用版本、使用与性能事件，以及经过脱敏处理的诊断日志。\n\n微信视频示教可选择上传脱敏后的控件结构、状态指纹、设备和微信版本、结果与回放状态，不包含联系人姓名、搜索文字、聊天内容、图片、截图、录音或视频；每次开始前都可取消上传，不影响本地保存和使用。\n\n银杏不提供广告，不出售个人信息。电话、联系人、通话记录、位置、无障碍和传感器权限仅用于对应功能。需要咨询、撤回同意、查询或删除相关数据时，可通过“联系作者”发送邮件。</string>
     <string name="settings_about_terms_title">服务条款</string>
     <string name="settings_about_terms_summary">了解功能边界、使用规则与责任</string>
     <string name="settings_about_license_title">软件许可证</string>
@@ -180,6 +180,9 @@
     <string name="settings_auto_answer_title">来电自动接听</string>
     <string name="settings_auto_answer_summary_on">已开启，联系人来电自动接通</string>
     <string name="settings_auto_answer_summary_off">已关闭，来电需手动接听</string>
+    <string name="settings_return_home_after_call_title">通话结束返回首页</string>
+    <string name="settings_return_home_after_call_summary_on">已开启，仅银杏发起的通话结束后返回</string>
+    <string name="settings_return_home_after_call_summary_off">已关闭，通话结束后停留在当前页面</string>
     <string name="settings_auto_answer_delay_title">自动接听倒计时</string>
     <string name="settings_auto_answer_delay_summary">%1$d 秒后自动接听</string>
     <string name="settings_dark_mode_title">外观模式</string>
@@ -298,12 +301,14 @@
 
     <string name="settings_wechat_teaching_title">微信视频示教</string>
     <string name="settings_wechat_teaching_summary_not_taught">还没有演示过，遇到不兼容时可让银杏学习</string>
+    <string name="settings_wechat_teaching_summary_candidates_pending">已保留 %1$d 个待验证候选，不会自动执行</string>
     <string name="settings_wechat_teaching_summary_ready">规则学习完成</string>
     <string name="settings_wechat_teaching_summary_no_rules">视频已打通，未学到可复用规则</string>
     <string name="settings_wechat_teaching_summary_verified_no_new">内置可用 %1$d 步，未新增规则</string>
-    <string name="settings_wechat_teaching_summary_difference">内置可用 %1$d 步，新增 %2$d 条规则（现有 %3$d 条）</string>
+    <string name="settings_wechat_teaching_summary_difference">已校准 %3$d 步（内置匹配 %1$d，设备适配 %2$d）</string>
     <string name="settings_wechat_teaching_summary_partial">已保存 %1$d/%2$d 步：%3$s</string>
     <string name="settings_wechat_teaching_summary_complete">规则学习完成：%1$d/%2$d 步</string>
+    <string name="settings_wechat_teaching_summary_routes">已保存 %1$d 条学习路线，其中 %2$d 条已验证</string>
     <string name="settings_wechat_teaching_summary_reteach">设备或微信版本已变化，请重新演示</string>
     <string name="settings_wechat_teaching_action_prepare">准备演示</string>
     <string name="settings_wechat_teaching_action_reteach">重新演示</string>
@@ -320,10 +325,21 @@
     <string name="settings_wechat_teaching_video_confirmed">视频已打通</string>
     <string name="settings_wechat_teaching_video_confirmed_no_rules">视频已打通，未学到规则</string>
     <string name="settings_wechat_teaching_finish">结束</string>
-    <string name="settings_wechat_teaching_complete_upload_message">新增 %1$d 条规则，可匿名上传帮助适配更多设备</string>
+    <string name="settings_wechat_teaching_complete_upload_message">新增 %1$d 条规则，已保存在本机</string>
+    <string name="settings_wechat_teaching_calibration_saved">已校准 %1$d 个动作，其中 %2$d 个为设备适配规则</string>
+    <string name="settings_wechat_teaching_candidates_saved">本次未打通，已保留 %1$d 个待验证候选；不会自动执行</string>
     <string name="settings_wechat_teaching_verified_no_new">内置可用 %1$d 步，未新增规则</string>
     <string name="settings_wechat_teaching_upload">保存并上传</string>
     <string name="settings_wechat_teaching_upload_short">上传</string>
+    <string name="settings_wechat_teaching_upload_choice">上传本次匿名演示数据</string>
+    <string name="settings_wechat_teaching_saved_verify">路线已保存在本机，挂断后可验证一次</string>
+    <string name="settings_wechat_teaching_verify_now">验证一次</string>
+    <string name="settings_wechat_teaching_verify_state_mismatch">当前微信页面与路线不一致，请回到微信首页后重试</string>
+    <string name="settings_wechat_teaching_verify_later">稍后</string>
+    <string name="settings_wechat_teaching_verifying">正在验证学习路线，可随时取消</string>
+    <string name="settings_wechat_teaching_verify_cancel">取消验证</string>
+    <string name="settings_wechat_teaching_verify_success">路线验证成功</string>
+    <string name="settings_wechat_teaching_verify_failed">第 %1$d 步验证失败，路线已保留并降低优先级</string>
     <string name="settings_wechat_teaching_local_only">仅保存</string>
     <string name="settings_wechat_teaching_incomplete">演示未完成</string>
     <string name="settings_wechat_teaching_retry">重新开始</string>
@@ -346,6 +362,8 @@
     <string name="settings_wechat_rules_status_none">尚未完成微信视频演示</string>
     <string name="settings_wechat_rules_status_confirmed">视频已确认 · %1$s · 微信 %2$s</string>
     <string name="settings_wechat_rules_status_saved">已保存 %1$d 条自学习规则</string>
+    <string name="settings_wechat_rules_pending_title">待验证候选</string>
+    <string name="settings_wechat_rules_pending_summary">已保留 %1$d 个候选，不会自动执行</string>
     <string name="settings_wechat_rules_builtin_title">已验证内置规则</string>
     <string name="settings_wechat_rules_builtin_empty">暂无验证记录</string>
     <string name="settings_wechat_rules_builtin_detail">%1$s（内置规则不可删除）</string>
