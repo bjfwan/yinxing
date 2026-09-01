@@ -71,7 +71,7 @@
     <string name="settings_about_title">关于银杏</string>
     <string name="settings_about_entry">关于银杏 ›</string>
     <string name="settings_about_summary">项目、设计验证与服务信息</string>
-    <string name="settings_about_subtitle">个人免费，专为长辈设计</string>
+    <string name="settings_about_subtitle">开源免费，专为长辈设计</string>
     <string name="settings_about_version_title">银杏</string>
     <string name="settings_about_version_summary">当前版本：v%1$s（%2$d）</string>
     <string name="settings_about_hero_version">v%1$s（%2$d）</string>
@@ -115,8 +115,8 @@
     <string name="settings_about_terms_title">服务条款</string>
     <string name="settings_about_terms_summary">了解功能边界、使用规则与责任</string>
     <string name="settings_about_license_title">软件许可证</string>
-    <string name="settings_about_license_summary">个人免费，商业使用需授权</string>
-    <string name="settings_about_license_message">银杏当前源代码使用 PolyForm Noncommercial License 1.0.0。\n\n个人在没有预期商业用途时，可以使用、研究、测试和修改。许可允许的非商业修改和分发须保留许可条款及 Required Notice。\n\n企业经营、内部业务、随硬件交付、商业集成、客户部署，以及广告、引流或获客等商业用途，须事先取得作者的付费书面授权。历史版本继续适用发布时随附的原有许可。</string>
+    <string name="settings_about_license_summary">GPL v3，自由使用并保持同许可开源</string>
+    <string name="settings_about_license_message">银杏中版权持有人有权许可的当前及全部历史原创代码使用 GNU General Public License v3.0（GPL-3.0-only）。\n\n允许使用、学习、研究、修改、分发和商业使用。分发原版或修改版源代码、APK 或其他二进制文件时，须遵守 GPL v3，保留版权与许可声明，以 GPL v3 许可受其约束的修改作品，并按许可证要求向接收者提供完整对应源代码及获取方式。\n\n仅在个人或组织内部使用、未向他人分发时，通常不触发向外提供源代码的义务。已经取得的旧许可证权利仍然有效；第三方内容继续适用各自许可证。</string>
     <string name="settings_about_usage_title">使用说明</string>
     <string name="settings_about_usage_summary">功能边界与注意事项</string>
     <string name="settings_about_usage_message">银杏提供的自动接听、跌倒检测和紧急联系人功能用于日常辅助，可能受设备型号、系统限制、权限、网络和传感器状态影响。\n\n这些功能不能替代医疗设备、人工照护或紧急救援。请为长辈保留可靠的人工联系和求助方式。</string>

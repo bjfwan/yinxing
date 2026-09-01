@@ -6,7 +6,7 @@
 
 <p><strong>给长辈一个真正能用的 Android 首页</strong></p>
 
-[![License: PolyForm Noncommercial](https://img.shields.io/badge/license-PolyForm%20NC-B8882A?labelColor=1C1914&style=flat-square)](LICENSE)
+[![License: GPL-3.0](https://img.shields.io/badge/license-GPL--3.0-B8882A?labelColor=1C1914&style=flat-square)](LICENSE)
 [![Download](https://img.shields.io/badge/下载-APK-B8882A?labelColor=1C1914&style=flat-square&logo=android&logoColor=white)](https://yinxing.722688.xyz)
 [![Platform](https://img.shields.io/badge/Android-7.0%2B-0369A1?labelColor=1C1914&style=flat-square&logo=android&logoColor=white)](#下载安装)
 [![Source Version](https://img.shields.io/badge/source-v2.1.0-B8882A?labelColor=1C1914&style=flat-square)](https://github.com/bjfwan/yinxing/releases/tag/v2.1.0)
@@ -288,9 +288,9 @@ yinxing/
 
 ## 许可
 
-银杏采用 [PolyForm Noncommercial License 1.0.0](LICENSE)：个人和非商业用途免费；商业用途需要事先取得书面授权。完整边界见 [LICENSING.md](LICENSING.md)。
+银杏当前源码采用 [GNU General Public License v3.0](LICENSE)（`GPL-3.0-only`），允许使用、学习、修改、分发及商业使用；分发原版或修改版时，须继续采用 GPL v3 并按许可要求提供完整对应源代码。完整边界见 [LICENSING.md](LICENSING.md)。
 
-此前已按 MIT 发布的历史版本继续适用原许可证，本次变更不追溯既有授权。
+版权持有人有权许可的全部历史原创代码现同时按 `GPL-3.0-only` 提供；已经取得的旧许可证权利仍然有效。详见 [LICENSING.md](LICENSING.md)。
 
 ---
 

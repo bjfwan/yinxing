@@ -111,7 +111,7 @@ class DialogContentQualityTest {
             .let { nodes -> (0 until nodes.length).mapNotNull { nodes.item(it) as? Element } }
             .single { it.getAttribute("name") == "settings_about_subtitle" }
 
-        assertEquals("个人免费，专为长辈设计", subtitle.textContent)
+        assertEquals("开源免费，专为长辈设计", subtitle.textContent)
     }
 
     @Test

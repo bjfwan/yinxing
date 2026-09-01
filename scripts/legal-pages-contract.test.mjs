@@ -9,6 +9,9 @@ const docsRoot = path.join(projectRoot, "docs")
 const privacyPath = path.join(docsRoot, "privacy.html")
 const termsPath = path.join(docsRoot, "terms.html")
 const legalCssPath = path.join(docsRoot, "assets", "css", "legal.css")
+const licensePath = path.join(projectRoot, "LICENSE")
+const licensingPath = path.join(projectRoot, "LICENSING.md")
+const readmePath = path.join(projectRoot, "README.md")
 
 test("legal pages expose accessible section navigation without JavaScript", async () => {
   const privacy = await readFile(privacyPath, "utf8")
@@ -51,17 +54,38 @@ test("legal pages use the current icon with an explicit cache version", async ()
   }
 })
 
-test("service terms summarize the current repository license without an external license jump", async () => {
+test("service terms summarize GNU GPL v3 obligations without an external license jump", async () => {
   const terms = await readFile(termsPath, "utf8")
 
   assert.match(terms, /id="software-license"/)
-  assert.match(terms, /PolyForm Noncommercial License 1\.0\.0/)
-  assert.match(terms, /非商业(?:用途|目的)/)
-  assert.match(terms, /修改和分发/)
-  assert.match(terms, /保留许可条款和 Required Notice/)
-  assert.match(terms, /付费书面授权/)
-  assert.match(terms, /历史版本继续适用其原有许可/)
-  assert.doesNotMatch(terms, /href="https:\/\/(?:github\.com|polyformproject\.org)[^"]*(?:LICENSE|license|noncommercial)/i)
+  assert.match(terms, /GNU General Public License v3\.0/)
+  assert.match(terms, /允许商业使用/)
+  assert.match(terms, /分发.*对应源代码/)
+  assert.match(terms, /全部历史原创代码.*GPL-3\.0-only/)
+  assert.match(terms, /已经取得的旧许可证权利仍然有效/)
+  assert.doesNotMatch(terms, /PolyForm Noncommercial|Affero|付费书面授权/)
+  assert.doesNotMatch(terms, /href="https:\/\/(?:github\.com|gnu\.org)[^"]*(?:LICENSE|license|gpl)/i)
+})
+
+test("repository declares GPL-3.0-only consistently", async () => {
+  const [license, licensing, readme] = await Promise.all([
+    readFile(licensePath, "utf8"),
+    readFile(licensingPath, "utf8"),
+    readFile(readmePath, "utf8"),
+  ])
+
+  assert.match(license, /^\s*GNU GENERAL PUBLIC LICENSE/m)
+  assert.match(license, /Version 3, 29 June 2007/)
+  assert.doesNotMatch(license, /Remote Network Interaction/)
+  assert.match(licensing, /GPL-3\.0-only/)
+  assert.match(licensing, /允许商业使用/)
+  assert.match(licensing, /分发.*对应源代码/)
+  assert.match(licensing, /全部历史原创代码.*GPL-3\.0-only/)
+  assert.match(licensing, /已经取得的旧许可证权利仍然有效/)
+  assert.match(readme, /license-GPL--3\.0/)
+  assert.match(readme, /GNU General Public License v3\.0/)
+  assert.match(readme, /全部历史原创代码.*GPL-3\.0-only/)
+  assert.doesNotMatch(`${licensing}\n${readme}`, /PolyForm Noncommercial|Affero|商业用途需要.*授权/)
 })
 
 test("legal layout provides a responsive sticky navigation and avoids side-stripe callouts", async () => {

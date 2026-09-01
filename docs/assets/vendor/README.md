@@ -8,4 +8,4 @@
 - License: GSAP Standard "No Charge" License
 - License terms: https://gsap.com/community/standard-license/
 
-GSAP is third-party software and is not covered by this repository's PolyForm Noncommercial license.
+GSAP is third-party software and is not covered by this repository's GNU GPL v3 license.

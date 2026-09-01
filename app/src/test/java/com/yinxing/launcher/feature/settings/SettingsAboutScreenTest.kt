@@ -113,7 +113,8 @@ class SettingsAboutScreenTest {
         assertTrue(shadowOf(activity).nextStartedActivity == null)
         val dialog = ShadowDialog.getLatestDialog()
         assertTrue(dialog.isShowing)
-        assertTrue(dialog.window!!.decorView.findText("PolyForm Noncommercial License 1.0.0").isNotEmpty())
+        assertTrue(dialog.window!!.decorView.findText("GNU General Public License v3.0").isNotEmpty())
+        assertTrue(dialog.window!!.decorView.findText("全部历史原创代码").isNotEmpty())
         dialog.dismiss()
     }
 
