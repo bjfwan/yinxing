@@ -213,7 +213,7 @@
     <string name="settings_update_build_label">构建版本</string>
     <string name="settings_update_status_label">更新状态</string>
     <string name="settings_update_release_title">本版更新</string>
-    <string name="settings_update_release_notes">• 重新设计银杏品牌图标，覆盖桌面、圆形与自适应图标\n• 修正图标安全区，减少系统场景中的裁切\n• 同步官网与发布资源</string>
+    <string name="settings_update_release_notes">• 微信视频主动拨打升级为六条可组合路线\n• 每进入新页面重新选择剩余操作更少的安全入口\n• 历史记录、最近消息、通讯录与聊天菜单失败时自动换线\n• 应用、通知、README 与官网全面统一新银杏图标</string>
     <string name="settings_update_recheck">重新检查</string>
     <string name="settings_update_close">关闭</string>
     <string name="settings_update_failed">检查更新失败，请稍后再试</string>

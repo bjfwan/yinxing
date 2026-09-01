@@ -9,12 +9,24 @@
 [![License: PolyForm Noncommercial](https://img.shields.io/badge/license-PolyForm%20NC-B8882A?labelColor=1C1914&style=flat-square)](LICENSE)
 [![Download](https://img.shields.io/badge/下载-APK-B8882A?labelColor=1C1914&style=flat-square&logo=android&logoColor=white)](https://yinxing.722688.xyz)
 [![Platform](https://img.shields.io/badge/Android-7.0%2B-0369A1?labelColor=1C1914&style=flat-square&logo=android&logoColor=white)](#下载安装)
-[![Source Version](https://img.shields.io/badge/source-v2.1.0-B8882A?labelColor=1C1914&style=flat-square)](https://github.com/bjfwan/yinxing/releases)
+[![Source Version](https://img.shields.io/badge/source-v2.1.0-B8882A?labelColor=1C1914&style=flat-square)](https://github.com/bjfwan/yinxing/releases/tag/v2.1.0)
 [![Stars](https://img.shields.io/github/stars/bjfwan/yinxing?color=B8882A&labelColor=1C1914&style=flat-square)](https://github.com/bjfwan/yinxing/stargazers)
 
 **大字、大图标只是起点。银杏真正想解决的是：长辈能不能稳定地找到家人、拨出电话，并在不同手机和软件版本上继续用下去。**
 
 </div>
+
+---
+
+## v2.1.0 发布重点
+
+- 微信视频主动拨打扩展为六条可组合路线：当前聊天、历史视频记录、最近消息、通讯录、搜索和聊天信息；
+- 每进入可靠的新页面重新比较剩余操作数，发现更短的安全入口就立即换线；
+- 历史记录、最近消息、通讯录和聊天菜单失败时，可从当前页面自动切换备用路线；
+- 应用启动图标、通知图标、GitHub README 与官网图标全部统一为新银杏图标；
+- OPPO OPD2506 六条路线及四类故障换线已完成实机验证，完整工程门禁为 `790 tests, 0 failed`。
+
+[查看 v2.1.0 完整发布说明](https://github.com/bjfwan/yinxing/releases/tag/v2.1.0) · [前往官网下载](https://yinxing.722688.xyz)
 
 ---
 

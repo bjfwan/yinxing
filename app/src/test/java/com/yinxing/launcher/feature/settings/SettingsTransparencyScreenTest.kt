@@ -77,9 +77,10 @@ class SettingsTransparencyScreenTest {
 
         listOf(
             "本版更新",
-            "重新设计银杏品牌图标",
-            "修正图标安全区",
-            "同步官网与发布资源"
+            "微信视频主动拨打升级为六条可组合路线",
+            "重新选择剩余操作更少的安全入口",
+            "失败时自动换线",
+            "全面统一新银杏图标"
         ).forEach { text ->
             assertTrue(
                 dialog.window?.decorView
