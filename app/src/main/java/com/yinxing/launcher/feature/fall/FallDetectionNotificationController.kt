@@ -58,7 +58,7 @@ internal object FallDetectionNotificationController {
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
         )
         return NotificationCompat.Builder(context, MONITORING_CHANNEL_ID)
-            .setSmallIcon(android.R.drawable.ic_menu_compass)
+            .setSmallIcon(R.drawable.ic_notification_yinxing)
             .setContentTitle(context.getString(R.string.fall_detection_notification_title))
             .setContentText(
                 context.getString(
@@ -90,7 +90,7 @@ internal object FallDetectionNotificationController {
         val cancelIntent = serviceAction(context, 42021, FallDetectionService.ACTION_FALSE_ALARM)
         val callIntent = serviceAction(context, 42022, FallDetectionService.ACTION_CALL_FAMILY)
         return NotificationCompat.Builder(context, ALERT_CHANNEL_ID)
-            .setSmallIcon(android.R.drawable.stat_notify_error)
+            .setSmallIcon(R.drawable.ic_notification_yinxing)
             .setContentTitle(context.getString(R.string.fall_alert_notification_title))
             .setContentText(context.getString(R.string.fall_alert_notification_text))
             .setCategory(NotificationCompat.CATEGORY_ALARM)

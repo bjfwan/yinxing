@@ -1,6 +1,6 @@
 <div align="center">
 
-<img src="https://raw.githubusercontent.com/bjfwan/yinxing/main/docs/icon.png?v=20260828b" width="140" height="140" alt="银杏图标" />
+<img src="https://raw.githubusercontent.com/bjfwan/yinxing/main/docs/icon.png?v=20260901" width="140" height="140" alt="银杏图标" />
 
 <h1>银杏 · Yinxing Launcher</h1>
 
@@ -9,7 +9,7 @@
 [![License: PolyForm Noncommercial](https://img.shields.io/badge/license-PolyForm%20NC-B8882A?labelColor=1C1914&style=flat-square)](LICENSE)
 [![Download](https://img.shields.io/badge/下载-APK-B8882A?labelColor=1C1914&style=flat-square&logo=android&logoColor=white)](https://yinxing.722688.xyz)
 [![Platform](https://img.shields.io/badge/Android-7.0%2B-0369A1?labelColor=1C1914&style=flat-square&logo=android&logoColor=white)](#下载安装)
-[![Source Version](https://img.shields.io/badge/source-v2.0.0-B8882A?labelColor=1C1914&style=flat-square)](https://github.com/bjfwan/yinxing/releases)
+[![Source Version](https://img.shields.io/badge/source-v2.1.0-B8882A?labelColor=1C1914&style=flat-square)](https://github.com/bjfwan/yinxing/releases)
 [![Stars](https://img.shields.io/github/stars/bjfwan/yinxing?color=B8882A&labelColor=1C1914&style=flat-square)](https://github.com/bjfwan/yinxing/stargazers)
 
 **大字、大图标只是起点。银杏真正想解决的是：长辈能不能稳定地找到家人、拨出电话，并在不同手机和软件版本上继续用下去。**
@@ -47,20 +47,37 @@
 - 启动微信并判断当前页面；
 - 验证当前聊天是否为目标联系人；
 - 从最近消息进入目标聊天；
+- 从通讯录进入联系人详情；
 - 搜索并打开目标联系人；
+- 识别最近会话的 `[视频通话]` 记录并尝试最短路径；
+- 从聊天信息页进入联系人详情；
 - 打开音视频入口并选择视频通话；
 - 确认真正进入视频呼叫页面；
 - 页面置信度不足时等待、回到微信首页或安全停止。
 
-当前有三条可组合入口路线：
+当前有六条可组合入口路线：
 
-| 路线 | 适用情况 |
+| 路线 | 完整路径 |
 |------|----------|
-| 当前聊天 | 微信启动后已经位于目标聊天或详情页 |
-| 最近消息 | 微信首页能够找到目标会话 |
-| 搜索 | 最近消息不可用时，通过联系人搜索进入 |
+| 当前聊天 | 当前聊天页 → `+` → 视频通话 → 视频通话 |
+| 历史视频记录 | 微信首页 → 最近消息 → 目标聊天 → 点击最近的历史视频通话记录 |
+| 最近消息 | 微信首页 → 最近消息 → 目标聊天 → `+` → 视频通话 → 视频通话 |
+| 通讯录 | 微信首页 → 通讯录 → 找到联系人 → 联系人详情 → 音视频通话 → 视频通话 |
+| 搜索 | 微信首页 → 搜索 → 输入联系人 → 点击搜索结果 → 聊天页/联系人详情 → 音视频入口 → 视频通话 |
+| 聊天信息 | 聊天页 → 右上角 → 聊天信息 → 点击头像 → 联系人详情 → 音视频通话 → 视频通话 |
 
-每个能力只负责一件事，每一步之后重新观察页面。某条路线失败时可以从当前状态切换备用路线，不必盲目重放整条操作。
+这六条路线不是六段互不相干的坐标脚本，而是一套可以组合和换线的能力网络，也是银杏针对真实微信环境做的重点工作：
+
+- **控件级最短路线**：每进入一个新页面，都重新比较当前可用入口的剩余操作数；即使原本准备走聊天信息长路线，发现历史视频记录后也会立即改走一键入口。
+- **逐能力验证**：打开会话、确认联系人、进入通讯录、搜索、打开聊天信息、选择视频和确认呼叫分别记录状态，任何一步失败都能明确定位。
+- **局部自动换线**：历史记录失败可切聊天菜单，最近消息失败可切通讯录，通讯录未找到可切搜索，聊天菜单失败可切聊天信息和联系人详情。
+- **身份安全边界**：只有页面标题或联系人详情精确匹配目标联系人后才允许拨号，聊天正文里出现同名文字不能作为身份依据。
+- **真实呼叫确认**：点击按钮不算成功，只有微信真正进入 `VideoActivity` 并连续确认后，银杏才报告视频通话已发起。
+- **微信版本适配**：同时使用语义文字、控件资源 ID、页面类型、可见区域和示教校准；旧节点、越界节点和不可靠页面会被拒绝。
+
+首页切换标签后必须连续两次确认目标标签已选中，才会点击列表，避免使用切换前的旧无障碍节点。历史记录没有真正进入微信视频页时，会自动退回聊天菜单路线。
+
+每个能力只负责一件事，每进入一个新页面都会重新计算可用入口的剩余操作数：发现更短且未失败的安全入口就立即换线；某条路线失败时也可以从当前状态切换备用路线，不必盲目重放整条操作。通讯录仍会继续逐屏查找联系人，不会因为存在搜索路线就立即退出。
 
 > 当前交付的是从银杏主动发起微信视频，不包含微信来电自动接听。
 
@@ -173,7 +190,7 @@
 
 ### [下载最新 APK](https://yinxing.722688.xyz)
 
-当前源码版本：`v2.0.0`
+当前源码版本：`v2.1.0`
 
 </div>
 
@@ -269,6 +286,6 @@ yinxing/
 
 **用代码，陪伴那些被时代遗忘的人。**
 
-<img src="https://raw.githubusercontent.com/bjfwan/yinxing/main/docs/icon.png?v=20260828b" width="60" height="60" alt="银杏图标" />
+<img src="https://raw.githubusercontent.com/bjfwan/yinxing/main/docs/icon.png?v=20260901" width="60" height="60" alt="银杏图标" />
 
 </div>

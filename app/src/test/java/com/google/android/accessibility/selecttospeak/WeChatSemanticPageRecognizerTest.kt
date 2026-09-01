@@ -62,6 +62,18 @@ class WeChatSemanticPageRecognizerTest {
     }
 
     @Test
+    fun `single chat info activity is recognized for contact profile fallback`() {
+        val result = WeChatSemanticPageRecognizer.recognize(
+            snapshot = node(),
+            currentClass = WeChatClassNames.SINGLE_CHAT_INFO
+        )
+
+        assertEquals(WeChatSemanticPage.CHAT_INFO, result.page)
+        assertTrue(result.reliable)
+        assertTrue(result.evidence.contains("single_chat_info_activity"))
+    }
+
+    @Test
     fun `expected video dialog identifies sheet while content tree is restricted`() {
         val result = WeChatSemanticPageRecognizer.recognize(
             snapshot = node(),

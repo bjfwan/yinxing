@@ -185,6 +185,7 @@ internal object WeChatFailureDiagnostics {
             .put("className", snapshot.className)
             .put("clickable", snapshot.clickable)
             .put("editable", snapshot.editable)
+            .put("selected", snapshot.selected)
             .put("bounds", snapshot.bounds?.let(::boundsToJson))
             .put("children", JSONArray().apply {
                 snapshot.children.forEach { put(snapshotToJson(it)) }
@@ -200,6 +201,7 @@ internal object WeChatFailureDiagnostics {
             className = json.optString("className").takeIf { it.isNotEmpty() },
             clickable = json.optBoolean("clickable"),
             editable = json.optBoolean("editable"),
+            selected = json.optBoolean("selected"),
             bounds = json.optJSONObject("bounds")?.let(::boundsFromJson),
             children = buildList {
                 if (children != null) {

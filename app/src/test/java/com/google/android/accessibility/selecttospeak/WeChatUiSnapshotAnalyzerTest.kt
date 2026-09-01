@@ -30,6 +30,60 @@ class WeChatUiSnapshotAnalyzerTest {
     }
 
     @Test
+    fun `requires selected bottom tab before reading its list`() {
+        val messagesSelected = node(
+            children = listOf(
+                node(
+                    text = "微信",
+                    viewIdResourceName = "com.tencent.mm:id/icon_tv",
+                    selected = true
+                ),
+                node(
+                    text = "通讯录",
+                    viewIdResourceName = "com.tencent.mm:id/icon_tv",
+                    selected = false
+                )
+            )
+        )
+
+        assertTrue(WeChatUiSnapshotAnalyzer.isBottomTabSelected(messagesSelected, "微信"))
+        assertFalse(WeChatUiSnapshotAnalyzer.isBottomTabSelected(messagesSelected, "通讯录"))
+    }
+
+    @Test
+    fun `recognizes recent video call preview only inside target conversation row`() {
+        val videoRow = node(
+            children = listOf(
+                node(text = "妈妈", viewIdResourceName = "com.tencent.mm:id/kbq"),
+                node(text = "[视频通话]", viewIdResourceName = "com.tencent.mm:id/ht5")
+            )
+        )
+        val ordinaryRow = node(
+            children = listOf(
+                node(text = "妈妈", viewIdResourceName = "com.tencent.mm:id/kbq"),
+                node(text = "晚上回家", viewIdResourceName = "com.tencent.mm:id/ht5")
+            )
+        )
+
+        assertTrue(WeChatUiSnapshotAnalyzer.hasRecentVideoCallPreview(videoRow, listOf("妈妈")))
+        assertFalse(WeChatUiSnapshotAnalyzer.hasRecentVideoCallPreview(ordinaryRow, listOf("妈妈")))
+    }
+
+    @Test
+    fun `identifies single chat info page without confusing contact profile`() {
+        val chatInfo = node(
+            children = listOf(
+                node(text = "聊天信息"),
+                node(text = "查找聊天记录"),
+                node(text = "妈妈", viewIdResourceName = "com.tencent.mm:id/m7b")
+            )
+        )
+
+        assertTrue(WeChatUiSnapshotAnalyzer.isSingleChatInfoPage(chatInfo))
+        assertFalse(WeChatUiSnapshotAnalyzer.isContactInfoPage(chatInfo))
+    }
+
+    @Test
     fun identifiesContactInfoAndChatLikePages() {
         val contactInfoSnapshot = node(
             children = listOf(
@@ -175,6 +229,25 @@ class WeChatUiSnapshotAnalyzerTest {
         assertTrue(
             WeChatUiSnapshotAnalyzer.isVerifiedTargetConversation(
                 truncatedChatHeader,
+                listOf("wan.")
+            )
+        )
+    }
+
+    @Test
+    fun verifiesCurrentWeChatContactProfileTitle() {
+        val contactProfile = node(
+            children = listOf(
+                node(
+                    text = "wan.",
+                    viewIdResourceName = "com.tencent.mm:id/cf8"
+                )
+            )
+        )
+
+        assertTrue(
+            WeChatUiSnapshotAnalyzer.isVerifiedTargetConversation(
+                contactProfile,
                 listOf("wan.")
             )
         )
@@ -348,6 +421,7 @@ class WeChatUiSnapshotAnalyzerTest {
         className: String? = null,
         clickable: Boolean = false,
         editable: Boolean = false,
+        selected: Boolean = false,
         bounds: WeChatUiBounds? = null,
         children: List<WeChatUiSnapshot> = emptyList()
     ): WeChatUiSnapshot {
@@ -358,6 +432,7 @@ class WeChatUiSnapshotAnalyzerTest {
             className = className,
             clickable = clickable,
             editable = editable,
+            selected = selected,
             bounds = bounds,
             children = children
         )

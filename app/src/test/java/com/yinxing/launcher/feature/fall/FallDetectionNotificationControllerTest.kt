@@ -46,6 +46,7 @@ class FallDetectionNotificationControllerTest {
         val notification = FallDetectionNotificationController.buildAlert(application)
 
         assertEquals(Notification.CATEGORY_ALARM, notification.category)
+        assertEquals(R.drawable.ic_notification_yinxing, notification.smallIcon.resId)
         assertNotNull(notification.fullScreenIntent)
         assertEquals(2, notification.actions.size)
         assertTrue(notification.flags and Notification.FLAG_ONGOING_EVENT != 0)
@@ -59,6 +60,7 @@ class FallDetectionNotificationControllerTest {
         val notification = FallDetectionNotificationController.buildMonitoring(application)
 
         assertEquals(Notification.CATEGORY_SERVICE, notification.category)
+        assertEquals(R.drawable.ic_notification_yinxing, notification.smallIcon.resId)
         assertNotNull(notification.contentIntent)
     }
 }

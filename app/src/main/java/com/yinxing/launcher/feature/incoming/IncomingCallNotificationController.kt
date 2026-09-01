@@ -72,7 +72,7 @@ internal object IncomingCallNotificationController {
         val person = Person.Builder().setName(callerLabel).setImportant(true).build()
 
         return NotificationCompat.Builder(context, CHANNEL_ID)
-            .setSmallIcon(android.R.drawable.sym_call_incoming)
+            .setSmallIcon(R.drawable.ic_notification_yinxing)
             .setContentTitle(context.getString(R.string.incoming_call_notification_title))
             .setContentText(callerLabel)
             .setSubText(IncomingCallDiagnostics.getNotificationStatusText(context))
@@ -113,7 +113,7 @@ internal object IncomingCallNotificationController {
         val openPendingIntent = activityPendingIntent(context, 110, openIntent)
 
         return NotificationCompat.Builder(context, CHANNEL_ID)
-            .setSmallIcon(android.R.drawable.sym_action_call)
+            .setSmallIcon(R.drawable.ic_notification_yinxing)
             .setContentTitle(context.getString(R.string.incoming_call_ongoing_notification_title))
             .setContentText(callerLabel)
             .setCategory(NotificationCompat.CATEGORY_CALL)

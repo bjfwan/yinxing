@@ -18,6 +18,11 @@ internal data class ContactResultTarget(
     val displayName: String
 )
 
+internal data class RecentConversationTarget(
+    val node: AccessibilityNodeInfo,
+    val hasVideoCallPreview: Boolean
+)
+
 internal data class SearchResultSections(
     val groupHeaderCenterY: Int?,
     val networkHeaderCenterY: Int?
@@ -74,6 +79,31 @@ internal class WeChatElementLocator(
             return success
         }
         return false
+    }
+
+    fun clickContactsTab(root: AccessibilityNodeInfo?): Boolean {
+        val node = AccessibilityUtil.findBestTextNode(
+            root,
+            "通讯录",
+            exactMatch = true,
+            preferBottom = true,
+            excludeEditable = false
+        ) ?: return false
+        val success = AccessibilityUtil.performClick(service, node)
+        AccessibilityUtil.safeRecycle(node)
+        return success
+    }
+
+    fun isBottomTabSelected(root: AccessibilityNodeInfo?, label: String): Boolean {
+        val candidates = AccessibilityUtil.findAllById(root, WeChatViewIds.MESSAGE_TAB_ICON)
+        val selected = candidates.any { node ->
+            node.isSelected && (
+                node.text?.toString() == label ||
+                    node.contentDescription?.toString() == label
+                )
+        }
+        candidates.forEach(AccessibilityUtil::safeRecycle)
+        return selected
     }
 
     fun clickTopSearchBar(root: AccessibilityNodeInfo?): Boolean {
@@ -339,7 +369,7 @@ internal class WeChatElementLocator(
         if (normalizedNames.isEmpty()) return null
         val byId = AccessibilityUtil.findAllById(root, WeChatViewIds.CONTACT_TITLE_SECONDARY)
         val matched = byId.firstOrNull { node ->
-            normalizedNames.any { name ->
+            isSafeVisibleListTarget(node) && normalizedNames.any { name ->
                 node.text?.toString() == name || node.contentDescription?.toString() == name
             }
         }
@@ -348,14 +378,15 @@ internal class WeChatElementLocator(
 
         normalizedNames.forEach { contactName ->
             val byDescNodes = AccessibilityUtil.findNodesByContentDescription(root, contactName, exactMatch = true)
-            val byDesc = byDescNodes.firstOrNull()
+            val byDesc = byDescNodes.firstOrNull(::isSafeVisibleListTarget)
             byDescNodes.forEach { if (it !== byDesc) AccessibilityUtil.safeRecycle(it) }
             if (byDesc != null) return byDesc
         }
 
         normalizedNames.forEach { contactName ->
             val byText = AccessibilityUtil.findBestTextNode(root, contactName, exactMatch = true, preferBottom = false)
-            if (byText != null) return byText
+            if (byText != null && isSafeVisibleListTarget(byText)) return byText
+            AccessibilityUtil.safeRecycle(byText)
         }
         return null
     }
@@ -394,6 +425,103 @@ internal class WeChatElementLocator(
             }
         }
         return null
+    }
+
+    fun findRecentConversationTarget(
+        root: AccessibilityNodeInfo?,
+        contactNames: Collection<String>
+    ): RecentConversationTarget? {
+        val node = findContactInMessageList(root, contactNames) ?: return null
+        return RecentConversationTarget(
+            node = node,
+            hasVideoCallPreview = hasVideoCallPreviewInAncestor(node, contactNames)
+        )
+    }
+
+    fun findContactInContactsList(
+        root: AccessibilityNodeInfo?,
+        contactNames: Collection<String>
+    ): AccessibilityNodeInfo? {
+        if (root == null) return null
+        val normalizedNames = contactNames.map(String::trim).filter(String::isNotEmpty).distinct()
+        for (contactName in normalizedNames) {
+            val textNodes = AccessibilityUtil.findAllByText(root, contactName)
+            val textMatch = textNodes.firstOrNull { node ->
+                isSafeVisibleListTarget(node) && matchesNodeText(node, contactName, exactMatch = true)
+            }
+            textNodes.forEach { if (it !== textMatch) AccessibilityUtil.safeRecycle(it) }
+            if (textMatch != null) return textMatch
+
+            val descriptionNodes = AccessibilityUtil.findNodesByContentDescription(
+                root,
+                contactName,
+                exactMatch = true
+            )
+            val descriptionMatch = descriptionNodes.firstOrNull(::isSafeVisibleListTarget)
+            descriptionNodes.forEach { if (it !== descriptionMatch) AccessibilityUtil.safeRecycle(it) }
+            if (descriptionMatch != null) return descriptionMatch
+        }
+        return null
+    }
+
+    fun scrollContactsForward(root: AccessibilityNodeInfo?): Boolean =
+        performScrollForward(root)
+
+    fun findLatestVisibleMessageBubble(root: AccessibilityNodeInfo?): AccessibilityNodeInfo? {
+        if (root == null) return null
+        val rootRect = Rect().also(root::getBoundsInScreen)
+        if (rootRect.isEmpty) return null
+        val allCandidates = AccessibilityUtil.findAllById(root, WeChatViewIds.MESSAGE_BUBBLE)
+        val candidates = allCandidates.filter { it.isVisibleToUser }
+        allCandidates.forEach { if (it !in candidates) AccessibilityUtil.safeRecycle(it) }
+        val candidateBounds = candidates.associateWith { node ->
+            Rect().also(node::getBoundsInScreen).let { bounds ->
+                WeChatUiBounds(bounds.left, bounds.top, bounds.right, bounds.bottom)
+            }
+        }
+        val selectedBounds = WeChatHistoryMessageCandidatePolicy.chooseLatestVisible(
+            rootBounds = WeChatUiBounds(rootRect.left, rootRect.top, rootRect.right, rootRect.bottom),
+            candidates = candidateBounds.values.toList()
+        )
+        val selected = candidateBounds.entries.firstOrNull { it.value == selectedBounds }?.key
+        candidates.forEach { if (it !== selected) AccessibilityUtil.safeRecycle(it) }
+        return selected
+    }
+
+    fun clickChatInfoButton(root: AccessibilityNodeInfo?): Boolean {
+        val byId = findNodeByIds(root, WeChatViewIds.CHAT_INFO_BUTTON_IDS)
+        if (byId != null) {
+            val success = AccessibilityUtil.performClick(service, byId)
+            AccessibilityUtil.safeRecycle(byId)
+            if (success) return true
+        }
+        val byDescription = AccessibilityUtil.findBestTextNode(
+            root,
+            "更多信息",
+            exactMatch = false,
+            preferBottom = false,
+            excludeEditable = false
+        ) ?: return false
+        val success = AccessibilityUtil.performClick(service, byDescription)
+        AccessibilityUtil.safeRecycle(byDescription)
+        return success
+    }
+
+    fun clickChatInfoContact(
+        root: AccessibilityNodeInfo?,
+        contactNames: Collection<String>
+    ): Boolean {
+        val normalizedNames = contactNames.map(String::trim).filter(String::isNotEmpty).distinct()
+        if (normalizedNames.isEmpty()) return false
+        val candidates = AccessibilityUtil.findAllById(root, WeChatViewIds.CHAT_INFO_CONTACT_NAME)
+        val target = candidates.firstOrNull { node ->
+            normalizedNames.any { name -> matchesNodeText(node, name, exactMatch = true) }
+        }
+        candidates.forEach { if (it !== target) AccessibilityUtil.safeRecycle(it) }
+        if (target == null) return false
+        val success = AccessibilityUtil.performClick(service, target)
+        AccessibilityUtil.safeRecycle(target)
+        return success
     }
 
     private fun clickLearnedSelector(
@@ -642,6 +770,57 @@ internal class WeChatElementLocator(
             candidateCenterY = bounds.centerY(),
             groupHeaderCenterY = sections.groupHeaderCenterY,
             networkHeaderCenterY = sections.networkHeaderCenterY
+        )
+    }
+
+    @Suppress("DEPRECATION")
+    private fun hasVideoCallPreviewInAncestor(
+        node: AccessibilityNodeInfo,
+        contactNames: Collection<String>
+    ): Boolean {
+        var current: AccessibilityNodeInfo? = AccessibilityNodeInfo.obtain(node)
+        var depth = 0
+        while (current != null && WeChatContactResultTraversalPolicy.shouldInspect(depth)) {
+            val snapshot = WeChatUiSnapshot.fromNode(current, maxDepth = 6, maxNodes = 80)
+            if (
+                snapshot != null &&
+                WeChatUiSnapshotAnalyzer.hasRecentVideoCallPreview(snapshot, contactNames)
+            ) {
+                AccessibilityUtil.safeRecycle(current)
+                return true
+            }
+            val parent = current.parent
+            AccessibilityUtil.safeRecycle(current)
+            current = parent
+            depth++
+        }
+        AccessibilityUtil.safeRecycle(current)
+        return false
+    }
+
+    private fun performScrollForward(node: AccessibilityNodeInfo?): Boolean {
+        if (node == null) return false
+        if (
+            node.isVisibleToUser &&
+            node.isScrollable &&
+            node.performAction(AccessibilityNodeInfo.ACTION_SCROLL_FORWARD)
+        ) {
+            return true
+        }
+        for (index in 0 until node.childCount) {
+            val child = node.getChild(index) ?: continue
+            val success = performScrollForward(child)
+            AccessibilityUtil.safeRecycle(child)
+            if (success) return true
+        }
+        return false
+    }
+
+    private fun isSafeVisibleListTarget(node: AccessibilityNodeInfo): Boolean {
+        if (!node.isVisibleToUser) return false
+        val bounds = Rect().also(node::getBoundsInScreen)
+        return WeChatListTargetBoundsPolicy.isSafe(
+            WeChatUiBounds(bounds.left, bounds.top, bounds.right, bounds.bottom)
         )
     }
 }

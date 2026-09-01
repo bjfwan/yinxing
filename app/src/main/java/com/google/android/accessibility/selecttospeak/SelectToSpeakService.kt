@@ -9,6 +9,7 @@ import android.os.Build
 import android.os.SystemClock
 import android.view.accessibility.AccessibilityEvent
 import android.view.accessibility.AccessibilityNodeInfo
+import com.yinxing.launcher.BuildConfig
 import com.yinxing.launcher.R
 import com.yinxing.launcher.automation.wechat.WeChatClassNames
 import com.yinxing.launcher.automation.wechat.WeChatPackage
@@ -1013,12 +1014,21 @@ class SelectToSpeakService : AccessibilityService(), WeChatRequestHost {
         if (activeTeachingProfile != null) {
             DebugLog.i(TAG) { "[微信自动] 当前设备学习规则已启用为兜底" }
         }
+        val deviceTestScenario = WeChatDeviceTestScenarioStore.consume()
+        if (deviceTestScenario != null) {
+            DebugLog.i(TAG) {
+                "[DEVICE_TEST] route=${deviceTestScenario.route} failures=${deviceTestScenario.failCapabilities}"
+            }
+        }
         val session = VideoCallSession(
             requestId = requestId,
             contactName = contactName,
             step = Step.WAITING_HOME,
             stepStartedAt = System.currentTimeMillis(),
-            startedAt = System.currentTimeMillis()
+            startedAt = System.currentTimeMillis(),
+            behaviorState = WeChatDeviceTestScenarioPolicy.initialBehaviorState(deviceTestScenario),
+            deviceTestScenario = deviceTestScenario,
+            deviceTestPendingFailures = deviceTestScenario?.failCapabilities?.toMutableSet() ?: mutableSetOf()
         )
         currentSession = session
         session.stateOverride = AutomationState.LAUNCHING_WECHAT
@@ -1164,6 +1174,9 @@ class SelectToSpeakService : AccessibilityService(), WeChatRequestHost {
         if (currentClass == WeChatClassNames.SEARCH_UI || isSearchPage(root)) {
             return WeChatPage.SEARCH
         }
+        if (currentClass == WeChatClassNames.SINGLE_CHAT_INFO) {
+            return WeChatPage.CHAT_INFO
+        }
         if (currentClass == WeChatClassNames.CONTACT_INFO || currentClass == WeChatClassNames.SOS_WEBVIEW || isContactInfoPage(root)) {
             return WeChatPage.CONTACT_DETAIL
         }
@@ -1180,6 +1193,7 @@ class SelectToSpeakService : AccessibilityService(), WeChatRequestHost {
         return when (page) {
             WeChatSemanticPage.HOME -> WeChatPage.HOME
             WeChatSemanticPage.SEARCH -> WeChatPage.SEARCH
+            WeChatSemanticPage.CHAT_INFO -> WeChatPage.CHAT_INFO
             WeChatSemanticPage.CONTACT_DETAIL -> WeChatPage.CONTACT_DETAIL
             WeChatSemanticPage.CHAT -> WeChatPage.CHAT
             WeChatSemanticPage.VIDEO_SHEET -> WeChatPage.VIDEO_SHEET
@@ -1232,8 +1246,7 @@ class SelectToSpeakService : AccessibilityService(), WeChatRequestHost {
             val titleNode = elementLocator.findNodeByExactText(
                 root,
                 contactName,
-                WeChatViewIds.CONTACT_TITLE_SECONDARY,
-                WeChatViewIds.CONTACT_TITLE_PRIMARY
+                *WeChatViewIds.TARGET_CONVERSATION_TITLE_IDS.toTypedArray()
             )
             if (titleNode == null) {
                 false
@@ -1422,14 +1435,16 @@ class SelectToSpeakService : AccessibilityService(), WeChatRequestHost {
             Step.WAITING_HOME -> {
                 session.searchTextApplied = false
                 session.searchInputSubmittedAt = 0L
-                session.launcherPrepared = false
+                resetHomeTabSettle(session)
                 session.resolvedContactTitle = null
+                session.historyVideoFastPathPending = false
+                session.historyVideoFastPathAttempted = false
             }
             Step.WAITING_LAUNCHER_UI,
             Step.WAITING_SEARCH_FALLBACK -> {
                 session.searchTextApplied = false
                 session.searchInputSubmittedAt = 0L
-                session.launcherPrepared = false
+                resetHomeTabSettle(session)
                 session.resolvedContactTitle = null
             }
             Step.WAITING_CONTACT_RESULT -> {
@@ -1450,12 +1465,13 @@ class SelectToSpeakService : AccessibilityService(), WeChatRequestHost {
                 session.searchTextApplied = false
                 session.searchInputSubmittedAt = 0L
                 session.resolvedContactTitle = null
+                if (target != Step.WAITING_SEARCH_FALLBACK) resetHomeTabSettle(session)
             }
             Step.WAITING_CONTACT_RESULT -> {
                 session.resolvedContactTitle = null
             }
             Step.WAITING_CONTACT_DETAIL,
-            Step.WAITING_VIDEO_OPTIONS -> Unit
+            Step.WAITING_VIDEO_OPTIONS -> session.chatMenuSettleMisses = 0
             Step.VERIFYING_CALL_STARTED -> {
                 session.callVerificationState = WeChatCallVerificationState()
                 session.callVerificationPollCount = 0
@@ -1623,7 +1639,9 @@ class SelectToSpeakService : AccessibilityService(), WeChatRequestHost {
             page = semantic,
             targetConversationVerified = targetConversationVerified,
             searchQueryVerified = searchQueryVerified,
-            contactAccepted = contactScore?.accepted == true
+            contactAccepted = contactScore?.accepted == true,
+            contactsTabSelected = elementLocator.isBottomTabSelected(root, "通讯录"),
+            historyVideoCallAvailable = session.historyVideoFastPathPending
         )
         val plannedDecision = capabilityTree.decide(
             state = session.behaviorState,
@@ -1655,6 +1673,8 @@ class SelectToSpeakService : AccessibilityService(), WeChatRequestHost {
                 true
             }
             WeChatCapabilityId.OPEN_RECENT_CONVERSATION,
+            WeChatCapabilityId.OPEN_CONTACTS_TAB,
+            WeChatCapabilityId.OPEN_CONTACT_FROM_LIST,
             WeChatCapabilityId.OPEN_SEARCH -> {
                 if (session.step == Step.WAITING_HOME) {
                     session.launcherPrepared = false
@@ -1695,6 +1715,9 @@ class SelectToSpeakService : AccessibilityService(), WeChatRequestHost {
                 }
             }
             WeChatCapabilityId.OPEN_SEARCH_RESULT,
+            WeChatCapabilityId.OPEN_HISTORY_VIDEO_RECORD,
+            WeChatCapabilityId.OPEN_CHAT_INFO,
+            WeChatCapabilityId.OPEN_CONTACT_PROFILE,
             WeChatCapabilityId.CONFIRM_CALL_STARTED,
             WeChatCapabilityId.VERIFY_TARGET_CONVERSATION,
             WeChatCapabilityId.LAUNCH_WECHAT -> false
@@ -1977,6 +2000,15 @@ class SelectToSpeakService : AccessibilityService(), WeChatRequestHost {
                     reason = "WAITING_HOME: 当前处于非目标联系人页"
                 )
             }
+            WeChatPage.CHAT_INFO -> {
+                logStep(session, "detectPage", "CHAT_INFO", "聊天信息页不是流程起点，返回首页")
+                recoverToHome(
+                    session = session,
+                    root = root,
+                    currentClass = currentClass,
+                    reason = "WAITING_HOME: 当前处于聊天信息页"
+                )
+            }
             WeChatPage.SEARCH -> {
                 logStep(session, "detectPage", "SEARCH", "已在搜索页，直接接续")
                 session.launcherPrepared = false
@@ -2024,51 +2056,129 @@ class SelectToSpeakService : AccessibilityService(), WeChatRequestHost {
 
         if (page != WeChatPage.HOME) {
             logStep(session, "detectPage", page, "非首页，重新归一化")
-            session.launcherPrepared = false
+            resetHomeTabSettle(session)
             session.searchTextApplied = false
             rerouteTo(session, Step.WAITING_HOME, "正在返回微信首页")
             return
         }
 
-        val searchRouteSelected = session.behaviorState.selectedRoute == WeChatRouteId.SEARCH
-        if (!searchRouteSelected && !session.launcherPrepared) {
-            session.launcherPrepared = true
-            val tabClicked = elementLocator.clickMessageTab(root)
-            logStep(session, "clickMessageTab", tabClicked)
-            scheduleAdaptiveProcess(
-                session,
-                if (tabClicked) DelayProfile.TRANSITION else DelayProfile.STABLE
-            )
+        when (session.behaviorState.selectedRoute ?: WeChatRouteId.RECENT_MESSAGES) {
+            WeChatRouteId.CURRENT_CONVERSATION,
+            WeChatRouteId.RECENT_VIDEO_HISTORY,
+            WeChatRouteId.RECENT_MESSAGES -> handleRecentMessagesRoute(session, root)
+            WeChatRouteId.CONTACTS -> handleContactsRoute(session, root)
+            WeChatRouteId.SEARCH -> handleSearchEntryRoute(session, root)
+            WeChatRouteId.CHAT_CONTACT_DETAIL -> handleRecentMessagesRoute(session, root)
+        }
+    }
+
+    private fun handleRecentMessagesRoute(session: VideoCallSession, root: AccessibilityNodeInfo) {
+        if (!ensureHomeTabSettled(session, root, label = "微信", clickTab = elementLocator::clickMessageTab)) {
             return
         }
-
-        if (!searchRouteSelected) {
-            val contactNames = sessionContactNames(session)
-            val contactNode = elementLocator.findContactInMessageList(root, contactNames)
-            if (contactNode != null) {
-                val success = AccessibilityUtil.performClick(this, contactNode)
-                logStep(session, "clickContactInList", success, "contacts=$contactNames node=${AccessibilityUtil.summarizeNode(contactNode)}")
-                AccessibilityUtil.safeRecycle(contactNode)
-                if (success) {
-                    markCapabilitySucceeded(session, WeChatCapabilityId.OPEN_RECENT_CONVERSATION)
-                    transitionTo(session, Step.WAITING_CONTACT_DETAIL, "正在打开聊天")
-                    return
-                }
-            } else {
-                logStep(session, "findContactInList", false, "消息列表未找到 contacts=$contactNames，转搜索路径")
-            }
-            markCapabilityFailed(
-                session,
-                WeChatCapabilityId.OPEN_RECENT_CONVERSATION,
-                WeChatCapabilityFailure.RECENT_TARGET_NOT_FOUND
-            )
+        if (consumeDeviceTestFailure(session, WeChatCapabilityId.OPEN_RECENT_CONVERSATION)) {
+            fallbackFromRecentToContacts(session, "注入最近消息失败")
+            return
         }
+        val contactNames = sessionContactNames(session)
+        val target = elementLocator.findRecentConversationTarget(root, contactNames)
+        if (target != null) {
+            val success = AccessibilityUtil.performClick(this, target.node)
+            val preview = WeChatDeviceTestScenarioPolicy.useHistoryPreview(
+                actualPreview = target.hasVideoCallPreview,
+                scenario = session.deviceTestScenario
+            )
+            logStep(
+                session,
+                "clickRecentConversation",
+                success,
+                "contacts=$contactNames videoPreview=$preview node=${AccessibilityUtil.summarizeNode(target.node)}"
+            )
+            AccessibilityUtil.safeRecycle(target.node)
+            if (success) {
+                session.historyVideoFastPathPending = preview
+                session.historyVideoFastPathAttempted = false
+                session.behaviorState = session.behaviorState.copy(
+                    selectedRoute = if (preview) {
+                        WeChatRouteId.RECENT_VIDEO_HISTORY
+                    } else {
+                        WeChatRouteId.RECENT_MESSAGES
+                    }
+                )
+                markCapabilitySucceeded(session, WeChatCapabilityId.OPEN_RECENT_CONVERSATION)
+                transitionTo(session, Step.WAITING_CONTACT_DETAIL, "正在打开聊天")
+                return
+            }
+        }
+        logStep(session, "findRecentConversation", false, "消息列表未找到 contacts=$contactNames")
+        fallbackFromRecentToContacts(session, "消息列表未找到")
+    }
 
-        updateProgress(session, "消息列表未找到，正在打开搜索")
+    private fun fallbackFromRecentToContacts(session: VideoCallSession, reason: String) {
+        markCapabilityFailed(
+            session,
+            WeChatCapabilityId.OPEN_RECENT_CONVERSATION,
+            WeChatCapabilityFailure.RECENT_TARGET_NOT_FOUND
+        )
+        session.behaviorState = session.behaviorState.copy(selectedRoute = WeChatRouteId.CONTACTS)
+        resetHomeTabSettle(session)
+        logStep(session, "fallbackRecentToContacts", true, reason)
+        updateProgress(session, "消息列表未找到，正在查找通讯录")
+        scheduleAdaptiveProcess(session, DelayProfile.TRANSITION)
+    }
+
+    private fun handleContactsRoute(session: VideoCallSession, root: AccessibilityNodeInfo) {
+        if (!ensureHomeTabSettled(session, root, label = "通讯录", clickTab = elementLocator::clickContactsTab)) {
+            return
+        }
+        markCapabilitySucceeded(session, WeChatCapabilityId.OPEN_CONTACTS_TAB)
+        if (consumeDeviceTestFailure(session, WeChatCapabilityId.OPEN_CONTACT_FROM_LIST)) {
+            fallbackFromContactsToSearch(session, "注入通讯录联系人失败")
+            return
+        }
+        val contactNames = sessionContactNames(session)
+        val contactNode = elementLocator.findContactInContactsList(root, contactNames)
+        if (contactNode != null) {
+            val success = AccessibilityUtil.performClick(this, contactNode)
+            logStep(
+                session,
+                "clickContactInContacts",
+                success,
+                "contacts=$contactNames node=${AccessibilityUtil.summarizeNode(contactNode)}"
+            )
+            AccessibilityUtil.safeRecycle(contactNode)
+            if (success) {
+                markCapabilitySucceeded(session, WeChatCapabilityId.OPEN_CONTACT_FROM_LIST)
+                transitionTo(session, Step.WAITING_CONTACT_DETAIL, "正在打开联系人")
+                return
+            }
+        }
+        if (session.contactsScrollAttempts < 6 && elementLocator.scrollContactsForward(root)) {
+            session.contactsScrollAttempts++
+            logStep(session, "scrollContacts", true, "attempt=${session.contactsScrollAttempts}")
+            scheduleAdaptiveProcess(session, DelayProfile.TRANSITION, attemptKey = "contacts_scroll", actionSucceeded = true)
+            return
+        }
+        fallbackFromContactsToSearch(session, "通讯录未找到")
+    }
+
+    private fun fallbackFromContactsToSearch(session: VideoCallSession, reason: String) {
+        markCapabilityFailed(
+            session,
+            WeChatCapabilityId.OPEN_CONTACT_FROM_LIST,
+            WeChatCapabilityFailure.CONTACTS_TARGET_NOT_FOUND
+        )
+        session.behaviorState = session.behaviorState.copy(selectedRoute = WeChatRouteId.SEARCH)
+        resetHomeTabSettle(session)
+        logStep(session, "fallbackContactsToSearch", true, reason)
+        updateProgress(session, "通讯录未找到，正在打开搜索")
+        scheduleAdaptiveProcess(session, DelayProfile.TRANSITION)
+    }
+
+    private fun handleSearchEntryRoute(session: VideoCallSession, root: AccessibilityNodeInfo) {
         val searchClicked = elementLocator.clickTopSearchBar(root)
         logStep(session, "clickTopSearchBar", searchClicked)
         if (searchClicked) {
-            session.behaviorState = session.behaviorState.copy(selectedRoute = WeChatRouteId.SEARCH)
             session.searchTextApplied = false
             transitionTo(session, Step.WAITING_SEARCH_FALLBACK, "正在打开搜索")
             return
@@ -2076,8 +2186,54 @@ class SelectToSpeakService : AccessibilityService(), WeChatRequestHost {
         if (!ensureAttemptBudget(session, "search_entry", MAX_SEARCH_ENTRY_ATTEMPTS, "查找联系人入口失败", root)) {
             return
         }
-        session.launcherPrepared = false
         scheduleAdaptiveProcess(session, DelayProfile.TRANSITION, attemptKey = "search_entry")
+    }
+
+    private fun ensureHomeTabSettled(
+        session: VideoCallSession,
+        root: AccessibilityNodeInfo,
+        label: String,
+        clickTab: (AccessibilityNodeInfo?) -> Boolean
+    ): Boolean {
+        if (session.homeTabLabel != label) {
+            session.homeTabLabel = label
+            session.homeTabSelectedObservations = 0
+        }
+        val selected = elementLocator.isBottomTabSelected(root, label)
+        session.homeTabSelectedObservations = if (selected) {
+            session.homeTabSelectedObservations + 1
+        } else {
+            0
+        }
+        return when (
+            WeChatHomeTabSettlePolicy.decide(
+                selected = selected,
+                consecutiveSelectedObservations = session.homeTabSelectedObservations
+            )
+        ) {
+            WeChatHomeTabSettleDecision.READY -> true
+            WeChatHomeTabSettleDecision.WAIT -> {
+                val clicked = if (selected) false else clickTab(root)
+                logStep(
+                    session,
+                    "settleHomeTab",
+                    if (selected) "observe" else clicked,
+                    "label=$label selected=$selected stable=${session.homeTabSelectedObservations}"
+                )
+                scheduleAdaptiveProcess(
+                    session,
+                    if (clicked) DelayProfile.TRANSITION else DelayProfile.STABLE
+                )
+                false
+            }
+        }
+    }
+
+    private fun resetHomeTabSettle(session: VideoCallSession) {
+        session.launcherPrepared = false
+        session.homeTabLabel = null
+        session.homeTabSelectedObservations = 0
+        session.contactsScrollAttempts = 0
     }
 
     private fun handleSearchFallback(session: VideoCallSession, root: AccessibilityNodeInfo) {
@@ -2168,6 +2324,11 @@ class SelectToSpeakService : AccessibilityService(), WeChatRequestHost {
                 rerouteTo(session, Step.WAITING_LAUNCHER_UI, "正在重新打开搜索")
                 return
             }
+            WeChatPage.CHAT_INFO -> {
+                logStep(session, "detectPage", "CHAT_INFO", "搜索流程进入聊天信息页，重新归一化")
+                rerouteTo(session, Step.WAITING_HOME, "正在返回微信首页")
+                return
+            }
             WeChatPage.UNKNOWN -> {
                 logStep(session, "detectPage", "UNKNOWN", "页面未知，回首页归一化")
                 session.searchTextApplied = false
@@ -2196,10 +2357,13 @@ class SelectToSpeakService : AccessibilityService(), WeChatRequestHost {
 
     private fun handleContactDetail(session: VideoCallSession, root: AccessibilityNodeInfo) {
         val currentClass = resolveCurrentWeChatClass(root)
-        when (detectWeChatPage(root, currentClass)) {
-
+        val page = detectWeChatPage(root, currentClass)
+        when (page) {
             WeChatPage.CONTACT_DETAIL -> {
                 logStep(session, "detectPage", "CONTACT_DETAIL", "直接找音视频通话按钮")
+                if (session.behaviorState.selectedRoute == WeChatRouteId.CHAT_CONTACT_DETAIL) {
+                    markCapabilitySucceeded(session, WeChatCapabilityId.OPEN_CONTACT_PROFILE)
+                }
             }
             WeChatPage.CHAT -> {
                 if (!isTargetConversationPage(root, currentClass, sessionContactNames(session))) {
@@ -2207,7 +2371,38 @@ class SelectToSpeakService : AccessibilityService(), WeChatRequestHost {
                     resolveAndRerouteTo(session, session.step, "WAITING_CONTACT_DETAIL: nonTargetConversation")
                     return
                 }
+                if (consumeDeviceTestFailure(session, WeChatCapabilityId.OPEN_VIDEO_ENTRY)) {
+                    activateChatInfoFallback(session, root, "注入聊天菜单失败")
+                    return
+                }
+                if (session.historyVideoFastPathPending) {
+                    handleHistoryVideoFastPath(session, root)
+                    return
+                }
+                if (session.behaviorState.selectedRoute == WeChatRouteId.CHAT_CONTACT_DETAIL) {
+                    val clicked = elementLocator.clickChatInfoButton(root)
+                    logStep(session, "clickChatInfo", clicked)
+                    if (clicked) {
+                        scheduleAdaptiveProcess(session, DelayProfile.TRANSITION, attemptKey = "chat_info", actionSucceeded = true)
+                        return
+                    }
+                    if (!ensureAttemptBudget(session, "chat_info", MAX_CONTACT_DETAIL_ATTEMPTS, "打开聊天信息失败", root)) return
+                    scheduleAdaptiveProcess(session, DelayProfile.STABLE, attemptKey = "chat_info", actionSucceeded = false)
+                    return
+                }
                 logStep(session, "detectPage", "CHAT", "聊天页，点+展开菜单发起视频通话")
+            }
+            WeChatPage.CHAT_INFO -> {
+                markCapabilitySucceeded(session, WeChatCapabilityId.OPEN_CHAT_INFO)
+                val clicked = elementLocator.clickChatInfoContact(root, sessionContactNames(session))
+                logStep(session, "clickChatInfoContact", clicked, "contacts=${sessionContactNames(session)}")
+                if (clicked) {
+                    scheduleAdaptiveProcess(session, DelayProfile.TRANSITION, attemptKey = "chat_info_contact", actionSucceeded = true)
+                    return
+                }
+                if (!ensureAttemptBudget(session, "chat_info_contact", MAX_CONTACT_DETAIL_ATTEMPTS, "打开联系人详情失败", root)) return
+                scheduleAdaptiveProcess(session, DelayProfile.STABLE, attemptKey = "chat_info_contact", actionSucceeded = false)
+                return
             }
             WeChatPage.VIDEO_SHEET -> {
                 logStep(session, "detectPage", "VIDEO_SHEET", "已出现视频选项，直接选择")
@@ -2222,7 +2417,7 @@ class SelectToSpeakService : AccessibilityService(), WeChatRequestHost {
             WeChatPage.HOME -> {
                 logStep(session, "detectPage", "HOME", "已回到首页，重新查找联系人")
                 session.searchTextApplied = false
-                session.launcherPrepared = true
+                resetHomeTabSettle(session)
                 rerouteTo(session, Step.WAITING_LAUNCHER_UI, "正在重新查找联系人")
                 return
             }
@@ -2260,6 +2455,21 @@ class SelectToSpeakService : AccessibilityService(), WeChatRequestHost {
                 scheduleAdaptiveProcess(session, DelayProfile.SHEET, attemptKey = "contact_detail_menu_wait")
                 return
             }
+            if (page == WeChatPage.CHAT) {
+                session.chatMenuSettleMisses++
+                if (session.chatMenuSettleMisses >= 2) {
+                    activateChatInfoFallback(session, root, "聊天页+菜单未找到视频通话")
+                    return
+                }
+                scheduleAdaptiveProcess(session, DelayProfile.STABLE, attemptKey = "contact_detail_menu_wait")
+                return
+            }
+        }
+
+        if (page == WeChatPage.CONTACT_DETAIL) {
+            if (!ensureAttemptBudget(session, "contact_detail", MAX_CONTACT_DETAIL_ATTEMPTS, "打开音视频通话失败", root)) return
+            scheduleAdaptiveProcess(session, DelayProfile.STABLE, attemptKey = "contact_detail")
+            return
         }
 
         val moreClicked = elementLocator.clickMoreButton(root)
@@ -2269,11 +2479,89 @@ class SelectToSpeakService : AccessibilityService(), WeChatRequestHost {
             scheduleAdaptiveProcess(session, DelayProfile.SHEET, attemptKey = "contact_detail_menu_click", actionSucceeded = true)
             return
         }
+        if ((session.actionAttempts["contact_detail"] ?: 0) >= 1) {
+            activateChatInfoFallback(session, root, "聊天页无法展开+菜单")
+            return
+        }
         if (!ensureAttemptBudget(session, "contact_detail", MAX_CONTACT_DETAIL_ATTEMPTS, "打开联系人失败", root)) {
             return
         }
         scheduleAdaptiveProcess(session, DelayProfile.STABLE, attemptKey = "contact_detail")
 
+    }
+
+    private fun handleHistoryVideoFastPath(
+        session: VideoCallSession,
+        root: AccessibilityNodeInfo
+    ) {
+        if (consumeDeviceTestFailure(session, WeChatCapabilityId.OPEN_HISTORY_VIDEO_RECORD)) {
+            session.historyVideoFastPathPending = false
+            markCapabilityFailed(
+                session,
+                WeChatCapabilityId.OPEN_HISTORY_VIDEO_RECORD,
+                WeChatCapabilityFailure.ACTION_FAILED
+            )
+            session.behaviorState = session.behaviorState.copy(selectedRoute = WeChatRouteId.RECENT_MESSAGES)
+            logStep(session, "fallbackHistoryToRecent", true, "注入历史记录失败")
+            updateProgress(session, "历史记录不可用，正在使用聊天菜单")
+            scheduleAdaptiveProcess(session, DelayProfile.STABLE)
+            return
+        }
+        val bubble = elementLocator.findLatestVisibleMessageBubble(root)
+        val clicked = bubble?.let { AccessibilityUtil.performClick(this, it) } == true
+        logStep(
+            session,
+            "clickHistoryVideoRecord",
+            clicked,
+            bubble?.let(AccessibilityUtil::summarizeNode)
+        )
+        AccessibilityUtil.safeRecycle(bubble)
+        session.historyVideoFastPathPending = false
+        if (clicked) {
+            session.historyVideoFastPathAttempted = true
+            transitionTo(session, Step.VERIFYING_CALL_STARTED, "正在通过历史记录发起视频通话")
+            return
+        }
+        markCapabilityFailed(
+            session,
+            WeChatCapabilityId.OPEN_HISTORY_VIDEO_RECORD,
+            WeChatCapabilityFailure.ACTION_FAILED
+        )
+        session.behaviorState = session.behaviorState.copy(selectedRoute = WeChatRouteId.RECENT_MESSAGES)
+        updateProgress(session, "历史记录不可用，正在使用聊天菜单")
+        scheduleAdaptiveProcess(session, DelayProfile.STABLE)
+    }
+
+    private fun activateChatInfoFallback(
+        session: VideoCallSession,
+        root: AccessibilityNodeInfo,
+        reason: String
+    ) {
+        markCapabilityFailed(
+            session,
+            WeChatCapabilityId.OPEN_VIDEO_ENTRY,
+            WeChatCapabilityFailure.ACTION_FAILED
+        )
+        session.behaviorState = session.behaviorState.copy(selectedRoute = WeChatRouteId.CHAT_CONTACT_DETAIL)
+        val dismissed = if (session.moreButtonClickedAt > 0L) {
+            performGlobalAction(GLOBAL_ACTION_BACK)
+        } else {
+            true
+        }
+        logStep(session, "fallbackToChatInfo", dismissed, reason)
+        session.moreButtonClickedAt = 0L
+        session.chatMenuSettleMisses = 0
+        updateProgress(session, "正在通过联系人详情发起视频通话")
+        scheduleAdaptiveProcess(session, DelayProfile.TRANSITION, attemptKey = "chat_info_fallback", actionSucceeded = dismissed)
+    }
+
+    private fun consumeDeviceTestFailure(
+        session: VideoCallSession,
+        capabilityId: WeChatCapabilityId
+    ): Boolean {
+        if (!BuildConfig.DEBUG || !session.deviceTestPendingFailures.remove(capabilityId)) return false
+        DebugLog.i(TAG) { "[DEVICE_TEST_INJECT] capability=$capabilityId" }
+        return true
     }
 
     private fun handleVideoOptions(session: VideoCallSession, root: AccessibilityNodeInfo) {
@@ -2359,6 +2647,27 @@ class SelectToSpeakService : AccessibilityService(), WeChatRequestHost {
         }
         session.lastCallVerificationLogKey = logKey
 
+        if (
+            decision.action == WeChatCallVerificationAction.WAIT &&
+            WeChatHistoryCallFallbackPolicy.shouldFallback(
+                historyAttempted = session.historyVideoFastPathAttempted,
+                elapsedMs = System.currentTimeMillis() - session.stepStartedAt,
+                currentClass = currentClass,
+                callStatus = assessment.status
+            )
+        ) {
+            logStep(session, "historyCallFallback", true, "历史记录未进入通话页，改用聊天菜单")
+            markCapabilityFailed(
+                session,
+                WeChatCapabilityId.OPEN_HISTORY_VIDEO_RECORD,
+                WeChatCapabilityFailure.ACTION_FAILED
+            )
+            session.historyVideoFastPathAttempted = false
+            session.behaviorState = session.behaviorState.copy(selectedRoute = WeChatRouteId.RECENT_MESSAGES)
+            rerouteTo(session, Step.WAITING_CONTACT_DETAIL, "历史记录不可用，正在使用聊天菜单")
+            return
+        }
+
         when (decision.action) {
             WeChatCallVerificationAction.COMPLETE -> finishVideoCallStarted(session)
             WeChatCallVerificationAction.FAIL -> failAndHide(
@@ -2439,7 +2748,11 @@ class SelectToSpeakService : AccessibilityService(), WeChatRequestHost {
         session.stepDurations[session.step.name.lowercase()] = stepElapsed
         recordStepSuccess(session.step, stepElapsed)
         session.moreButtonClickedAt = 0L
-        markCapabilitySucceeded(session, WeChatCapabilityId.SELECT_VIDEO)
+        if (session.historyVideoFastPathAttempted) {
+            markCapabilitySucceeded(session, WeChatCapabilityId.OPEN_HISTORY_VIDEO_RECORD)
+        } else {
+            markCapabilitySucceeded(session, WeChatCapabilityId.SELECT_VIDEO)
+        }
         markCapabilitySucceeded(session, WeChatCapabilityId.CONFIRM_CALL_STARTED)
         session.lastCapabilityReason = "call_started_confirmed"
         
@@ -2868,8 +3181,14 @@ class SelectToSpeakService : AccessibilityService(), WeChatRequestHost {
         val startedAt: Long,
         var searchTextApplied: Boolean = false,
         var launcherPrepared: Boolean = false,
+        var homeTabLabel: String? = null,
+        var homeTabSelectedObservations: Int = 0,
+        var contactsScrollAttempts: Int = 0,
         var resolvedContactTitle: String? = null,
         var moreButtonClickedAt: Long = 0L,
+        var chatMenuSettleMisses: Int = 0,
+        var historyVideoFastPathPending: Boolean = false,
+        var historyVideoFastPathAttempted: Boolean = false,
         var lastAnnouncedMessage: String? = null,
         var lastDetectedPage: WeChatPage? = null,
         var stateOverride: AutomationState? = null,
@@ -2893,7 +3212,9 @@ class SelectToSpeakService : AccessibilityService(), WeChatRequestHost {
         var conversationPageRecoveries: Int = 0,
         var callVerificationState: WeChatCallVerificationState = WeChatCallVerificationState(),
         var callVerificationPollCount: Int = 0,
-        var lastCallVerificationLogKey: String? = null
+        var lastCallVerificationLogKey: String? = null,
+        val deviceTestScenario: WeChatDeviceTestScenario? = null,
+        val deviceTestPendingFailures: MutableSet<WeChatCapabilityId> = mutableSetOf()
     )
 
     private data class TeachingSession(
@@ -2932,6 +3253,7 @@ class SelectToSpeakService : AccessibilityService(), WeChatRequestHost {
         HOME,
         SEARCH,
         CHAT,
+        CHAT_INFO,
         CONTACT_DETAIL,
         VIDEO_SHEET,
         UNKNOWN

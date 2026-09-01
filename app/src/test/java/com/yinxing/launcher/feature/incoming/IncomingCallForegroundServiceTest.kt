@@ -88,7 +88,21 @@ class IncomingCallForegroundServiceTest {
             callerName = "李阿姨"
         )
 
+        assertEquals(R.drawable.ic_notification_yinxing, notification.smallIcon.resId)
         assertNotNull(notification.fullScreenIntent)
+    }
+
+    @Test
+    fun incomingCallUsesYinxingBrandIcon() {
+        val notification = IncomingCallNotificationController.buildIncoming(
+            context = application,
+            callerName = "李阿姨",
+            uiAutoAnswer = false,
+            incomingNumber = "13800000000",
+            knownContact = true
+        )
+
+        assertEquals(R.drawable.ic_notification_yinxing, notification.smallIcon.resId)
     }
 
     @Test

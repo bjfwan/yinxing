@@ -5,6 +5,7 @@ import com.yinxing.launcher.automation.wechat.WeChatClassNames
 internal enum class WeChatSemanticPage {
     HOME,
     SEARCH,
+    CHAT_INFO,
     CONTACT_DETAIL,
     CHAT,
     VIDEO_SHEET,
@@ -33,6 +34,7 @@ internal object WeChatSemanticPageRecognizer {
             val results = listOf(
                 scoreVideoSheet(snapshot),
                 scoreNoResult(snapshot),
+                scoreChatInfo(snapshot),
                 scoreContactDetail(snapshot),
                 scoreSearch(snapshot),
                 scoreChat(snapshot),
@@ -49,6 +51,8 @@ internal object WeChatSemanticPageRecognizer {
                 WeChatSemanticPage.VIDEO_SHEET to "expected_video_dialog"
             currentClass == WeChatClassNames.LAUNCHER_UI -> WeChatSemanticPage.HOME to "launcher_activity"
             currentClass == WeChatClassNames.CHATTING_UI -> WeChatSemanticPage.CHAT to "chatting_activity"
+            currentClass == WeChatClassNames.SINGLE_CHAT_INFO ->
+                WeChatSemanticPage.CHAT_INFO to "single_chat_info_activity"
             currentClass == WeChatClassNames.CONTACT_INFO ||
                 currentClass == WeChatClassNames.SOS_WEBVIEW ->
                 WeChatSemanticPage.CONTACT_DETAIL to "contact_activity"
@@ -81,6 +85,13 @@ internal object WeChatSemanticPageRecognizer {
             return WeChatSemanticPageResult(WeChatSemanticPage.CONTACT_DETAIL, 0, emptyList())
         }
         return WeChatSemanticPageResult(WeChatSemanticPage.CONTACT_DETAIL, 88, listOf("contact_actions"))
+    }
+
+    private fun scoreChatInfo(snapshot: WeChatUiSnapshot): WeChatSemanticPageResult {
+        if (!WeChatUiSnapshotAnalyzer.isSingleChatInfoPage(snapshot)) {
+            return WeChatSemanticPageResult(WeChatSemanticPage.CHAT_INFO, 0, emptyList())
+        }
+        return WeChatSemanticPageResult(WeChatSemanticPage.CHAT_INFO, 91, listOf("chat_info_actions"))
     }
 
     private fun scoreChat(snapshot: WeChatUiSnapshot): WeChatSemanticPageResult {

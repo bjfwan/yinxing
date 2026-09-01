@@ -36,6 +36,7 @@ internal data class WeChatUiSnapshot(
     val className: String? = null,
     val clickable: Boolean = false,
     val editable: Boolean = false,
+    val selected: Boolean = false,
     val bounds: WeChatUiBounds? = null,
     val children: List<WeChatUiSnapshot> = emptyList(),
     val visibleToUser: Boolean = true
@@ -83,6 +84,7 @@ internal data class WeChatUiSnapshot(
                     className = node.className?.toString(),
                     clickable = node.isClickable,
                     editable = node.isEditable || node.className == "android.widget.EditText",
+                    selected = node.isSelected,
                     bounds = if (bounds.isEmpty) null else WeChatUiBounds(
                         left = bounds.left,
                         top = bounds.top,
@@ -125,6 +127,7 @@ internal object WeChatUiSnapshotAnalyzer {
     private val noSearchResultTexts = listOf("无搜索结果", "没有找到", "无结果")
     private val closeDialogTexts = listOf("关闭", "我知道了", "稍后再说", "以后再说", "暂不")
     private val contactResultTitleIds = WeChatViewIds.CONTACT_RESULT_TITLE_IDS
+    private val targetConversationTitleIds = WeChatViewIds.TARGET_CONVERSATION_TITLE_IDS
     private val contactSecondaryFieldLabels = listOf("昵称", "微信号", "微信昵称", "账号")
 
     fun isSearchPage(snapshot: WeChatUiSnapshot): Boolean {
@@ -139,8 +142,42 @@ internal object WeChatUiSnapshotAnalyzer {
         return hasExactText(snapshot, "音视频通话") || hasExactText(snapshot, "发消息")
     }
 
+    fun isSingleChatInfoPage(snapshot: WeChatUiSnapshot): Boolean {
+        return hasExactText(snapshot, "聊天信息") && hasExactText(snapshot, "查找聊天记录")
+    }
+
+    fun isBottomTabSelected(snapshot: WeChatUiSnapshot, label: String): Boolean {
+        return snapshot.flatten().any { node ->
+            node.viewIdResourceName == WeChatViewIds.MESSAGE_TAB_ICON &&
+                node.text == label &&
+                node.selected
+        }
+    }
+
+    fun hasRecentVideoCallPreview(
+        snapshot: WeChatUiSnapshot,
+        contactNames: Collection<String>
+    ): Boolean {
+        val normalizedNames = contactNames.map { it.trim() }.filter { it.isNotEmpty() }.toSet()
+        if (normalizedNames.isEmpty()) return false
+        val hasTargetTitle = snapshot.flatten().any { node ->
+            node.viewIdResourceName in WeChatViewIds.CONTACT_RESULT_TITLE_IDS &&
+                (node.text?.trim() in normalizedNames || node.contentDescription?.trim() in normalizedNames)
+        }
+        val hasVideoPreview = snapshot.flatten().any { node ->
+            node.viewIdResourceName == WeChatViewIds.RECENT_MESSAGE_PREVIEW &&
+                node.text?.trim() == "[视频通话]"
+        }
+        return hasTargetTitle && hasVideoPreview
+    }
+
     fun isLauncherReady(snapshot: WeChatUiSnapshot): Boolean {
-        if (isSearchPage(snapshot) || isContactInfoPage(snapshot) || isChatPageLike(snapshot)) {
+        if (
+            isSearchPage(snapshot) ||
+            isContactInfoPage(snapshot) ||
+            isSingleChatInfoPage(snapshot) ||
+            isChatPageLike(snapshot)
+        ) {
             return false
         }
         val tabs = listOf("微信", "通讯录", "发现", "我")
@@ -183,7 +220,7 @@ internal object WeChatUiSnapshotAnalyzer {
             val description = node.contentDescription?.trim()
             normalizedNames.any { name -> text == name || description == name }
         }.toList()
-        if (exactMatches.any { node -> node.viewIdResourceName in contactResultTitleIds }) {
+        if (exactMatches.any { node -> node.viewIdResourceName in targetConversationTitleIds }) {
             return true
         }
         if (exactMatches.any { node -> isInsideConversationTitleBand(snapshot, node) }) {

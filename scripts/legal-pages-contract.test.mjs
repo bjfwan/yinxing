@@ -42,8 +42,11 @@ test("contact email stays readable when the app WebView disables JavaScript", as
 test("legal pages use the current icon with an explicit cache version", async () => {
   for (const pagePath of [privacyPath, termsPath]) {
     const html = await readFile(pagePath, "utf8")
-    assert.match(html, /rel="icon" type="image\/png" href="\.\/icon\.png\?v=20260828b"/)
-    assert.match(html, /class="brand-logo" src="\.\/icon\.png\?v=20260828b"/)
+    assert.match(html, /rel="icon" href="\.\/favicon\.ico\?v=20260901" sizes="any"/)
+    assert.match(html, /rel="icon" type="image\/png" sizes="32x32" href="\.\/favicon-32x32\.png\?v=20260901"/)
+    assert.match(html, /rel="apple-touch-icon" sizes="180x180" href="\.\/apple-touch-icon\.png\?v=20260901"/)
+    assert.match(html, /rel="manifest" href="\.\/site\.webmanifest\?v=20260901"/)
+    assert.match(html, /class="brand-logo" src="\.\/icon\.png\?v=20260901"/)
     assert.match(html, /href="\.\/assets\/css\/legal\.css\?v=20260828b"/)
   }
 })

@@ -10,15 +10,18 @@ class WeChatCapabilityBehaviorTreeTest {
     private val tree = WeChatCapabilityBehaviorTree()
 
     @Test
-    fun `tree exposes current recent and search routes in fallback order`() {
+    fun `tree exposes all six verified user routes`() {
         val root = tree.root as WeChatBehaviorNode.Sequence
         val entry = root.children.first() as WeChatBehaviorNode.Fallback
 
         assertEquals(
             listOf(
                 WeChatRouteId.CURRENT_CONVERSATION,
+                WeChatRouteId.RECENT_VIDEO_HISTORY,
                 WeChatRouteId.RECENT_MESSAGES,
-                WeChatRouteId.SEARCH
+                WeChatRouteId.CONTACTS,
+                WeChatRouteId.SEARCH,
+                WeChatRouteId.CHAT_CONTACT_DETAIL
             ),
             entry.children.map { it.routeId }
         )
@@ -61,7 +64,7 @@ class WeChatCapabilityBehaviorTreeTest {
     }
 
     @Test
-    fun `home tries recent messages before search`() {
+    fun `home falls back from recent messages to contacts then search`() {
         val first = tree.decide(
             state = WeChatBehaviorTreeState(),
             observation = observation(WeChatSemanticPage.HOME)
@@ -73,10 +76,106 @@ class WeChatCapabilityBehaviorTreeTest {
             ),
             observation = observation(WeChatSemanticPage.HOME)
         )
+        val third = tree.decide(
+            state = second.nextState.markFailed(
+                capabilityId = WeChatCapabilityId.OPEN_CONTACT_FROM_LIST,
+                reason = WeChatCapabilityFailure.CONTACTS_TARGET_NOT_FOUND
+            ),
+            observation = observation(WeChatSemanticPage.HOME)
+        )
 
         assertEquals(WeChatCapabilityId.OPEN_RECENT_CONVERSATION, first.capabilityId)
-        assertEquals(WeChatCapabilityId.OPEN_SEARCH, second.capabilityId)
-        assertEquals(WeChatRouteId.SEARCH, second.nextState.selectedRoute)
+        assertEquals(WeChatCapabilityId.OPEN_CONTACTS_TAB, second.capabilityId)
+        assertEquals(WeChatRouteId.CONTACTS, second.nextState.selectedRoute)
+        assertEquals(WeChatCapabilityId.OPEN_SEARCH, third.capabilityId)
+        assertEquals(WeChatRouteId.SEARCH, third.nextState.selectedRoute)
+    }
+
+    @Test
+    fun `recent video preview selects history record fast route`() {
+        val home = tree.decide(
+            state = WeChatBehaviorTreeState(),
+            observation = observation(
+                page = WeChatSemanticPage.HOME,
+                recentVideoCallAvailable = true
+            )
+        )
+        val chat = tree.decide(
+            state = home.nextState,
+            observation = observation(
+                page = WeChatSemanticPage.CHAT,
+                targetConversationVerified = true,
+                historyVideoCallAvailable = true
+            )
+        )
+
+        assertEquals(WeChatRouteId.RECENT_VIDEO_HISTORY, home.nextState.selectedRoute)
+        assertEquals(WeChatCapabilityId.OPEN_HISTORY_VIDEO_RECORD, chat.capabilityId)
+    }
+
+    @Test
+    fun `new chat page replans a longer route to the visible history shortcut`() {
+        val decision = tree.decide(
+            state = WeChatBehaviorTreeState(
+                selectedRoute = WeChatRouteId.CHAT_CONTACT_DETAIL
+            ).markFailed(
+                capabilityId = WeChatCapabilityId.OPEN_VIDEO_ENTRY,
+                reason = WeChatCapabilityFailure.ACTION_FAILED
+            ),
+            observation = observation(
+                page = WeChatSemanticPage.CHAT,
+                targetConversationVerified = true,
+                historyVideoCallAvailable = true
+            )
+        )
+
+        assertEquals(WeChatCapabilityId.OPEN_HISTORY_VIDEO_RECORD, decision.capabilityId)
+        assertEquals(WeChatRouteId.RECENT_VIDEO_HISTORY, decision.nextState.selectedRoute)
+    }
+
+    @Test
+    fun `failed history shortcut is not selected again during replanning`() {
+        val state = WeChatBehaviorTreeState(
+            selectedRoute = WeChatRouteId.CURRENT_CONVERSATION
+        ).markFailed(
+            capabilityId = WeChatCapabilityId.OPEN_HISTORY_VIDEO_RECORD,
+            reason = WeChatCapabilityFailure.ACTION_FAILED
+        )
+        val decision = tree.decide(
+            state = state,
+            observation = observation(
+                page = WeChatSemanticPage.CHAT,
+                targetConversationVerified = true,
+                historyVideoCallAvailable = true
+            )
+        )
+
+        assertEquals(WeChatCapabilityId.OPEN_VIDEO_ENTRY, decision.capabilityId)
+    }
+
+    @Test
+    fun `failed chat video entry falls back through chat info and contact profile`() {
+        val failedEntryState = WeChatBehaviorTreeState(
+            selectedRoute = WeChatRouteId.CURRENT_CONVERSATION
+        ).markFailed(
+            capabilityId = WeChatCapabilityId.OPEN_VIDEO_ENTRY,
+            reason = WeChatCapabilityFailure.ACTION_FAILED
+        )
+        val openInfo = tree.decide(
+            state = failedEntryState,
+            observation = observation(
+                page = WeChatSemanticPage.CHAT,
+                targetConversationVerified = true
+            )
+        )
+        val openProfile = tree.decide(
+            state = openInfo.nextState,
+            observation = observation(page = WeChatSemanticPage.CHAT_INFO)
+        )
+
+        assertEquals(WeChatRouteId.CHAT_CONTACT_DETAIL, openInfo.nextState.selectedRoute)
+        assertEquals(WeChatCapabilityId.OPEN_CHAT_INFO, openInfo.capabilityId)
+        assertEquals(WeChatCapabilityId.OPEN_CONTACT_PROFILE, openProfile.capabilityId)
     }
 
     @Test
@@ -216,6 +315,8 @@ class WeChatCapabilityBehaviorTreeTest {
         targetConversationVerified: Boolean = false,
         searchQueryVerified: Boolean = false,
         contactAccepted: Boolean = false,
+        recentVideoCallAvailable: Boolean = false,
+        historyVideoCallAvailable: Boolean = false,
         callStartedConfirmed: Boolean = false
     ) = WeChatCapabilityObservation(
         page = WeChatSemanticPageResult(
@@ -226,6 +327,8 @@ class WeChatCapabilityBehaviorTreeTest {
         targetConversationVerified = targetConversationVerified,
         searchQueryVerified = searchQueryVerified,
         contactAccepted = contactAccepted,
+        recentVideoCallAvailable = recentVideoCallAvailable,
+        historyVideoCallAvailable = historyVideoCallAvailable,
         callStartedConfirmed = callStartedConfirmed
     )
 }

@@ -7,9 +7,14 @@ internal enum class WeChatCapabilityId {
     LAUNCH_WECHAT,
     VERIFY_TARGET_CONVERSATION,
     OPEN_RECENT_CONVERSATION,
+    OPEN_HISTORY_VIDEO_RECORD,
+    OPEN_CONTACTS_TAB,
+    OPEN_CONTACT_FROM_LIST,
     OPEN_SEARCH,
     TYPE_CONTACT,
     OPEN_SEARCH_RESULT,
+    OPEN_CHAT_INFO,
+    OPEN_CONTACT_PROFILE,
     OPEN_VIDEO_ENTRY,
     SELECT_VIDEO,
     CONFIRM_CALL_STARTED,
@@ -19,8 +24,11 @@ internal enum class WeChatCapabilityId {
 
 internal enum class WeChatRouteId {
     CURRENT_CONVERSATION,
+    RECENT_VIDEO_HISTORY,
     RECENT_MESSAGES,
-    SEARCH
+    CONTACTS,
+    SEARCH,
+    CHAT_CONTACT_DETAIL
 }
 
 internal enum class WeChatCapabilityStatus {
@@ -34,6 +42,7 @@ internal enum class WeChatCapabilityFailure {
     LOW_PAGE_CONFIDENCE,
     TARGET_NOT_VERIFIED,
     RECENT_TARGET_NOT_FOUND,
+    CONTACTS_TARGET_NOT_FOUND,
     SEARCH_RESULT_NOT_FOUND,
     PRECONDITION_NOT_MET,
     ACTION_FAILED,
@@ -86,6 +95,29 @@ internal object WeChatConversationVerificationPolicy {
             (semanticTitleVerified || legacyExactTitleVerified)
 }
 
+internal object WeChatShortestRoutePolicy {
+    private data class Candidate(
+        val capabilityId: WeChatCapabilityId,
+        val remainingActions: Int
+    )
+
+    fun chooseChatEntry(
+        historyVideoCallAvailable: Boolean,
+        failedCapabilities: Set<WeChatCapabilityId>
+    ): WeChatCapabilityId = buildList {
+        if (
+            historyVideoCallAvailable &&
+            WeChatCapabilityId.OPEN_HISTORY_VIDEO_RECORD !in failedCapabilities
+        ) {
+            add(Candidate(WeChatCapabilityId.OPEN_HISTORY_VIDEO_RECORD, remainingActions = 1))
+        }
+        if (WeChatCapabilityId.OPEN_VIDEO_ENTRY !in failedCapabilities) {
+            add(Candidate(WeChatCapabilityId.OPEN_VIDEO_ENTRY, remainingActions = 3))
+        }
+        add(Candidate(WeChatCapabilityId.OPEN_CHAT_INFO, remainingActions = 4))
+    }.minBy(Candidate::remainingActions).capabilityId
+}
+
 internal data class WeChatCapabilityResult(
     val capabilityId: WeChatCapabilityId,
     val status: WeChatCapabilityStatus,
@@ -136,6 +168,9 @@ internal data class WeChatCapabilityObservation(
     val targetConversationVerified: Boolean = false,
     val searchQueryVerified: Boolean = false,
     val contactAccepted: Boolean = false,
+    val contactsTabSelected: Boolean = false,
+    val recentVideoCallAvailable: Boolean = false,
+    val historyVideoCallAvailable: Boolean = false,
     val callStartedConfirmed: Boolean = false
 )
 
@@ -194,9 +229,25 @@ internal class WeChatCapabilityBehaviorTree {
                         )
                     ),
                     WeChatBehaviorNode.Route(
+                        routeId = WeChatRouteId.RECENT_VIDEO_HISTORY,
+                        children = listOf(
+                            WeChatBehaviorNode.Capability(WeChatCapabilityId.OPEN_RECENT_CONVERSATION),
+                            WeChatBehaviorNode.Capability(WeChatCapabilityId.VERIFY_TARGET_CONVERSATION),
+                            WeChatBehaviorNode.Capability(WeChatCapabilityId.OPEN_HISTORY_VIDEO_RECORD)
+                        )
+                    ),
+                    WeChatBehaviorNode.Route(
                         routeId = WeChatRouteId.RECENT_MESSAGES,
                         children = listOf(
                             WeChatBehaviorNode.Capability(WeChatCapabilityId.OPEN_RECENT_CONVERSATION),
+                            WeChatBehaviorNode.Capability(WeChatCapabilityId.VERIFY_TARGET_CONVERSATION)
+                        )
+                    ),
+                    WeChatBehaviorNode.Route(
+                        routeId = WeChatRouteId.CONTACTS,
+                        children = listOf(
+                            WeChatBehaviorNode.Capability(WeChatCapabilityId.OPEN_CONTACTS_TAB),
+                            WeChatBehaviorNode.Capability(WeChatCapabilityId.OPEN_CONTACT_FROM_LIST),
                             WeChatBehaviorNode.Capability(WeChatCapabilityId.VERIFY_TARGET_CONVERSATION)
                         )
                     ),
@@ -206,6 +257,15 @@ internal class WeChatCapabilityBehaviorTree {
                             WeChatBehaviorNode.Capability(WeChatCapabilityId.OPEN_SEARCH),
                             WeChatBehaviorNode.Capability(WeChatCapabilityId.TYPE_CONTACT),
                             WeChatBehaviorNode.Capability(WeChatCapabilityId.OPEN_SEARCH_RESULT),
+                            WeChatBehaviorNode.Capability(WeChatCapabilityId.VERIFY_TARGET_CONVERSATION)
+                        )
+                    ),
+                    WeChatBehaviorNode.Route(
+                        routeId = WeChatRouteId.CHAT_CONTACT_DETAIL,
+                        children = listOf(
+                            WeChatBehaviorNode.Capability(WeChatCapabilityId.VERIFY_TARGET_CONVERSATION),
+                            WeChatBehaviorNode.Capability(WeChatCapabilityId.OPEN_CHAT_INFO),
+                            WeChatBehaviorNode.Capability(WeChatCapabilityId.OPEN_CONTACT_PROFILE),
                             WeChatBehaviorNode.Capability(WeChatCapabilityId.VERIFY_TARGET_CONVERSATION)
                         )
                     )
@@ -251,6 +311,15 @@ internal class WeChatCapabilityBehaviorTree {
             )
         }
 
+        if (observation.page.page == WeChatSemanticPage.CHAT_INFO) {
+            return ready(
+                state = state.copy(selectedRoute = WeChatRouteId.CHAT_CONTACT_DETAIL)
+                    .markSucceeded(WeChatCapabilityId.OPEN_CHAT_INFO),
+                capabilityId = WeChatCapabilityId.OPEN_CONTACT_PROFILE,
+                reason = "chat_info_ready"
+            )
+        }
+
         if (
             observation.page.page == WeChatSemanticPage.CHAT ||
             observation.page.page == WeChatSemanticPage.CONTACT_DETAIL
@@ -265,6 +334,29 @@ internal class WeChatCapabilityBehaviorTree {
                 )
             }
             val selectedRoute = state.selectedRoute ?: WeChatRouteId.CURRENT_CONVERSATION
+            if (observation.page.page == WeChatSemanticPage.CHAT) {
+                when (
+                    WeChatShortestRoutePolicy.chooseChatEntry(
+                        historyVideoCallAvailable = observation.historyVideoCallAvailable,
+                        failedCapabilities = state.failedCapabilities.keys
+                    )
+                ) {
+                    WeChatCapabilityId.OPEN_HISTORY_VIDEO_RECORD -> return ready(
+                        state = state.copy(selectedRoute = WeChatRouteId.RECENT_VIDEO_HISTORY)
+                            .markSucceeded(WeChatCapabilityId.VERIFY_TARGET_CONVERSATION),
+                        capabilityId = WeChatCapabilityId.OPEN_HISTORY_VIDEO_RECORD,
+                        reason = "shortest_visible_history_route"
+                    )
+                    WeChatCapabilityId.OPEN_CHAT_INFO -> return ready(
+                        state = state.copy(selectedRoute = WeChatRouteId.CHAT_CONTACT_DETAIL)
+                            .markSucceeded(WeChatCapabilityId.VERIFY_TARGET_CONVERSATION),
+                        capabilityId = WeChatCapabilityId.OPEN_CHAT_INFO,
+                        reason = "fallback_through_chat_info"
+                    )
+                    WeChatCapabilityId.OPEN_VIDEO_ENTRY -> Unit
+                    else -> error("unsupported chat entry capability")
+                }
+            }
             return ready(
                 state = state.copy(selectedRoute = selectedRoute)
                     .markSucceeded(WeChatCapabilityId.VERIFY_TARGET_CONVERSATION),
@@ -274,7 +366,7 @@ internal class WeChatCapabilityBehaviorTree {
         }
 
         return when (observation.page.page) {
-            WeChatSemanticPage.HOME -> decideFromHome(state)
+            WeChatSemanticPage.HOME -> decideFromHome(state, observation)
             WeChatSemanticPage.SEARCH -> decideFromSearch(state, observation)
             WeChatSemanticPage.NO_RESULT -> failed(
                 state = state.markFailed(
@@ -292,17 +384,37 @@ internal class WeChatCapabilityBehaviorTree {
                 reason = "unknown_page"
             )
             WeChatSemanticPage.CHAT,
+            WeChatSemanticPage.CHAT_INFO,
             WeChatSemanticPage.CONTACT_DETAIL -> error("handled above")
         }
     }
 
-    private fun decideFromHome(state: WeChatBehaviorTreeState): WeChatBehaviorDecision {
+    private fun decideFromHome(
+        state: WeChatBehaviorTreeState,
+        observation: WeChatCapabilityObservation
+    ): WeChatBehaviorDecision {
         val recentFailed = WeChatCapabilityId.OPEN_RECENT_CONVERSATION in state.failedCapabilities
+        val contactsFailed = WeChatCapabilityId.OPEN_CONTACTS_TAB in state.failedCapabilities ||
+            WeChatCapabilityId.OPEN_CONTACT_FROM_LIST in state.failedCapabilities
         return if (!recentFailed && state.selectedRoute != WeChatRouteId.SEARCH) {
+            val route = if (
+                observation.recentVideoCallAvailable ||
+                state.selectedRoute == WeChatRouteId.RECENT_VIDEO_HISTORY
+            ) {
+                WeChatRouteId.RECENT_VIDEO_HISTORY
+            } else {
+                WeChatRouteId.RECENT_MESSAGES
+            }
             ready(
-                state = state.copy(selectedRoute = WeChatRouteId.RECENT_MESSAGES),
+                state = state.copy(selectedRoute = route),
                 capabilityId = WeChatCapabilityId.OPEN_RECENT_CONVERSATION,
                 reason = "try_recent_messages"
+            )
+        } else if (!contactsFailed && state.selectedRoute != WeChatRouteId.SEARCH) {
+            ready(
+                state = state.copy(selectedRoute = WeChatRouteId.CONTACTS),
+                capabilityId = WeChatCapabilityId.OPEN_CONTACTS_TAB,
+                reason = "fallback_to_contacts"
             )
         } else {
             ready(
@@ -378,6 +490,25 @@ internal class WeChatCapabilityBehaviorTree {
             isReady = { it.page.page == WeChatSemanticPage.HOME },
             isComplete = { it.targetConversationVerified }
         )
+        WeChatCapabilityId.OPEN_HISTORY_VIDEO_RECORD -> SemanticWeChatCapability(
+            id,
+            isReady = {
+                it.page.page == WeChatSemanticPage.CHAT &&
+                    it.targetConversationVerified &&
+                    it.historyVideoCallAvailable
+            },
+            isComplete = { it.callStartedConfirmed }
+        )
+        WeChatCapabilityId.OPEN_CONTACTS_TAB -> SemanticWeChatCapability(
+            id,
+            isReady = { it.page.page == WeChatSemanticPage.HOME },
+            isComplete = { it.page.page == WeChatSemanticPage.HOME && it.contactsTabSelected }
+        )
+        WeChatCapabilityId.OPEN_CONTACT_FROM_LIST -> SemanticWeChatCapability(
+            id,
+            isReady = { it.page.page == WeChatSemanticPage.HOME && it.contactsTabSelected },
+            isComplete = { it.targetConversationVerified }
+        )
         WeChatCapabilityId.OPEN_SEARCH -> SemanticWeChatCapability(
             id,
             isReady = { it.page.page == WeChatSemanticPage.HOME },
@@ -394,6 +525,16 @@ internal class WeChatCapabilityBehaviorTree {
                 it.page.page == WeChatSemanticPage.SEARCH && it.contactAccepted
             },
             isComplete = { it.targetConversationVerified }
+        )
+        WeChatCapabilityId.OPEN_CHAT_INFO -> SemanticWeChatCapability(
+            id,
+            isReady = { it.page.page == WeChatSemanticPage.CHAT && it.targetConversationVerified },
+            isComplete = { it.page.page == WeChatSemanticPage.CHAT_INFO }
+        )
+        WeChatCapabilityId.OPEN_CONTACT_PROFILE -> SemanticWeChatCapability(
+            id,
+            isReady = { it.page.page == WeChatSemanticPage.CHAT_INFO },
+            isComplete = { it.page.page == WeChatSemanticPage.CONTACT_DETAIL }
         )
         WeChatCapabilityId.OPEN_VIDEO_ENTRY -> SemanticWeChatCapability(
             id,

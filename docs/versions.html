@@ -40,7 +40,10 @@
     }
   }
   </script>
-  <link rel="icon" type="image/png" href="./icon.png?v=20260828b" />
+  <link rel="icon" href="./favicon.ico?v=20260901" sizes="any" />
+  <link rel="icon" type="image/png" sizes="32x32" href="./favicon-32x32.png?v=20260901" />
+  <link rel="apple-touch-icon" sizes="180x180" href="./apple-touch-icon.png?v=20260901" />
+  <link rel="manifest" href="./site.webmanifest?v=20260901" />
   <link rel="stylesheet" href="./assets/css/style.css" />
   <script type="module" src="./assets/js/versions.js"></script>
 </head>
@@ -49,7 +52,7 @@
 
   <header class="site-header">
     <a class="brand" href="./index.html" aria-label="返回银杏首页">
-      <img class="brand-logo" src="./icon.png?v=20260828b" width="48" height="48" alt="" />
+      <img class="brand-logo" src="./icon.png?v=20260901" width="48" height="48" alt="" />
       <span>
         <strong>银杏</strong>
         <small>Yinxing Launcher</small>
@@ -73,8 +76,8 @@
       </div>
       <div class="versions-current" aria-label="当前版本信息">
         <span>当前稳定版</span>
-        <strong data-latest-version>v2.0.0</strong>
-        <time data-latest-date datetime="2026-08-27">2026.08.27</time>
+        <strong data-latest-version>v2.1.0</strong>
+        <time data-latest-date datetime="2026-09-01">2026.09.01</time>
         <a class="button button-primary" data-latest-download href="./app-release.apk" download="银杏.apk">下载当前版本</a>
       </div>
     </section>
@@ -82,15 +85,35 @@
     <section class="release-ledger" id="all-releases" aria-labelledby="release-ledger-title">
       <div class="release-ledger-head">
         <h2 id="release-ledger-title">发布记录</h2>
-        <p><span data-release-count>16</span> 个正式版本，每页显示 5 个。<span data-release-sync aria-live="polite">正在同步 GitHub 发布记录。</span></p>
+        <p><span data-release-count>17</span> 个正式版本，每页显示 5 个。<span data-release-sync aria-live="polite">正在同步 GitHub 发布记录。</span></p>
       </div>
 
       <ol class="release-list" data-release-list>
         <li>
           <article class="release-entry release-entry-current">
             <div class="release-meta">
-              <time datetime="2026-08-27">2026.08.27</time>
+              <time datetime="2026-09-01">2026.09.01</time>
               <span class="release-status">当前版本</span>
+            </div>
+            <div class="release-content">
+              <h3><span>v2.1.0</span> 六路线微信视频与品牌统一</h3>
+              <p>统一应用、通知、README 与官网图标，微信视频扩展为六条可组合路线，并支持逐页择短和故障自动换线。</p>
+              <ul>
+                <li>六条路线及四类故障换线完成 OPPO 真机验证</li>
+                <li>790 项单元测试、Lint、Release 构建和签名校验通过</li>
+              </ul>
+            </div>
+            <div class="release-actions">
+              <a class="release-download" href="https://github.com/bjfwan/yinxing/releases/download/v2.1.0/app-release.apk">下载 APK</a>
+              <a href="https://github.com/bjfwan/yinxing/releases/tag/v2.1.0" target="_blank" rel="noopener noreferrer">完整说明</a>
+            </div>
+          </article>
+        </li>
+
+        <li>
+          <article class="release-entry">
+            <div class="release-meta">
+              <time datetime="2026-08-27">2026.08.27</time>
             </div>
             <div class="release-content">
               <h3><span>v2.0.0</span> 完整产品与工程升级</h3>
@@ -334,7 +357,7 @@
 
   <footer class="site-footer">
     <a class="brand footer-brand" href="./index.html" aria-label="返回银杏首页">
-      <img class="brand-logo" src="./icon.png?v=20260828b" width="48" height="48" alt="" loading="lazy" />
+      <img class="brand-logo" src="./icon.png?v=20260901" width="48" height="48" alt="" loading="lazy" />
       <span>
         <strong>银杏</strong>
         <small>让手机更简单</small>
