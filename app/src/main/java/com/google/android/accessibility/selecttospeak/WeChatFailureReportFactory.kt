@@ -46,7 +46,7 @@ internal object WeChatFailureReportFactory {
                 }
                 step.copy(
                     stepCode = stepCode,
-                    stepName = "",
+                    stepName = stepCode,
                     action = action,
                     detail = null,
                     durationMs = step.durationMs?.coerceIn(0L, 86_400_000L),

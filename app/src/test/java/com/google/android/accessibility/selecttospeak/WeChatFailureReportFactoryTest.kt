@@ -56,7 +56,7 @@ class WeChatFailureReportFactoryTest {
         assertFalse(event.logLine.contains("张三"))
         assertFalse(event.details.toJson().toString().contains("张三"))
         assertEquals("search", event.details.steps.single().stepCode)
-        assertEquals("", event.details.steps.single().stepName)
+        assertEquals("search", event.details.steps.single().stepName)
         assertEquals("click", event.details.steps.single().action)
         assertEquals(null, event.details.steps.single().detail)
         assertFalse(event.details.toJson().toString().contains("搜索联系人"))
