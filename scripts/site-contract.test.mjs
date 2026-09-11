@@ -20,6 +20,7 @@ const releaseWorkflowPath = path.join(projectRoot, ".github", "workflows", "sync
 test("footer routes to the site-owned complete release history", async () => {
   const html = await readFile(htmlPath, "utf8")
   const versions = await readFile(versionsPath, "utf8")
+  const manifest = JSON.parse(await readFile(releasesPath, "utf8"))
 
   assert.match(html, /href="\.\/versions\.html">历史版本<\/a>/)
   assert.match(html, /class="hero-history-link" href="\.\/versions\.html">历史发布版本/)
@@ -28,7 +29,10 @@ test("footer routes to the site-owned complete release history", async () => {
   assert.match(versions, /仅支持 Android 7\+/)
   assert.match(versions, /href="\.\/app-release\.apk"/)
   assert.match(versions, /href="\.\/index\.html"/)
-  assert.equal((versions.match(/class="release-entry/g) || []).length, 16)
+  const staticReleaseTags = [...versions.matchAll(
+    /<article class="release-entry[^"]*">[\s\S]*?<h3><span>(v\d+\.\d+\.\d+)<\/span>/g
+  )].map(match => match[1])
+  assert.deepEqual(staticReleaseTags, manifest.map(release => release.tag_name))
 
   for (const version of ["v2.0.0", "v1.9.0", "v1.0.0"]) {
     assert.match(versions, new RegExp(`>${version.replaceAll(".", "\\.")}<`))
@@ -92,6 +96,16 @@ test("release history reads a same-origin manifest that is refreshed after GitHu
   assert.match(workflow, /release:\s*\n\s+types:\s*\[published, edited, deleted\]/)
   assert.match(workflow, /node scripts\/sync-release-history\.mjs/)
   assert.match(workflow, /contents:\s*write/)
+})
+
+test("release history automation respects protected main and opens a pull request", async () => {
+  const workflow = await readFile(releaseWorkflowPath, "utf8")
+
+  assert.match(workflow, /pull-requests:\s*write/)
+  assert.match(workflow, /uses:\s*peter-evans\/create-pull-request@v8/)
+  assert.match(workflow, /branch:\s*automation\/sync-release-history/)
+  assert.match(workflow, /add-paths:\s*docs\/releases\.json/)
+  assert.doesNotMatch(workflow, /\bgit push\b/)
 })
 
 test("official site keeps its download and visual assets local", async () => {
