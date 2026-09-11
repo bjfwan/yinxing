@@ -98,17 +98,18 @@ test("release history reads a same-origin manifest that is refreshed after GitHu
   assert.match(workflow, /contents:\s*write/)
 })
 
-test("release history automation respects protected main and opens a pull request", async () => {
+test("release history automation writes the refreshed manifest directly to main", async () => {
   const workflow = await readFile(releaseWorkflowPath, "utf8")
 
   assert.match(workflow, /uses:\s*actions\/checkout@v7/)
   assert.match(workflow, /uses:\s*actions\/setup-node@v7/)
   assert.match(workflow, /node-version:\s*["']24["']/)
-  assert.match(workflow, /pull-requests:\s*write/)
-  assert.match(workflow, /uses:\s*peter-evans\/create-pull-request@v8/)
-  assert.match(workflow, /branch:\s*automation\/sync-release-history/)
-  assert.match(workflow, /add-paths:\s*docs\/releases\.json/)
-  assert.doesNotMatch(workflow, /\bgit push\b/)
+  assert.match(workflow, /contents:\s*write/)
+  assert.doesNotMatch(workflow, /pull-requests:\s*write/)
+  assert.doesNotMatch(workflow, /peter-evans\/create-pull-request/)
+  assert.match(workflow, /git add docs\/releases\.json/)
+  assert.match(workflow, /git commit -m "Sync website release history"/)
+  assert.match(workflow, /\bgit push\b/)
 })
 
 test("official site keeps its download and visual assets local", async () => {
