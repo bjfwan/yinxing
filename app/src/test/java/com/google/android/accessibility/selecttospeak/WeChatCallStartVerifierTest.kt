@@ -154,6 +154,54 @@ class WeChatCallStartVerifierTest {
         assertEquals("微信视频网络连接失败", assessment.userMessage)
     }
 
+    @Test
+    fun audioCommunicationTransitionConfirmsOpaqueWechatCallPage() {
+        val assessment = WeChatCallStartVerifier.assess(
+            snapshot = null,
+            className = "com.tencent.mm.ui.LauncherUI",
+            audioCommunicationStarted = true
+        )
+
+        assertEquals(WeChatCallStartStatus.CONFIRMED, assessment.status)
+        assertTrue(assessment.reasons.contains("audio_communication_started"))
+    }
+
+    @Test
+    fun audioSignalStillRequiresTwoConsecutiveObservations() {
+        val assessment = WeChatCallStartVerifier.assess(
+            snapshot = null,
+            className = "com.tencent.mm.ui.LauncherUI",
+            audioCommunicationStarted = true
+        )
+
+        val first = WeChatCallVerificationPolicy.decide(
+            WeChatCallVerificationState(),
+            assessment
+        )
+        val second = WeChatCallVerificationPolicy.decide(first.nextState, assessment)
+
+        assertEquals(WeChatCallVerificationAction.WAIT, first.action)
+        assertEquals(WeChatCallVerificationAction.COMPLETE, second.action)
+    }
+
+    @Test
+    fun videoOptionSheetOverridesAudioModeToAvoidPrematureSuccess() {
+        val assessment = WeChatCallStartVerifier.assess(
+            snapshot = node(
+                children = listOf(
+                    node(text = "语音通话"),
+                    node(text = "视频通话"),
+                    node(text = "取消")
+                )
+            ),
+            className = "com.tencent.mm.ui.LauncherUI",
+            audioCommunicationStarted = true
+        )
+
+        assertEquals(WeChatCallStartStatus.PENDING, assessment.status)
+        assertTrue(assessment.reasons.contains("video_sheet"))
+    }
+
     private fun node(
         text: String? = null,
         children: List<WeChatUiSnapshot> = emptyList()

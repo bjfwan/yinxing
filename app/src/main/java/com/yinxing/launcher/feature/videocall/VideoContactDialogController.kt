@@ -14,6 +14,7 @@ import com.google.android.material.card.MaterialCardView
 import com.yinxing.launcher.R
 import com.yinxing.launcher.common.ui.LauncherDialogFactory
 import com.yinxing.launcher.common.media.MediaThumbnailLoader
+import com.yinxing.launcher.common.util.AccessibilityServiceReadiness
 import com.yinxing.launcher.data.contact.Contact
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
@@ -67,9 +68,13 @@ class VideoContactDialogController(
         dialog.show()
     }
 
-    fun showAccessibilityDialog() {
+    fun showAccessibilityDialog(readiness: AccessibilityServiceReadiness) {
+        val content = AccessibilityPromptContentPolicy.resolve(readiness) ?: return
         val dialogView = activity.layoutInflater.inflate(R.layout.dialog_accessibility_prompt, null)
         val dialog = LauncherDialogFactory.create(activity, dialogView, dismissOnTouchOutside = false)
+        dialogView.findViewById<TextView>(R.id.tv_dialog_title).setText(content.titleRes)
+        dialogView.findViewById<TextView>(R.id.tv_dialog_message).setText(content.messageRes)
+        dialogView.findViewById<TextView>(R.id.tv_primary_label).setText(content.actionRes)
         dialogView.findViewById<CardView>(R.id.btn_open_settings).setOnClickListener {
             onOpenAccessibilitySettings()
             dialog.dismiss()

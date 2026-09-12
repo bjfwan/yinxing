@@ -15,6 +15,8 @@ import com.yinxing.launcher.common.util.DebugLog
 import com.yinxing.launcher.common.util.NetworkUtil
 import com.yinxing.launcher.common.util.PermissionUtil
 import com.yinxing.launcher.common.util.AccessibilityServiceMatcher
+import com.yinxing.launcher.common.util.AccessibilityServiceReadiness
+import com.yinxing.launcher.common.util.AccessibilityServiceReadinessPolicy
 import com.yinxing.launcher.data.contact.Contact
 import com.yinxing.launcher.data.contact.ContactManager
 import com.yinxing.launcher.feature.callreturn.CallReturnCoordinator
@@ -30,7 +32,7 @@ class VideoCallCoordinator(
     private val ttsService: TTSService,
     private val contactManager: ContactManager,
     private val automationGateway: VideoCallAutomationGateway,
-    private val onNeedAccessibilityPermission: () -> Unit,
+    private val onAccessibilityIssue: (AccessibilityServiceReadiness) -> Unit,
     private val onNeedOverlayPermission: (Contact) -> Unit,
     private val onCallCompleted: () -> Unit
 ) {
@@ -51,15 +53,7 @@ class VideoCallCoordinator(
             return
         }
 
-        val serviceName = AccessibilityServiceMatcher.componentName(
-            activity.packageName,
-            SelectToSpeakService::class.java.name
-        )
-        if (!PermissionUtil.isAccessibilityServiceEnabled(activity, serviceName)) {
-            speakAndToast(R.string.accessibility_required, R.string.accessibility_required)
-            onNeedAccessibilityPermission()
-            return
-        }
+        if (!ensureAccessibilityReady()) return
 
         if (!PermissionUtil.canDrawOverlays(activity)) {
             onNeedOverlayPermission(contact)
@@ -70,6 +64,8 @@ class VideoCallCoordinator(
     }
 
     fun continueWithVideoCall(contact: Contact) {
+        if (!ensureAccessibilityReady()) return
+
         if (activeRequestId != null) {
             speakAndToast(R.string.video_call_in_progress)
             return
@@ -97,7 +93,7 @@ class VideoCallCoordinator(
             )
         )
 
-        LobsterClient.log("[微信视频] 流程开始: 联系人=${contact.displayName}")
+        LobsterClient.log("[微信视频] 流程开始: contact_configured=${contact.displayName.isNotBlank()}")
 
         val requestToken = ++activeRequestToken
         val returnSessionId = "wechat-video-$requestToken"
@@ -203,7 +199,7 @@ class VideoCallCoordinator(
             CallReturnCoordinator.cancel(CallReturnOrigin.WECHAT_VIDEO)
             activeReturnSessionId = null
             val message = activity.getString(R.string.video_call_request_timeout)
-            LobsterClient.log("[微信视频] 请求级超时: 联系人=$contactName, requestId=$requestId")
+            LobsterClient.log("[微信视频] 请求级超时: requestId=$requestId")
             LobsterClient.report(
                 activity,
                 "微信视频",
@@ -218,8 +214,52 @@ class VideoCallCoordinator(
             )
             ttsService.speak(message)
             Toast.makeText(activity, message, Toast.LENGTH_SHORT).show()
-            onNeedAccessibilityPermission()
+            val readiness = currentAccessibilityReadiness()
+            if (readiness != AccessibilityServiceReadiness.CONNECTED) {
+                onAccessibilityIssue(readiness)
+            }
         }
+    }
+
+    private fun ensureAccessibilityReady(): Boolean {
+        return when (val readiness = currentAccessibilityReadiness()) {
+            AccessibilityServiceReadiness.DISABLED -> {
+                speakAndToast(R.string.accessibility_required, R.string.accessibility_required)
+                onAccessibilityIssue(readiness)
+                false
+            }
+            AccessibilityServiceReadiness.ENABLED_NOT_CONNECTED -> {
+                val message = activity.getString(R.string.accessibility_connection_issue)
+                LobsterClient.log(
+                    "[无障碍] preflight: setting_enabled=true, service_connected=false"
+                )
+                LobsterClient.report(
+                    activity,
+                    "系统无障碍连接",
+                    LobsterReportStatus.ERROR,
+                    message,
+                    LobsterReportDetails(
+                        errorCode = "ACCESSIBILITY_ENABLED_NOT_CONNECTED",
+                        failedStep = "accessibility_preflight"
+                    )
+                )
+                speakAndToast(R.string.accessibility_connection_issue)
+                onAccessibilityIssue(readiness)
+                false
+            }
+            AccessibilityServiceReadiness.CONNECTED -> true
+        }
+    }
+
+    private fun currentAccessibilityReadiness(): AccessibilityServiceReadiness {
+        val serviceName = AccessibilityServiceMatcher.componentName(
+            activity.packageName,
+            SelectToSpeakService::class.java.name
+        )
+        return AccessibilityServiceReadinessPolicy.resolve(
+            settingEnabled = PermissionUtil.isAccessibilityServiceEnabled(activity, serviceName),
+            serviceConnected = SelectToSpeakService.isServiceConnected()
+        )
     }
 
     private fun persistSuccessfulCall(contactId: String) {

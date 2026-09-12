@@ -80,6 +80,7 @@
     <string name="network_unavailable_detail">网络未连接，请检查网络</string>
     <string name="network_unavailable">网络未连接</string>
     <string name="accessibility_required">请先开启无障碍权限</string>
+    <string name="accessibility_connection_issue">无障碍已开启，但服务还没有连接</string>
     <string name="wechat_not_installed_detail">未安装微信应用</string>
     <string name="wechat_not_installed">未安装微信</string>
     <string name="starting_video_call_detail">正在为您拨打视频电话</string>
@@ -91,6 +92,9 @@
     <string name="overlay_permission_message">为了显示操作状态，需要开启悬浮窗权限</string>
     <string name="accessibility_dialog_title">需要开启无障碍权限</string>
     <string name="accessibility_dialog_message">自动拨打微信视频需要无障碍服务权限，请在设置中开启</string>
+    <string name="accessibility_connection_issue_title">等待无障碍连接</string>
+    <string name="accessibility_connection_issue_message">无障碍已经开启，但系统尚未连接到银杏服务。请稍后重试；仍未恢复时，请进入设置关闭后重新开启银杏无障碍。</string>
+    <string name="accessibility_check_settings">检查设置</string>
     <string name="state_video_empty_title">还没有联系人</string>
     <string name="state_video_empty_message">还没有视频联系人，请让家人先帮您设置</string>
 

@@ -18,5 +18,8 @@ class LobsterEndpointContractTest {
 
         assertTrue(source.contains("https://log.722688.xyz/api/upload"))
         assertFalse(source.contains("https://log.likeyou.qzz.io/api/upload"))
+        assertTrue(source.contains("put(\"schema_version\", 5)"))
+        assertTrue(source.contains("LobsterBuildIdentity.current().writeTo(this)"))
+        assertTrue(source.contains("put(\"session_event_sequence\", sessionEventSequence)"))
     }
 }

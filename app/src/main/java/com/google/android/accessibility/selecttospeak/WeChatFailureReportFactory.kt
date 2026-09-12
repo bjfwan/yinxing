@@ -5,6 +5,7 @@ import com.yinxing.launcher.common.lobster.LobsterFailureSample
 import com.yinxing.launcher.common.lobster.LobsterLogCategory
 import com.yinxing.launcher.common.lobster.LobsterReportDetails
 import com.yinxing.launcher.common.lobster.LobsterReportStatus
+import com.yinxing.launcher.common.lobster.LobsterStepOutcome
 import com.yinxing.launcher.common.lobster.LobsterTraceStep
 import com.yinxing.launcher.common.lobster.LobsterUsageEvent
 
@@ -18,46 +19,66 @@ internal object WeChatFailureReportFactory {
         sample: LobsterFailureSample,
         traceId: String,
         contactName: String,
+        occurredAt: String,
         steps: List<LobsterTraceStep>,
-    ): LobsterUsageEvent = LobsterUsageEvent(
-        scene = "微信视频失败样本",
-        status = LobsterReportStatus.ERROR,
-        summary = "$REPORT_TYPE ${sample.failureCode}",
-        logLine = buildString {
-            append("[微信失败样本] report_type=").append(REPORT_TYPE)
-            append(", fingerprint=").append(sample.fingerprint)
-            append(", error=").append(sample.failureCode)
-            sample.failedStep?.let { append(", step=").append(it) }
-            sample.capability?.let { append(", capability=").append(it) }
-            sample.capabilityFailure?.let { append(", failure=").append(it) }
-            sample.uiState.semanticPage?.let { append(", page=").append(it) }
-            sample.uiState.route?.let { append(", route=").append(it) }
-        },
-        details = LobsterReportDetails(
-            traceId = traceId,
-            errorCode = sample.failureCode,
-            failedStep = sample.failedStep,
-            reportType = REPORT_TYPE,
-            steps = steps.takeLast(100).mapNotNull { step ->
-                val stepCode = step.stepCode.trim().lowercase()
-                val action = step.action.trim().lowercase()
-                if (!safeStepCode.matches(stepCode) || !safeAction.matches(action)) {
-                    return@mapNotNull null
-                }
-                step.copy(
-                    stepCode = stepCode,
-                    stepName = stepCode,
-                    action = action,
+    ): LobsterUsageEvent {
+        val safeOccurredAt = occurredAt.takeIf(safeTimestamp::matches)
+            ?: "1970-01-01T00:00:00.000Z"
+        val safeSteps = steps.takeLast(100).mapNotNull { step ->
+            val stepCode = step.stepCode.trim().lowercase()
+            val action = step.action.trim().lowercase()
+            if (!safeStepCode.matches(stepCode) || !safeAction.matches(action)) {
+                return@mapNotNull null
+            }
+            step.copy(
+                stepCode = stepCode,
+                stepName = stepCode,
+                action = action,
+                detail = null,
+                durationMs = step.durationMs?.coerceIn(0L, 86_400_000L),
+                occurredAt = step.occurredAt.takeIf(safeTimestamp::matches) ?: safeOccurredAt,
+            )
+        }.ifEmpty {
+            val failedStep = sample.failedStep?.trim()?.lowercase()
+                ?.takeIf(safeStepCode::matches)
+                ?: "unknown_failure"
+            listOf(
+                LobsterTraceStep(
+                    stepCode = failedStep,
+                    stepName = failedStep,
+                    action = "failure",
+                    outcome = LobsterStepOutcome.ERROR,
                     detail = null,
-                    durationMs = step.durationMs?.coerceIn(0L, 86_400_000L),
-                    occurredAt = step.occurredAt.takeIf(safeTimestamp::matches).orEmpty(),
+                    occurredAt = safeOccurredAt,
                 )
+            )
+        }
+        return LobsterUsageEvent(
+            scene = "微信视频失败样本",
+            status = LobsterReportStatus.ERROR,
+            summary = "$REPORT_TYPE ${sample.failureCode}",
+            logLine = buildString {
+                append("[微信失败样本] report_type=").append(REPORT_TYPE)
+                append(", fingerprint=").append(sample.fingerprint)
+                append(", error=").append(sample.failureCode)
+                sample.failedStep?.let { append(", step=").append(it) }
+                sample.capability?.let { append(", capability=").append(it) }
+                sample.capabilityFailure?.let { append(", failure=").append(it) }
+                sample.uiState.semanticPage?.let { append(", page=").append(it) }
+                sample.uiState.route?.let { append(", route=").append(it) }
             },
-            failureSample = sample,
-            sensitiveValues = listOf(contactName),
-        ),
-        category = LobsterLogCategory.WECHAT_VIDEO,
-        eventType = LobsterEventType.ERROR,
-        action = "upload_wechat_failure_sample",
-    )
+            details = LobsterReportDetails(
+                traceId = traceId,
+                errorCode = sample.failureCode,
+                failedStep = sample.failedStep,
+                reportType = REPORT_TYPE,
+                steps = safeSteps,
+                failureSample = sample,
+                sensitiveValues = listOf(contactName),
+            ),
+            category = LobsterLogCategory.WECHAT_VIDEO,
+            eventType = LobsterEventType.ERROR,
+            action = "upload_wechat_failure_sample",
+        )
+    }
 }

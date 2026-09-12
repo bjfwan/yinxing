@@ -1,6 +1,8 @@
 package com.yinxing.launcher.common.lobster
 
 import org.junit.Assert.assertFalse
+import org.junit.Assert.assertEquals
+import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
@@ -24,5 +26,14 @@ class MainThreadStallDetectorTest {
         detector.onHeartbeat(1_000L)
 
         assertFalse(detector.shouldReport(nowMs = 20_000L, debuggerConnected = true))
+    }
+
+    @Test
+    fun `returns measured duration for the reportable sample`() {
+        val detector = MainThreadStallDetector(thresholdMs = 8_000L)
+        detector.onHeartbeat(1_000L)
+
+        assertEquals(8_001L, detector.takeReportableStallDuration(9_001L, debuggerConnected = false))
+        assertNull(detector.takeReportableStallDuration(20_000L, debuggerConnected = false))
     }
 }

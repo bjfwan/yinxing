@@ -62,6 +62,7 @@ object LobsterClient {
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
     private val logBuffer = StringBuilder()
     private val sessionId = UUID.randomUUID().toString()
+    private val eventSequence = LobsterEventSequence()
 
     @Synchronized
     fun log(message: String) {
@@ -82,6 +83,7 @@ object LobsterClient {
         if (logsToReport.isBlank()) return
 
         val deviceId = installId(context)
+        val sessionEventSequence = eventSequence.next()
 
         scope.launch {
             var queued = false
@@ -94,6 +96,7 @@ object LobsterClient {
                     summary = summary,
                     logs = logsToReport,
                     details = details,
+                    sessionEventSequence = sessionEventSequence,
                     taxonomy = LobsterEventTaxonomy.infer(scene, status, summary, details.errorCode)
                 )
                 val pending = LobsterPendingReport(
@@ -118,6 +121,7 @@ object LobsterClient {
         if (!shouldUploadCurrentRuntime()) return
         val appContext = context.applicationContext
         val deviceId = installId(appContext)
+        val sessionEventSequence = eventSequence.next()
 
         scope.launch {
             try {
@@ -129,6 +133,7 @@ object LobsterClient {
                     summary = event.summary,
                     logs = event.logLine,
                     details = event.details,
+                    sessionEventSequence = sessionEventSequence,
                     taxonomy = LobsterEventTaxonomy(event.category, event.eventType, event.action)
                 )
                 val pending = LobsterPendingReport(
@@ -187,6 +192,7 @@ object LobsterClient {
             summary = event.summary,
             logs = event.logLine,
             details = event.details,
+            sessionEventSequence = eventSequence.next(),
             taxonomy = LobsterEventTaxonomy(event.category, event.eventType, event.action)
         )
         LobsterPendingReportStore.enqueue(
@@ -204,6 +210,7 @@ object LobsterClient {
         if (metrics.isEmpty() || !shouldUploadCurrentRuntime()) return
 
         val deviceId = installId(context)
+        val sessionEventSequence = eventSequence.next()
 
         scope.launch {
             try {
@@ -221,8 +228,11 @@ object LobsterClient {
                     put("device_id", deviceId)
                     put("metrics", metricsArray)
                     put("session_id", sessionId)
+                    put("session_event_sequence", sessionEventSequence)
                     put("app_version", BuildConfig.VERSION_NAME)
                     put("app_version_code", BuildConfig.VERSION_CODE)
+                    LobsterBuildIdentity.current().writeTo(this)
+                    put("created_at", currentIsoTimestamp())
                     traceId?.trim()?.takeIf { it.isNotEmpty() }?.let { put("trace_id", it.take(120)) }
                 }
 
@@ -392,6 +402,7 @@ object LobsterClient {
         summary: String?,
         logs: String,
         details: LobsterReportDetails,
+        sessionEventSequence: Long,
         taxonomy: LobsterEventTaxonomy
     ): JSONObject {
         val deviceName = "${Build.MANUFACTURER} ${Build.MODEL} (Android ${Build.VERSION.RELEASE})"
@@ -404,7 +415,7 @@ object LobsterClient {
             .joinToString("\n")
         return JSONObject().apply {
             put("delivery_id", UUID.randomUUID().toString())
-            put("schema_version", 4)
+            put("schema_version", 5)
             put("category", taxonomy.category.wireValue)
             put("event_type", taxonomy.eventType.wireValue)
             taxonomy.action?.let { put("action", it) }
@@ -418,8 +429,10 @@ object LobsterClient {
             put("logs", LobsterLogSanitizer.sanitize(diagnosticLogs, details.sensitiveValues))
             put("event_level", status.wireValue)
             put("session_id", sessionId)
+            put("session_event_sequence", sessionEventSequence)
             put("app_version", BuildConfig.VERSION_NAME)
             put("app_version_code", BuildConfig.VERSION_CODE)
+            LobsterBuildIdentity.current().writeTo(this)
             put("created_at", currentIsoTimestamp())
             put("network_type", networkType(context))
             val structured = details.toJson()

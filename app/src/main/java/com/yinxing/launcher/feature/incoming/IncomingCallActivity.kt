@@ -151,7 +151,7 @@ class IncomingCallActivity : FontScaleActivity() {
             )
         )
 
-        LobsterClient.log("[来电处理] applyIntent | 来电者: $callerName | 决定: $autoAnswer (意图: $intentAutoAnswer, 设置: $prefAutoAnswerEnabled)")
+        LobsterClient.log("[来电处理] applyIntent | known_contact=$knownContact | 决定: $autoAnswer (意图: $intentAutoAnswer, 设置: $prefAutoAnswerEnabled)")
 
         val state = IncomingCallSessionState.uiShown(
             callerLabel = callerName,

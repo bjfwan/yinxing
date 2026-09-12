@@ -116,7 +116,9 @@ class VideoCallActivity : FontScaleActivity() {
             ttsService = ttsService,
             contactManager = ContactManager.getInstance(this),
             automationGateway = SelectToSpeakAutomationGateway,
-            onNeedAccessibilityPermission = { dialogController.showAccessibilityDialog() },
+            onAccessibilityIssue = { readiness ->
+                dialogController.showAccessibilityDialog(readiness)
+            },
             onNeedOverlayPermission = { contact -> dialogController.showOverlayPermissionDialog(contact) },
             onCallCompleted = { viewModel.refresh() }
         )

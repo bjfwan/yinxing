@@ -80,10 +80,12 @@ import java.util.UUID
 class SelectToSpeakService : AccessibilityService(), WeChatRequestHost {
 
     companion object {
-        @Volatile
-        private var instance: SelectToSpeakService? = null
+        private val connectionRegistry = WeChatServiceConnectionRegistry()
 
-        fun getInstance(): SelectToSpeakService? = instance
+        fun getInstance(): SelectToSpeakService? =
+            connectionRegistry.currentHost() as? SelectToSpeakService
+
+        fun isServiceConnected(): Boolean = connectionRegistry.isConnected()
 
         const val ACTION_START_VIDEO_CALL = "com.yinxing.launcher.START_VIDEO_CALL"
         const val EXTRA_CONTACT_NAME = "contact_name"
@@ -106,16 +108,23 @@ class SelectToSpeakService : AccessibilityService(), WeChatRequestHost {
 
 
         fun requestVideoCall(contactName: String, listener: (VideoCallProgress) -> Unit): String =
-            WeChatRequestQueue.enqueue(contactName, listener, host = instance)
+            WeChatRequestQueue.enqueue(
+                contactName,
+                listener,
+                host = connectionRegistry.currentHost()
+            )
 
         fun clearRequestListener(requestId: String) =
             WeChatRequestQueue.clearListener(requestId)
 
         fun prepareWeChatTeaching(): WeChatTeachingPrepareResult =
-            instance?.prepareWeChatTeachingInternal()
+            getInstance()?.prepareWeChatTeachingInternal()
                 ?: WeChatTeachingPrepareResult.SERVICE_NOT_CONNECTED
 
-        internal fun resetForTesting() = WeChatRequestQueue.resetForTesting()
+        internal fun resetForTesting() {
+            WeChatRequestQueue.resetForTesting()
+            connectionRegistry.resetForTesting()
+        }
 
         private fun deliverProgress(requestId: String, progress: VideoCallProgress) =
             WeChatRequestQueue.deliverProgress(requestId, progress)
@@ -175,7 +184,7 @@ class SelectToSpeakService : AccessibilityService(), WeChatRequestHost {
 
     override fun onCreate() {
         super.onCreate()
-        instance = this
+        LobsterClient.log("[无障碍] lifecycle=created")
     }
 
     override fun onServiceConnected() {
@@ -183,6 +192,8 @@ class SelectToSpeakService : AccessibilityService(), WeChatRequestHost {
         timeoutManager = TimeoutManager.getInstance(this)
         floatingView = FloatingStatusView(this)
         teachingOverlay = WeChatTeachingOverlay(this)
+        connectionRegistry.onConnected(this)
+        LobsterClient.log("[无障碍] lifecycle=connected")
         consumePendingRequest()
     }
 
@@ -256,6 +267,7 @@ class SelectToSpeakService : AccessibilityService(), WeChatRequestHost {
     }
 
     override fun onInterrupt() {
+        LobsterClient.log("[无障碍] lifecycle=interrupted")
         cancelSession(true, "无障碍服务已中断，请重新开启后再试")
         CallReturnCoordinator.cancel(CallReturnOrigin.WECHAT_VIDEO)
         wechatCallEndJob?.cancel()
@@ -296,7 +308,8 @@ class SelectToSpeakService : AccessibilityService(), WeChatRequestHost {
     }
 
     override fun onDestroy() {
-        instance = null
+        connectionRegistry.onDisconnected(this)
+        LobsterClient.log("[无障碍] lifecycle=destroyed")
         cancelSession(true, "无障碍服务已关闭，请重新开启后再试")
         closeTeachingSession()
         floatingView?.hide()
@@ -306,6 +319,12 @@ class SelectToSpeakService : AccessibilityService(), WeChatRequestHost {
         wechatCallEndJob?.cancel()
         serviceScope.cancel()
         super.onDestroy()
+    }
+
+    override fun onUnbind(intent: Intent?): Boolean {
+        connectionRegistry.onDisconnected(this)
+        LobsterClient.log("[无障碍] lifecycle=unbound")
+        return super.onUnbind(intent)
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
@@ -990,7 +1009,7 @@ class SelectToSpeakService : AccessibilityService(), WeChatRequestHost {
             )
         )
 
-        LobsterClient.log("[微信自动] 请求开始: 联系人=$contactName, 任务ID=$requestId")
+        LobsterClient.log("[微信自动] 请求开始: contact_provided=${contactName.isNotBlank()}, 任务ID=$requestId")
 
         if (hasActiveSession()) {
             deliverProgress(
@@ -2507,6 +2526,7 @@ class SelectToSpeakService : AccessibilityService(), WeChatRequestHost {
             scheduleAdaptiveProcess(session, DelayProfile.STABLE)
             return
         }
+        val audioModeBeforeClick = currentAudioMode()
         val bubble = elementLocator.findLatestVisibleMessageBubble(root)
         val clicked = bubble?.let { AccessibilityUtil.performClick(this, it) } == true
         logStep(
@@ -2519,6 +2539,7 @@ class SelectToSpeakService : AccessibilityService(), WeChatRequestHost {
         session.historyVideoFastPathPending = false
         if (clicked) {
             session.historyVideoFastPathAttempted = true
+            session.callAudioModeBaseline = audioModeBeforeClick
             transitionTo(session, Step.VERIFYING_CALL_STARTED, "正在通过历史记录发起视频通话")
             return
         }
@@ -2591,12 +2612,14 @@ class SelectToSpeakService : AccessibilityService(), WeChatRequestHost {
             action = WeChatTeachingAction.START_VIDEO_CALL,
             currentWindowClass = currentClass
         )
+        val audioModeBeforeSheetClick = currentAudioMode()
         val sheetClicked = elementLocator.clickVideoCallSheetOption(
             root,
             allowLearnedFallback = learnedFinalSelector != null
         )
         logStep(session, "clickVideoCallSheetOption", sheetClicked, "elapsed=${elapsed}ms")
         if (sheetClicked) {
+            session.callAudioModeBaseline = audioModeBeforeSheetClick
             transitionTo(session, Step.VERIFYING_CALL_STARTED, "正在确认视频通话")
             return
         }
@@ -2606,9 +2629,11 @@ class SelectToSpeakService : AccessibilityService(), WeChatRequestHost {
             scheduleAdaptiveProcess(session, DelayProfile.SHEET, attemptKey = "video_sheet_wait")
             return
         }
+        val audioModeBeforeFallbackClick = currentAudioMode()
         val clicked = elementLocator.clickVideoCallOption(root)
         logStep(session, "clickVideoCallOption(fallback)", clicked)
         if (clicked) {
+            session.callAudioModeBaseline = audioModeBeforeFallbackClick
             transitionTo(session, Step.VERIFYING_CALL_STARTED, "正在确认视频通话")
             return
         }
@@ -2623,9 +2648,15 @@ class SelectToSpeakService : AccessibilityService(), WeChatRequestHost {
         root: AccessibilityNodeInfo?,
         currentClass: String?
     ) {
+        val currentAudioMode = currentAudioMode()
+        val audioCommunicationStarted = WeChatAudioCallEvidencePolicy.hasCommunicationStarted(
+            baselineMode = session.callAudioModeBaseline,
+            currentMode = currentAudioMode
+        )
         val assessment = WeChatCallStartVerifier.assess(
             snapshot = snapshotOf(root),
-            className = currentClass
+            className = currentClass,
+            audioCommunicationStarted = audioCommunicationStarted
         )
         val decision = WeChatCallVerificationPolicy.decide(
             state = session.callVerificationState,
@@ -2642,7 +2673,9 @@ class SelectToSpeakService : AccessibilityService(), WeChatRequestHost {
                 session,
                 "verifyCallStarted",
                 assessment.status,
-                "class=$currentClass reasons=${assessment.reasons} confirmations=${decision.nextState.consecutiveConfirmations}"
+                "class=$currentClass reasons=${assessment.reasons} " +
+                    "audioBaseline=${session.callAudioModeBaseline} audioCurrent=$currentAudioMode " +
+                    "confirmations=${decision.nextState.consecutiveConfirmations}"
             )
         }
         session.lastCallVerificationLogKey = logKey
@@ -2740,6 +2773,9 @@ class SelectToSpeakService : AccessibilityService(), WeChatRequestHost {
             }
         }
     }
+
+    private fun currentAudioMode(): Int? =
+        (getSystemService(AUDIO_SERVICE) as? AudioManager)?.mode
 
 
 
@@ -3002,6 +3038,7 @@ class SelectToSpeakService : AccessibilityService(), WeChatRequestHost {
                     sample = failureSample,
                     traceId = session.requestId,
                     contactName = session.contactName,
+                    occurredAt = currentTraceTimestamp(),
                     steps = session.structuredSteps,
                 )
             )
@@ -3213,6 +3250,7 @@ class SelectToSpeakService : AccessibilityService(), WeChatRequestHost {
         var callVerificationState: WeChatCallVerificationState = WeChatCallVerificationState(),
         var callVerificationPollCount: Int = 0,
         var lastCallVerificationLogKey: String? = null,
+        var callAudioModeBaseline: Int? = null,
         val deviceTestScenario: WeChatDeviceTestScenario? = null,
         val deviceTestPendingFailures: MutableSet<WeChatCapabilityId> = mutableSetOf()
     )

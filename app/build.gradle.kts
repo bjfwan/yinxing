@@ -1,4 +1,5 @@
 import java.util.Properties
+import org.gradle.api.tasks.bundling.Zip
 
 plugins {
     alias(libs.plugins.android.application)
@@ -18,6 +19,23 @@ val hasReleaseSigning = releaseStoreFile.exists() &&
     releaseKeyAlias.isNotBlank() &&
     !releaseStorePassword.isNullOrBlank() &&
     !releaseKeyPassword.isNullOrBlank()
+
+fun gitText(vararg arguments: String): String = runCatching {
+    providers.exec {
+        commandLine("git", *arguments)
+        isIgnoreExitValue = true
+    }.standardOutput.asText.get().trim()
+}.getOrDefault("")
+
+val lobsterBuildSha = gitText("rev-parse", "--verify", "HEAD")
+    .lowercase()
+    .takeIf { it.matches(Regex("^[a-f0-9]{40}$")) }
+    ?: "unknown"
+val lobsterBuildSourceState = when {
+    lobsterBuildSha == "unknown" -> "unknown"
+    gitText("status", "--porcelain").isNotEmpty() -> "dirty"
+    else -> "clean"
+}
 
 gradle.taskGraph.whenReady {
     val releasePackageRequested = allTasks.any {
@@ -43,8 +61,8 @@ android {
         applicationId = "com.yinxing.launcher"
         minSdk = 24
         targetSdk = 36
-        versionCode = 18
-        versionName = "2.1.0"
+        versionCode = 19
+        versionName = "2.1.1"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
 
@@ -53,6 +71,8 @@ android {
         buildConfigField("String", "TENCENT_KEY",   "\"${localProps["TENCENT_KEY"]   ?: ""}\"")
         buildConfigField("String", "LOBSTER_UPLOAD_URL",   "\"${localProps["LOBSTER_UPLOAD_URL"]   ?: ""}\"")
         buildConfigField("String", "LOBSTER_UPLOAD_TOKEN", "\"${localProps["LOBSTER_UPLOAD_TOKEN"] ?: ""}\"")
+        buildConfigField("String", "LOBSTER_BUILD_SHA", "\"$lobsterBuildSha\"")
+        buildConfigField("String", "LOBSTER_BUILD_SOURCE_STATE", "\"$lobsterBuildSourceState\"")
     }
 
     signingConfigs {
@@ -127,4 +147,25 @@ tasks.withType<org.gradle.api.tasks.testing.Test>().configureEach {
     // long suites so settings/weather UI tests cannot exhaust one shared heap.
     maxParallelForks = 1
     forkEvery = 40
+}
+
+tasks.register<Zip>("bundleReleaseDiagnostics") {
+    group = "build"
+    description = "Bundles the signed release APK with its exact R8 mapping file."
+    dependsOn("assembleRelease")
+    doFirst {
+        if (lobsterBuildSourceState != "clean") {
+            throw GradleException("Release diagnostics require a clean Git checkout")
+        }
+    }
+    from(layout.buildDirectory.file("outputs/apk/release/app-release.apk")) {
+        into("apk")
+    }
+    from(layout.buildDirectory.file("outputs/mapping/release/mapping.txt")) {
+        into("mapping")
+    }
+    archiveFileName.set(
+        "yinxing-${android.defaultConfig.versionName}-${lobsterBuildSha.take(12)}-diagnostics.zip"
+    )
+    destinationDirectory.set(layout.buildDirectory.dir("outputs/diagnostics"))
 }

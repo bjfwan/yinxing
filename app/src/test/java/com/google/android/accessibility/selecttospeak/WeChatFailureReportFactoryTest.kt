@@ -7,6 +7,7 @@ import com.yinxing.launcher.common.lobster.LobsterStepOutcome
 import com.yinxing.launcher.common.lobster.LobsterTraceStep
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
+import org.junit.Assert.assertTrue
 import org.junit.Test
 
 class WeChatFailureReportFactoryTest {
@@ -36,6 +37,7 @@ class WeChatFailureReportFactoryTest {
             sample = sample,
             traceId = "trace-1",
             contactName = "张三",
+            occurredAt = "2026-08-31T00:00:01.000Z",
             steps = listOf(
                 LobsterTraceStep(
                     stepCode = "search",
@@ -61,5 +63,55 @@ class WeChatFailureReportFactoryTest {
         assertEquals(null, event.details.steps.single().detail)
         assertFalse(event.details.toJson().toString().contains("搜索联系人"))
         assertFalse(event.details.toJson().toString().contains("没有找到"))
+    }
+
+    @Test
+    fun `always emits a valid terminal step when captured steps are unusable`() {
+        val sample = LobsterFailureSample(
+            fingerprint = "b".repeat(64),
+            domain = "wechat_video",
+            failureCode = "WECHAT_WAITING_HOME_TIMEOUT",
+            failedStep = "WAITING_HOME",
+            capability = null,
+            capabilityFailure = null,
+            reason = "timeout",
+            uiState = LobsterFailureUiState(
+                windowClass = "com.tencent.mm.ui.LauncherUI",
+                semanticPage = "UNKNOWN",
+                route = null,
+                resourceIds = emptyList(),
+                nodeClasses = emptyList(),
+                nodeCount = 18,
+                clickableCount = 0,
+                editableCount = 0,
+                maxDepth = 3,
+            ),
+        )
+
+        val event = WeChatFailureReportFactory.create(
+            sample = sample,
+            traceId = "trace-empty-steps",
+            contactName = "李四",
+            occurredAt = "2026-09-12T01:02:03.004Z",
+            steps = listOf(
+                LobsterTraceStep(
+                    stepCode = "",
+                    stepName = "",
+                    action = "FAILED",
+                    outcome = LobsterStepOutcome.ERROR,
+                    detail = "李四",
+                    occurredAt = "",
+                ),
+            ),
+        )
+
+        val step = event.details.steps.single()
+        assertEquals("waiting_home", step.stepCode)
+        assertEquals("waiting_home", step.stepName)
+        assertEquals("failure", step.action)
+        assertEquals(LobsterStepOutcome.ERROR, step.outcome)
+        assertEquals("2026-09-12T01:02:03.004Z", step.occurredAt)
+        assertTrue(event.details.toJson().getJSONArray("steps").length() == 1)
+        assertFalse(event.details.toJson().toString().contains("李四"))
     }
 }

@@ -1,6 +1,6 @@
 # 构建与环境说明
 
-更新时间：2026-08-27
+更新时间：2026-09-12
 
 ## 1. 基础环境
 
@@ -114,6 +114,14 @@ adb devices
 .\build.bat :app:assembleRelease
 ```
 
+正式发布前从干净提交生成 APK 与 R8 映射绑定包：
+
+```powershell
+.\build.bat :app:bundleReleaseDiagnostics
+```
+
+输出位于 `app/build/outputs/diagnostics/`。任务会拒绝脏工作区，压缩包同时包含签名 APK 与对应 `mapping.txt`，用于按日志 `build_sha` 还原正式包堆栈。
+
 ### 5.9 输出位置
 
 ```text
@@ -141,6 +149,8 @@ benchmark/build/outputs/connected_android_test_additional_output/  （benchmark 
 - 上述字段从 `local.properties` 注入到 `BuildConfig`
 - 未配置时应用仍可构建和运行，只是不进行线上日志上报
 - Release 包会关闭普通 logcat 输出，诊断数据走 Lobster 上报链路
+- 构建时自动写入 Git SHA 和源码状态；正式诊断包必须从干净提交构建，确保 `build_source_state = clean`
+- 日志与指标使用 `session_id + session_event_sequence` 还原故障前事件链，字段契约见 `docs/specs/structured-diagnostics-v5.md`
 
 ## 7. 推荐协作方式
 

@@ -109,7 +109,7 @@ class IncomingCallForegroundService : Service() {
             )
         )
 
-        LobsterClient.log("[来电服务] 启动: Caller=$callerName, Number=$incomingNumber, Auto=$autoAnswer")
+        LobsterClient.log("[来电服务] 启动: known_contact=$knownContact, Auto=$autoAnswer")
         traceBegin(LauncherTraceNames.INCOMING_CALL_RESPONSE)
 
         ensureNotificationChannels(this, platformCompat)

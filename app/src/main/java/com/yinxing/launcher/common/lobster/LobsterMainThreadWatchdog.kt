@@ -20,10 +20,16 @@ internal class MainThreadStallDetector(private val thresholdMs: Long) {
 
     @Synchronized
     fun shouldReport(nowMs: Long, debuggerConnected: Boolean): Boolean {
-        if (debuggerConnected || lastHeartbeatMs <= 0L || reportedForCurrentStall) return false
-        if (nowMs - lastHeartbeatMs <= thresholdMs) return false
+        return takeReportableStallDuration(nowMs, debuggerConnected) != null
+    }
+
+    @Synchronized
+    fun takeReportableStallDuration(nowMs: Long, debuggerConnected: Boolean): Long? {
+        if (debuggerConnected || lastHeartbeatMs <= 0L || reportedForCurrentStall) return null
+        val durationMs = nowMs - lastHeartbeatMs
+        if (durationMs <= thresholdMs) return null
         reportedForCurrentStall = true
-        return true
+        return durationMs
     }
 }
 
@@ -61,11 +67,23 @@ object LobsterMainThreadWatchdog {
             Thread(runnable, "lobster-main-thread-watchdog").apply { isDaemon = true }
         }.scheduleAtFixedRate(
             {
-                if (detector.shouldReport(SystemClock.uptimeMillis(), Debug.isDebuggerConnected())) {
-                    LobsterClient.reportUsage(
-                        appContext,
-                        LobsterAnrEventFactory.from(mainThread.stackTrace.toList())
-                    )
+                val durationMs = detector.takeReportableStallDuration(
+                    SystemClock.uptimeMillis(),
+                    Debug.isDebuggerConnected()
+                )
+                if (durationMs != null) {
+                    val frames = mainThread.stackTrace.toList()
+                    when (MainThreadStallSampleClassifier.classify(frames)) {
+                        MainThreadStallSample.ACTIONABLE -> LobsterClient.reportUsage(
+                            appContext,
+                            LobsterAnrEventFactory.from(frames, durationMs)
+                        )
+                        MainThreadStallSample.RECOVERED_IDLE,
+                        MainThreadStallSample.WATCHDOG_SELF -> LobsterClient.reportMetrics(
+                            appContext,
+                            listOf("main_thread_stall_recovered_sample" to durationMs)
+                        )
+                    }
                 }
             },
             STALL_THRESHOLD_MS,

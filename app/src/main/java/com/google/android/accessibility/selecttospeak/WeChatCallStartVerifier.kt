@@ -1,5 +1,14 @@
 package com.google.android.accessibility.selecttospeak
 
+import android.media.AudioManager
+
+internal object WeChatAudioCallEvidencePolicy {
+    fun hasCommunicationStarted(baselineMode: Int?, currentMode: Int?): Boolean {
+        return baselineMode == AudioManager.MODE_NORMAL &&
+            currentMode == AudioManager.MODE_IN_COMMUNICATION
+    }
+}
+
 internal enum class WeChatCallStartStatus {
     PENDING,
     CONFIRMED,
@@ -52,7 +61,11 @@ internal object WeChatCallStartVerifier {
         "暂时无法呼叫"
     )
 
-    fun assess(snapshot: WeChatUiSnapshot?, className: String?): WeChatCallStartAssessment {
+    fun assess(
+        snapshot: WeChatUiSnapshot?,
+        className: String?,
+        audioCommunicationStarted: Boolean = false
+    ): WeChatCallStartAssessment {
         val texts = snapshot?.flatten()
             ?.flatMap { node -> sequenceOf(node.text, node.contentDescription) }
             ?.mapNotNull { value -> value?.trim()?.takeIf(String::isNotEmpty) }
@@ -85,6 +98,13 @@ internal object WeChatCallStartVerifier {
             return WeChatCallStartAssessment(
                 status = WeChatCallStartStatus.PENDING,
                 reasons = listOf("video_sheet")
+            )
+        }
+
+        if (audioCommunicationStarted) {
+            return WeChatCallStartAssessment(
+                status = WeChatCallStartStatus.CONFIRMED,
+                reasons = listOf("audio_communication_started")
             )
         }
 
