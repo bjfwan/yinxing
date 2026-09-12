@@ -9,7 +9,7 @@
 [![License: GPL-3.0](https://img.shields.io/badge/license-GPL--3.0-B8882A?labelColor=1C1914&style=flat-square)](LICENSE)
 [![Download](https://img.shields.io/badge/下载-APK-B8882A?labelColor=1C1914&style=flat-square&logo=android&logoColor=white)](https://yinxing.722688.xyz)
 [![Platform](https://img.shields.io/badge/Android-7.0%2B-0369A1?labelColor=1C1914&style=flat-square&logo=android&logoColor=white)](#下载安装)
-[![Source Version](https://img.shields.io/badge/source-v2.1.0-B8882A?labelColor=1C1914&style=flat-square)](https://github.com/bjfwan/yinxing/releases/tag/v2.1.0)
+[![Source Version](https://img.shields.io/badge/source-v2.1.1-B8882A?labelColor=1C1914&style=flat-square)](https://github.com/bjfwan/yinxing/releases/tag/v2.1.1)
 [![Stars](https://img.shields.io/github/stars/bjfwan/yinxing?color=B8882A&labelColor=1C1914&style=flat-square)](https://github.com/bjfwan/yinxing/stargazers)
 
 **大字、大图标只是起点。银杏真正想解决的是：长辈能不能稳定地找到家人、拨出电话，并在不同手机和软件版本上继续用下去。**
@@ -18,15 +18,16 @@
 
 ---
 
-## v2.1.0 发布重点
+## v2.1.1 发布重点
 
-- 微信视频主动拨打扩展为六条可组合路线：当前聊天、历史视频记录、最近消息、通讯录、搜索和聊天信息；
-- 每进入可靠的新页面重新比较剩余操作数，发现更短的安全入口就立即换线；
-- 历史记录、最近消息、通讯录和聊天菜单失败时，可从当前页面自动切换备用路线；
-- 应用启动图标、通知图标、GitHub README 与官网图标全部统一为新银杏图标；
-- OPPO OPD2506 六条路线及四类故障换线已完成实机验证，完整工程门禁为 `790 tests, 0 failed`。
+- 🔌 无障碍开关已开启但服务未连接时，会立即给出准确提示，不再误报为权限未开启；
+- 🎥 微信页面结构不可见时，增加通话前后音频通信状态变化作为连续确认依据；
+- 🧭 日志增加构建 SHA、会话事件序号和稳定步骤链，线上样本可以对应到具体源码与故障前操作；
+- ⏱️ 主线程卡顿记录真实持续时间，并排除采样时已经恢复到系统空闲队列的误报；
+- 🔐 联系人姓名和电话号码不再进入缓冲日志；
+- ✅ `817 tests, 0 failed`，Lint、Release 构建和 APK v2 签名校验通过。
 
-[查看 v2.1.0 完整发布说明](https://github.com/bjfwan/yinxing/releases/tag/v2.1.0) · [前往官网下载](https://yinxing.722688.xyz)
+[查看 v2.1.1 完整发布说明](https://github.com/bjfwan/yinxing/releases/tag/v2.1.1) · [前往官网下载](https://yinxing.722688.xyz)
 
 ---
 
@@ -84,7 +85,7 @@
 - **逐能力验证**：打开会话、确认联系人、进入通讯录、搜索、打开聊天信息、选择视频和确认呼叫分别记录状态，任何一步失败都能明确定位。
 - **局部自动换线**：历史记录失败可切聊天菜单，最近消息失败可切通讯录，通讯录未找到可切搜索，聊天菜单失败可切聊天信息和联系人详情。
 - **身份安全边界**：只有页面标题或联系人详情精确匹配目标联系人后才允许拨号，聊天正文里出现同名文字不能作为身份依据。
-- **真实呼叫确认**：点击按钮不算成功，只有微信真正进入 `VideoActivity` 并连续确认后，银杏才报告视频通话已发起。
+- **真实呼叫确认**：点击按钮不算成功；只有连续确认微信视频呼叫页面，或确认点击前后进入音频通信状态，银杏才报告视频通话已发起。
 - **微信版本适配**：同时使用语义文字、控件资源 ID、页面类型、可见区域和示教校准；旧节点、越界节点和不可靠页面会被拒绝。
 
 首页切换标签后必须连续两次确认目标标签已选中，才会点击列表，避免使用切换前的旧无障碍节点。历史记录没有真正进入微信视频页时，会自动退回聊天菜单路线。
@@ -202,7 +203,7 @@
 
 ### [下载最新 APK](https://yinxing.722688.xyz)
 
-当前源码版本：`v2.1.0`
+当前源码版本：`v2.1.1`
 
 </div>
 

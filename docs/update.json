@@ -1,6 +1,6 @@
 {
-  "versionCode": 18,
-  "versionName": "2.1.0",
+  "versionCode": 19,
+  "versionName": "2.1.1",
   "apkUrl": "https://yinxing.722688.xyz/app-release.apk",
-  "releaseNotes": "银杏 2.1.0 全面统一应用、通知、GitHub README 与官网图标；微信视频主动拨打扩展为六条可组合路线，支持逐页重新选择最短入口和多级故障换线；手机端版本详情同步展示本次完整更新。"
+  "releaseNotes": "银杏 2.1.1 能准确区分无障碍未开启与服务未连接；微信通话确认增加音频通信状态证据；日志补齐构建身份、会话事件序号和失败步骤链；主线程卡顿排除已恢复采样误报，并进一步清理联系人和电话号码日志。"
 }
