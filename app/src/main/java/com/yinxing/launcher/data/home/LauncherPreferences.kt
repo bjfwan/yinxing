@@ -45,6 +45,7 @@ class LauncherPreferences(context: Context) {
         private const val KEY_ICON_SCALE = "icon_scale"
         private const val KEY_FALL_DETECTION_ENABLED = "fall_detection_enabled"
         private const val KEY_FALL_EMERGENCY_CONTACT = "fall_emergency_contact"
+        private const val KEY_DIAGNOSTICS_SHARING_ENABLED = "diagnostics_sharing_enabled"
         const val DEFAULT_ICON_SCALE = 100
         const val MIN_ICON_SCALE = 60
         const val MAX_ICON_SCALE = 120
@@ -154,6 +155,16 @@ class LauncherPreferences(context: Context) {
     }
 
     fun isFullCardTapKey(key: String?): Boolean = key == KEY_FULL_CARD_TAP_ENABLED
+
+    fun isDiagnosticsSharingEnabled(): Boolean {
+        return settingsStore.snapshot().diagnosticsSharingEnabled
+    }
+
+    fun setDiagnosticsSharingEnabled(enabled: Boolean) {
+        if (settingsStore.snapshot().diagnosticsSharingEnabled == enabled) return
+        settingsStore.setDiagnosticsSharingEnabled(enabled)
+        notifyPreferenceChanged(KEY_DIAGNOSTICS_SHARING_ENABLED)
+    }
 
     fun getDarkMode(): String {
         return settingsStore.snapshot().darkMode

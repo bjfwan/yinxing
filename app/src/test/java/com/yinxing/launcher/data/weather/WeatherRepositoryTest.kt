@@ -94,6 +94,27 @@ class WeatherRepositoryTest {
     }
 
     @Test
+    fun fetchWeatherEntersBackoffAfterCityNotFound() = runTest {
+        val tencentSource = FakeTencentWeatherSource(adcode = null)
+        WeatherRepository.configureForTest(
+            tencentSource = tencentSource,
+            seniverseSource = FakeSeniverseWeatherSource(),
+            diskCache = diskCache,
+            clock = { nowMillis }
+        )
+
+        val first = WeatherRepository.fetchWeather("火星基地")
+        assertTrue(first is WeatherState.CityNotFound)
+        assertEquals(1, tencentSource.searchCount)
+
+        val second = WeatherRepository.fetchWeather("火星基地")
+        assertTrue(second is WeatherState.Failure)
+        second as WeatherState.Failure
+        assertEquals(WeatherFailureReason.Backoff, second.reason)
+        assertEquals(1, tencentSource.searchCount)
+    }
+
+    @Test
     fun fetchWeatherUsesExpiredCacheWhenGeocodingTemporarilyReturnsNoCity() = runTest {
         diskCache.write(
             WeatherState.Success(

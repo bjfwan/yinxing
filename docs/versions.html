@@ -76,8 +76,8 @@
       </div>
       <div class="versions-current" aria-label="当前版本信息">
         <span>当前稳定版</span>
-        <strong data-latest-version>v2.1.1</strong>
-        <time data-latest-date datetime="2026-09-12">2026.09.12</time>
+        <strong data-latest-version>v2.2.0</strong>
+        <time data-latest-date datetime="2026-10-02">2026.10.02</time>
         <a class="button button-primary" data-latest-download href="./app-release.apk" download="银杏.apk">下载当前版本</a>
       </div>
     </section>
@@ -85,15 +85,36 @@
     <section class="release-ledger" id="all-releases" aria-labelledby="release-ledger-title">
       <div class="release-ledger-head">
         <h2 id="release-ledger-title">发布记录</h2>
-        <p><span data-release-count>18</span> 个正式版本，每页显示 5 个。<span data-release-sync aria-live="polite">正在同步 GitHub 发布记录。</span></p>
+        <p><span data-release-count>19</span> 个正式版本，每页显示 5 个。<span data-release-sync aria-live="polite">正在同步 GitHub 发布记录。</span></p>
       </div>
 
       <ol class="release-list" data-release-list>
         <li>
           <article class="release-entry release-entry-current">
             <div class="release-meta">
-              <time datetime="2026-09-12">2026.09.12</time>
+              <time datetime="2026-10-02">2026.10.02</time>
               <span class="release-status">当前版本</span>
+            </div>
+            <div class="release-content">
+              <h3><span>v2.2.0</span> 应用内更新与稳定性修复</h3>
+              <p>新增应用内检查与下载更新，多条下载线路自动切换；修复部分机型来电、权限弹窗与平板拨号问题。</p>
+              <ul>
+                <li>应用内更新：多下载源、断点续传与完整性校验</li>
+                <li>新增诊断日志上报开关，用户可自主选择是否上传</li>
+                <li>822 项单元测试、Lint、Release 构建和签名校验通过</li>
+              </ul>
+            </div>
+            <div class="release-actions">
+              <a class="release-download" href="https://github.com/bjfwan/yinxing/releases/download/v2.2.0/app-release.apk">下载 APK</a>
+              <a href="https://github.com/bjfwan/yinxing/releases/tag/v2.2.0" target="_blank" rel="noopener noreferrer">完整说明</a>
+            </div>
+          </article>
+        </li>
+
+        <li>
+          <article class="release-entry">
+            <div class="release-meta">
+              <time datetime="2026-09-12">2026.09.12</time>
             </div>
             <div class="release-content">
               <h3><span>v2.1.1</span> 日志诊断与无障碍连接增强</h3>

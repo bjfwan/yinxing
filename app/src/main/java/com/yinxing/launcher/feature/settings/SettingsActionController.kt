@@ -232,7 +232,7 @@ internal fun SettingsActivity.requestPhonePermissions() {
         LobsterSettingEventFactory.permissionRequested(LobsterPermissionTarget.PHONE)
             .withTrace(traceId)
     )
-    phonePermissionLauncher.launch(permissions.toTypedArray())
+    PermissionUtil.launchSafely(phonePermissionLauncher, permissions.toTypedArray(), this)
 }
 
 internal fun SettingsActivity.requestDefaultPhoneRole() {
@@ -328,7 +328,12 @@ internal fun SettingsActivity.requestNotificationPermission() {
             LobsterSettingEventFactory.permissionRequested(LobsterPermissionTarget.NOTIFICATION)
                 .withTrace(traceId)
         )
-        notificationPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
+        PermissionUtil.launchSafely(
+            notificationPermissionLauncher,
+            Manifest.permission.POST_NOTIFICATIONS,
+            this,
+            onUnavailable = { PermissionUtil.openNotificationSettings(this) }
+        )
     } else {
         PermissionUtil.openNotificationSettings(this)
     }

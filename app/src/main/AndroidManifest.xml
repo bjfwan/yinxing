@@ -112,6 +112,9 @@
             android:name=".feature.settings.LegalDocumentActivity"
             android:exported="false" />
         <activity
+            android:name=".feature.settings.AppUpdateActivity"
+            android:exported="false" />
+        <activity
             android:name=".feature.weather.WeatherDetailActivity"
             android:exported="false" />
         <activity

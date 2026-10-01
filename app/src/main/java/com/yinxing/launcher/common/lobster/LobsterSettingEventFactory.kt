@@ -5,7 +5,8 @@ enum class LobsterSetting(val action: String, val label: String) {
     RETURN_HOME_AFTER_CALL("change_return_home_after_call", "通话结束返回首页"),
     FALL_DETECTION("change_fall_detection", "跌倒检测"),
     LOW_PERFORMANCE_MODE("change_low_performance_mode", "低性能模式"),
-    FULL_CARD_TAP("change_full_card_tap", "整卡点击")
+    FULL_CARD_TAP("change_full_card_tap", "整卡点击"),
+    DIAGNOSTICS_SHARING("change_diagnostics_sharing", "诊断日志上报")
 }
 
 enum class LobsterContactChannel(val actionPart: String, val label: String) {
@@ -151,6 +152,32 @@ object LobsterSettingEventFactory {
     fun darkModeChanged() = operation(
         summary = "深色模式已修改",
         action = "change_dark_mode"
+    )
+
+    fun appUpdateCheckResult(foundUpdate: Boolean) = operation(
+        summary = if (foundUpdate) "检查到新版本" else "已是最新版本",
+        action = "check_app_update",
+        status = if (foundUpdate) LobsterReportStatus.SUCCESS else LobsterReportStatus.REPORTED
+    )
+
+    fun appUpdateDownloaded() = operation(
+        summary = "更新包下载完成",
+        action = "download_app_update"
+    )
+
+    fun appUpdateInstallLaunched() = operation(
+        summary = "已拉起系统安装页面",
+        action = "install_app_update",
+        status = LobsterReportStatus.REPORTED
+    )
+
+    fun appUpdateFailed(step: String, errorCode: String) = operation(
+        summary = "应用更新失败",
+        action = "app_update",
+        status = LobsterReportStatus.ERROR,
+        eventType = LobsterEventType.ERROR,
+        errorCode = errorCode,
+        failedStep = step
     )
 
     private fun operation(

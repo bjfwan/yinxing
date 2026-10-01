@@ -1,21 +1,14 @@
 package com.yinxing.launcher.feature.settings
 
 import android.content.Context
-import android.content.Intent
-import android.net.Uri
 import android.view.inputmethod.EditorInfo
 import android.view.inputmethod.InputMethodManager
 import android.widget.EditText
-import android.widget.FrameLayout
-import android.widget.TextView
 import android.widget.Toast
-import androidx.appcompat.app.AlertDialog
-import androidx.lifecycle.lifecycleScope
 import com.yinxing.launcher.BuildConfig
 import com.yinxing.launcher.R
 import com.yinxing.launcher.common.ui.LauncherDialogFactory
 import com.yinxing.launcher.data.weather.WeatherRepository
-import kotlinx.coroutines.launch
 
 internal fun SettingsActivity.showSystemDialog() {
     val dialog = createListDialog(
@@ -46,97 +39,21 @@ internal fun SettingsActivity.showSystemDialog() {
         dialog.dialog.dismiss()
         actionController.openSystemSettings()
     }
+    val knownUpdate = AppUpdateStore(this).latestAvailable()
     addDialogEntry(
         context = dialog,
         title = getString(R.string.settings_update_title),
-        summary = getString(R.string.settings_update_summary, BuildConfig.VERSION_NAME, BuildConfig.VERSION_CODE),
+        summary = knownUpdate?.let { getString(R.string.settings_update_found_new, it.versionName) }
+            ?: getString(R.string.settings_update_summary, BuildConfig.VERSION_NAME, BuildConfig.VERSION_CODE),
         badge = actionBadge(getString(R.string.settings_update_check)),
         iconResId = R.drawable.ic_settings_action_update,
         iconTintResId = R.color.launcher_contacts,
         iconPlateResId = R.color.launcher_contacts_soft
     ) {
         dialog.dialog.dismiss()
-        showVersionDetailsDialog()
+        startActivity(AppUpdateActivity.createIntent(this))
     }
     dialog.dialog.show()
-}
-
-internal fun SettingsActivity.showVersionDetailsDialog(): AlertDialog {
-    val dialogView = layoutInflater.inflate(R.layout.dialog_version_details, FrameLayout(this), false)
-    val status = dialogView.findViewById<TextView>(R.id.tv_version_update_status)
-    val checkLabel = dialogView.findViewById<TextView>(R.id.tv_version_check_label)
-    val checkButton = dialogView.findViewById<android.view.View>(R.id.btn_version_check)
-    dialogView.findViewById<TextView>(R.id.tv_version_name).text = "v${BuildConfig.VERSION_NAME}"
-    dialogView.findViewById<TextView>(R.id.tv_version_code).text = BuildConfig.VERSION_CODE.toString()
-    status.setText(R.string.settings_update_not_checked)
-
-    val dialog = LauncherDialogFactory.create(this, dialogView)
-    dialogView.findViewById<android.view.View>(R.id.btn_version_close).setOnClickListener {
-        dialog.dismiss()
-    }
-    checkButton.setOnClickListener {
-        checkButton.isEnabled = false
-        checkButton.alpha = 0.65f
-        status.setText(R.string.settings_update_checking)
-        checkLabel.setText(R.string.settings_update_checking)
-        checkAppUpdate(dialog, status, checkLabel, checkButton)
-    }
-    dialog.show()
-    return dialog
-}
-
-private fun SettingsActivity.checkAppUpdate(
-    versionDialog: AlertDialog,
-    status: TextView,
-    checkLabel: TextView,
-    checkButton: android.view.View
-) {
-    lifecycleScope.launch {
-        when (val state = AppUpdateChecker().check()) {
-            AppUpdateState.UpToDate -> {
-                status.setText(R.string.settings_update_latest)
-                checkLabel.setText(R.string.settings_update_recheck)
-                checkButton.isEnabled = true
-                checkButton.alpha = 1f
-            }
-            is AppUpdateState.Available -> {
-                versionDialog.dismiss()
-                showUpdateDialog(state.info)
-            }
-            is AppUpdateState.Failed -> {
-                status.setText(R.string.settings_update_failed)
-                checkLabel.setText(R.string.settings_update_recheck)
-                checkButton.isEnabled = true
-                checkButton.alpha = 1f
-            }
-        }
-    }
-}
-
-internal fun SettingsActivity.showUpdateDialog(info: AppUpdateInfo) {
-    val dialogView = layoutInflater.inflate(R.layout.dialog_accessibility_prompt, FrameLayout(this), false)
-    dialogView.findViewById<TextView>(R.id.tv_dialog_title).text =
-        getString(R.string.settings_update_available_title, info.versionName)
-    dialogView.findViewById<TextView>(R.id.tv_dialog_message).text =
-        info.releaseNotes.ifBlank { getString(R.string.settings_update_available_message) }
-    dialogView.findViewById<TextView>(R.id.tv_cancel_label).text = getString(R.string.action_cancel)
-    dialogView.findViewById<TextView>(R.id.tv_primary_label).text =
-        getString(R.string.settings_update_download)
-
-    val dialog = LauncherDialogFactory.create(this, dialogView)
-
-    dialogView.findViewById<android.view.View>(R.id.btn_cancel).setOnClickListener {
-        dialog.dismiss()
-    }
-    dialogView.findViewById<android.view.View>(R.id.btn_open_settings).setOnClickListener {
-        dialog.dismiss()
-        runCatching {
-            startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(info.apkUrl)))
-        }.onFailure {
-            Toast.makeText(this, getString(R.string.settings_update_open_failed), Toast.LENGTH_SHORT).show()
-        }
-    }
-    dialog.show()
 }
 
 internal fun SettingsActivity.showSetCityDialog() {

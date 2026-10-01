@@ -55,7 +55,7 @@ class DialogContentQualityTest {
 
     @Test
     fun `version update status is allowed to wrap`() {
-        val status = elements("dialog_version_details.xml")
+        val status = elements("activity_app_update.xml")
             .single { it.androidAttribute("id") == "@+id/tv_version_update_status" }
 
         assertNotEquals("Version status must not be clipped to one line", "1", status.androidAttribute("maxLines"))
@@ -148,7 +148,7 @@ class DialogContentQualityTest {
             assertEquals("88dp", avatar.androidAttribute("layout_height"))
         }
 
-        val versionIdentity = elements("dialog_version_details.xml")
+        val versionIdentity = elements("activity_app_update.xml")
             .single { it.androidAttribute("id") == "@+id/layout_version_identity" }
         assertEquals("horizontal", versionIdentity.androidAttribute("orientation"))
     }
@@ -241,7 +241,6 @@ class DialogContentQualityTest {
             "dialog_settings_contacts.xml",
             "dialog_settings_value.xml",
             "dialog_user_report.xml",
-            "dialog_version_details.xml",
             "dialog_weather_city_search.xml"
         )
 

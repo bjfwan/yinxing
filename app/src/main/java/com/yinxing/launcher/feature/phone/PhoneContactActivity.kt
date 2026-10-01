@@ -41,6 +41,8 @@ import com.yinxing.launcher.common.lobster.LobsterPermissionTarget
 import com.yinxing.launcher.common.lobster.LobsterSettingEventFactory
 import com.yinxing.launcher.common.lobster.LobsterTrace
 import com.yinxing.launcher.common.lobster.withTrace
+import com.yinxing.launcher.common.util.DebugLog
+import com.yinxing.launcher.common.util.PermissionUtil
 import com.yinxing.launcher.common.perf.LauncherTraceNames
 import com.yinxing.launcher.common.media.MediaThumbnailLoader
 import com.yinxing.launcher.common.ui.PageStateView
@@ -147,6 +149,7 @@ private class ImportCandidateAdapter(
 
 class PhoneContactActivity : FontScaleActivity() {
     companion object {
+        private const val TAG = "PhoneContactActivity"
         private const val EXTRA_START_IN_MANAGE_MODE = "extra_start_in_manage_mode"
 
         fun createIntent(context: Context, startInManageMode: Boolean = false): Intent {
@@ -491,19 +494,23 @@ class PhoneContactActivity : FontScaleActivity() {
                 LobsterSettingEventFactory.permissionRequested(LobsterPermissionTarget.PHONE)
                     .withTrace(traceId)
             )
-            callPermissionLauncher.launch(Manifest.permission.CALL_PHONE)
+            PermissionUtil.launchSafely(callPermissionLauncher, Manifest.permission.CALL_PHONE, this)
             return
         }
-        val intent = Intent(Intent.ACTION_CALL, Uri.fromParts("tel", number, null))
+        val telUri = Uri.fromParts("tel", number, null)
         val startedAt = SystemClock.elapsedRealtime()
         CallReturnCoordinator.arm(this, CallReturnOrigin.SYSTEM_PHONE, traceId)
-        runCatching { startActivity(intent) }.onFailure {
-            CallReturnCoordinator.cancel(CallReturnOrigin.SYSTEM_PHONE, traceId)
-            LobsterClient.reportUsage(this, LobsterUsageEvents.OUTGOING_CALL_FAILED.withTrace(traceId))
-            showToast(getString(R.string.dial_failed, it.message ?: ""))
-        }.onSuccess {
-            LobsterClient.reportUsage(this, LobsterUsageEvents.OUTGOING_CALL_STARTED.withTrace(traceId))
-            viewModel.incrementCallCountAsync(contact.id)
+        runCatching { startActivity(Intent(Intent.ACTION_CALL, telUri)) }
+            .recoverCatching {
+                CallReturnCoordinator.cancel(CallReturnOrigin.SYSTEM_PHONE, traceId)
+                startActivity(Intent(Intent.ACTION_DIAL, telUri))
+            }
+            .onFailure {
+                LobsterClient.reportUsage(this, LobsterUsageEvents.OUTGOING_CALL_FAILED.withTrace(traceId))
+                showToast(getString(R.string.dial_failed, it.message ?: ""))
+            }.onSuccess {
+                LobsterClient.reportUsage(this, LobsterUsageEvents.OUTGOING_CALL_STARTED.withTrace(traceId))
+                viewModel.incrementCallCountAsync(contact.id)
         }
         LobsterClient.reportMetrics(
             this,
@@ -524,7 +531,12 @@ class PhoneContactActivity : FontScaleActivity() {
                 LobsterSettingEventFactory.permissionRequested(LobsterPermissionTarget.CONTACTS)
                     .withTrace(traceId)
             )
-            ActivityCompat.requestPermissions(this, arrayOf(Manifest.permission.READ_CONTACTS), 101)
+            runCatching {
+                ActivityCompat.requestPermissions(this, arrayOf(Manifest.permission.READ_CONTACTS), 101)
+            }.onFailure {
+                DebugLog.w(TAG, "Unable to request contacts permission", it)
+                PermissionUtil.openAppDetailSettings(this)
+            }
             return
         }
         viewModel.loadImportCandidates()

@@ -8,9 +8,11 @@ import android.content.Context
 import androidx.core.app.NotificationCompat
 import androidx.core.app.Person
 import com.yinxing.launcher.R
+import com.yinxing.launcher.common.util.DebugLog
 
 /** Shared call notification builder used by both Telecom and the legacy receiver path. */
 internal object IncomingCallNotificationController {
+    private const val TAG = "IncomingCallNotification"
     const val NOTIFICATION_ID = 41001
     const val CHANNEL_ID = "incoming_call_alerts"
 
@@ -132,24 +134,40 @@ internal object IncomingCallNotificationController {
         incomingNumber: String?,
         knownContact: Boolean
     ) {
-        val notification = buildIncoming(
-            context = context,
-            callerName = callerName,
-            uiAutoAnswer = false,
-            incomingNumber = incomingNumber,
-            knownContact = knownContact
-        )
-        context.getSystemService(NotificationManager::class.java)
-            ?.notify(NOTIFICATION_ID, notification)
+        val notification = runCatching {
+            buildIncoming(
+                context = context,
+                callerName = callerName,
+                uiAutoAnswer = false,
+                incomingNumber = incomingNumber,
+                knownContact = knownContact
+            )
+        }.onFailure {
+            DebugLog.w(TAG, "Unable to build incoming call notification", it)
+        }.getOrNull() ?: return
+        runCatching {
+            context.getSystemService(NotificationManager::class.java)
+                ?.notify(NOTIFICATION_ID, notification)
+        }.onFailure {
+            DebugLog.w(TAG, "Unable to post incoming call notification", it)
+        }
     }
 
     fun notifyOngoing(context: Context, callerName: String?) {
-        context.getSystemService(NotificationManager::class.java)
-            ?.notify(NOTIFICATION_ID, buildOngoing(context, callerName))
+        runCatching {
+            context.getSystemService(NotificationManager::class.java)
+                ?.notify(NOTIFICATION_ID, buildOngoing(context, callerName))
+        }.onFailure {
+            DebugLog.w(TAG, "Unable to post ongoing call notification", it)
+        }
     }
 
     fun cancel(context: Context) {
-        context.getSystemService(NotificationManager::class.java)?.cancel(NOTIFICATION_ID)
+        runCatching {
+            context.getSystemService(NotificationManager::class.java)?.cancel(NOTIFICATION_ID)
+        }.onFailure {
+            DebugLog.w(TAG, "Unable to cancel call notification", it)
+        }
     }
 
     private fun activityPendingIntent(

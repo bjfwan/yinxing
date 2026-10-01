@@ -71,24 +71,22 @@ class SettingsTransparencyScreenTest {
     }
 
     @Test
-    fun currentVersionDetailsShowsReleaseHighlights() {
-        val activity = buildActivity()
-        val dialog = activity.showVersionDetailsDialog()
+    fun updatePageShowsCurrentVersionAndCaregiverGuidance() {
+        val activity = Robolectric.buildActivity(AppUpdateActivity::class.java).setup().get()
 
         listOf(
-            "本版更新",
-            "微信视频主动拨打升级为六条可组合路线",
-            "重新选择剩余操作更少的安全入口",
-            "失败时自动换线",
-            "全面统一新银杏图标"
+            activity.getString(R.string.settings_update_current_version_label),
+            activity.getString(R.string.settings_update_latest_version_label),
+            activity.getString(R.string.settings_update_status_label),
+            activity.getString(R.string.settings_update_caregiver_hint)
         ).forEach { text ->
             assertTrue(
-                dialog.window?.decorView
-                    ?.let { root -> arrayListOf<View>().also { root.findViewsWithText(it, text, View.FIND_VIEWS_WITH_TEXT) } }
-                    ?.isNotEmpty() == true
+                activity.findViewById<View>(android.R.id.content)
+                    .let { root -> arrayListOf<View>().also { root.findViewsWithText(it, text, View.FIND_VIEWS_WITH_TEXT) } }
+                    .isNotEmpty()
             )
         }
-        dialog.dismiss()
+        activity.finish()
     }
 
     private fun buildActivity() = Robolectric.buildActivity(SettingsActivity::class.java).setup().get()

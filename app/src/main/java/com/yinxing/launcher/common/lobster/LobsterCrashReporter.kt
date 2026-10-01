@@ -59,12 +59,7 @@ object LobsterCrashReporter {
 
     @Synchronized
     fun install(context: Context) {
-        if (installed || !LobsterRuntimePolicy.shouldUpload(
-                Build.MANUFACTURER,
-                Build.MODEL,
-                Build.FINGERPRINT
-            )
-        ) return
+        if (installed || !LobsterRuntimePolicy.shouldUpload(context)) return
 
         val appContext = context.applicationContext
         val previous = Thread.getDefaultUncaughtExceptionHandler()

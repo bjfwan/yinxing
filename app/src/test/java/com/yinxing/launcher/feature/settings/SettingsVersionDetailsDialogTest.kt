@@ -12,34 +12,21 @@ import org.robolectric.RobolectricTestRunner
 @RunWith(RobolectricTestRunner::class)
 class SettingsVersionDetailsDialogTest {
     @Test
-    fun versionEntryOpensDetailsBeforeCheckingForUpdates() {
-        val activity = Robolectric.buildActivity(SettingsActivity::class.java).setup().get()
-        val dialog = activity.showVersionDetailsDialog()
+    fun updatePageShowsCurrentVersionAndStartsChecking() {
+        val activity = Robolectric.buildActivity(AppUpdateActivity::class.java).setup().get()
 
         assertEquals(
-            "银杏",
-            requireNotNull(dialog.findViewById<TextView>(R.id.tv_version_app_name)).text.toString()
-        )
-        assertEquals(
             "v${BuildConfig.VERSION_NAME}",
-            requireNotNull(dialog.findViewById<TextView>(R.id.tv_version_name)).text.toString()
+            activity.findViewById<TextView>(R.id.tv_version_name).text.toString()
         )
         assertEquals(
             BuildConfig.VERSION_CODE.toString(),
-            requireNotNull(dialog.findViewById<TextView>(R.id.tv_version_code)).text.toString()
+            activity.findViewById<TextView>(R.id.tv_version_code).text.toString()
         )
         assertEquals(
-            activity.getString(R.string.settings_update_not_checked),
-            requireNotNull(dialog.findViewById<TextView>(R.id.tv_version_update_status)).text.toString()
+            activity.getString(R.string.settings_update_checking),
+            activity.findViewById<TextView>(R.id.tv_version_update_status).text.toString()
         )
-        assertEquals(
-            activity.getString(R.string.settings_update_release_title),
-            requireNotNull(dialog.findViewById<TextView>(R.id.tv_version_release_title)).text.toString()
-        )
-        assertEquals(
-            activity.getString(R.string.settings_update_release_notes),
-            requireNotNull(dialog.findViewById<TextView>(R.id.tv_version_release_notes)).text.toString()
-        )
-        dialog.dismiss()
+        activity.finish()
     }
 }

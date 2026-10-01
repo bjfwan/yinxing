@@ -12,6 +12,7 @@ import android.os.Build
 import android.os.Environment
 import android.os.PowerManager
 import android.provider.Settings
+import androidx.activity.result.ActivityResultLauncher
 import androidx.core.app.NotificationManagerCompat
 
 object PermissionUtil {
@@ -242,5 +243,19 @@ object PermissionUtil {
         }.onFailure { e ->
             DebugLog.w(TAG, "无法打开应用详情页: ${e.message}")
         }
+    }
+
+    fun <I> launchSafely(
+        launcher: ActivityResultLauncher<I>,
+        input: I,
+        context: Context,
+        onUnavailable: (() -> Unit)? = null
+    ): Boolean {
+        val result = runCatching { launcher.launch(input) }
+        result.exceptionOrNull()?.let { throwable ->
+            DebugLog.w(TAG, "ActivityResultLauncher.launch failed", throwable)
+            if (onUnavailable != null) onUnavailable() else openAppDetailSettings(context)
+        }
+        return result.isSuccess
     }
 }

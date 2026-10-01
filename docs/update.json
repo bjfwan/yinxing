@@ -1,6 +1,11 @@
 {
-  "versionCode": 19,
-  "versionName": "2.1.1",
-  "apkUrl": "https://yinxing.722688.xyz/app-release.apk",
-  "releaseNotes": "银杏 2.1.1 能准确区分无障碍未开启与服务未连接；微信通话确认增加音频通信状态证据；日志补齐构建身份、会话事件序号和失败步骤链；主线程卡顿排除已恢复采样误报，并进一步清理联系人和电话号码日志。"
+  "versionCode": 20,
+  "versionName": "2.2.0",
+  "apkUrl": "https://dl.fanshipu.top/app-release.apk",
+  "apkUrls": [
+    "https://yinxing.722688.xyz/app-release.apk"
+  ],
+  "apkUrlFallback": "https://github.com/bjfwan/yinxing/releases/latest/download/app-release.apk",
+  "sha256": "b74801bd8e132503d2d569a8893eeb36e55b6f39f991d8bd60b6dcbc77f7d6eb",
+  "releaseNotes": "新增应用内更新：直接在应用里检查并下载新版本，支持多条下载线路自动切换，下载中断后可继续。\n修复部分手机来电和权限弹窗闪退的问题。\n修复部分平板无法拨打电话的问题，现在会自动打开拨号盘。\n新增诊断日志上报开关，可在高级设置中自主选择是否上传。\n减少息屏时的误报和重复日志上报。"
 }

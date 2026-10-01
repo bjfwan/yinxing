@@ -36,6 +36,7 @@ object WeatherRepository {
     private const val BACKOFF_FIRST_MS = 60 * 1000L
     private const val BACKOFF_SECOND_MS = 5 * 60 * 1000L
     private const val BACKOFF_MAX_MS = 15 * 60 * 1000L
+    private const val CITY_NOT_FOUND_REPORT_DEDUPE_MS = 15 * 60 * 1000L
 
     private val apiClient = HttpWeatherApiClient()
     private val cacheMutex = Mutex()
@@ -44,6 +45,7 @@ object WeatherRepository {
     private val inFlightRequests = mutableMapOf<String, Deferred<WeatherState>>()
     private val failureCounts = mutableMapOf<String, Int>()
     private val retryAfterMs = mutableMapOf<String, Long>()
+    private val cityNotFoundReportedAtMs = mutableMapOf<String, Long>()
 
     @Volatile
     private var cache: WeatherState.Success? = null
@@ -109,6 +111,18 @@ object WeatherRepository {
         traceBegin(LauncherTraceNames.HOME_WEATHER_REQUEST)
         val startedAt = SystemClock.elapsedRealtime()
         val normalizedCityName = normalizeCityName(cityName)
+        val cached = cacheMutex.withLock { freshCached(normalizedCityName) }
+        if (cached != null) {
+            val result = cached.copy(fromCache = true)
+            context?.let { reportWeatherResult(it, result, startedAt) }
+            return@withContext result
+        }
+
+        backoffState(normalizedCityName)?.let { state ->
+            context?.let { reportWeatherResult(it, state, startedAt) }
+            return@withContext state
+        }
+
         val result = fetchWeatherInternal(normalizedCityName, latitude, longitude)
         context?.let { reportWeatherResult(it, result, startedAt) }
         result
@@ -116,6 +130,7 @@ object WeatherRepository {
 
     private fun reportWeatherResult(context: Context, result: WeatherState, startedAt: Long) {
         traceAndReport(context, LauncherTraceNames.HOME_WEATHER_REQUEST)
+        if (result is WeatherState.CityNotFound && !shouldReportCityNotFound(result.cityName)) return
         LobsterClient.reportUsage(
             context,
             WeatherUsageEventFactory.from(
@@ -195,6 +210,7 @@ object WeatherRepository {
             }
             if (weather == null) {
                 val cached = cachedSuccess(cityName)?.copy(fromCache = true)
+                recordFailure(cityName)
                 return if (cached != null) {
                     WeatherState.UsingCache(
                         cached,
@@ -259,6 +275,19 @@ object WeatherRepository {
         }
     }
 
+    private fun shouldReportCityNotFound(cityName: String): Boolean {
+        val now = clock()
+        return synchronized(this) {
+            val last = cityNotFoundReportedAtMs[cityName]
+            if (last != null && now - last < CITY_NOT_FOUND_REPORT_DEDUPE_MS) {
+                false
+            } else {
+                cityNotFoundReportedAtMs[cityName] = now
+                true
+            }
+        }
+    }
+
     private fun backoffMs(failureCount: Int): Long {
         return when (failureCount) {
             1 -> BACKOFF_FIRST_MS
@@ -304,6 +333,7 @@ object WeatherRepository {
             inFlightRequests.clear()
             failureCounts.clear()
             retryAfterMs.clear()
+            cityNotFoundReportedAtMs.clear()
         }
     }
 

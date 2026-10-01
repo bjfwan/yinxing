@@ -19,6 +19,7 @@ import android.widget.Toast
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatDelegate
 import androidx.core.content.ContextCompat
+import androidx.lifecycle.lifecycleScope
 import com.google.android.accessibility.selecttospeak.SelectToSpeakService
 import com.google.android.accessibility.selecttospeak.WeChatTeachingPrepareResult
 import com.google.android.material.card.MaterialCardView
@@ -53,6 +54,7 @@ import com.yinxing.launcher.feature.incoming.OemIncomingCallPolicy
 import com.yinxing.launcher.feature.phone.PhoneContactActivity
 import com.yinxing.launcher.feature.videocall.VideoCallActivity
 import kotlin.math.roundToInt
+import kotlinx.coroutines.launch
 
 internal class SettingsDetailController(private val activity: SettingsActivity) {
     private var activeRowsContainerId = R.id.settings_detail_rows
@@ -917,6 +919,23 @@ internal class SettingsDetailController(private val activity: SettingsActivity) 
             bind(SettingsScreen.Advanced)
             overviewController.refreshOverviewUi()
         }
+        addSwitchRow(
+            R.string.settings_diagnostics_sharing_title,
+            if (launcherPreferences.isDiagnosticsSharingEnabled()) {
+                R.string.settings_diagnostics_sharing_summary_on
+            } else {
+                R.string.settings_diagnostics_sharing_summary_off
+            },
+            R.drawable.ic_settings_category_system,
+            launcherPreferences.isDiagnosticsSharingEnabled()
+        ) {
+            launcherPreferences.setDiagnosticsSharingEnabled(it)
+            LobsterClient.reportUsage(
+                this,
+                LobsterSettingEventFactory.toggleChanged(LobsterSetting.DIAGNOSTICS_SHARING, it)
+            )
+            bind(SettingsScreen.Advanced)
+        }
         addRow(
             R.string.settings_diagnostic_export_title,
             R.string.settings_diagnostic_export_summary,
@@ -953,15 +972,32 @@ internal class SettingsDetailController(private val activity: SettingsActivity) 
         ) {
             actionController.openSystemSettings()
         }
-        addRow(
+        val knownUpdate = AppUpdateStore(this).latestAvailable()
+        val updateRow = addRow(
             R.string.settings_update_title,
-            getString(R.string.settings_update_summary, BuildConfig.VERSION_NAME, BuildConfig.VERSION_CODE),
+            knownUpdate?.let { getString(R.string.settings_update_found_new, it.versionName) }
+                ?: getString(R.string.settings_update_summary, BuildConfig.VERSION_NAME, BuildConfig.VERSION_CODE),
             R.drawable.ic_settings_action_update,
             R.color.launcher_call,
             R.color.launcher_call_soft,
             chevron = true
         ) {
-            showVersionDetailsDialog()
+            startActivity(AppUpdateActivity.createIntent(this))
+        }
+        refreshUpdateRow(updateRow)
+    }
+
+    private fun refreshUpdateRow(row: View) = with(activity) {
+        val store = AppUpdateStore(this)
+        if (!store.shouldCheckNow()) return@with
+        lifecycleScope.launch {
+            val state = AppUpdateChecker().check()
+            store.lastCheckAt = System.currentTimeMillis()
+            if (state is AppUpdateState.Available) {
+                store.saveAvailable(state.info)
+                row.findViewById<TextView>(R.id.detail_row_summary)?.text =
+                    getString(R.string.settings_update_found_new, state.info.versionName)
+            }
         }
     }
 

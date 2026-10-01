@@ -11,11 +11,31 @@ internal data class AppUpdateInfo(
     val versionCode: Int,
     val versionName: String,
     val apkUrl: String,
-    val releaseNotes: String
-)
+    val apkUrlFallback: String = "",
+    val extraUrls: List<String> = emptyList(),
+    val sha256: String = "",
+    val forceBelowVersionCode: Int = 0,
+    val releaseNotes: String = "",
+    val announcementTitle: String = "",
+    val announcementBody: String = ""
+) {
+    val downloadUrls: List<String>
+        get() = (listOf(apkUrl) + extraUrls + apkUrlFallback)
+            .filter { it.isNotBlank() }
+            .distinct()
+
+    fun isForced(currentVersionCode: Int): Boolean = forceBelowVersionCode > currentVersionCode
+
+    fun hasAnnouncement(): Boolean = announcementTitle.isNotBlank() || announcementBody.isNotBlank()
+}
 
 internal sealed class AppUpdateState {
-    data object UpToDate : AppUpdateState()
+    data class UpToDate(
+        val announcementTitle: String = "",
+        val announcementBody: String = ""
+    ) : AppUpdateState() {
+        fun hasAnnouncement(): Boolean = announcementTitle.isNotBlank() || announcementBody.isNotBlank()
+    }
     data class Available(val info: AppUpdateInfo) : AppUpdateState()
     data class Failed(val message: String) : AppUpdateState()
 }
@@ -40,22 +60,35 @@ internal class AppUpdateChecker(
             if (status !in 200..299) {
                 return@withContext AppUpdateState.Failed("HTTP $status")
             }
-            val json = JSONObject(body)
-            val info = AppUpdateInfo(
-                versionCode = json.optInt("versionCode", 0),
-                versionName = json.optString("versionName"),
-                apkUrl = json.optString("apkUrl"),
-                releaseNotes = json.optString("releaseNotes")
-            )
-            if (info.versionCode > BuildConfig.VERSION_CODE && info.apkUrl.isNotBlank()) {
+            val info = parseInfo(JSONObject(body))
+            if (info.versionCode > BuildConfig.VERSION_CODE && info.downloadUrls.isNotEmpty()) {
                 AppUpdateState.Available(info)
             } else {
-                AppUpdateState.UpToDate
+                AppUpdateState.UpToDate(info.announcementTitle, info.announcementBody)
             }
         } catch (e: Exception) {
             AppUpdateState.Failed(e.message ?: "unknown")
         } finally {
             connection?.disconnect()
         }
+    }
+
+    private fun parseInfo(json: JSONObject): AppUpdateInfo {
+        val announcement = json.optJSONObject("announcement")
+        val urlsArray = json.optJSONArray("apkUrls")
+        val extraUrls = List(urlsArray?.length() ?: 0) { urlsArray!!.optString(it) }
+            .filter { it.isNotBlank() }
+        return AppUpdateInfo(
+            versionCode = json.optInt("versionCode", 0),
+            versionName = json.optString("versionName"),
+            apkUrl = json.optString("apkUrl"),
+            apkUrlFallback = json.optString("apkUrlFallback"),
+            extraUrls = extraUrls,
+            sha256 = json.optString("sha256"),
+            forceBelowVersionCode = json.optInt("forceBelowVersionCode", 0),
+            releaseNotes = json.optString("releaseNotes"),
+            announcementTitle = announcement?.optString("title").orEmpty(),
+            announcementBody = announcement?.optString("body").orEmpty()
+        )
     }
 }

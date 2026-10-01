@@ -19,6 +19,7 @@ import androidx.core.view.updatePadding
 import androidx.lifecycle.lifecycleScope
 import com.yinxing.launcher.R
 import com.yinxing.launcher.common.ui.LauncherDialogFactory
+import com.yinxing.launcher.common.util.PermissionUtil
 import com.yinxing.launcher.data.weather.WeatherPreferences
 import com.yinxing.launcher.data.weather.WeatherLocationResolver
 import com.yinxing.launcher.data.weather.WeatherRepository
@@ -91,7 +92,11 @@ class WeatherCityManagerActivity : FontScaleActivity() {
         ) {
             locateCurrentCity()
         } else {
-            locationPermissionLauncher.launch(Manifest.permission.ACCESS_COARSE_LOCATION)
+            PermissionUtil.launchSafely(
+                locationPermissionLauncher,
+                Manifest.permission.ACCESS_COARSE_LOCATION,
+                this
+            )
         }
     }
 

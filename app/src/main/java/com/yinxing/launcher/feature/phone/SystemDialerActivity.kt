@@ -2,6 +2,7 @@ package com.yinxing.launcher.feature.phone
 
 import android.Manifest
 import android.annotation.SuppressLint
+import android.content.Intent
 import android.content.pm.PackageManager
 import android.net.Uri
 import android.os.Bundle
@@ -19,6 +20,7 @@ import com.yinxing.launcher.common.lobster.LobsterSettingEventFactory
 import com.yinxing.launcher.common.lobster.LobsterTrace
 import com.yinxing.launcher.common.lobster.withTrace
 import com.yinxing.launcher.common.perf.LauncherTraceNames
+import com.yinxing.launcher.common.util.PermissionUtil
 
 /**
  * ROLE_DIALER 所需的 ACTION_DIAL 入口。实际拨号统一交给 TelecomManager，确保紧急号码
@@ -81,7 +83,7 @@ class SystemDialerActivity : FontScaleActivity() {
                 LobsterSettingEventFactory.permissionRequested(LobsterPermissionTarget.PHONE)
                     .withTrace(traceId)
             )
-            callPermissionLauncher.launch(Manifest.permission.CALL_PHONE)
+            PermissionUtil.launchSafely(callPermissionLauncher, Manifest.permission.CALL_PHONE, this)
             return
         }
         placeCall(number, LobsterTrace.newId())
@@ -91,9 +93,12 @@ class SystemDialerActivity : FontScaleActivity() {
     private fun placeCall(number: String, traceId: String) {
         val startedAt = SystemClock.elapsedRealtime()
         val manager = getSystemService(TelecomManager::class.java)
+        val telUri = Uri.fromParts("tel", number, null)
         val result = runCatching {
             requireNotNull(manager) { "TelecomManager unavailable" }
-            manager.placeCall(Uri.fromParts("tel", number, null), Bundle())
+            manager.placeCall(telUri, Bundle())
+        }.recoverCatching {
+            startActivity(Intent(Intent.ACTION_DIAL, telUri))
         }
         if (result.isSuccess) {
             LobsterClient.reportUsage(this, LobsterUsageEvents.OUTGOING_CALL_STARTED.withTrace(traceId))

@@ -32,6 +32,7 @@ import com.yinxing.launcher.common.lobster.LobsterTrace
 import com.yinxing.launcher.common.lobster.withTrace
 import com.yinxing.launcher.databinding.ActivityMainBinding
 import com.yinxing.launcher.data.weather.WeatherLocationResolver
+import com.yinxing.launcher.common.util.PermissionUtil
 import com.yinxing.launcher.data.weather.WeatherPreferences
 import com.yinxing.launcher.data.weather.WeatherRepository
 import com.yinxing.launcher.feature.settings.SettingsActivity
@@ -164,7 +165,11 @@ class MainActivity : FontScaleActivity() {
                     LobsterSettingEventFactory.permissionRequested(LobsterPermissionTarget.LOCATION)
                         .withTrace(traceId)
                 )
-                locationPermissionLauncher.launch(Manifest.permission.ACCESS_COARSE_LOCATION)
+                PermissionUtil.launchSafely(
+                    locationPermissionLauncher,
+                    Manifest.permission.ACCESS_COARSE_LOCATION,
+                    this
+                )
             }
             InitialWeatherLocationAction.ResolveLocation -> resolveInitialWeatherLocation()
             InitialWeatherLocationAction.None -> Unit

@@ -62,25 +62,40 @@ class YinxingInCallService : InCallService() {
 
     override fun onCallAdded(call: Call) {
         super.onCallAdded(call)
-        val presentation = presentationFrom(call.details)
-        presentations[call] = presentation
-        val initialState = callState(call)
-        callStates[call] = initialState
-        callDirections[call] = callDirection(call.details)
-        callsObservedRinging[call] = initialState == ManagedTelecomCallState.Ringing
+        try {
+            val presentation = presentationFrom(call.details)
+            presentations[call] = presentation
+            val initialState = callState(call)
+            callStates[call] = initialState
+            callDirections[call] = callDirection(call.details)
+            callsObservedRinging[call] = initialState == ManagedTelecomCallState.Ringing
 
-        val callback = object : Call.Callback() {
-            override fun onStateChanged(changedCall: Call, newState: Int) {
-                handleStateChanged(changedCall, mapCallState(newState))
-            }
+            val callback = object : Call.Callback() {
+                override fun onStateChanged(changedCall: Call, newState: Int) {
+                    handleStateChanged(changedCall, mapCallState(newState))
+                }
 
-            override fun onDetailsChanged(changedCall: Call, details: Call.Details) {
-                handleDetailsChanged(changedCall, details)
+                override fun onDetailsChanged(changedCall: Call, details: Call.Details) {
+                    handleDetailsChanged(changedCall, details)
+                }
             }
+            callbacks[call] = callback
+            call.registerCallback(callback, mainHandler)
+            refreshSelectedCall(preferredCall = call)
+        } catch (throwable: Throwable) {
+            DebugLog.e(TAG, "onCallAdded failed for telecom call", throwable)
+            IncomingCallDiagnostics.recordBroadcastFailure(
+                context = this,
+                callerLabel = null,
+                incomingNumber = presentations[call]?.incomingNumber,
+                throwable = throwable
+            )
+            callbacks.remove(call)
+            presentations.remove(call)
+            callStates.remove(call)
+            callDirections.remove(call)
+            callsObservedRinging.remove(call)
         }
-        callbacks[call] = callback
-        call.registerCallback(callback, mainHandler)
-        refreshSelectedCall(preferredCall = call)
     }
 
     override fun onCallRemoved(call: Call) {

@@ -95,6 +95,20 @@ class LauncherPreferencesTest {
     }
 
     @Test
+    fun diagnosticsSharingDefaultsToEnabled() {
+        assertTrue(preferences.isDiagnosticsSharingEnabled())
+    }
+
+    @Test
+    fun diagnosticsSharingPersistsAcrossInstances() {
+        preferences.setDiagnosticsSharingEnabled(false)
+        assertFalse(LauncherPreferences(context).isDiagnosticsSharingEnabled())
+
+        preferences.setDiagnosticsSharingEnabled(true)
+        assertTrue(LauncherPreferences(context).isDiagnosticsSharingEnabled())
+    }
+
+    @Test
     fun autoStartConfirmationDefaultsToFalse() {
         assertFalse(preferences.isAutoStartConfirmed())
     }

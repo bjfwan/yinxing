@@ -9,7 +9,7 @@
 [![License: GPL-3.0](https://img.shields.io/badge/license-GPL--3.0-B8882A?labelColor=1C1914&style=flat-square)](LICENSE)
 [![Download](https://img.shields.io/badge/下载-APK-B8882A?labelColor=1C1914&style=flat-square&logo=android&logoColor=white)](https://yinxing.722688.xyz)
 [![Platform](https://img.shields.io/badge/Android-7.0%2B-0369A1?labelColor=1C1914&style=flat-square&logo=android&logoColor=white)](#下载安装)
-[![Source Version](https://img.shields.io/badge/source-v2.1.1-B8882A?labelColor=1C1914&style=flat-square)](https://github.com/bjfwan/yinxing/releases/tag/v2.1.1)
+[![Source Version](https://img.shields.io/badge/source-v2.2.0-B8882A?labelColor=1C1914&style=flat-square)](https://github.com/bjfwan/yinxing/releases/tag/v2.2.0)
 [![Stars](https://img.shields.io/github/stars/bjfwan/yinxing?color=B8882A&labelColor=1C1914&style=flat-square)](https://github.com/bjfwan/yinxing/stargazers)
 
 **大字、大图标只是起点。银杏真正想解决的是：长辈能不能稳定地找到家人、拨出电话，并在不同手机和软件版本上继续用下去。**
@@ -18,16 +18,15 @@
 
 ---
 
-## v2.1.1 发布重点
+## v2.2.0 发布重点
 
-- 🔌 无障碍开关已开启但服务未连接时，会立即给出准确提示，不再误报为权限未开启；
-- 🎥 微信页面结构不可见时，增加通话前后音频通信状态变化作为连续确认依据；
-- 🧭 日志增加构建 SHA、会话事件序号和稳定步骤链，线上样本可以对应到具体源码与故障前操作；
-- ⏱️ 主线程卡顿记录真实持续时间，并排除采样时已经恢复到系统空闲队列的误报；
-- 🔐 联系人姓名和电话号码不再进入缓冲日志；
-- ✅ `817 tests, 0 failed`，Lint、Release 构建和 APK v2 签名校验通过。
+- � 新增应用内更新：在应用内检查、下载并安装新版本，支持多条下载线路自动切换、断点续传和完整性校验；
+- 🛠️ 修复部分机型来电与权限弹窗闪退、平板无法直接拨号等问题，拨号失败时自动回落到系统拨号盘；
+- 🔐 新增“诊断日志上报”开关，用户可自主选择是否上传脱敏诊断日志，隐私政策已同步说明；
+- ⏱️ 减少息屏时的卡顿误报与天气城市查询的重复上报；
+- ✅ `822 tests, 0 failed`，Lint、Release 构建和 APK v2 签名校验通过。
 
-[查看 v2.1.1 完整发布说明](https://github.com/bjfwan/yinxing/releases/tag/v2.1.1) · [前往官网下载](https://yinxing.722688.xyz)
+[查看 v2.2.0 完整发布说明](https://github.com/bjfwan/yinxing/releases/tag/v2.2.0) · [前往官网下载](https://yinxing.722688.xyz)
 
 ---
 
@@ -203,7 +202,7 @@
 
 ### [下载最新 APK](https://yinxing.722688.xyz)
 
-当前源码版本：`v2.1.1`
+当前源码版本：`v2.2.0`
 
 </div>
 

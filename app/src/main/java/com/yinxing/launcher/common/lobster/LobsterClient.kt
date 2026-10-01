@@ -77,7 +77,7 @@ object LobsterClient {
         summary: String? = null,
         details: LobsterReportDetails = LobsterReportDetails()
     ) {
-        if (!shouldUploadCurrentRuntime()) return
+        if (!shouldUploadCurrentRuntime(context)) return
         val logsToReport = takeBufferedLogs()
 
         if (logsToReport.isBlank()) return
@@ -118,7 +118,7 @@ object LobsterClient {
     }
 
     fun reportUsage(context: Context, event: LobsterUsageEvent) {
-        if (!shouldUploadCurrentRuntime()) return
+        if (!shouldUploadCurrentRuntime(context)) return
         val appContext = context.applicationContext
         val deviceId = installId(appContext)
         val sessionEventSequence = eventSequence.next()
@@ -158,7 +158,7 @@ object LobsterClient {
     }
 
     fun flushPendingReports(context: Context) {
-        if (!shouldUploadCurrentRuntime()) return
+        if (!shouldUploadCurrentRuntime(context)) return
         val appContext = context.applicationContext
         scope.launch {
             LobsterPendingReportStore.read(appContext).forEach { pending ->
@@ -181,7 +181,7 @@ object LobsterClient {
     }
 
     internal fun recordCrash(context: Context, snapshot: LobsterCrashSnapshot) {
-        if (!shouldUploadCurrentRuntime()) return
+        if (!shouldUploadCurrentRuntime(context)) return
         val appContext = context.applicationContext
         val event = snapshot.toUsageEvent()
         val body = createReportBody(
@@ -207,7 +207,7 @@ object LobsterClient {
     }
 
     fun reportMetrics(context: Context, metrics: List<Pair<String, Long>>, traceId: String? = null) {
-        if (metrics.isEmpty() || !shouldUploadCurrentRuntime()) return
+        if (metrics.isEmpty() || !shouldUploadCurrentRuntime(context)) return
 
         val deviceId = installId(context)
         val sessionEventSequence = eventSequence.next()
@@ -441,11 +441,7 @@ object LobsterClient {
         }
     }
 
-    private fun shouldUploadCurrentRuntime(): Boolean {
-        return LobsterRuntimePolicy.shouldUpload(
-            manufacturer = Build.MANUFACTURER,
-            model = Build.MODEL,
-            fingerprint = Build.FINGERPRINT
-        )
+    private fun shouldUploadCurrentRuntime(context: Context): Boolean {
+        return LobsterRuntimePolicy.shouldUpload(context)
     }
 }

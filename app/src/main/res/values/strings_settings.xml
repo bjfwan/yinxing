@@ -111,7 +111,7 @@
     <string name="settings_about_contact_summary">2632507193@qq.com</string>
     <string name="settings_about_privacy_title">隐私政策</string>
     <string name="settings_about_privacy_summary">了解信息收集、使用与保护方式</string>
-    <string name="settings_about_privacy_message">生效日期：2026 年 8 月 29 日\n\n银杏会在手机本地保存联系人、紧急联系人、天气城市、应用设置和微信视频示教路线。天气、版本更新等功能需要联网。为排查问题和改进稳定性，应用会向项目维护的日志服务发送设备型号、Android 版本、随机安装标识、应用版本、使用与性能事件，以及经过脱敏处理的诊断日志。\n\n微信视频示教可选择上传脱敏后的控件结构、状态指纹、设备和微信版本、结果与回放状态，不包含联系人姓名、搜索文字、聊天内容、图片、截图、录音或视频；每次开始前都可取消上传，不影响本地保存和使用。\n\n银杏不提供广告，不出售个人信息。电话、联系人、通话记录、位置、无障碍和传感器权限仅用于对应功能。需要咨询、撤回同意、查询或删除相关数据时，可通过“联系作者”发送邮件。</string>
+    <string name="settings_about_privacy_message">生效日期：2026 年 8 月 29 日\n\n银杏会在手机本地保存联系人、紧急联系人、天气城市、应用设置和微信视频示教路线。天气、版本更新等功能需要联网。为排查问题和改进稳定性，应用会向项目维护的日志服务发送设备型号、Android 版本、随机安装标识、应用版本、使用与性能事件，以及经过脱敏处理的诊断日志。\n\n微信视频示教可选择上传脱敏后的控件结构、状态指纹、设备和微信版本、结果与回放状态，不包含联系人姓名、搜索文字、聊天内容、图片、截图、录音或视频；每次开始前都可取消上传，不影响本地保存和使用。\n\n诊断日志的上传由你自主选择：可在“设置 → 高级设置 → 诊断日志上报”中随时开启或关闭，关闭后应用不再向服务器发送诊断日志，也不影响其他功能的使用。\n\n银杏不提供广告，不出售个人信息。电话、联系人、通话记录、位置、无障碍和传感器权限仅用于对应功能。需要咨询、撤回同意、查询或删除相关数据时，可通过“联系作者”发送邮件。</string>
     <string name="settings_about_terms_title">服务条款</string>
     <string name="settings_about_terms_summary">了解功能边界、使用规则与责任</string>
     <string name="settings_about_license_title">软件许可证</string>
@@ -170,6 +170,9 @@
     <string name="settings_home_layout_reset_summary">恢复初始应用与排列</string>
     <string name="settings_home_layout_reset_message">将移除首页中手动添加的应用并恢复默认排列。联系人、显示大小和其他设置不会改变。</string>
     <string name="settings_home_layout_reset_done">首页布局已恢复</string>
+    <string name="settings_diagnostics_sharing_title">诊断日志上报</string>
+    <string name="settings_diagnostics_sharing_summary_on">已开启，上传脱敏诊断日志帮助排查问题</string>
+    <string name="settings_diagnostics_sharing_summary_off">已关闭，不向服务器上传诊断日志</string>
     <string name="settings_diagnostic_export_title">导出诊断信息</string>
     <string name="settings_diagnostic_export_summary">生成脱敏诊断文件</string>
     <string name="settings_diagnostic_export_subject">银杏诊断信息</string>
@@ -221,6 +224,28 @@
     <string name="settings_update_available_message">有新版本可以下载，建议由家属协助安装。</string>
     <string name="settings_update_download">下载更新</string>
     <string name="settings_update_open_failed">无法打开下载页面</string>
+    <string name="settings_update_caregiver_hint">本页可由家属协助操作：检查、下载并安装新版本。</string>
+    <string name="settings_update_latest_version_label">最新版本</string>
+    <string name="settings_update_latest_version_unknown">未知</string>
+    <string name="settings_update_found_new">发现新版本 v%1$s</string>
+    <string name="settings_update_found_new_short">发现新版本</string>
+    <string name="settings_update_found_important">发现重要更新，建议尽快安装</string>
+    <string name="settings_update_download_hint">下载完成后需要安装才会生效。</string>
+    <string name="settings_update_downloading">正在下载 %1$d%%</string>
+    <string name="settings_update_downloading_size">正在下载 %1$.1f MB</string>
+    <string name="settings_update_downloading_status">正在下载更新包…</string>
+    <string name="settings_update_downloaded_status">下载完成，可以安装</string>
+    <string name="settings_update_install">安装更新</string>
+    <string name="settings_update_install_hint">点击后将打开系统安装页面，请选择【安装】。</string>
+    <string name="settings_update_install_system_hint">系统安装页面已打开，请选择【安装】。如未完成，可回到本页再次点击。</string>
+    <string name="settings_update_install_pending">还没有完成安装。点击【安装更新】重新打开系统安装页面，并选择【安装】。</string>
+    <string name="settings_update_install_blocked_status">需要先允许本应用安装更新</string>
+    <string name="settings_update_install_blocked_hint">系统出于安全考虑需要授权。点击下方按钮，在打开的页面中允许本应用安装应用，然后返回继续。</string>
+    <string name="settings_update_open_install_settings">去允许安装</string>
+    <string name="settings_update_download_failed">下载失败，请检查网络后重试</string>
+    <string name="settings_update_retry">重试</string>
+    <string name="settings_update_retry_hint">检查网络连接后点击下方按钮重试。</string>
+    <string name="settings_update_announcement_title">公告</string>
 
     <!-- 权限管理通用 -->
     <string name="settings_weather_city_title">天气城市</string>
