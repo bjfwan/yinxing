@@ -31,3 +31,7 @@
 # unobfuscated in both the manifest and dex, even with R8 enabled.
 -keep class androidx.profileinstaller.** { *; }
 -keep class androidx.startup.** { *; }
+
+# 定位回调由框架线程经反射式派发调用，R8 看不到调用点，剥离后 MIUI 上会抛
+# AbstractMethodError（LocationManager$ListenerTransport）。保留所有实现类的全部方法。
+-keep class * implements android.location.LocationListener { *; }

@@ -61,8 +61,8 @@ class YinxingInCallService : InCallService() {
     private var speakerRouteRequestInFlight = false
 
     override fun onCallAdded(call: Call) {
-        super.onCallAdded(call)
         try {
+            runCatching { super.onCallAdded(call) }
             val presentation = presentationFrom(call.details)
             presentations[call] = presentation
             val initialState = callState(call)
@@ -83,13 +83,15 @@ class YinxingInCallService : InCallService() {
             call.registerCallback(callback, mainHandler)
             refreshSelectedCall(preferredCall = call)
         } catch (throwable: Throwable) {
-            DebugLog.e(TAG, "onCallAdded failed for telecom call", throwable)
-            IncomingCallDiagnostics.recordBroadcastFailure(
-                context = this,
-                callerLabel = null,
-                incomingNumber = presentations[call]?.incomingNumber,
-                throwable = throwable
-            )
+            runCatching { DebugLog.e(TAG, "onCallAdded failed for telecom call", throwable) }
+            runCatching {
+                IncomingCallDiagnostics.recordBroadcastFailure(
+                    context = this,
+                    callerLabel = null,
+                    incomingNumber = presentations[call]?.incomingNumber,
+                    throwable = throwable
+                )
+            }
             callbacks.remove(call)
             presentations.remove(call)
             callStates.remove(call)

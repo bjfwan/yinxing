@@ -8,19 +8,19 @@
     android:gravity="center_vertical"
     android:minHeight="72dp"
     android:orientation="horizontal"
-    android:paddingStart="12dp"
-    android:paddingTop="10dp"
-    android:paddingEnd="12dp"
-    android:paddingBottom="10dp">
+    android:paddingStart="@dimen/launcher_spacing_md"
+    android:paddingTop="@dimen/launcher_spacing_md"
+    android:paddingEnd="@dimen/launcher_spacing_md"
+    android:paddingBottom="@dimen/launcher_spacing_md">
 
     <ImageView
         android:id="@+id/iv_permission_item_icon"
         android:layout_width="40dp"
         android:layout_height="40dp"
-        android:layout_marginEnd="12dp"
+        android:layout_marginEnd="@dimen/launcher_spacing_md"
         android:background="@drawable/bg_settings_icon_plate"
         android:importantForAccessibility="no"
-        android:padding="8dp"
+        android:padding="@dimen/launcher_spacing_sm"
         android:visibility="gone" />
 
     <LinearLayout
@@ -40,7 +40,7 @@
             style="@style/TextAppearance.OldLauncher.DialogSupporting"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginTop="4dp" />
+            android:layout_marginTop="@dimen/launcher_spacing_xs" />
     </LinearLayout>
 
     <TextView
@@ -48,5 +48,5 @@
         style="@style/TextAppearance.OldLauncher.DialogBadge"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_marginStart="12dp" />
+        android:layout_marginStart="@dimen/launcher_spacing_md" />
 </LinearLayout>

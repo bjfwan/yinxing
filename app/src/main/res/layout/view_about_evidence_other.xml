@@ -3,57 +3,53 @@
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
     android:orientation="vertical"
-    android:padding="16dp">
+    android:padding="@dimen/launcher_spacing_lg">
 
     <TextView
         style="@style/TextAppearance.OldLauncher.DialogSectionLabel"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="@string/settings_about_verification_title"
-        android:textSize="17sp" />
+        android:text="@string/settings_about_verification_title" />
 
     <TextView
         style="@style/TextAppearance.OldLauncher.DialogSupporting"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginTop="10dp"
+        android:layout_marginTop="@dimen/launcher_spacing_md"
         android:text="@string/settings_about_verification_tests"
-        android:textColor="@color/launcher_text_primary"
-        android:textSize="14sp" />
+        android:textColor="@color/launcher_text_primary" />
 
     <TextView
         style="@style/TextAppearance.OldLauncher.DialogSupporting"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginTop="8dp"
+        android:layout_marginTop="@dimen/launcher_spacing_sm"
         android:text="@string/settings_about_verification_device"
-        android:textColor="@color/launcher_text_primary"
-        android:textSize="14sp" />
+        android:textColor="@color/launcher_text_primary" />
 
     <TextView
         style="@style/TextAppearance.OldLauncher.DialogSupporting"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginTop="8dp"
+        android:layout_marginTop="@dimen/launcher_spacing_sm"
         android:text="@string/settings_about_verification_perf"
-        android:textColor="@color/launcher_text_primary"
-        android:textSize="14sp" />
+        android:textColor="@color/launcher_text_primary" />
 
     <TextView
         style="@style/TextAppearance.OldLauncher.DialogSupporting"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginTop="10dp"
-        android:lineSpacingExtra="3dp"
+        android:layout_marginTop="@dimen/launcher_spacing_md"
+        android:lineSpacingExtra="@dimen/launcher_spacing_xs"
         android:text="@string/settings_about_verification_sources" />
 
     <TextView
         style="@style/TextAppearance.OldLauncher.DialogSupporting"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginTop="12dp"
+        android:layout_marginTop="@dimen/launcher_spacing_md"
         android:background="@drawable/bg_settings_evidence_note"
-        android:padding="10dp"
+        android:padding="@dimen/launcher_spacing_md"
         android:text="@string/settings_about_verification_limit"
         android:textColor="@color/launcher_text_primary" />
 </LinearLayout>

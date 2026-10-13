@@ -41,7 +41,7 @@
     <string name="incoming_call_trace_decline_failed">拒接失败</string>
     <string name="incoming_call_trace_speaker_on">扬声器已打开</string>
     <string name="incoming_call_trace_speaker_kept_private">保持当前输出</string>
-    <string name="action_pick_contact_short">通讯录导入</string>
+    <string name="action_pick_contact_short">通讯录选择</string>
     <string name="action_call">拨打</string>
     <string name="action_save">保存</string>
 </resources>

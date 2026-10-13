@@ -13,9 +13,9 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="vertical"
-        android:paddingStart="16dp"
-        android:paddingEnd="16dp"
-        android:paddingBottom="48dp">
+        android:paddingStart="@dimen/launcher_spacing_lg"
+        android:paddingEnd="@dimen/launcher_spacing_lg"
+        android:paddingBottom="@dimen/launcher_spacing_xxl">
 
         <FrameLayout
             android:layout_width="match_parent"
@@ -28,29 +28,27 @@
                 android:layout_gravity="start|center_vertical"
                 android:background="@drawable/bg_weather_toolbar_action"
                 android:contentDescription="@string/weather_detail_back"
-                android:padding="13dp"
+                android:padding="@dimen/launcher_spacing_lg"
                 android:src="@drawable/ic_weather_detail_back" />
 
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_gravity="center"
-                android:text="@string/weather_detail_title"
-                android:textColor="@color/launcher_text_primary"
-                android:textSize="22sp"
-                android:textStyle="bold" />
+                style="@style/TextAppearance.OldLauncher.PageTitle"
+                android:text="@string/weather_detail_title" />
         </FrameLayout>
 
         <androidx.constraintlayout.widget.ConstraintLayout
             android:id="@+id/weather_hero"
             android:layout_width="match_parent"
             android:layout_height="232dp"
-            android:layout_marginTop="12dp"
+            android:layout_marginTop="@dimen/launcher_spacing_md"
             android:background="@drawable/bg_weather_detail_hero"
-            android:paddingStart="18dp"
-            android:paddingTop="14dp"
-            android:paddingEnd="18dp"
-            android:paddingBottom="14dp">
+            android:paddingStart="@dimen/launcher_spacing_lg"
+            android:paddingTop="@dimen/launcher_spacing_lg"
+            android:paddingEnd="@dimen/launcher_spacing_lg"
+            android:paddingBottom="@dimen/launcher_spacing_lg">
 
             <TextView
                 android:id="@+id/tv_city"
@@ -60,14 +58,12 @@
                 android:clickable="true"
                 android:contentDescription="@string/weather_city_open_manager"
                 android:drawableEnd="@drawable/ic_settings_action_forward"
-                android:drawablePadding="6dp"
+                android:drawablePadding="@dimen/launcher_spacing_sm"
                 android:drawableTint="@color/launcher_text_secondary"
                 android:focusable="true"
                 android:gravity="center_vertical"
+                style="@style/TextAppearance.OldLauncher.CardTitle"
                 android:minWidth="96dp"
-                android:textColor="@color/launcher_text_primary"
-                android:textSize="27sp"
-                android:textStyle="bold"
                 app:layout_constraintStart_toStartOf="parent"
                 app:layout_constraintTop_toTopOf="parent" />
 
@@ -75,9 +71,8 @@
                 android:id="@+id/tv_date"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="1dp"
-                android:textColor="@color/launcher_text_secondary"
-                android:textSize="16sp"
+                style="@style/TextAppearance.OldLauncher.Meta"
+                android:layout_marginTop="@dimen/launcher_spacing_sm"
                 android:textStyle="bold"
                 app:layout_constraintStart_toStartOf="parent"
                 app:layout_constraintTop_toBottomOf="@id/tv_city" />
@@ -86,10 +81,8 @@
                 android:id="@+id/tv_temperature"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
+                style="@style/TextAppearance.OldLauncher.WeatherTemperature"
                 android:includeFontPadding="false"
-                android:textColor="@color/launcher_text_primary"
-                android:textSize="72sp"
-                android:textStyle="bold"
                 app:layout_constraintBottom_toBottomOf="parent"
                 app:layout_constraintStart_toStartOf="parent" />
 
@@ -99,7 +92,7 @@
                 android:layout_height="108dp"
                 android:contentDescription="@null"
                 android:importantForAccessibility="no"
-                android:padding="4dp"
+                android:padding="@dimen/launcher_spacing_xs"
                 android:scaleType="fitCenter"
                 android:src="@drawable/weather_icon_sunny"
                 app:layout_constraintEnd_toEndOf="parent"
@@ -109,10 +102,8 @@
                 android:id="@+id/tv_condition"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
+                style="@style/TextAppearance.OldLauncher.WeatherHeadline"
                 android:includeFontPadding="false"
-                android:textColor="@color/launcher_text_primary"
-                android:textSize="23sp"
-                android:textStyle="bold"
                 app:layout_constraintBottom_toTopOf="@id/tv_high_low"
                 app:layout_constraintEnd_toEndOf="parent" />
 
@@ -120,9 +111,8 @@
                 android:id="@+id/tv_high_low"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_marginBottom="4dp"
-                android:textColor="@color/launcher_text_secondary"
-                android:textSize="16sp"
+                style="@style/TextAppearance.OldLauncher.Meta"
+                android:layout_marginBottom="@dimen/launcher_spacing_xs"
                 android:textStyle="bold"
                 app:layout_constraintBottom_toBottomOf="parent"
                 app:layout_constraintEnd_toEndOf="parent" />
@@ -132,56 +122,51 @@
             android:id="@+id/error_group"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginTop="18dp"
+            android:layout_marginTop="@dimen/launcher_spacing_xl"
             android:gravity="center"
             android:orientation="vertical"
-            android:paddingTop="20dp"
-            android:paddingBottom="20dp"
+            android:paddingTop="@dimen/launcher_spacing_xl"
+            android:paddingBottom="@dimen/launcher_spacing_xl"
             android:visibility="gone">
 
             <TextView
                 android:id="@+id/tv_error_title"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="@string/weather_detail_failed"
-                android:textColor="@color/launcher_text_primary"
-                android:textSize="22sp"
-                android:textStyle="bold" />
+                style="@style/TextAppearance.OldLauncher.StateTitle"
+                android:text="@string/weather_detail_failed" />
 
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="6dp"
-                android:text="@string/weather_detail_retry_hint"
-                android:textColor="@color/launcher_text_secondary"
-                android:textSize="17sp" />
+                android:layout_marginTop="@dimen/launcher_spacing_sm"
+                style="@style/TextAppearance.OldLauncher.PageSubtitle"
+                android:text="@string/weather_detail_retry_hint" />
 
             <TextView
                 android:id="@+id/btn_retry"
                 android:layout_width="180dp"
                 android:layout_height="56dp"
-                android:layout_marginTop="16dp"
+                android:layout_marginTop="@dimen/launcher_spacing_lg"
                 android:background="@drawable/bg_weather_retry_button"
                 android:clickable="true"
                 android:contentDescription="@string/weather_detail_retry"
                 android:focusable="true"
                 android:foreground="?android:attr/selectableItemBackground"
                 android:gravity="center"
-                android:text="@string/weather_detail_retry"
-                android:textColor="@color/launcher_on_primary"
-                android:textSize="19sp"
-                android:textStyle="bold" />
+                style="@style/TextAppearance.OldLauncher.ButtonPrimary"
+                android:text="@string/weather_detail_retry" />
         </LinearLayout>
 
         <LinearLayout
             android:id="@+id/hourly_section"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginTop="20dp"
+            android:layout_marginTop="@dimen/launcher_spacing_xl"
             android:orientation="vertical">
 
             <TextView
-                style="@style/WeatherDetailText.SectionTitle"
+                style="@style/TextAppearance.OldLauncher.ListTitle"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="@string/weather_detail_today" />
@@ -190,9 +175,9 @@
                 android:id="@+id/hourly_card"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="10dp"
+                android:layout_marginTop="@dimen/launcher_spacing_md"
                 app:cardBackgroundColor="@color/launcher_surface"
-                app:cardCornerRadius="14dp"
+                app:cardCornerRadius="@dimen/launcher_radius_md"
                 app:cardElevation="0dp"
                 app:strokeWidth="0dp">
 
@@ -208,8 +193,8 @@
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:orientation="horizontal"
-                        android:paddingStart="4dp"
-                        android:paddingEnd="12dp">
+                        android:paddingStart="@dimen/launcher_spacing_xs"
+                        android:paddingEnd="@dimen/launcher_spacing_md">
 
                         <include android:id="@+id/hour_now" layout="@layout/item_weather_hour" />
                         <include android:id="@+id/hour_second" layout="@layout/item_weather_hour" />
@@ -228,11 +213,11 @@
             android:id="@+id/future_section"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginTop="22dp"
+            android:layout_marginTop="@dimen/launcher_spacing_xl"
             android:orientation="vertical">
 
             <TextView
-                style="@style/WeatherDetailText.SectionTitle"
+                style="@style/TextAppearance.OldLauncher.ListTitle"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="@string/weather_detail_next_days" />
@@ -241,9 +226,9 @@
                 android:id="@+id/future_card"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="10dp"
+                android:layout_marginTop="@dimen/launcher_spacing_md"
                 app:cardBackgroundColor="@color/launcher_surface"
-                app:cardCornerRadius="14dp"
+                app:cardCornerRadius="@dimen/launcher_radius_md"
                 app:cardElevation="0dp"
                 app:strokeWidth="0dp">
 
@@ -251,8 +236,8 @@
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:orientation="vertical"
-                    android:paddingStart="12dp"
-                    android:paddingEnd="12dp">
+                    android:paddingStart="@dimen/launcher_spacing_md"
+                    android:paddingEnd="@dimen/launcher_spacing_md">
 
                     <include android:id="@+id/day_tomorrow" layout="@layout/item_weather_day" />
 
@@ -279,9 +264,9 @@
             android:id="@+id/weather_meta_card"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginTop="18dp"
+            android:layout_marginTop="@dimen/launcher_spacing_xl"
             app:cardBackgroundColor="@color/launcher_surface"
-            app:cardCornerRadius="14dp"
+            app:cardCornerRadius="@dimen/launcher_radius_md"
             app:cardElevation="0dp"
             app:strokeWidth="0dp">
 
@@ -290,22 +275,21 @@
                 android:layout_height="wrap_content"
                 android:gravity="center"
                 android:orientation="vertical"
-                android:padding="14dp">
+                android:padding="@dimen/launcher_spacing_lg">
 
                 <TextView
+                    style="@style/TextAppearance.OldLauncher.Meta"
                     android:id="@+id/tv_wind_humidity"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:textColor="@color/launcher_text_primary"
-                    android:textSize="16sp" />
+                    android:textColor="@color/launcher_text_primary" />
 
                 <TextView
+                    style="@style/TextAppearance.OldLauncher.Caption"
                     android:id="@+id/tv_update"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:layout_marginTop="3dp"
-                    android:textColor="@color/launcher_text_secondary"
-                    android:textSize="13sp" />
+                    android:layout_marginTop="@dimen/launcher_spacing_sm" />
             </LinearLayout>
         </com.google.android.material.card.MaterialCardView>
     </LinearLayout>

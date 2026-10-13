@@ -211,7 +211,7 @@ class WeatherDetailActivity : FontScaleActivity() {
         binding.root.background = if (current) {
             gradient(
                 colors = intArrayOf(color(visualTheme.currentStart), color(visualTheme.currentEnd)),
-                cornerRadiusDp = 12f,
+                cornerRadiusPx = resources.getDimension(R.dimen.launcher_radius_sm),
             )
         } else {
             null
@@ -275,7 +275,7 @@ class WeatherDetailActivity : FontScaleActivity() {
                 color(visualTheme.heroMiddle),
                 color(visualTheme.heroEnd),
             ),
-            cornerRadiusDp = 14f,
+            cornerRadiusPx = resources.getDimension(R.dimen.launcher_radius_lg),
             strokeColor = color(visualTheme.outline),
         )
         val surfaceColor = color(visualTheme.surface)
@@ -289,10 +289,10 @@ class WeatherDetailActivity : FontScaleActivity() {
 
     private fun gradient(
         colors: IntArray,
-        cornerRadiusDp: Float = 0f,
+        cornerRadiusPx: Float = 0f,
         strokeColor: Int? = null,
     ): GradientDrawable = GradientDrawable(GradientDrawable.Orientation.TL_BR, colors).apply {
-        cornerRadius = cornerRadiusDp * resources.displayMetrics.density
+        cornerRadius = cornerRadiusPx
         strokeColor?.let { setStroke(resources.displayMetrics.density.toInt().coerceAtLeast(1), it) }
     }
 

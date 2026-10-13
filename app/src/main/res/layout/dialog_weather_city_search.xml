@@ -29,15 +29,15 @@
             android:imeOptions="actionSearch"
             android:inputType="text"
             android:maxLines="1"
-            android:paddingStart="16dp"
-            android:paddingEnd="16dp" />
+            android:paddingStart="@dimen/launcher_spacing_lg"
+            android:paddingEnd="@dimen/launcher_spacing_lg" />
 
         <TextView
             android:id="@+id/tv_search_status"
             style="@style/TextAppearance.OldLauncher.DialogSupporting"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginTop="10dp"
+            android:layout_marginTop="@dimen/launcher_spacing_md"
             android:minHeight="24dp"
             android:textColor="@color/launcher_danger" />
 
@@ -52,7 +52,7 @@
                 style="@style/Widget.OldLauncher.DialogButtonSecondary"
                 android:layout_width="0dp"
                 android:layout_height="@dimen/launcher_dialog_button_height"
-                android:layout_marginEnd="6dp"
+                android:layout_marginEnd="@dimen/launcher_spacing_xs"
                 android:layout_weight="1"
                 android:contentDescription="@string/weather_city_cancel">
 
@@ -70,7 +70,7 @@
                 style="@style/Widget.OldLauncher.DialogButtonPrimary"
                 android:layout_width="0dp"
                 android:layout_height="@dimen/launcher_dialog_button_height"
-                android:layout_marginStart="6dp"
+                android:layout_marginStart="@dimen/launcher_spacing_xs"
                 android:layout_weight="1"
                 android:contentDescription="@string/weather_city_search">
 

@@ -6,5 +6,5 @@
         android:endColor="@color/settings_guard_end"
         android:startColor="@color/settings_guard_start"
         android:type="linear" />
-    <corners android:radius="18dp" />
+    <corners android:radius="@dimen/launcher_radius_md" />
 </shape>

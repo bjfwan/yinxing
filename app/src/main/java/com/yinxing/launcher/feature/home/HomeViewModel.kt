@@ -245,7 +245,7 @@ private class AndroidHomeWeatherSource(
 ) : HomeWeatherSource {
     override fun getCityName() = preferences.getCityName()
 
-    override fun getCached() = WeatherRepository.getCached()
+    override fun getCached() = WeatherRepository.getCached(preferences.getCityName())
 
     override suspend fun fetchWeather(cityName: String): WeatherState {
         val location = preferences.getSelectedLocation()

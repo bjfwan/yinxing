@@ -16,10 +16,10 @@
         android:gravity="center_vertical"
         android:minHeight="60dp"
         android:orientation="horizontal"
-        android:paddingStart="12dp"
-        android:paddingTop="7dp"
-        android:paddingEnd="12dp"
-        android:paddingBottom="7dp">
+        android:paddingStart="@dimen/launcher_spacing_md"
+        android:paddingTop="@dimen/launcher_spacing_sm"
+        android:paddingEnd="@dimen/launcher_spacing_md"
+        android:paddingBottom="@dimen/launcher_spacing_sm">
 
         <ImageView
             android:id="@+id/detail_row_icon"
@@ -27,32 +27,29 @@
             android:layout_height="32dp"
             android:background="@drawable/bg_settings_icon_plate"
             android:importantForAccessibility="no"
-            android:padding="8dp" />
+            android:padding="@dimen/launcher_spacing_sm" />
 
         <LinearLayout
             android:layout_width="0dp"
             android:layout_height="wrap_content"
-            android:layout_marginStart="12dp"
+            android:layout_marginStart="@dimen/launcher_spacing_md"
             android:layout_weight="1"
             android:orientation="vertical">
 
             <TextView
+                style="@style/TextAppearance.OldLauncher.ListTitle"
                 android:id="@+id/detail_row_title"
                 android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:textColor="@color/launcher_text_primary"
-                android:textSize="16sp"
-                android:textStyle="normal" />
+                android:layout_height="wrap_content" />
 
             <TextView
                 android:id="@+id/detail_row_summary"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="2dp"
+                android:layout_marginTop="@dimen/launcher_spacing_xs"
                 android:ellipsize="end"
-                android:maxLines="2"
-                android:textColor="@color/launcher_text_secondary"
-                android:textSize="12sp" />
+                style="@style/TextAppearance.OldLauncher.Meta"
+                android:maxLines="2" />
         </LinearLayout>
 
         <TextView
@@ -61,10 +58,10 @@
             android:layout_height="wrap_content"
             android:gravity="center"
             android:minHeight="40dp"
-            android:paddingStart="8dp"
-            android:paddingEnd="6dp"
+            android:paddingStart="@dimen/launcher_spacing_sm"
+            android:paddingEnd="@dimen/launcher_spacing_sm"
+            style="@style/TextAppearance.OldLauncher.Meta"
             android:textColor="@color/launcher_action_dark"
-            android:textSize="13sp"
             android:visibility="gone" />
 
         <com.yinxing.launcher.feature.settings.SettingsToggle

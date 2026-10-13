@@ -14,10 +14,8 @@ import android.widget.EditText
 import android.widget.ImageView
 import android.widget.TextView
 import android.widget.Toast
-import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts
 import com.yinxing.launcher.common.ui.FontScaleActivity
-import androidx.appcompat.widget.SwitchCompat
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import androidx.core.view.ViewCompat
@@ -166,12 +164,11 @@ class PhoneContactActivity : FontScaleActivity() {
     private lateinit var pageTitleText: TextView
     private lateinit var modeActionButton: View
     private lateinit var modeActionText: TextView
-    private lateinit var modeSummaryText: TextView
     private lateinit var manageTools: View
     private lateinit var searchInput: EditText
     private lateinit var clearSearchButton: View
-    private lateinit var changeLayoutButton: View
-    private lateinit var currentLayoutText: TextView
+    private lateinit var layoutLargeOption: TextView
+    private lateinit var layoutGridOption: TextView
     private lateinit var layoutPreferences: PhoneContactLayoutPreferences
     private lateinit var avatarEditor: AvatarEditorController
     private var layoutStyle = PhoneContactLayoutStyle.LARGE
@@ -187,9 +184,10 @@ class PhoneContactActivity : FontScaleActivity() {
 
 
     private val pickImageLauncher = registerForActivityResult(
-        ActivityResultContracts.PickVisualMedia()
-    ) { uri ->
-        if (uri != null) {
+        ActivityResultContracts.StartActivityForResult()
+    ) { result ->
+        val uri = result.data?.data
+        if (result.resultCode == RESULT_OK && uri != null) {
             avatarEditor.edit(uri)
         }
     }
@@ -245,13 +243,12 @@ class PhoneContactActivity : FontScaleActivity() {
         pageTitleText = findViewById(R.id.tv_page_title)
         modeActionButton = findViewById(R.id.btn_mode_action)
         modeActionText = findViewById(R.id.tv_mode_action)
-        modeSummaryText = findViewById(R.id.tv_mode_summary)
 
         manageTools = findViewById(R.id.layout_manage_tools)
         searchInput = findViewById(R.id.et_contact_search)
         clearSearchButton = findViewById(R.id.btn_clear_search)
-        changeLayoutButton = findViewById(R.id.btn_change_layout)
-        currentLayoutText = findViewById(R.id.tv_current_layout)
+        layoutLargeOption = findViewById(R.id.btn_layout_large)
+        layoutGridOption = findViewById(R.id.btn_layout_grid)
 
         adapter = PhoneContactAdapter(
             scope = lifecycleScope,
@@ -272,10 +269,13 @@ class PhoneContactActivity : FontScaleActivity() {
         }
         modeActionButton.setOnClickListener {
             if (viewModel.isManageMode.value) {
-                showContactDialog(null)
+                if (launchedFromManageEntry) finish() else viewModel.setManageMode(false)
             } else {
                 viewModel.setManageMode(true)
             }
+        }
+        findViewById<MaterialCardView>(R.id.btn_add_contact).setOnClickListener {
+            showContactDialog(null)
         }
 
         searchInput.doAfterTextChanged { editable ->
@@ -285,7 +285,8 @@ class PhoneContactActivity : FontScaleActivity() {
         clearSearchButton.setOnClickListener {
             searchInput.text?.clear()
         }
-        changeLayoutButton.setOnClickListener { showLayoutChoiceDialog() }
+        layoutLargeOption.setOnClickListener { setLayoutStyle(PhoneContactLayoutStyle.LARGE) }
+        layoutGridOption.setOnClickListener { setLayoutStyle(PhoneContactLayoutStyle.GRID) }
         renderCurrentLayout()
         observeViewModel()
 
@@ -368,13 +369,10 @@ class PhoneContactActivity : FontScaleActivity() {
         pageTitleText.text = getString(
             if (isManageMode) R.string.phone_contact_manage_title else R.string.phone_contact_title
         )
-        val actionText = getString(if (isManageMode) R.string.action_add else R.string.action_manage)
+        val actionText = getString(if (isManageMode) R.string.action_done else R.string.action_manage)
         modeActionText.text = actionText
         modeActionButton.contentDescription = actionText
         modeActionButton.isVisible = true
-        modeSummaryText.text = getString(
-            if (isManageMode) R.string.phone_contact_manage_summary else R.string.phone_contact_call_summary_short
-        )
         manageTools.isVisible = isManageMode
         clearSearchButton.isVisible = isManageMode && viewModel.searchQuery.value.isNotBlank()
         updateRecyclerLayout()
@@ -421,47 +419,6 @@ class PhoneContactActivity : FontScaleActivity() {
         }
     }
 
-    private fun showLayoutChoiceDialog() {
-        val sheetView = layoutInflater.inflate(R.layout.dialog_phone_layout_choice, null)
-        val dialog = LauncherDialogFactory.create(this, sheetView)
-
-        val largeOption = sheetView.findViewById<MaterialCardView>(R.id.option_layout_large)
-        val gridOption = sheetView.findViewById<MaterialCardView>(R.id.option_layout_grid)
-        val largeBadge = sheetView.findViewById<TextView>(R.id.check_layout_large)
-        val gridBadge = sheetView.findViewById<TextView>(R.id.check_layout_grid)
-        val selectedStroke = (3 * resources.displayMetrics.density).toInt()
-
-        fun renderSelection() {
-            val largeSelected = layoutStyle == PhoneContactLayoutStyle.LARGE
-            largeOption.isSelected = largeSelected
-            gridOption.isSelected = !largeSelected
-            largeBadge.visibility = if (largeSelected) View.VISIBLE else View.INVISIBLE
-            gridBadge.visibility = if (largeSelected) View.INVISIBLE else View.VISIBLE
-            largeOption.strokeWidth = if (largeSelected) selectedStroke else 1
-            gridOption.strokeWidth = if (largeSelected) 1 else selectedStroke
-            largeOption.strokeColor = ContextCompat.getColor(
-                this,
-                if (largeSelected) R.color.launcher_primary else R.color.launcher_outline
-            )
-            gridOption.strokeColor = ContextCompat.getColor(
-                this,
-                if (largeSelected) R.color.launcher_outline else R.color.launcher_primary
-            )
-        }
-
-        fun select(style: PhoneContactLayoutStyle) {
-            setLayoutStyle(style)
-            renderSelection()
-            dialog.dismiss()
-        }
-
-        largeOption.setOnClickListener { select(PhoneContactLayoutStyle.LARGE) }
-        gridOption.setOnClickListener { select(PhoneContactLayoutStyle.GRID) }
-        sheetView.findViewById<View>(R.id.btn_layout_cancel).setOnClickListener { dialog.dismiss() }
-        renderSelection()
-        dialog.show()
-    }
-
     private fun setLayoutStyle(style: PhoneContactLayoutStyle) {
         if (layoutStyle == style) return
         layoutStyle = style
@@ -472,12 +429,20 @@ class PhoneContactActivity : FontScaleActivity() {
     }
 
     private fun renderCurrentLayout() {
-        currentLayoutText.setText(
-            if (layoutStyle == PhoneContactLayoutStyle.LARGE) {
-                R.string.phone_contact_layout_large_summary
-            } else {
-                R.string.phone_contact_layout_grid_summary
-            }
+        renderLayoutOption(layoutLargeOption, layoutStyle == PhoneContactLayoutStyle.LARGE)
+        renderLayoutOption(layoutGridOption, layoutStyle == PhoneContactLayoutStyle.GRID)
+    }
+
+    private fun renderLayoutOption(option: TextView, selected: Boolean) {
+        option.isSelected = selected
+        option.setBackgroundResource(
+            if (selected) R.drawable.bg_segmented_item_selected else 0
+        )
+        option.setTextColor(
+            ContextCompat.getColor(
+                this,
+                if (selected) R.color.launcher_text_primary else R.color.launcher_text_secondary
+            )
         )
     }
 
@@ -617,7 +582,9 @@ class PhoneContactActivity : FontScaleActivity() {
 
         val nameField = dialogView.findViewById<EditText>(R.id.et_name)
         val phoneField = dialogView.findViewById<EditText>(R.id.et_phone)
-        val autoAnswerSwitch = dialogView.findViewById<SwitchCompat>(R.id.sw_auto_answer)
+        val autoAnswerSwitch = dialogView.findViewById<CheckBox>(R.id.sw_auto_answer)
+        dialogView.findViewById<View>(R.id.btn_auto_answer_toggle)
+            .setOnClickListener { autoAnswerSwitch.toggle() }
         val pickContactButton = dialogView.findViewById<MaterialCardView>(R.id.btn_pick_contact)
         val selectPhotoButton = dialogView.findViewById<MaterialCardView>(R.id.btn_select_photo)
         val cancelButton = dialogView.findViewById<MaterialCardView>(R.id.btn_cancel)
@@ -635,9 +602,7 @@ class PhoneContactActivity : FontScaleActivity() {
             showImportFromContacts()
         }
         selectPhotoButton.setOnClickListener {
-            pickImageLauncher.launch(
-                PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)
-            )
+            pickImageLauncher.launch(AvatarEditorController.imagePickIntent(this))
         }
 
         if (initial != null) {

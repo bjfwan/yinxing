@@ -164,6 +164,7 @@ class SettingsActivity : FontScaleActivity() {
                     LobsterSettingEventFactory.defaultLauncherResult(isDefaultLauncher())
                         .withTrace(traceId)
                 )
+                showDefaultLauncherGateHintIfNeeded()
             }
             overviewController.refreshOverviewUi()
             if (currentScreen !in setOf(SettingsScreen.StandardOverview, SettingsScreen.ElderOverview)) {

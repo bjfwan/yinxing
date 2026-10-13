@@ -40,13 +40,19 @@ internal object WeChatCallStartVerifier {
         "扬声器",
         "免提"
     )
-    private val permissionBlockTexts = listOf(
+    private val permissionEducationTexts = listOf(
+        "微信申请获取",
+        "在下方弹窗中选择允许"
+    )
+    private val micPermissionBlockTexts = listOf(
+        "无法使用麦克风",
+        "麦克风权限"
+    )
+    private val cameraPermissionBlockTexts = listOf(
         "无法使用相机",
         "无法使用摄像头",
-        "无法使用麦克风",
         "相机权限",
-        "摄像头权限",
-        "麦克风权限"
+        "摄像头权限"
     )
     private val networkBlockTexts = listOf(
         "网络连接失败",
@@ -72,11 +78,33 @@ internal object WeChatCallStartVerifier {
             ?.toList()
             .orEmpty()
 
-        if (texts.containsAny(permissionBlockTexts)) {
+        val micBlocked = texts.containsAny(micPermissionBlockTexts)
+        val cameraBlocked = texts.containsAny(cameraPermissionBlockTexts)
+        if (texts.containsAny(permissionEducationTexts)) {
+            return WeChatCallStartAssessment(
+                status = WeChatCallStartStatus.PENDING,
+                reasons = buildList {
+                    add("permission_education")
+                    if (micBlocked) add("mic")
+                    if (cameraBlocked) add("camera")
+                }
+            )
+        }
+        if (micBlocked || cameraBlocked) {
             return WeChatCallStartAssessment(
                 status = WeChatCallStartStatus.BLOCKED,
-                reasons = listOf("permission_block"),
-                userMessage = "微信缺少视频通话权限"
+                reasons = listOf(
+                    when {
+                        micBlocked && cameraBlocked -> "permission_block"
+                        micBlocked -> "mic_permission_block"
+                        else -> "camera_permission_block"
+                    }
+                ),
+                userMessage = when {
+                    micBlocked && cameraBlocked -> "微信缺少音视频通话权限"
+                    micBlocked -> "微信缺少麦克风权限"
+                    else -> "微信缺少相机权限"
+                }
             )
         }
         if (texts.containsAny(networkBlockTexts)) {

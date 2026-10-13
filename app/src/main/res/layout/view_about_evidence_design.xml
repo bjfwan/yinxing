@@ -3,30 +3,26 @@
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
     android:orientation="vertical"
-    android:padding="16dp">
+    android:padding="@dimen/launcher_spacing_lg">
 
     <TextView
         style="@style/TextAppearance.OldLauncher.DialogSectionLabel"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="@string/settings_about_design_title"
-        android:textSize="17sp" />
+        android:text="@string/settings_about_design_title" />
 
     <TextView
+        style="@style/TextAppearance.OldLauncher.DialogSectionLabel"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginTop="10dp"
-        android:text="@string/settings_about_design_overview"
-        android:textColor="@color/launcher_text_primary"
-        android:textSize="14sp"
-        android:textStyle="bold" />
+        android:layout_marginTop="@dimen/launcher_spacing_md"
+        android:text="@string/settings_about_design_overview" />
 
     <TextView
         style="@style/TextAppearance.OldLauncher.DialogSupporting"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginTop="10dp"
-        android:lineSpacingExtra="3dp"
-        android:text="@string/settings_about_design_body"
-        android:textSize="14sp" />
+        android:layout_marginTop="@dimen/launcher_spacing_md"
+        android:lineSpacingExtra="@dimen/launcher_spacing_xs"
+        android:text="@string/settings_about_design_body" />
 </LinearLayout>

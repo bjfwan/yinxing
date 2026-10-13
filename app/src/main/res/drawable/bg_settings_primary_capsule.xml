@@ -6,5 +6,5 @@
         android:endColor="@color/settings_primary_end"
         android:startColor="@color/settings_primary_start"
         android:type="linear" />
-    <corners android:radius="23dp" />
+    <corners android:radius="@dimen/launcher_radius_md" />
 </shape>

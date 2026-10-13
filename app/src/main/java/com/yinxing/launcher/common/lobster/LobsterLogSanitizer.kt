@@ -6,7 +6,7 @@ object LobsterLogSanitizer {
     private val landlineNumber = Regex("(?<!\\d)(0\\d{2,3})\\d{3,4}(\\d{4})(?!\\d)")
     private val emailAddress = Regex("[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,}")
     private val labeledContact = Regex(
-        "(?i)((?:联系人|来电者|搜索名|caller|contact)\\s*[=:：]\\s*)([^,，|\\n)）]+)"
+        "(?i)((?:联系人|来电者|搜索名|caller|contact)\\s*[=:：]\\s*)([^\\s,，|\\n)）]+)"
     )
 
     fun sanitize(value: String, sensitiveValues: Collection<String> = emptyList()): String {

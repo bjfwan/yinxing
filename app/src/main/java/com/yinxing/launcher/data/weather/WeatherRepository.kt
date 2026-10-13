@@ -7,6 +7,7 @@ import com.yinxing.launcher.common.perf.LauncherTraceNames
 import com.yinxing.launcher.common.perf.traceAndReport
 import com.yinxing.launcher.common.perf.traceBegin
 import com.yinxing.launcher.common.util.DebugLog
+import com.yinxing.launcher.common.util.NetworkUtil
 import com.yinxing.launcher.data.weather.source.OpenMeteoWeatherDataSource
 import com.yinxing.launcher.data.weather.source.SeniverseWeatherSource
 import com.yinxing.launcher.data.weather.source.TencentWeatherSource
@@ -46,6 +47,7 @@ object WeatherRepository {
     private val failureCounts = mutableMapOf<String, Int>()
     private val retryAfterMs = mutableMapOf<String, Long>()
     private val cityNotFoundReportedAtMs = mutableMapOf<String, Long>()
+    private val backoffReportedAtMs = mutableMapOf<String, Long>()
 
     @Volatile
     private var cache: WeatherState.Success? = null
@@ -57,10 +59,13 @@ object WeatherRepository {
     private var clock: () -> Long = { System.currentTimeMillis() }
 
     fun initialize(context: Context) {
-        if (diskCache != null) return
+        val appContext = context.applicationContext
         synchronized(this) {
             if (diskCache == null) {
-                diskCache = WeatherDiskCache(context)
+                diskCache = WeatherDiskCache(appContext)
+            }
+            (weatherSource as? OpenMeteoWeatherDataSource)?.regionIndexProvider = {
+                ChinaRegionIndex.get(appContext)
             }
         }
     }
@@ -79,6 +84,10 @@ object WeatherRepository {
         backoffState(normalizedCityName)?.let { state ->
             context?.let { reportWeatherResult(it, state, startedAt) }
             return@withContext state
+        }
+
+        if (context != null && !NetworkUtil.isNetworkAvailable(context)) {
+            return@withContext offlineResult(normalizedCityName)
         }
 
         val deferred = inFlightMutex.withLock {
@@ -111,8 +120,9 @@ object WeatherRepository {
         traceBegin(LauncherTraceNames.HOME_WEATHER_REQUEST)
         val startedAt = SystemClock.elapsedRealtime()
         val normalizedCityName = normalizeCityName(cityName)
+        val locationKey = "$latitude,$longitude"
         val cached = cacheMutex.withLock { freshCached(normalizedCityName) }
-        if (cached != null) {
+        if (cached != null && cached.adcode == locationKey) {
             val result = cached.copy(fromCache = true)
             context?.let { reportWeatherResult(it, result, startedAt) }
             return@withContext result
@@ -123,14 +133,29 @@ object WeatherRepository {
             return@withContext state
         }
 
+        if (context != null && !NetworkUtil.isNetworkAvailable(context)) {
+            return@withContext offlineResult(normalizedCityName)
+        }
+
         val result = fetchWeatherInternal(normalizedCityName, latitude, longitude)
         context?.let { reportWeatherResult(it, result, startedAt) }
         result
     }
 
+    private fun offlineResult(cityName: String): WeatherState {
+        val message = "当前无网络连接"
+        val cached = cachedSuccess(cityName)?.copy(fromCache = true)
+        return if (cached != null) {
+            WeatherState.UsingCache(cached, WeatherFailureReason.Network, message)
+        } else {
+            WeatherState.Failure(cityName, WeatherFailureReason.Network, message)
+        }
+    }
+
     private fun reportWeatherResult(context: Context, result: WeatherState, startedAt: Long) {
         traceAndReport(context, LauncherTraceNames.HOME_WEATHER_REQUEST)
         if (result is WeatherState.CityNotFound && !shouldReportCityNotFound(result.cityName)) return
+        if (result.backoffFailure && !shouldReportBackoff(result.cityName)) return
         LobsterClient.reportUsage(
             context,
             WeatherUsageEventFactory.from(
@@ -156,10 +181,10 @@ object WeatherRepository {
         }
     }
 
-    fun getCached(): WeatherState? {
+    fun getCached(cityName: String? = null): WeatherState? {
         val memory = cache
-        if (memory != null) return memory
-        val disk = diskCache?.read() ?: return null
+        if (memory != null && (cityName == null || memory.cityName == cityName)) return memory
+        val disk = diskCache?.read(cityName) ?: return null
         cache = disk.copy(fromCache = false)
         return disk
     }
@@ -275,6 +300,26 @@ object WeatherRepository {
         }
     }
 
+    private val WeatherState.backoffFailure: Boolean
+        get() = when (this) {
+            is WeatherState.Failure -> reason == WeatherFailureReason.Backoff
+            is WeatherState.UsingCache -> reason == WeatherFailureReason.Backoff
+            else -> false
+        }
+
+    private fun shouldReportBackoff(cityName: String): Boolean {
+        val now = clock()
+        return synchronized(this) {
+            val last = backoffReportedAtMs[cityName]
+            if (last != null && now - last < BACKOFF_MAX_MS) {
+                false
+            } else {
+                backoffReportedAtMs[cityName] = now
+                true
+            }
+        }
+    }
+
     private fun shouldReportCityNotFound(cityName: String): Boolean {
         val now = clock()
         return synchronized(this) {
@@ -334,6 +379,7 @@ object WeatherRepository {
             failureCounts.clear()
             retryAfterMs.clear()
             cityNotFoundReportedAtMs.clear()
+            backoffReportedAtMs.clear()
         }
     }
 

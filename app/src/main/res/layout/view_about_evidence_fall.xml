@@ -3,42 +3,38 @@
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
     android:orientation="vertical"
-    android:padding="16dp">
+    android:padding="@dimen/launcher_spacing_lg">
 
     <TextView
         style="@style/TextAppearance.OldLauncher.DialogSectionLabel"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="@string/settings_about_fall_title"
-        android:textSize="17sp" />
+        android:text="@string/settings_about_fall_title" />
 
     <TextView
         style="@style/TextAppearance.OldLauncher.DialogSupporting"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginTop="4dp"
-        android:text="@string/settings_about_fall_source"
-        android:textSize="12sp" />
+        android:layout_marginTop="@dimen/launcher_spacing_xs"
+        android:text="@string/settings_about_fall_source" />
 
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginTop="12dp"
+        android:layout_marginTop="@dimen/launcher_spacing_md"
         android:orientation="vertical">
 
         <TextView
+            style="@style/TextAppearance.OldLauncher.DialogSectionLabel"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="@string/settings_about_fall_overview"
-            android:textColor="@color/launcher_text_primary"
-            android:textSize="14sp"
-            android:textStyle="bold" />
+            android:text="@string/settings_about_fall_overview" />
     </LinearLayout>
 
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginTop="14dp"
+        android:layout_marginTop="@dimen/launcher_spacing_md"
         android:orientation="horizontal">
 
         <TextView
@@ -51,17 +47,16 @@
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
+            style="@style/TextAppearance.OldLauncher.DialogSectionLabel"
             android:text="@string/settings_about_fall_detection_value"
-            android:textColor="@color/launcher_action_dark"
-            android:textSize="15sp"
-            android:textStyle="bold" />
+            android:textColor="@color/launcher_action_dark" />
     </LinearLayout>
 
     <ProgressBar
         style="?android:attr/progressBarStyleHorizontal"
         android:layout_width="match_parent"
         android:layout_height="8dp"
-        android:layout_marginTop="7dp"
+        android:layout_marginTop="@dimen/launcher_spacing_sm"
         android:max="10000"
         android:progress="9423"
         android:progressBackgroundTint="@color/launcher_surface_soft"
@@ -70,7 +65,7 @@
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginTop="12dp"
+        android:layout_marginTop="@dimen/launcher_spacing_md"
         android:orientation="horizontal">
 
         <TextView
@@ -83,17 +78,16 @@
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
+            style="@style/TextAppearance.OldLauncher.DialogSectionLabel"
             android:text="@string/settings_about_fall_adl_value"
-            android:textColor="@color/launcher_action_dark"
-            android:textSize="15sp"
-            android:textStyle="bold" />
+            android:textColor="@color/launcher_action_dark" />
     </LinearLayout>
 
     <ProgressBar
         style="?android:attr/progressBarStyleHorizontal"
         android:layout_width="match_parent"
         android:layout_height="8dp"
-        android:layout_marginTop="7dp"
+        android:layout_marginTop="@dimen/launcher_spacing_sm"
         android:max="10000"
         android:progress="9703"
         android:progressBackgroundTint="@color/launcher_surface_soft"
@@ -102,7 +96,7 @@
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginTop="14dp"
+        android:layout_marginTop="@dimen/launcher_spacing_md"
         android:orientation="horizontal">
 
         <TextView
@@ -135,7 +129,7 @@
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginTop="8dp"
+        android:layout_marginTop="@dimen/launcher_spacing_sm"
         android:orientation="horizontal">
 
         <TextView
@@ -165,7 +159,7 @@
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginTop="7dp"
+        android:layout_marginTop="@dimen/launcher_spacing_sm"
         android:orientation="horizontal">
 
         <TextView
@@ -196,9 +190,9 @@
         style="@style/TextAppearance.OldLauncher.DialogSupporting"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginTop="14dp"
+        android:layout_marginTop="@dimen/launcher_spacing_md"
         android:background="@drawable/bg_settings_evidence_note"
-        android:padding="10dp"
+        android:padding="@dimen/launcher_spacing_md"
         android:text="@string/settings_about_fall_limit"
         android:textColor="@color/launcher_text_primary" />
 </LinearLayout>

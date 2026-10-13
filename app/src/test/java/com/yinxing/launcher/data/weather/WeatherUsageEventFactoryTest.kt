@@ -5,6 +5,7 @@ import com.yinxing.launcher.common.lobster.LobsterEventType
 import com.yinxing.launcher.common.lobster.LobsterLogCategory
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
+import org.junit.Assert.assertTrue
 import org.junit.Test
 
 class WeatherUsageEventFactoryTest {
@@ -25,8 +26,36 @@ class WeatherUsageEventFactoryTest {
         assertEquals(LobsterLogCategory.WEATHER, event.category)
         assertEquals(LobsterEventType.ERROR, event.eventType)
         assertEquals("refresh_weather", event.action)
+        assertTrue(event.details.steps.single().detail?.startsWith("city_hash=") == true)
         assertFalse(serialized.contains("北京市朝阳区"))
         assertFalse(serialized.contains("request failed"))
+    }
+
+    @Test
+    fun `same city produces identical city hash across error states`() {
+        val failure = WeatherUsageEventFactory.from(
+            WeatherState.Failure("北京", WeatherFailureReason.Network, "boom"),
+            1L,
+            "2026-08-27T10:00:00.000Z"
+        )
+        val notFound = WeatherUsageEventFactory.from(
+            WeatherState.CityNotFound("北京"),
+            1L,
+            "2026-08-27T10:00:00.000Z"
+        )
+        val other = WeatherUsageEventFactory.from(
+            WeatherState.CityNotFound("上海"),
+            1L,
+            "2026-08-27T10:00:00.000Z"
+        )
+
+        assertEquals(
+            failure.details.steps.single().detail,
+            notFound.details.steps.single().detail
+        )
+        assertFalse(
+            notFound.details.steps.single().detail == other.details.steps.single().detail
+        )
     }
 
     @Test

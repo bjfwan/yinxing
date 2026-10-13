@@ -14,6 +14,7 @@ import android.widget.LinearLayout
 import android.widget.ImageView
 import androidx.test.core.app.ApplicationProvider
 import com.yinxing.launcher.R
+import com.yinxing.launcher.common.util.OemLauncherPolicy
 import com.yinxing.launcher.data.home.LauncherPreferences
 import com.yinxing.launcher.data.settings.LauncherSettingsDataStore
 import com.yinxing.launcher.feature.incoming.IncomingCallDiagnostics
@@ -123,16 +124,16 @@ class SettingsActivitySmokeTest {
             val actions = requireNotNull(
                 dialog.findViewById<LinearLayout>(R.id.layout_dialog_actions)
             )
-            val defaultAction = requireNotNull(
+            val securityAction = requireNotNull(
                 dialog.findViewById<TextView>(R.id.tv_cancel_label)
             )
-            val securityAction = requireNotNull(
+            val defaultAction = requireNotNull(
                 dialog.findViewById<TextView>(R.id.tv_primary_label)
             )
-            val defaultButton = requireNotNull(dialog.findViewById<View>(R.id.btn_cancel))
-            val securityButton = requireNotNull(dialog.findViewById<View>(R.id.btn_open_settings))
-            val defaultParams = defaultButton.layoutParams as LinearLayout.LayoutParams
+            val securityButton = requireNotNull(dialog.findViewById<View>(R.id.btn_cancel))
+            val defaultButton = requireNotNull(dialog.findViewById<View>(R.id.btn_open_settings))
             val securityParams = securityButton.layoutParams as LinearLayout.LayoutParams
+            val defaultParams = defaultButton.layoutParams as LinearLayout.LayoutParams
             val message = requireNotNull(dialog.findViewById<TextView>(R.id.tv_dialog_message))
 
             assertEquals(LinearLayout.VERTICAL, actions.orientation)
@@ -142,14 +143,42 @@ class SettingsActivitySmokeTest {
             assertEquals(0, securityParams.marginStart)
             assertEquals(0, securityParams.marginEnd)
             assertEquals(
-                activity.getString(R.string.set_default_launcher_vivo_default_action),
-                defaultAction.text.toString()
-            )
-            assertEquals(
                 activity.getString(R.string.set_default_launcher_vivo_security_action),
                 securityAction.text.toString()
             )
+            assertEquals(
+                activity.getString(R.string.set_default_launcher_vivo_default_action),
+                defaultAction.text.toString()
+            )
             assertTrue(message.text.contains("安全 → 更多安全设置 → 更换系统桌面"))
+        } finally {
+            ShadowBuild.setManufacturer(originalManufacturer)
+        }
+    }
+
+    @Test
+    fun vivoDefaultLauncherGateHintExplainsSecurityRequirement() {
+        val originalManufacturer = Build.MANUFACTURER
+        ShadowBuild.setManufacturer("vivo")
+        try {
+            val activity = buildActivity()
+            val dialog = activity.showSetDefaultLauncherGateHint(
+                OemLauncherPolicy.profile(Build.MANUFACTURER)
+            )
+            val title = requireNotNull(dialog.findViewById<TextView>(R.id.tv_dialog_title))
+            val message = requireNotNull(dialog.findViewById<TextView>(R.id.tv_dialog_message))
+            val primaryLabel = requireNotNull(dialog.findViewById<TextView>(R.id.tv_primary_label))
+
+            assertEquals(
+                activity.getString(R.string.set_default_launcher_gate_failed_title),
+                title.text.toString()
+            )
+            assertTrue(message.text.contains("允许更换桌面"))
+            assertTrue(message.text.contains("点击主屏键锁定系统桌面"))
+            assertEquals(
+                activity.getString(R.string.set_default_launcher_open_security_action),
+                primaryLabel.text.toString()
+            )
         } finally {
             ShadowBuild.setManufacturer(originalManufacturer)
         }
@@ -454,7 +483,7 @@ class SettingsActivitySmokeTest {
             val activity = buildActivity()
             activity.showScreen(SettingsScreen.Device)
 
-            assertTrue(activity.findDetailText("vivo / iQOO：先设置默认桌面，并完成系统安全授权").isNotEmpty())
+            assertTrue(activity.findDetailText("vivo / iQOO：先开启“允许更换桌面”，再设置默认桌面").isNotEmpty())
             assertTrue(activity.findDetailText("Home 辅助返回").isNotEmpty())
             assertTrue(activity.findDetailText("默认关闭；仅在系统不允许更换桌面时使用").isNotEmpty())
             assertTrue(activity.findDetailText("OPPO 桌面兼容组件").isEmpty())

@@ -11,7 +11,7 @@
         android:layout_width="14dp"
         android:layout_height="7dp"
         android:layout_gravity="end"
-        android:layout_marginEnd="24dp"
+        android:layout_marginEnd="@dimen/launcher_spacing_xxl"
         android:contentDescription="@null"
         android:importantForAccessibility="no"
         android:src="@drawable/ic_weather_detail_hint_tail" />
@@ -24,14 +24,14 @@
         android:fontFamily="sans-serif-medium"
         android:gravity="center"
         android:includeFontPadding="false"
-        android:paddingStart="14dp"
-        android:paddingEnd="14dp"
+        android:paddingStart="@dimen/launcher_spacing_lg"
+        android:paddingEnd="@dimen/launcher_spacing_lg"
         android:shadowColor="#66000000"
         android:shadowDx="0"
         android:shadowDy="1"
         android:shadowRadius="1.5"
+        style="@style/TextAppearance.OldLauncher.Meta"
         android:text="@string/home_weather_detail_hint"
-        android:textColor="@color/launcher_on_primary"
-        android:textSize="15sp" />
+        android:textColor="@color/launcher_on_primary" />
 
 </LinearLayout>

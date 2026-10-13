@@ -39,13 +39,16 @@ internal enum class ForegroundRecoveryDecision { WAIT, RELAUNCH, FAIL }
 
 internal object WeChatForegroundRecoveryPolicy {
     private const val MISSING_ROOT_GRACE_MS = 1_500L
+    private const val WECHAT_FOREGROUND_GRACE_MS = 4_000L
     private const val MAX_RECOVERY_ATTEMPTS = 2
 
     fun decide(activePackage: String?, missingRootMs: Long, recoveryAttempts: Int): ForegroundRecoveryDecision {
-        if (activePackage.isNullOrBlank() || activePackage == WeChatPackage.NAME || isTransientSystemPackage(activePackage)) {
+        if (activePackage.isNullOrBlank() || isTransientSystemPackage(activePackage)) {
             return ForegroundRecoveryDecision.WAIT
         }
-        if (missingRootMs < MISSING_ROOT_GRACE_MS) return ForegroundRecoveryDecision.WAIT
+        val graceMs =
+            if (activePackage == WeChatPackage.NAME) WECHAT_FOREGROUND_GRACE_MS else MISSING_ROOT_GRACE_MS
+        if (missingRootMs < graceMs) return ForegroundRecoveryDecision.WAIT
         return if (recoveryAttempts >= MAX_RECOVERY_ATTEMPTS) ForegroundRecoveryDecision.FAIL else ForegroundRecoveryDecision.RELAUNCH
     }
 

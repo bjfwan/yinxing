@@ -35,8 +35,8 @@
             android:hint="@string/settings_fall_contact_hint"
             android:inputType="phone"
             android:maxLength="24"
-            android:paddingStart="16dp"
-            android:paddingEnd="16dp"
+            android:paddingStart="@dimen/launcher_spacing_lg"
+            android:paddingEnd="@dimen/launcher_spacing_lg"
             android:singleLine="true" />
 
         <TextView
@@ -44,7 +44,7 @@
             style="@style/TextAppearance.OldLauncher.DialogSupporting"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginTop="6dp"
+            android:layout_marginTop="@dimen/launcher_spacing_sm"
             android:text="@string/settings_fall_contact_invalid"
             android:textColor="@color/launcher_danger"
             android:visibility="gone" />

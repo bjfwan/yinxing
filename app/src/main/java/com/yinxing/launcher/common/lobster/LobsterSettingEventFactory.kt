@@ -189,7 +189,7 @@ object LobsterSettingEventFactory {
         errorCode: String? = null,
         failedStep: String? = null
     ) = LobsterUsageEvent(
-        scene = "细操作",
+        scene = "设置操作",
         status = status,
         summary = summary,
         logLine = "[操作] $summary",

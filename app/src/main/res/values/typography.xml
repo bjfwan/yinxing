@@ -208,16 +208,16 @@
     </style>
 
     <style name="Widget.OldLauncher.PageHeroCard" parent="Widget.OldLauncher.DialogSurfaceCard">
-        <item name="cardCornerRadius">32dp</item>
+        <item name="cardCornerRadius">@dimen/launcher_radius_lg</item>
         <item name="cardElevation">6dp</item>
     </style>
 
     <style name="Widget.OldLauncher.PageToolbarButton" parent="Widget.OldLauncher.DialogButtonSecondary">
-        <item name="cardCornerRadius">20dp</item>
+        <item name="cardCornerRadius">@dimen/launcher_radius_md</item>
     </style>
 
     <style name="Widget.OldLauncher.ListItemCard" parent="Widget.OldLauncher.DialogSurfaceCard">
-        <item name="cardCornerRadius">28dp</item>
+        <item name="cardCornerRadius">@dimen/launcher_radius_lg</item>
         <item name="cardElevation">5dp</item>
     </style>
 
@@ -279,7 +279,7 @@
 
     <style name="Widget.OldLauncher.FloatingStatusCard" parent="">
         <item name="cardBackgroundColor">@color/launcher_surface_overlay</item>
-        <item name="cardCornerRadius">22dp</item>
+        <item name="cardCornerRadius">@dimen/launcher_radius_lg</item>
         <item name="cardElevation">8dp</item>
         <item name="strokeColor">@color/launcher_primary_soft</item>
         <item name="strokeWidth">1dp</item>

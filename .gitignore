@@ -29,5 +29,15 @@ launcher_prefs*.xml
 .codex-backup/
 app/google-services .json
 .windsurf
+.devin/
+.kilo/
+.playwright-cli/
+.playwright-mcp/
+output/
+*.code-workspace
 .tmp_preview/
 update_release.py
+hs_err_pid*.log
+replay_pid*.log
+nul
+design-qa-assets/

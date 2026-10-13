@@ -6,7 +6,7 @@
             <stroke
                 android:width="2dp"
                 android:color="@color/launcher_primary" />
-            <corners android:radius="18dp" />
+            <corners android:radius="@dimen/launcher_radius_md" />
         </shape>
     </item>
     <item>
@@ -15,7 +15,7 @@
             <stroke
                 android:width="2dp"
                 android:color="@color/launcher_outline" />
-            <corners android:radius="18dp" />
+            <corners android:radius="@dimen/launcher_radius_md" />
         </shape>
     </item>
 </selector>

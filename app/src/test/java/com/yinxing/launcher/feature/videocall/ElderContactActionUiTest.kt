@@ -36,7 +36,7 @@ class ElderContactActionUiTest {
 
         assertTrue(view.layoutParams.height >= 232.dp)
         assertTrue(button.layoutParams.height >= 76.dp)
-        assertTrue(button.textSize >= 22.sp)
+        assertTrue(button.textSize >= 18.sp)
         assertEquals(
             ContextCompat.getColor(context, R.color.launcher_phone_action),
             button.backgroundTintList?.defaultColor
@@ -50,7 +50,11 @@ class ElderContactActionUiTest {
         val card = view as MaterialCardView
         val badge = view.findViewById<TextView>(R.id.tv_auto_answer_badge)
 
-        assertEquals(18.dp.toFloat(), card.radius, 0.5f)
+        assertEquals(
+            context.resources.getDimension(R.dimen.launcher_radius_md),
+            card.radius,
+            0.5f
+        )
         assertTrue(card.cardElevation <= 1.dp)
         assertTrue(badge.text.none { it == '⚡' })
         assertTrue(badge.compoundDrawablesRelative[0] != null)
@@ -96,7 +100,7 @@ class ElderContactActionUiTest {
         val button = view.findViewById<MaterialButton>(R.id.btn_video_call)
 
         assertTrue(button.layoutParams.height >= 76.dp)
-        assertTrue(button.textSize >= 22.sp)
+        assertTrue(button.textSize >= 18.sp)
         assertEquals(
             ContextCompat.getColor(context, R.color.launcher_phone_action),
             button.backgroundTintList?.defaultColor

@@ -2,58 +2,56 @@
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="112dp"
     android:layout_height="wrap_content"
-    android:layout_margin="6dp"
+    android:layout_margin="@dimen/launcher_spacing_sm"
     android:background="@drawable/bg_wechat_teaching_overlay"
     android:elevation="6dp"
     android:orientation="vertical"
-    android:padding="6dp">
+    android:padding="@dimen/launcher_spacing_sm">
 
     <TextView
         android:id="@+id/wechat_teaching_message"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:gravity="center"
+        style="@style/TextAppearance.OldLauncher.Caption"
         android:text="@string/settings_wechat_teaching_prepared_message"
-        android:textColor="@color/launcher_text_primary"
-        android:textSize="11sp" />
+        android:textColor="@color/launcher_text_primary" />
 
     <CheckBox
         android:id="@+id/wechat_teaching_upload_choice"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginTop="3dp"
+        android:layout_marginTop="@dimen/launcher_spacing_xs"
         android:buttonTint="@color/launcher_action"
         android:checked="true"
         android:gravity="center_vertical"
         android:minHeight="48dp"
         android:text="@string/settings_wechat_teaching_upload_choice"
-        android:textColor="@color/launcher_text_secondary"
-        android:textSize="12sp"
+        style="@style/TextAppearance.OldLauncher.Caption"
         android:visibility="gone" />
 
     <TextView
         android:id="@+id/wechat_teaching_primary"
         android:layout_width="match_parent"
         android:layout_height="34dp"
-        android:layout_marginTop="4dp"
+        android:layout_marginTop="@dimen/launcher_spacing_xs"
         android:background="@drawable/bg_wechat_teaching_start"
         android:clickable="true"
         android:focusable="true"
         android:gravity="center"
+        style="@style/TextAppearance.OldLauncher.ButtonPrimary"
         android:text="@string/settings_wechat_teaching_start"
-        android:textColor="@color/launcher_on_action"
-        android:textSize="13sp"
-        android:textStyle="bold" />
+        android:textColor="@color/launcher_on_action" />
 
     <TextView
         android:id="@+id/wechat_teaching_secondary"
         android:layout_width="match_parent"
         android:layout_height="34dp"
-        android:layout_marginTop="3dp"
+        android:layout_marginTop="@dimen/launcher_spacing_xs"
         android:clickable="true"
         android:focusable="true"
         android:gravity="center"
+        style="@style/TextAppearance.OldLauncher.ButtonSecondary"
         android:text="@string/action_cancel"
-        android:textColor="@color/launcher_text_secondary"
-        android:textSize="12sp" />
+        android:textColor="@color/launcher_text_secondary" />
 </LinearLayout>

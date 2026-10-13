@@ -37,7 +37,6 @@
     <string name="weather_load_failed_short">天气暂时不可用</string>
 
     <string name="app_manage_title">选择应用</string>
-    <string name="app_manage_subtitle">选择首页要显示的应用</string>
     <string name="app_manage_empty_message">未读取到可显示应用，请确认系统允许读取桌面应用列表</string>
     <string name="app_manage_selected">已显示在首页</string>
     <string name="app_manage_unselected">未显示在首页</string>

@@ -151,7 +151,8 @@ class MainActivity : FontScaleActivity() {
         val permissionGranted = hasCoarseLocationPermission()
         when (
             initialWeatherLocationAction(
-                hasCity = weatherPreferences.hasCity(),
+                hasCity = weatherPreferences.hasCity() &&
+                    weatherPreferences.getCityName() != WeatherLocationResolver.FALLBACK_CITY_NAME,
                 permissionGranted = permissionGranted,
                 permissionRequested = weatherPreferences.wasInitialLocationPermissionRequested(),
             )

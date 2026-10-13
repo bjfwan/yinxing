@@ -140,7 +140,41 @@ class WeChatCallStartVerifierTest {
 
         assertEquals(WeChatCallStartStatus.BLOCKED, assessment.status)
         assertEquals(WeChatCallVerificationAction.FAIL, decision.action)
-        assertEquals("微信缺少视频通话权限", assessment.userMessage)
+        assertEquals("微信缺少相机权限", assessment.userMessage)
+    }
+
+    @Test
+    fun micPermissionBlockReportsMicSpecificMessage() {
+        val assessment = WeChatCallStartVerifier.assess(
+            snapshot = node(children = listOf(node(text = "无法使用麦克风，请在设置中开启权限"))),
+            className = null
+        )
+
+        assertEquals(WeChatCallStartStatus.BLOCKED, assessment.status)
+        assertEquals("微信缺少麦克风权限", assessment.userMessage)
+        assertTrue(assessment.reasons.contains("mic_permission_block"))
+    }
+
+    @Test
+    fun permissionEducationPageWaitsForSystemDialogInsteadOfFailing() {
+        val assessment = WeChatCallStartVerifier.assess(
+            snapshot = node(
+                children = listOf(
+                    node(text = "微信申请获取麦克风权限"),
+                    node(text = "在下方弹窗中选择允许后，你可以在微信中发送语音消息，使用音视频通话、拍摄视频、直播、声音锁等功能。")
+                )
+            ),
+            className = null
+        )
+        val decision = WeChatCallVerificationPolicy.decide(
+            WeChatCallVerificationState(),
+            assessment
+        )
+
+        assertEquals(WeChatCallStartStatus.PENDING, assessment.status)
+        assertEquals(WeChatCallVerificationAction.WAIT, decision.action)
+        assertTrue(assessment.reasons.contains("permission_education"))
+        assertTrue(assessment.reasons.contains("mic"))
     }
 
     @Test

@@ -5,45 +5,55 @@
     android:background="@drawable/bg_gradient"
     android:gravity="center_horizontal"
     android:orientation="vertical"
-    android:padding="32dp">
+    android:padding="@dimen/launcher_spacing_xxl">
 
     <TextView
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="@string/system_dialer_title"
-        android:textColor="@color/launcher_text_primary"
-        android:textSize="34sp"
-        android:textStyle="bold" />
+        style="@style/TextAppearance.OldLauncher.PageTitle"
+        android:text="@string/system_dialer_title" />
 
     <EditText
         android:id="@+id/et_system_dialer_number"
         android:layout_width="match_parent"
         android:layout_height="72dp"
-        android:layout_marginTop="32dp"
+        android:layout_marginTop="@dimen/launcher_spacing_xxl"
         android:background="@drawable/edit_text_background"
         android:gravity="center"
         android:hint="@string/system_dialer_number_hint"
         android:importantForAutofill="no"
         android:inputType="phone"
         android:maxLines="1"
-        android:textColor="@color/launcher_text_primary"
-        android:textSize="30sp" />
+        style="@style/TextAppearance.OldLauncher.Input" />
 
-    <Button
+    <com.google.android.material.card.MaterialCardView
         android:id="@+id/btn_system_dialer_call"
+        style="@style/Widget.OldLauncher.DialogButtonPrimary"
         android:layout_width="match_parent"
         android:layout_height="72dp"
-        android:layout_marginTop="28dp"
-        android:text="@string/action_call"
-        android:textSize="26sp"
-        android:textStyle="bold" />
+        android:layout_marginTop="@dimen/launcher_spacing_xxl">
 
-    <Button
+        <TextView
+            style="@style/TextAppearance.OldLauncher.ButtonPrimary"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:gravity="center"
+            android:text="@string/action_call" />
+    </com.google.android.material.card.MaterialCardView>
+
+    <com.google.android.material.card.MaterialCardView
         android:id="@+id/btn_system_dialer_close"
+        style="@style/Widget.OldLauncher.DialogButtonSecondary"
         android:layout_width="match_parent"
         android:layout_height="64dp"
-        android:layout_marginTop="16dp"
-        android:text="@string/action_cancel"
-        android:textSize="22sp" />
+        android:layout_marginTop="@dimen/launcher_spacing_lg">
+
+        <TextView
+            style="@style/TextAppearance.OldLauncher.ButtonSecondary"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:gravity="center"
+            android:text="@string/action_cancel" />
+    </com.google.android.material.card.MaterialCardView>
 
 </LinearLayout>

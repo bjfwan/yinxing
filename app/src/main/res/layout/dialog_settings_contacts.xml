@@ -23,7 +23,7 @@
             style="@style/Widget.OldLauncher.DialogButtonSuccess"
             android:layout_width="match_parent"
             android:layout_height="@dimen/launcher_dialog_button_height"
-            android:layout_marginTop="24dp">
+            android:layout_marginTop="@dimen/launcher_spacing_xxl">
 
             <LinearLayout
                 android:layout_width="match_parent"
@@ -42,7 +42,7 @@
                     style="@style/TextAppearance.OldLauncher.DialogActionPrimary"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:layout_marginStart="10dp"
+                    android:layout_marginStart="@dimen/launcher_spacing_sm"
                     android:text="@string/settings_open_phone_contacts" />
             </LinearLayout>
         </com.google.android.material.card.MaterialCardView>
@@ -52,7 +52,7 @@
             style="@style/Widget.OldLauncher.DialogButtonSuccess"
             android:layout_width="match_parent"
             android:layout_height="@dimen/launcher_dialog_button_height"
-            android:layout_marginTop="12dp">
+            android:layout_marginTop="@dimen/launcher_spacing_md">
 
             <LinearLayout
                 android:layout_width="match_parent"
@@ -71,7 +71,7 @@
                     style="@style/TextAppearance.OldLauncher.DialogActionPrimary"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:layout_marginStart="10dp"
+                    android:layout_marginStart="@dimen/launcher_spacing_sm"
                     android:text="@string/settings_open_video_contacts" />
             </LinearLayout>
         </com.google.android.material.card.MaterialCardView>
@@ -81,7 +81,7 @@
             style="@style/Widget.OldLauncher.DialogButtonSecondary"
             android:layout_width="match_parent"
             android:layout_height="@dimen/launcher_dialog_button_height"
-            android:layout_marginTop="12dp">
+            android:layout_marginTop="@dimen/launcher_spacing_md">
 
             <TextView
                 style="@style/TextAppearance.OldLauncher.DialogActionSecondary"

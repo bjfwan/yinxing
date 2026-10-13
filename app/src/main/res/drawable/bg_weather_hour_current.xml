@@ -4,5 +4,5 @@
         android:angle="135"
         android:endColor="@color/weather_detail_current_end"
         android:startColor="@color/weather_detail_current_start" />
-    <corners android:radius="18dp" />
+    <corners android:radius="@dimen/launcher_radius_md" />
 </shape>

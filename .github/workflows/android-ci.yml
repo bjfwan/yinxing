@@ -70,7 +70,7 @@ jobs:
         run: ./gradlew :app:assembleDebug
 
       - name: Unit tests
-        run: ./gradlew :app:testDebugUnitTest
+        run: ./gradlew :app:testDeviceTestUnitTest
 
       - name: Lint
         run: ./gradlew :app:lintDebug
@@ -149,4 +149,4 @@ jobs:
           profile: Nexus 6
           emulator-options: -no-snapshot-save -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim
           disable-animations: true
-          script: ./gradlew :app:connectedDebugAndroidTest
+          script: ./gradlew :app:connectedDeviceTestAndroidTest

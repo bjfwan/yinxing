@@ -7,7 +7,6 @@ import android.view.View
 import android.widget.EditText
 import android.widget.TextView
 import android.widget.Toast
-import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts
 import com.yinxing.launcher.common.ui.FontScaleActivity
 import androidx.core.view.isVisible
@@ -52,7 +51,7 @@ class VideoCallActivity : FontScaleActivity() {
     private lateinit var pageTitleText: TextView
     private lateinit var modeActionButton: MaterialCardView
     private lateinit var modeActionText: TextView
-    private lateinit var modeSummaryText: TextView
+    private lateinit var addContactButton: MaterialCardView
     private lateinit var searchLayout: MaterialCardView
     private lateinit var searchInput: EditText
     private lateinit var clearSearchButton: MaterialCardView
@@ -67,9 +66,10 @@ class VideoCallActivity : FontScaleActivity() {
     private var searchInputUpdating = false
 
     private val pickImageLauncher = registerForActivityResult(
-        ActivityResultContracts.PickVisualMedia()
-    ) { uri ->
-        if (uri != null) {
+        ActivityResultContracts.StartActivityForResult()
+    ) { result ->
+        val uri = result.data?.data
+        if (result.resultCode == RESULT_OK && uri != null) {
             avatarEditor.edit(uri)
         }
     }
@@ -96,8 +96,8 @@ class VideoCallActivity : FontScaleActivity() {
         pageTitleText = findViewById(R.id.tv_page_title)
         modeActionButton = findViewById(R.id.btn_mode_action)
         modeActionText = findViewById(R.id.tv_mode_action)
-        modeSummaryText = findViewById(R.id.tv_mode_summary)
 
+        addContactButton = findViewById(R.id.btn_add_contact)
         searchLayout = findViewById(R.id.layout_manage_search)
         searchInput = findViewById(R.id.et_contact_search)
         clearSearchButton = findViewById(R.id.btn_clear_search)
@@ -156,10 +156,13 @@ class VideoCallActivity : FontScaleActivity() {
         }
         modeActionButton.setOnClickListener {
             if (viewModel.isManageMode.value) {
-                dialogController.showAddContactDialog()
+                if (launchedFromManageEntry) finish() else viewModel.setManageMode(false)
             } else {
                 viewModel.setManageMode(true)
             }
+        }
+        addContactButton.setOnClickListener {
+            dialogController.showAddContactDialog()
         }
 
         observeViewModel()
@@ -247,19 +250,17 @@ class VideoCallActivity : FontScaleActivity() {
         pageTitleText.text = getString(
             if (isManageMode) R.string.video_manage_title else R.string.video_title
         )
-        val actionText = getString(if (isManageMode) R.string.action_add else R.string.action_manage)
+        val actionText = getString(if (isManageMode) R.string.action_done else R.string.action_manage)
         modeActionText.text = actionText
         modeActionButton.contentDescription = actionText
         modeActionButton.isVisible = true
-        modeSummaryText.text = getString(
-            if (isManageMode) R.string.video_mode_manage_summary else R.string.video_mode_call_summary
-        )
+        addContactButton.isVisible = isManageMode
         searchLayout.isVisible = isManageMode
         clearSearchButton.isVisible = isManageMode && viewModel.searchQuery.value.isNotBlank()
     }
 
     private fun openImagePicker() {
-        pickImageLauncher.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly))
+        pickImageLauncher.launch(AvatarEditorController.imagePickIntent(this))
     }
 
     private fun updateState(contacts: List<Contact>) {

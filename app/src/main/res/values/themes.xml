@@ -17,7 +17,7 @@
 
     <style name="ShapeAppearance.OldLauncher.ContactPhoto" parent="">
         <item name="cornerFamily">rounded</item>
-        <item name="cornerSize">18dp</item>
+        <item name="cornerSize">@dimen/launcher_radius_md</item>
     </style>
 </resources>
 

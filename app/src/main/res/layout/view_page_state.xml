@@ -5,7 +5,7 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_gravity="center"
-        android:layout_margin="24dp"
+        android:layout_margin="@dimen/launcher_spacing_xxl"
         style="@style/Widget.OldLauncher.PageHeroCard">
 
         <LinearLayout
@@ -13,7 +13,7 @@
             android:layout_height="wrap_content"
             android:gravity="center"
             android:orientation="vertical"
-            android:padding="28dp">
+            android:padding="@dimen/launcher_spacing_xxl">
 
             <TextView
                 android:id="@+id/tv_page_state_title"
@@ -28,7 +28,7 @@
                 style="@style/TextAppearance.OldLauncher.StateBody"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="12dp"
+                android:layout_marginTop="@dimen/launcher_spacing_md"
                 android:gravity="center"
                 android:maxWidth="360dp" />
 
@@ -37,7 +37,7 @@
                 style="@style/Widget.OldLauncher.DialogButtonPrimary"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="24dp"
+                android:layout_marginTop="@dimen/launcher_spacing_xxl"
                 android:visibility="gone">
 
                 <TextView
@@ -45,10 +45,10 @@
                     style="@style/TextAppearance.OldLauncher.ButtonPrimary"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:paddingStart="28dp"
-                    android:paddingTop="14dp"
-                    android:paddingEnd="28dp"
-                    android:paddingBottom="14dp" />
+                    android:paddingStart="@dimen/launcher_spacing_xxl"
+                    android:paddingTop="@dimen/launcher_spacing_md"
+                    android:paddingEnd="@dimen/launcher_spacing_xxl"
+                    android:paddingBottom="@dimen/launcher_spacing_md" />
 
             </com.google.android.material.card.MaterialCardView>
 

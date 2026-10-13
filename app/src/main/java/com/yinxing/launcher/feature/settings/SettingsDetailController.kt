@@ -8,7 +8,6 @@ import android.hardware.Sensor
 import android.hardware.SensorManager
 import android.net.Uri
 import android.os.Build
-import android.util.TypedValue
 import android.view.View
 import android.widget.EditText
 import android.widget.FrameLayout
@@ -1130,7 +1129,7 @@ internal class SettingsDetailController(private val activity: SettingsActivity) 
         findViewById<View>(R.id.detail_row_click_target).minimumHeight =
             (56 * resources.displayMetrics.density).toInt()
         findViewById<TextView>(R.id.detail_row_title)
-            .setTextSize(TypedValue.COMPLEX_UNIT_SP, 15f)
+            .setTextAppearance(R.style.TextAppearance_OldLauncher_DialogSectionLabel)
         if (hideSummary) {
             findViewById<View>(R.id.detail_row_summary).visibility = View.GONE
         }

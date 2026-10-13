@@ -9,9 +9,9 @@ class LobsterUsageEventTest {
     fun `catalog covers non WeChat client usage`() {
         val events = LobsterUsageEvents.all
 
-        assertEquals(17, events.size)
+        assertEquals(19, events.size)
         assertEquals(
-            setOf("应用启动", "首页入口", "电话拨出", "跌倒检测", "跌倒求助", "主线程卡死"),
+            setOf("应用启动", "首页入口", "电话拨出", "跌倒检测", "跌倒求助", "主线程卡死", "微信视频"),
             events.map { it.scene }.toSet()
         )
         assertEquals(LobsterReportStatus.ERROR, LobsterUsageEvents.APP_OPEN_FAILED.status)

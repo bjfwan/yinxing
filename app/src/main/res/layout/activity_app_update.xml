@@ -10,8 +10,8 @@
     <FrameLayout
         android:layout_width="match_parent"
         android:layout_height="56dp"
-        android:paddingStart="12dp"
-        android:paddingEnd="12dp">
+        android:paddingStart="@dimen/launcher_spacing_md"
+        android:paddingEnd="@dimen/launcher_spacing_md">
 
         <ImageButton
             android:id="@+id/app_update_back"
@@ -20,17 +20,15 @@
             android:layout_gravity="start|center_vertical"
             android:background="@drawable/bg_weather_toolbar_action"
             android:contentDescription="@string/action_back"
-            android:padding="12dp"
+            android:padding="@dimen/launcher_spacing_md"
             android:src="@drawable/ic_weather_detail_back" />
 
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_gravity="center"
-            android:text="@string/settings_update_title"
-            android:textColor="@color/launcher_text_primary"
-            android:textSize="21sp"
-            android:textStyle="bold" />
+            style="@style/TextAppearance.OldLauncher.PageTitle"
+            android:text="@string/settings_update_title" />
     </FrameLayout>
 
     <ScrollView
@@ -56,7 +54,7 @@
                     android:layout_height="wrap_content"
                     android:gravity="center_vertical"
                     android:orientation="horizontal"
-                    android:padding="14dp">
+                    android:padding="@dimen/launcher_spacing_md">
 
                     <ImageView
                         android:layout_width="64dp"
@@ -67,7 +65,7 @@
                     <LinearLayout
                         android:layout_width="0dp"
                         android:layout_height="wrap_content"
-                        android:layout_marginStart="14dp"
+                        android:layout_marginStart="@dimen/launcher_spacing_md"
                         android:layout_weight="1"
                         android:orientation="vertical">
 
@@ -81,7 +79,7 @@
                             style="@style/TextAppearance.OldLauncher.DialogSupporting"
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"
-                            android:layout_marginTop="4dp"
+                            android:layout_marginTop="@dimen/launcher_spacing_xs"
                             android:text="@string/settings_update_caregiver_hint" />
                     </LinearLayout>
                 </LinearLayout>
@@ -98,8 +96,8 @@
                     android:layout_height="wrap_content"
                     android:divider="@drawable/bg_settings_group_divider"
                     android:orientation="vertical"
-                    android:paddingStart="14dp"
-                    android:paddingEnd="14dp"
+                    android:paddingStart="@dimen/launcher_spacing_md"
+                    android:paddingEnd="@dimen/launcher_spacing_md"
                     android:showDividers="middle">
 
                     <LinearLayout
@@ -108,8 +106,8 @@
                         android:gravity="center_vertical"
                         android:minHeight="@dimen/launcher_dialog_control_height"
                         android:orientation="horizontal"
-                        android:paddingTop="10dp"
-                        android:paddingBottom="10dp">
+                        android:paddingTop="@dimen/launcher_spacing_md"
+                        android:paddingBottom="@dimen/launcher_spacing_md">
 
                         <TextView
                             style="@style/TextAppearance.OldLauncher.DialogSectionLabel"
@@ -131,8 +129,8 @@
                         android:gravity="center_vertical"
                         android:minHeight="@dimen/launcher_dialog_control_height"
                         android:orientation="horizontal"
-                        android:paddingTop="10dp"
-                        android:paddingBottom="10dp">
+                        android:paddingTop="@dimen/launcher_spacing_md"
+                        android:paddingBottom="@dimen/launcher_spacing_md">
 
                         <TextView
                             style="@style/TextAppearance.OldLauncher.DialogSectionLabel"
@@ -154,8 +152,8 @@
                         android:gravity="center_vertical"
                         android:minHeight="@dimen/launcher_dialog_control_height"
                         android:orientation="horizontal"
-                        android:paddingTop="10dp"
-                        android:paddingBottom="10dp">
+                        android:paddingTop="@dimen/launcher_spacing_md"
+                        android:paddingBottom="@dimen/launcher_spacing_md">
 
                         <TextView
                             style="@style/TextAppearance.OldLauncher.DialogSectionLabel"
@@ -177,8 +175,8 @@
                         android:gravity="center_vertical"
                         android:minHeight="@dimen/launcher_dialog_control_height"
                         android:orientation="horizontal"
-                        android:paddingTop="10dp"
-                        android:paddingBottom="10dp">
+                        android:paddingTop="@dimen/launcher_spacing_md"
+                        android:paddingBottom="@dimen/launcher_spacing_md">
 
                         <TextView
                             style="@style/TextAppearance.OldLauncher.DialogSectionLabel"
@@ -192,7 +190,7 @@
                             style="@style/TextAppearance.OldLauncher.DialogSupporting"
                             android:layout_width="0dp"
                             android:layout_height="wrap_content"
-                            android:layout_marginStart="12dp"
+                            android:layout_marginStart="@dimen/launcher_spacing_md"
                             android:layout_weight="1"
                             android:gravity="end"
                             android:textColor="@color/launcher_action_dark" />
@@ -212,7 +210,7 @@
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:orientation="vertical"
-                    android:padding="14dp">
+                    android:padding="@dimen/launcher_spacing_md">
 
                     <TextView
                         android:id="@+id/tv_update_announcement_title"
@@ -226,8 +224,8 @@
                         style="@style/TextAppearance.OldLauncher.DialogSupporting"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:layout_marginTop="8dp"
-                        android:lineSpacingExtra="3dp"
+                        android:layout_marginTop="@dimen/launcher_spacing_sm"
+                        android:lineSpacingExtra="@dimen/launcher_spacing_xs"
                         android:textColor="@color/launcher_text_primary" />
                 </LinearLayout>
             </com.google.android.material.card.MaterialCardView>
@@ -244,7 +242,7 @@
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:orientation="vertical"
-                    android:padding="14dp">
+                    android:padding="@dimen/launcher_spacing_md">
 
                     <TextView
                         style="@style/TextAppearance.OldLauncher.DialogSectionLabel"
@@ -257,8 +255,8 @@
                         style="@style/TextAppearance.OldLauncher.DialogSupporting"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:layout_marginTop="8dp"
-                        android:lineSpacingExtra="3dp"
+                        android:layout_marginTop="@dimen/launcher_spacing_sm"
+                        android:lineSpacingExtra="@dimen/launcher_spacing_xs"
                         android:textColor="@color/launcher_text_primary" />
                 </LinearLayout>
             </com.google.android.material.card.MaterialCardView>
@@ -286,7 +284,7 @@
             style="@style/TextAppearance.OldLauncher.DialogSupporting"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginTop="6dp"
+            android:layout_marginTop="@dimen/launcher_spacing_sm"
             android:gravity="center"
             android:visibility="gone" />
 
@@ -295,15 +293,15 @@
             style="@style/TextAppearance.OldLauncher.DialogSupporting"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginTop="6dp"
-            android:lineSpacingExtra="3dp" />
+            android:layout_marginTop="@dimen/launcher_spacing_sm"
+            android:lineSpacingExtra="@dimen/launcher_spacing_xs" />
 
         <com.google.android.material.card.MaterialCardView
             android:id="@+id/btn_update_action"
             style="@style/Widget.OldLauncher.DialogButtonPrimary"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginTop="12dp">
+            android:layout_marginTop="@dimen/launcher_spacing_md">
 
             <TextView
                 android:id="@+id/tv_update_action_label"

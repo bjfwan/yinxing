@@ -30,7 +30,7 @@
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginTop="24dp"
+            android:layout_marginTop="@dimen/launcher_spacing_xxl"
             android:orientation="horizontal">
 
             <com.google.android.material.card.MaterialCardView
@@ -38,7 +38,7 @@
                 style="@style/Widget.OldLauncher.DialogButtonSecondary"
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
-                android:layout_marginEnd="6dp"
+                android:layout_marginEnd="@dimen/launcher_spacing_xs"
                 android:layout_weight="1">
 
                 <TextView
@@ -47,10 +47,10 @@
                     android:layout_height="wrap_content"
                     android:gravity="center"
                     android:minHeight="@dimen/launcher_dialog_button_height"
-                    android:paddingStart="16dp"
-                    android:paddingTop="14dp"
-                    android:paddingEnd="16dp"
-                    android:paddingBottom="14dp"
+                    android:paddingStart="@dimen/launcher_spacing_lg"
+                    android:paddingTop="@dimen/launcher_spacing_md"
+                    android:paddingEnd="@dimen/launcher_spacing_lg"
+                    android:paddingBottom="@dimen/launcher_spacing_md"
                     android:text="@string/action_cancel" />
             </com.google.android.material.card.MaterialCardView>
 
@@ -59,7 +59,7 @@
                 style="@style/Widget.OldLauncher.DialogButtonDanger"
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
-                android:layout_marginStart="6dp"
+                android:layout_marginStart="@dimen/launcher_spacing_xs"
                 android:layout_weight="1">
 
                 <TextView
@@ -68,10 +68,10 @@
                     android:layout_height="wrap_content"
                     android:gravity="center"
                     android:minHeight="@dimen/launcher_dialog_button_height"
-                    android:paddingStart="12dp"
-                    android:paddingTop="14dp"
-                    android:paddingEnd="12dp"
-                    android:paddingBottom="14dp"
+                    android:paddingStart="@dimen/launcher_spacing_md"
+                    android:paddingTop="@dimen/launcher_spacing_md"
+                    android:paddingEnd="@dimen/launcher_spacing_md"
+                    android:paddingBottom="@dimen/launcher_spacing_md"
                     android:text="@string/action_delete" />
             </com.google.android.material.card.MaterialCardView>
         </LinearLayout>

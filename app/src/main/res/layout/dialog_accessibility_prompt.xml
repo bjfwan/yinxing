@@ -16,7 +16,7 @@
             android:layout_width="56dp"
             android:layout_height="56dp"
             android:layout_gravity="center_horizontal"
-            android:layout_marginBottom="16dp"
+            android:layout_marginBottom="@dimen/launcher_spacing_lg"
             android:contentDescription="@string/settings_vendor_icon_description"
             android:scaleType="fitCenter"
             android:visibility="gone" />
@@ -43,7 +43,7 @@
             android:id="@+id/layout_dialog_actions"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginTop="24dp"
+            android:layout_marginTop="@dimen/launcher_spacing_xxl"
             android:orientation="horizontal">
 
             <com.google.android.material.card.MaterialCardView
@@ -51,7 +51,7 @@
                 style="@style/Widget.OldLauncher.DialogButtonSecondary"
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
-                android:layout_marginEnd="6dp"
+                android:layout_marginEnd="@dimen/launcher_spacing_xs"
                 android:layout_weight="1">
 
                 <TextView
@@ -61,10 +61,10 @@
                     android:layout_height="wrap_content"
                     android:gravity="center"
                     android:minHeight="@dimen/launcher_dialog_button_height"
-                    android:paddingStart="16dp"
-                    android:paddingTop="14dp"
-                    android:paddingEnd="16dp"
-                    android:paddingBottom="14dp"
+                    android:paddingStart="@dimen/launcher_spacing_lg"
+                    android:paddingTop="@dimen/launcher_spacing_md"
+                    android:paddingEnd="@dimen/launcher_spacing_lg"
+                    android:paddingBottom="@dimen/launcher_spacing_md"
                     android:text="@string/action_cancel" />
 
             </com.google.android.material.card.MaterialCardView>
@@ -74,7 +74,7 @@
                 style="@style/Widget.OldLauncher.DialogButtonPrimary"
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
-                android:layout_marginStart="6dp"
+                android:layout_marginStart="@dimen/launcher_spacing_xs"
                 android:layout_weight="1">
 
                 <TextView
@@ -84,10 +84,10 @@
                     android:layout_height="wrap_content"
                     android:gravity="center"
                     android:minHeight="@dimen/launcher_dialog_button_height"
-                    android:paddingStart="16dp"
-                    android:paddingTop="14dp"
-                    android:paddingEnd="16dp"
-                    android:paddingBottom="14dp"
+                    android:paddingStart="@dimen/launcher_spacing_lg"
+                    android:paddingTop="@dimen/launcher_spacing_md"
+                    android:paddingEnd="@dimen/launcher_spacing_lg"
+                    android:paddingBottom="@dimen/launcher_spacing_md"
                     android:text="@string/action_go_to_settings" />
 
             </com.google.android.material.card.MaterialCardView>

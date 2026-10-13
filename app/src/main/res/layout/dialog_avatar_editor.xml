@@ -28,7 +28,7 @@
             style="@style/TextAppearance.OldLauncher.DialogSupporting"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginTop="12dp"
+            android:layout_marginTop="@dimen/launcher_spacing_md"
             android:gravity="center"
             android:text="@string/avatar_crop_tip" />
 
@@ -43,7 +43,7 @@
                 style="@style/Widget.OldLauncher.DialogButtonSecondary"
                 android:layout_width="0dp"
                 android:layout_height="match_parent"
-                android:layout_marginEnd="6dp"
+                android:layout_marginEnd="@dimen/launcher_spacing_xs"
                 android:layout_weight="1">
 
                 <TextView
@@ -59,7 +59,7 @@
                 style="@style/Widget.OldLauncher.DialogButtonPrimary"
                 android:layout_width="0dp"
                 android:layout_height="match_parent"
-                android:layout_marginStart="6dp"
+                android:layout_marginStart="@dimen/launcher_spacing_xs"
                 android:layout_weight="1">
 
                 <TextView

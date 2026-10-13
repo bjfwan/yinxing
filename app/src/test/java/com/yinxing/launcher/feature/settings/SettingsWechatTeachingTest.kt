@@ -77,8 +77,8 @@ class SettingsWechatTeachingTest {
         assertTrue(titleMatches.isEmpty())
         assertEquals(expectedWidth, root.layoutParams.width)
         assertEquals(expectedButtonHeight, primary.layoutParams.height)
-        assertEquals(11f, message.textSize / scaledDensity, 0.1f)
-        assertEquals(13f, primary.textSize / scaledDensity, 0.1f)
+        assertEquals(14f, message.textSize / scaledDensity, 0.1f)
+        assertEquals(18f, primary.textSize / scaledDensity, 0.1f)
     }
 
     @Test

@@ -4,7 +4,7 @@
     style="@style/Widget.OldLauncher.DialogContentCard"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:layout_marginTop="8dp"
+    android:layout_marginTop="@dimen/launcher_spacing_sm"
     android:clickable="true"
     android:focusable="true"
     android:foreground="?android:attr/selectableItemBackground">
@@ -15,16 +15,16 @@
         android:gravity="center_vertical"
         android:minHeight="76dp"
         android:orientation="horizontal"
-        android:padding="14dp">
+        android:padding="@dimen/launcher_spacing_lg">
 
         <ImageView
             android:id="@+id/iv_permission_item_icon"
             android:layout_width="44dp"
             android:layout_height="44dp"
-            android:layout_marginEnd="12dp"
+            android:layout_marginEnd="@dimen/launcher_spacing_md"
             android:background="@drawable/bg_settings_icon_plate"
             android:importantForAccessibility="no"
-            android:padding="9dp"
+            android:padding="@dimen/launcher_spacing_sm"
             android:visibility="gone" />
 
         <LinearLayout
@@ -52,10 +52,10 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:background="@drawable/edit_text_background"
-                    android:paddingStart="10dp"
-                    android:paddingTop="4dp"
-                    android:paddingEnd="10dp"
-                    android:paddingBottom="4dp" />
+                    android:paddingStart="@dimen/launcher_spacing_md"
+                    android:paddingTop="@dimen/launcher_spacing_xs"
+                    android:paddingEnd="@dimen/launcher_spacing_md"
+                    android:paddingBottom="@dimen/launcher_spacing_xs" />
             </LinearLayout>
 
             <TextView
@@ -63,7 +63,7 @@
                 style="@style/TextAppearance.OldLauncher.DialogSupporting"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="6dp" />
+                android:layout_marginTop="@dimen/launcher_spacing_sm" />
         </LinearLayout>
     </LinearLayout>
 </com.google.android.material.card.MaterialCardView>

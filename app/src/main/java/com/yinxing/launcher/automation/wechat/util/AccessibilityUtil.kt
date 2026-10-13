@@ -197,6 +197,10 @@ object AccessibilityUtil {
         return node.performAction(AccessibilityNodeInfo.ACTION_SET_TEXT, arguments)
     }
 
+    fun safeRootInActiveWindow(service: AccessibilityService): AccessibilityNodeInfo? {
+        return runCatching { service.rootInActiveWindow }.getOrNull()
+    }
+
     @Suppress("DEPRECATION")
     fun safeRecycle(node: AccessibilityNodeInfo?) {
         try {

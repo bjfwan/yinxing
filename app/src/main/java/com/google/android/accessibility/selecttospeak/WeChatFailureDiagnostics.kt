@@ -4,6 +4,8 @@ import android.accessibilityservice.AccessibilityService
 import android.content.Context
 import android.view.accessibility.AccessibilityNodeInfo
 import com.yinxing.launcher.automation.wechat.util.AccessibilityUtil
+import com.yinxing.launcher.common.lobster.LobsterStepOutcome
+import com.yinxing.launcher.common.lobster.LobsterTraceStep
 import com.yinxing.launcher.common.util.DebugLog
 import java.io.File
 import org.json.JSONArray
@@ -24,7 +26,8 @@ internal data class WeChatFailureSnapshot(
     val taskStep: String? = null,
     val taskReason: String? = null,
     val capabilityId: String? = null,
-    val capabilityFailure: String? = null
+    val capabilityFailure: String? = null,
+    val steps: List<LobsterTraceStep> = emptyList()
 )
 
 internal data class WeChatFailureReplay(
@@ -155,6 +158,18 @@ internal object WeChatFailureDiagnostics {
             .put("taskReason", session.taskReason)
             .put("capabilityId", session.capabilityId)
             .put("capabilityFailure", session.capabilityFailure)
+            .put("steps", JSONArray().apply {
+                session.steps.forEach { step ->
+                    put(JSONObject().apply {
+                        put("action", step.action)
+                        put("outcome", step.outcome.wireValue)
+                        put("stepCode", step.stepCode)
+                        step.detail?.let { put("detail", it.take(500)) }
+                        step.durationMs?.let { put("durationMs", it) }
+                        put("occurredAt", step.occurredAt)
+                    })
+                }
+            })
     }
 
     private fun sessionFromJson(json: JSONObject): WeChatFailureSnapshot {
@@ -173,7 +188,8 @@ internal object WeChatFailureDiagnostics {
             taskStep = json.optString("taskStep").takeIf { it.isNotEmpty() },
             taskReason = json.optString("taskReason").takeIf { it.isNotEmpty() },
             capabilityId = json.optString("capabilityId").takeIf { it.isNotEmpty() },
-            capabilityFailure = json.optString("capabilityFailure").takeIf { it.isNotEmpty() }
+            capabilityFailure = json.optString("capabilityFailure").takeIf { it.isNotEmpty() },
+            steps = jsonToSteps(json.optJSONArray("steps"))
         )
     }
 
@@ -250,6 +266,26 @@ internal object WeChatFailureDiagnostics {
     private fun jsonToLongMap(json: JSONObject?): Map<String, Long> {
         if (json == null) return emptyMap()
         return json.keys().asSequence().associateWith { json.optLong(it) }
+    }
+
+    private fun jsonToSteps(array: JSONArray?): List<LobsterTraceStep> {
+        if (array == null) return emptyList()
+        return buildList {
+            for (index in 0 until array.length()) {
+                val item = array.optJSONObject(index) ?: continue
+                add(LobsterTraceStep(
+                    stepCode = item.optString("stepCode"),
+                    stepName = item.optString("stepCode"),
+                    action = item.optString("action"),
+                    outcome = LobsterStepOutcome.entries
+                        .firstOrNull { it.wireValue == item.optString("outcome") }
+                        ?: LobsterStepOutcome.REPORTED,
+                    detail = item.optString("detail").takeIf { it.isNotEmpty() },
+                    durationMs = item.optLong("durationMs").takeIf { item.has("durationMs") },
+                    occurredAt = item.optString("occurredAt")
+                ))
+            }
+        }
     }
 
     private fun jsonToStringList(array: JSONArray?): List<String> {

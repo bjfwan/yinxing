@@ -2,7 +2,9 @@ package com.yinxing.launcher.data.weather
 
 import com.yinxing.launcher.data.weather.source.OpenMeteoWeatherDataSource
 import kotlinx.coroutines.test.runTest
+import org.json.JSONArray
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
@@ -80,7 +82,62 @@ class OpenMeteoWeatherDataSourceTest {
         val weather = OpenMeteoWeatherDataSource(client).fetchWeather("火星基地")
 
         assertEquals(null, weather)
-        assertEquals(1, client.urls.size)
+        assertTrue(client.urls.isNotEmpty())
+        assertTrue(client.urls.all { it.contains("geocoding-api") })
+    }
+
+    @Test
+    fun `retries with suffix and split candidates until a confident match appears`() = runTest {
+        val client = FakeWeatherApiClient { url ->
+            when {
+                url.contains("name=%E5%8C%97%E4%BA%AC%E6%9C%9D%E9%98%B3") -> """{"results":[]}"""
+                url.contains("name=%E6%9C%9D%E9%98%B3") -> """
+                    {"results":[{"name":"朝阳","latitude":31.4,"longitude":109.0,
+                      "feature_code":"PPLA4","admin1":"重庆市","population":13524}]}
+                    """.trimIndent()
+                url.contains("name=%E5%8C%97%E4%BA%AC") -> """
+                    {"results":[{"name":"北京","latitude":39.9,"longitude":116.4,
+                      "feature_code":"PPLC","admin1":"北京市","population":21000000}]}
+                    """.trimIndent()
+                url.contains("forecast") -> """
+                    {
+                      "current": {"time":"2026-10-13T10:00","temperature_2m":20.0,
+                        "relative_humidity_2m":50,"weather_code":0,
+                        "wind_speed_10m":8.0,"wind_direction_10m":0},
+                      "hourly": {"time":["2026-10-13T10:00"],"temperature_2m":[20.0],
+                        "weather_code":[0],"precipitation_probability":[0]},
+                      "daily": {"time":["2026-10-13"],"weather_code":[0],
+                        "temperature_2m_max":[24.0],"temperature_2m_min":[15.0]}
+                    }
+                    """.trimIndent()
+                else -> """{"results":[]}"""
+            }
+        }
+
+        val weather = OpenMeteoWeatherDataSource(client).fetchWeather("北京朝阳")
+
+        requireNotNull(weather)
+        assertEquals("39.9,116.4", weather.locationKey)
+        assertEquals("北京朝阳", weather.now.cityName)
+        // 原始拼接查空 → 尾部“朝阳”命中乡镇但置信不足 → 继续拆到“北京”兜底
+        assertTrue(client.urls.any { it.contains("name=%E5%8C%97%E4%BA%AC") })
+    }
+
+    @Test
+    fun `candidateQueries completes suffixes for bare short names`() {
+        val source = OpenMeteoWeatherDataSource(FakeWeatherApiClient { "{}" })
+
+        assertEquals(listOf("朝阳", "朝阳市", "朝阳县", "朝阳区"), source.candidateQueries("朝阳"))
+    }
+
+    @Test
+    fun `candidateQueries splits concatenated input into tail and head`() {
+        val source = OpenMeteoWeatherDataSource(FakeWeatherApiClient { "{}" })
+
+        val queries = source.candidateQueries("北京朝阳")
+
+        assertEquals("北京朝阳", queries.first())
+        assertTrue("朝阳" in queries && "北京" in queries)
     }
 
     @Test
@@ -121,6 +178,72 @@ class OpenMeteoWeatherDataSourceTest {
         assertEquals("39.9042,116.4074", weather.locationKey)
         assertEquals(1, client.urls.size)
         assertTrue(client.urls.single().contains("latitude=39.9042&longitude=116.4074"))
+    }
+
+    @Test
+    fun `pickLocation prefers exact name match over first result`() {
+        val results = JSONArray(
+            """[
+              {"name":"朝阳街道","latitude":41.5,"longitude":120.4,"admin2":"朝阳市","population":500},
+              {"name":"朝阳区","latitude":39.9,"longitude":116.4,"admin1":"北京市","population":3600000}
+            ]"""
+        )
+        val source = OpenMeteoWeatherDataSource(FakeWeatherApiClient { "{}" })
+
+        val picked = source.pickLocation(results, "朝阳区")
+
+        assertEquals(39.9, picked?.getDouble("latitude") ?: 0.0, 0.001)
+    }
+
+    @Test
+    fun `pickLocation uses admin context to disambiguate same-named districts`() {
+        val results = JSONArray(
+            """[
+              {"name":"朝阳区","latitude":43.8,"longitude":125.3,"admin1":"吉林省","admin2":"长春市","population":700000},
+              {"name":"朝阳区","latitude":39.9,"longitude":116.4,"admin1":"北京市","admin2":"北京市","population":3600000}
+            ]"""
+        )
+        val source = OpenMeteoWeatherDataSource(FakeWeatherApiClient { "{}" })
+
+        val picked = source.pickLocation(results, "长春朝阳区")
+
+        assertEquals(43.8, picked?.getDouble("latitude") ?: 0.0, 0.001)
+    }
+
+    @Test
+    fun `pickLocation breaks ties by population`() {
+        val results = JSONArray(
+            """[
+              {"name":"象山区","latitude":25.2,"longitude":110.3,"admin2":"桂林市","population":200000},
+              {"name":"象山县","latitude":29.4,"longitude":121.8,"admin2":"宁波市","population":500000}
+            ]"""
+        )
+        val source = OpenMeteoWeatherDataSource(FakeWeatherApiClient { "{}" })
+
+        val picked = source.pickLocation(results, "象山")
+
+        assertEquals(29.4, picked?.getDouble("latitude") ?: 0.0, 0.001)
+    }
+
+    @Test
+    fun `pickLocation returns null when nothing matches the query`() {
+        val results = JSONArray(
+            """[{"name":"哈尔滨市","latitude":45.8,"longitude":126.5,"population":9000000}]"""
+        )
+        val source = OpenMeteoWeatherDataSource(FakeWeatherApiClient { "{}" })
+
+        assertNull(source.pickLocation(results, "火星基地"))
+    }
+
+    @Test
+    fun `normalizePlaceName strips administrative suffixes`() {
+        val source = OpenMeteoWeatherDataSource(FakeWeatherApiClient { "{}" })
+
+        assertEquals("北京", source.normalizePlaceName("北京市"))
+        assertEquals("朝阳", source.normalizePlaceName("朝阳区"))
+        assertEquals("象山", source.normalizePlaceName("象山县"))
+        assertEquals("内蒙古", source.normalizePlaceName("内蒙古自治区"))
+        assertEquals("凤凰古城", source.normalizePlaceName("凤凰古城"))
     }
 
     private class FakeWeatherApiClient(

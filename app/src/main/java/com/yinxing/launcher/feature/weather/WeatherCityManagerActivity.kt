@@ -116,7 +116,9 @@ class WeatherCityManagerActivity : FontScaleActivity() {
                 this@WeatherCityManagerActivity,
             )
             if (state.now == null) {
-                showLocationFailure(R.string.weather_location_failed)
+                showLocationFailure(
+                    getString(R.string.weather_location_weather_failed, location.cityName)
+                )
                 return@launch
             }
             preferences.setCurrentLocation(location.cityName, location.latitude, location.longitude)
@@ -131,7 +133,9 @@ class WeatherCityManagerActivity : FontScaleActivity() {
         }
     }
 
-    private fun showLocationFailure(message: Int) {
+    private fun showLocationFailure(message: Int) = showLocationFailure(getString(message))
+
+    private fun showLocationFailure(message: CharSequence) {
         binding.btnUseCurrentLocation.isEnabled = true
         binding.tvUseCurrentLocation.setText(R.string.weather_city_use_current_location)
         Toast.makeText(this, message, Toast.LENGTH_LONG).show()

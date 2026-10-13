@@ -107,6 +107,22 @@ object LobsterUsageEvents {
         errorCode = "MAIN_THREAD_STALLED",
         failedStep = "main_thread"
     )
+    val WECHAT_VIDEO_CALL_ABORTED = event(
+        "微信视频",
+        LobsterReportStatus.REPORTED,
+        "视频通话流程中止",
+        LobsterLogCategory.WECHAT_VIDEO,
+        LobsterEventType.OPERATION,
+        "abort_video_call"
+    )
+    val WECHAT_PERMISSION_AUTO_GRANTED = event(
+        "微信视频",
+        LobsterReportStatus.SUCCESS,
+        "已自动允许微信所需权限",
+        LobsterLogCategory.WECHAT_VIDEO,
+        LobsterEventType.OPERATION,
+        "grant_wechat_permission"
+    )
 
     val all = listOf(
         APP_STARTED,
@@ -125,7 +141,9 @@ object LobsterUsageEvents {
         FALL_ALERT_CANCELLED,
         FALL_FAMILY_CALL_STARTED,
         FALL_FAMILY_CALL_FAILED,
-        MAIN_THREAD_STALLED
+        MAIN_THREAD_STALLED,
+        WECHAT_VIDEO_CALL_ABORTED,
+        WECHAT_PERMISSION_AUTO_GRANTED
     )
 
     private fun event(

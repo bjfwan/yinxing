@@ -29,7 +29,7 @@
         <ScrollView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginTop="12dp"
+            android:layout_marginTop="@dimen/launcher_spacing_md"
             android:clipToPadding="false"
             android:fadeScrollbars="false"
             android:overScrollMode="ifContentScrolls"
@@ -47,7 +47,7 @@
             style="@style/Widget.OldLauncher.DialogButtonSecondary"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginTop="20dp">
+            android:layout_marginTop="@dimen/launcher_spacing_xl">
 
             <TextView
                 style="@style/TextAppearance.OldLauncher.DialogActionSecondary"
@@ -55,10 +55,10 @@
                 android:layout_height="wrap_content"
                 android:gravity="center"
                 android:minHeight="@dimen/launcher_dialog_button_height"
-                android:paddingStart="16dp"
-                android:paddingTop="14dp"
-                android:paddingEnd="16dp"
-                android:paddingBottom="14dp"
+                android:paddingStart="@dimen/launcher_spacing_lg"
+                android:paddingTop="@dimen/launcher_spacing_md"
+                android:paddingEnd="@dimen/launcher_spacing_lg"
+                android:paddingBottom="@dimen/launcher_spacing_md"
                 android:text="@string/settings_permission_dialog_close" />
         </com.google.android.material.card.MaterialCardView>
     </LinearLayout>

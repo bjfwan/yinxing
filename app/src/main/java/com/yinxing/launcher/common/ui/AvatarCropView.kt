@@ -10,6 +10,7 @@ import android.view.MotionEvent
 import android.view.ScaleGestureDetector
 import android.view.View
 import androidx.core.graphics.createBitmap
+import com.yinxing.launcher.R
 import kotlin.math.max
 
 object AvatarCropGeometry {
@@ -67,7 +68,7 @@ class AvatarCropView @JvmOverloads constructor(
         canvas.drawColor(Color.rgb(17, 24, 39))
         drawImage(canvas)
         val inset = borderPaint.strokeWidth / 2f
-        val radius = resources.displayMetrics.density * 22f
+        val radius = resources.getDimension(R.dimen.launcher_radius_lg)
         canvas.drawRoundRect(inset, inset, width - inset, height - inset, radius, radius, borderPaint)
     }
 

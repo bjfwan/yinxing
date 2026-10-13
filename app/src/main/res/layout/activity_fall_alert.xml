@@ -11,72 +11,65 @@
         android:layout_height="match_parent"
         android:gravity="center"
         android:orientation="vertical"
-        android:paddingStart="24dp"
-        android:paddingTop="32dp"
-        android:paddingEnd="24dp"
-        android:paddingBottom="32dp">
+        android:paddingStart="@dimen/launcher_spacing_xxl"
+        android:paddingTop="@dimen/launcher_spacing_xxl"
+        android:paddingEnd="@dimen/launcher_spacing_xxl"
+        android:paddingBottom="@dimen/launcher_spacing_xxl">
 
         <TextView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:gravity="center"
+            style="@style/TextAppearance.OldLauncher.PageTitle"
             android:text="@string/fall_alert_title"
-            android:textColor="@color/launcher_danger"
-            android:textSize="34sp"
-            android:textStyle="bold" />
+            android:textColor="@color/launcher_danger" />
 
         <TextView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginTop="14dp"
+            android:layout_marginTop="@dimen/launcher_spacing_lg"
             android:gravity="center"
-            android:lineSpacingExtra="4dp"
+            style="@style/TextAppearance.OldLauncher.StateBody"
             android:text="@string/fall_alert_message"
-            android:textColor="@color/launcher_text_primary"
-            android:textSize="20sp" />
+            android:textColor="@color/launcher_text_primary" />
 
         <TextView
             android:id="@+id/fall_alert_countdown"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginTop="20dp"
+            android:layout_marginTop="@dimen/launcher_spacing_xl"
+            style="@style/TextAppearance.OldLauncher.HeroTitle"
             android:gravity="center"
-            android:textColor="@color/launcher_danger"
-            android:textSize="72sp"
-            android:textStyle="bold" />
+            android:textColor="@color/launcher_danger" />
 
         <TextView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:gravity="center"
-            android:text="@string/fall_alert_countdown_hint"
-            android:textColor="@color/launcher_text_secondary"
-            android:textSize="18sp" />
+            style="@style/TextAppearance.OldLauncher.SectionSubtitle"
+            android:text="@string/fall_alert_countdown_hint" />
 
         <TextView
+            style="@style/TextAppearance.OldLauncher.PageSubtitle"
             android:id="@+id/fall_alert_contact"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginTop="10dp"
-            android:gravity="center"
-            android:textColor="@color/launcher_text_secondary"
-            android:textSize="17sp" />
+            android:layout_marginTop="@dimen/launcher_spacing_md"
+            android:gravity="center" />
 
         <com.google.android.material.card.MaterialCardView
             android:id="@+id/fall_alert_cancel"
             style="@style/Widget.OldLauncher.DialogButtonSuccess"
             android:layout_width="match_parent"
             android:layout_height="88dp"
-            android:layout_marginTop="26dp"
-            app:cardCornerRadius="24dp">
+            android:layout_marginTop="@dimen/launcher_spacing_xxl">
 
             <TextView
                 style="@style/TextAppearance.OldLauncher.ButtonPrimary"
                 android:layout_width="match_parent"
                 android:layout_height="match_parent"
                 android:gravity="center"
-                android:text="@string/fall_alert_cancel"
-                android:textSize="28sp" />
+                android:text="@string/fall_alert_cancel" />
         </com.google.android.material.card.MaterialCardView>
 
         <com.google.android.material.card.MaterialCardView
@@ -84,16 +77,14 @@
             style="@style/Widget.OldLauncher.DialogButtonDanger"
             android:layout_width="match_parent"
             android:layout_height="72dp"
-            android:layout_marginTop="14dp"
-            app:cardCornerRadius="22dp">
+            android:layout_marginTop="@dimen/launcher_spacing_md">
 
             <TextView
                 style="@style/TextAppearance.OldLauncher.ButtonPrimary"
                 android:layout_width="match_parent"
                 android:layout_height="match_parent"
                 android:gravity="center"
-                android:text="@string/fall_alert_call_now"
-                android:textSize="22sp" />
+                android:text="@string/fall_alert_call_now" />
         </com.google.android.material.card.MaterialCardView>
     </LinearLayout>
 </ScrollView>

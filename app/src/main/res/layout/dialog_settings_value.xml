@@ -29,7 +29,7 @@
                 android:layout_height="wrap_content"
                 android:gravity="center"
                 android:orientation="horizontal"
-                android:padding="12dp">
+                android:padding="@dimen/launcher_spacing_md">
 
                 <TextView
                     android:id="@+id/value_dialog_minus"
@@ -37,22 +37,19 @@
                     android:layout_height="@dimen/launcher_dialog_control_height"
                     android:background="@drawable/edit_text_background"
                     android:gravity="center"
+                    style="@style/TextAppearance.OldLauncher.CardTitle"
                     android:text="−"
-                    android:textColor="@color/launcher_primary_dark"
-                    android:textSize="26sp"
-                    android:textStyle="bold" />
+                    android:textColor="@color/launcher_primary_dark" />
 
                 <TextView
+                    style="@style/TextAppearance.OldLauncher.StateTitle"
                     android:id="@+id/value_dialog_value"
                     android:layout_width="0dp"
                     android:layout_height="@dimen/launcher_dialog_control_height"
-                    android:layout_marginStart="12dp"
-                    android:layout_marginEnd="12dp"
+                    android:layout_marginStart="@dimen/launcher_spacing_md"
+                    android:layout_marginEnd="@dimen/launcher_spacing_md"
                     android:layout_weight="1"
-                    android:gravity="center"
-                    android:textColor="@color/launcher_text_primary"
-                    android:textSize="24sp"
-                    android:textStyle="bold" />
+                    android:gravity="center" />
 
                 <TextView
                     android:id="@+id/value_dialog_plus"
@@ -60,10 +57,9 @@
                     android:layout_height="@dimen/launcher_dialog_control_height"
                     android:background="@drawable/edit_text_background"
                     android:gravity="center"
+                    style="@style/TextAppearance.OldLauncher.CardTitle"
                     android:text="+"
-                    android:textColor="@color/launcher_primary_dark"
-                    android:textSize="26sp"
-                    android:textStyle="bold" />
+                    android:textColor="@color/launcher_primary_dark" />
             </LinearLayout>
         </com.google.android.material.card.MaterialCardView>
 

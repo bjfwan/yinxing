@@ -29,7 +29,7 @@
                 android:id="@+id/layout_contact_identity"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="14dp"
+                android:layout_marginTop="@dimen/launcher_spacing_lg"
                 android:gravity="center_vertical"
                 android:orientation="horizontal">
 
@@ -39,7 +39,7 @@
                     android:layout_height="88dp"
                     android:background="@color/launcher_surface_soft"
                     android:contentDescription="@string/contact_photo_preview"
-                    android:padding="20dp"
+                    android:padding="@dimen/launcher_spacing_xl"
                     android:scaleType="centerCrop"
                     android:src="@drawable/ic_contact_avatar_placeholder"
                     app:shapeAppearanceOverlay="@style/ShapeAppearance.OldLauncher.ContactPhoto" />
@@ -48,7 +48,7 @@
                     style="@style/TextAppearance.OldLauncher.DialogSupporting"
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
-                    android:layout_marginStart="14dp"
+                    android:layout_marginStart="@dimen/launcher_spacing_md"
                     android:layout_weight="1"
                     android:text="@string/contact_dialog_avatar_tip_short" />
             </LinearLayout>
@@ -56,7 +56,7 @@
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="@dimen/launcher_dialog_button_height"
-                android:layout_marginTop="12dp"
+                android:layout_marginTop="@dimen/launcher_spacing_md"
                 android:orientation="horizontal">
 
                 <com.google.android.material.card.MaterialCardView
@@ -64,15 +64,28 @@
                     style="@style/Widget.OldLauncher.DialogButtonSecondary"
                     android:layout_width="0dp"
                     android:layout_height="match_parent"
-                    android:layout_marginEnd="5dp"
+                    android:layout_marginEnd="@dimen/launcher_spacing_xs"
                     android:layout_weight="1">
 
-                    <TextView
-                        style="@style/TextAppearance.OldLauncher.DialogActionSecondary"
+                    <LinearLayout
                         android:layout_width="match_parent"
                         android:layout_height="match_parent"
                         android:gravity="center"
-                        android:text="@string/action_pick_contact_short" />
+                        android:orientation="horizontal">
+
+                        <ImageView
+                            android:layout_width="20dp"
+                            android:layout_height="20dp"
+                            android:importantForAccessibility="no"
+                            android:src="@drawable/ic_contact_book" />
+
+                        <TextView
+                            style="@style/TextAppearance.OldLauncher.DialogActionSecondary"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginStart="@dimen/launcher_spacing_xs"
+                            android:text="@string/action_pick_contact_short" />
+                    </LinearLayout>
                 </com.google.android.material.card.MaterialCardView>
 
                 <com.google.android.material.card.MaterialCardView
@@ -80,25 +93,38 @@
                     style="@style/Widget.OldLauncher.DialogButtonSecondary"
                     android:layout_width="0dp"
                     android:layout_height="match_parent"
-                    android:layout_marginStart="5dp"
+                    android:layout_marginStart="@dimen/launcher_spacing_xs"
                     android:layout_weight="1">
 
-                    <TextView
-                        style="@style/TextAppearance.OldLauncher.DialogActionSecondary"
+                    <LinearLayout
                         android:layout_width="match_parent"
                         android:layout_height="match_parent"
                         android:gravity="center"
-                        android:text="@string/action_edit_avatar" />
+                        android:orientation="horizontal">
+
+                        <ImageView
+                            android:layout_width="20dp"
+                            android:layout_height="20dp"
+                            android:importantForAccessibility="no"
+                            android:src="@drawable/ic_image" />
+
+                        <TextView
+                            style="@style/TextAppearance.OldLauncher.DialogActionSecondary"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:layout_marginStart="@dimen/launcher_spacing_xs"
+                            android:text="@string/action_edit_avatar" />
+                    </LinearLayout>
                 </com.google.android.material.card.MaterialCardView>
             </LinearLayout>
 
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="14dp"
+                android:layout_marginTop="@dimen/launcher_spacing_lg"
                 android:background="@drawable/bg_settings_mode_capsule"
                 android:orientation="vertical"
-                android:padding="14dp">
+                android:padding="@dimen/launcher_spacing_lg">
 
                 <TextView
                     style="@style/TextAppearance.OldLauncher.DialogSectionLabel"
@@ -111,21 +137,21 @@
                     style="@style/TextAppearance.OldLauncher.DialogInput"
                     android:layout_width="match_parent"
                     android:layout_height="@dimen/launcher_dialog_control_height"
-                    android:layout_marginTop="8dp"
+                    android:layout_marginTop="@dimen/launcher_spacing_sm"
                     android:autofillHints="personName"
                     android:background="@drawable/edit_text_background_focused"
                     android:hint="@string/hint_name"
                     android:imeOptions="actionNext"
                     android:inputType="textPersonName"
                     android:maxLines="1"
-                    android:paddingStart="16dp"
-                    android:paddingEnd="16dp" />
+                    android:paddingStart="@dimen/launcher_spacing_lg"
+                    android:paddingEnd="@dimen/launcher_spacing_lg" />
 
                 <TextView
                     style="@style/TextAppearance.OldLauncher.DialogSectionLabel"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:layout_marginTop="14dp"
+                    android:layout_marginTop="@dimen/launcher_spacing_md"
                     android:text="@string/label_phone" />
 
                 <EditText
@@ -133,22 +159,22 @@
                     style="@style/TextAppearance.OldLauncher.DialogInput"
                     android:layout_width="match_parent"
                     android:layout_height="@dimen/launcher_dialog_control_height"
-                    android:layout_marginTop="8dp"
+                    android:layout_marginTop="@dimen/launcher_spacing_sm"
                     android:autofillHints="phone"
                     android:background="@drawable/edit_text_background_focused"
                     android:hint="@string/hint_phone"
                     android:imeOptions="actionDone"
                     android:inputType="phone"
                     android:maxLines="1"
-                    android:paddingStart="16dp"
-                    android:paddingEnd="16dp" />
+                    android:paddingStart="@dimen/launcher_spacing_lg"
+                    android:paddingEnd="@dimen/launcher_spacing_lg" />
             </LinearLayout>
 
             <com.google.android.material.card.MaterialCardView
                 style="@style/Widget.OldLauncher.DialogContentCard"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="12dp">
+                android:layout_marginTop="@dimen/launcher_spacing_md">
 
                 <LinearLayout
                     android:layout_width="match_parent"
@@ -156,7 +182,7 @@
                     android:gravity="center_vertical"
                     android:minHeight="72dp"
                     android:orientation="horizontal"
-                    android:padding="14dp">
+                    android:padding="@dimen/launcher_spacing_lg">
 
                     <LinearLayout
                         android:layout_width="0dp"
@@ -174,19 +200,24 @@
                             style="@style/TextAppearance.OldLauncher.DialogSupporting"
                             android:layout_width="match_parent"
                             android:layout_height="wrap_content"
-                            android:layout_marginTop="4dp"
+                            android:layout_marginTop="@dimen/launcher_spacing_xs"
                             android:text="@string/contact_auto_answer_tip_short" />
                     </LinearLayout>
 
-                    <androidx.appcompat.widget.SwitchCompat
-                        android:id="@+id/sw_auto_answer"
+                    <FrameLayout
+                        android:id="@+id/btn_auto_answer_toggle"
                         android:layout_width="wrap_content"
                         android:layout_height="@dimen/launcher_dialog_control_height"
-                        android:layout_marginStart="12dp"
-                        android:contentDescription="@string/contact_auto_answer_label"
-                        android:minHeight="@dimen/launcher_dialog_control_height"
-                        app:thumbTint="@color/switch_thumb_color"
-                        app:trackTint="@color/switch_track_color" />
+                        android:layout_marginStart="@dimen/launcher_spacing_md"
+                        android:clickable="true">
+
+                        <com.yinxing.launcher.feature.settings.SettingsToggle
+                            android:id="@+id/sw_auto_answer"
+                            android:layout_width="42dp"
+                            android:layout_height="32dp"
+                            android:layout_gravity="center"
+                            android:contentDescription="@string/contact_auto_answer_label" />
+                    </FrameLayout>
                 </LinearLayout>
             </com.google.android.material.card.MaterialCardView>
 
@@ -201,7 +232,7 @@
                     style="@style/Widget.OldLauncher.DialogButtonSecondary"
                     android:layout_width="0dp"
                     android:layout_height="match_parent"
-                    android:layout_marginEnd="6dp"
+                    android:layout_marginEnd="@dimen/launcher_spacing_xs"
                     android:layout_weight="1">
 
                     <TextView
@@ -218,7 +249,7 @@
                     style="@style/Widget.OldLauncher.DialogButtonPrimary"
                     android:layout_width="0dp"
                     android:layout_height="match_parent"
-                    android:layout_marginStart="6dp"
+                    android:layout_marginStart="@dimen/launcher_spacing_xs"
                     android:layout_weight="1">
 
                     <TextView

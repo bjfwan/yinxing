@@ -76,8 +76,8 @@
       </div>
       <div class="versions-current" aria-label="当前版本信息">
         <span>当前稳定版</span>
-        <strong data-latest-version>v2.2.0</strong>
-        <time data-latest-date datetime="2026-10-02">2026.10.02</time>
+        <strong data-latest-version>v2.3.0</strong>
+        <time data-latest-date datetime="2026-10-13">2026.10.13</time>
         <a class="button button-primary" data-latest-download href="./app-release.apk" download="银杏.apk">下载当前版本</a>
       </div>
     </section>
@@ -85,15 +85,37 @@
     <section class="release-ledger" id="all-releases" aria-labelledby="release-ledger-title">
       <div class="release-ledger-head">
         <h2 id="release-ledger-title">发布记录</h2>
-        <p><span data-release-count>19</span> 个正式版本，每页显示 5 个。<span data-release-sync aria-live="polite">正在同步 GitHub 发布记录。</span></p>
+        <p><span data-release-count>20</span> 个正式版本，每页显示 5 个。<span data-release-sync aria-live="polite">正在同步 GitHub 发布记录。</span></p>
       </div>
 
       <ol class="release-list" data-release-list>
         <li>
           <article class="release-entry release-entry-current">
             <div class="release-meta">
-              <time datetime="2026-10-02">2026.10.02</time>
+              <time datetime="2026-10-13">2026.10.13</time>
               <span class="release-status">当前版本</span>
+            </div>
+            <div class="release-content">
+              <h3><span>v2.3.0</span> 界面改版与天气定位修复</h3>
+              <p>界面按统一设计规范改版；天气定位链路重写，授权权限后自动匹配城市；内置全国省市区县地名库，支持模糊匹配与错别字纠正；定向修复小米手机崩溃问题，建议小米/红米用户尽快更新。</p>
+              <ul>
+                <li>设置、联系人、视频通话、应用管理等页面统一新设计：色彩语义、圆角、字号全面规范</li>
+                <li>授权定位权限后自动定位匹配城市，无需手动设置；定位失败与天气失败分开提示</li>
+                <li>内置 3240 条省市区县索引，模糊匹配、错别字、省市拼接写法、常见简称均可识别</li>
+                <li>修复小米手机定位回调崩溃与来电弹窗异常；微信视频识别未登录并自动恢复界面读取异常</li>
+              </ul>
+            </div>
+            <div class="release-actions">
+              <a class="release-download" href="https://github.com/bjfwan/yinxing/releases/download/v2.3.0/app-release.apk">下载 APK</a>
+              <a href="https://github.com/bjfwan/yinxing/releases/tag/v2.3.0" target="_blank" rel="noopener noreferrer">完整说明</a>
+            </div>
+          </article>
+        </li>
+
+        <li>
+          <article class="release-entry">
+            <div class="release-meta">
+              <time datetime="2026-10-02">2026.10.02</time>
             </div>
             <div class="release-content">
               <h3><span>v2.2.0</span> 应用内更新与稳定性修复</h3>

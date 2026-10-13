@@ -32,22 +32,34 @@ data class LobsterCrashSnapshot(
     }
 
     companion object {
+        private const val MAX_STACK_LINES = 60
+        private const val MAX_CAUSE_DEPTH = 3
+        private const val FRAMES_PER_THROWABLE = 25
+
         fun from(threadName: String, throwable: Throwable): LobsterCrashSnapshot {
-            val appFrames = throwable.stackTrace
-                .asSequence()
-                .filter { it.className.startsWith("com.yinxing.launcher") }
-                .take(20)
-                .map(StackTraceElement::toString)
-                .toList()
-            val fallbackFrames = throwable.stackTrace
-                .asSequence()
-                .take(10)
-                .map(StackTraceElement::toString)
-                .toList()
+            val lines = mutableListOf<String>()
+            var current: Throwable? = throwable
+            var depth = 0
+            while (current != null && depth < MAX_CAUSE_DEPTH && lines.size < MAX_STACK_LINES) {
+                if (depth > 0) {
+                    val causeMessage = LobsterLogSanitizer.sanitize(current.message.orEmpty().take(200))
+                    lines += "Caused by: ${current.javaClass.name}: $causeMessage"
+                } else {
+                    current.message?.takeIf { it.isNotBlank() }?.let {
+                        lines += "message=${LobsterLogSanitizer.sanitize(it.take(300))}"
+                    }
+                }
+                current.stackTrace
+                    .asSequence()
+                    .take(FRAMES_PER_THROWABLE)
+                    .mapTo(lines, StackTraceElement::toString)
+                current = current.cause?.takeIf { it !== current }
+                depth += 1
+            }
             return LobsterCrashSnapshot(
                 exceptionType = throwable.javaClass.simpleName.take(120),
                 threadKind = if (threadName == "main") "main_thread" else "background_thread",
-                stackFrames = appFrames.ifEmpty { fallbackFrames }
+                stackFrames = lines.take(MAX_STACK_LINES)
             )
         }
     }

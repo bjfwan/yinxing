@@ -84,4 +84,20 @@ class WeChatAutomationRecoveryPolicyTest {
             WeChatForegroundRecoveryPolicy.decide("com.baidu.input_oppo", missingRootMs = 5_000, recoveryAttempts = 0)
         )
     }
+
+    @Test
+    fun `relaunches when WeChat stays foreground but the node tree remains empty`() {
+        assertEquals(
+            ForegroundRecoveryDecision.WAIT,
+            WeChatForegroundRecoveryPolicy.decide(WeChatPackage.NAME, missingRootMs = 3_900, recoveryAttempts = 0)
+        )
+        assertEquals(
+            ForegroundRecoveryDecision.RELAUNCH,
+            WeChatForegroundRecoveryPolicy.decide(WeChatPackage.NAME, missingRootMs = 4_500, recoveryAttempts = 0)
+        )
+        assertEquals(
+            ForegroundRecoveryDecision.FAIL,
+            WeChatForegroundRecoveryPolicy.decide(WeChatPackage.NAME, missingRootMs = 4_500, recoveryAttempts = 2)
+        )
+    }
 }

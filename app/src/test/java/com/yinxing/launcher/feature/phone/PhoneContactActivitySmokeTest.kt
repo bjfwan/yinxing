@@ -11,7 +11,9 @@ import androidx.recyclerview.widget.RecyclerView
 import com.yinxing.launcher.R
 import com.yinxing.launcher.data.contact.ContactSqliteStore
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertSame
+import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -45,33 +47,32 @@ class PhoneContactActivitySmokeTest {
         assertEquals("管理联系人", stateAction.text.toString())
         activity.findViewById<View>(R.id.btn_page_state_action).performClick()
         waitUntil {
-            modeAction.text.toString() == activity.getString(R.string.action_add) &&
+            modeAction.text.toString() == activity.getString(R.string.action_done) &&
                 stateAction.text.toString() == activity.getString(R.string.state_phone_empty_action)
         }
 
-        assertEquals(activity.getString(R.string.action_add), modeAction.text.toString())
+        assertEquals(activity.getString(R.string.action_done), modeAction.text.toString())
         assertEquals(activity.getString(R.string.state_phone_empty_action), stateAction.text.toString())
     }
 
     @Test
-    fun headerKeepsTitleAndSummaryOnOneLine() {
+    fun headerKeepsTitleOnOneLine() {
         val activity = Robolectric.buildActivity(PhoneContactActivity::class.java).setup().get()
 
         assertEquals(1, activity.findViewById<TextView>(R.id.tv_page_title).maxLines)
-        assertEquals(1, activity.findViewById<TextView>(R.id.tv_mode_summary).maxLines)
     }
 
     @Test
     fun contactDialogGroupsSecondaryActionsSideBySide() {
         val intent = PhoneContactActivity.createIntent(context, startInManageMode = true)
         val activity = Robolectric.buildActivity(PhoneContactActivity::class.java, intent).setup().get()
-        val modeAction = activity.findViewById<View>(R.id.btn_mode_action)
+        val addContact = activity.findViewById<View>(R.id.btn_add_contact)
         waitUntil {
             activity.findViewById<TextView>(R.id.tv_mode_action).text.toString() ==
-                activity.getString(R.string.action_add)
+                activity.getString(R.string.action_done)
         }
 
-        modeAction.performClick()
+        addContact.performClick()
         shadowOf(Looper.getMainLooper()).idle()
         val dialog = requireNotNull(ShadowDialog.getLatestDialog())
         val pickContact = dialog.findViewById<View>(R.id.btn_pick_contact)
@@ -85,45 +86,36 @@ class PhoneContactActivitySmokeTest {
     }
 
     @Test
-    fun layoutChoiceAppliesImmediatelyAndPersists() {
+    fun layoutSegmentAppliesImmediatelyAndPersists() {
         val intent = PhoneContactActivity.createIntent(context, startInManageMode = true)
         val activity = Robolectric.buildActivity(PhoneContactActivity::class.java, intent).setup().get()
         waitUntil {
             activity.findViewById<TextView>(R.id.tv_mode_action).text.toString() ==
-                activity.getString(R.string.action_add)
+                activity.getString(R.string.action_done)
         }
 
-        activity.findViewById<View>(R.id.btn_change_layout).performClick()
-        shadowOf(Looper.getMainLooper()).idle()
-        val dialog = requireNotNull(ShadowDialog.getLatestDialog())
-        dialog.findViewById<View>(R.id.option_layout_grid).performClick()
+        activity.findViewById<View>(R.id.btn_layout_grid).performClick()
         shadowOf(Looper.getMainLooper()).idle()
 
         val recycler = activity.findViewById<RecyclerView>(R.id.recycler_phone_contacts)
-        assertEquals(
-            activity.getString(R.string.phone_contact_layout_grid_summary),
-            activity.findViewById<TextView>(R.id.tv_current_layout).text.toString()
-        )
         assertEquals(GridLayoutManager::class.java, recycler.layoutManager?.javaClass)
         assertEquals(PhoneContactLayoutStyle.GRID, PhoneContactLayoutPreferences(context).get())
+        assertTrue(activity.findViewById<View>(R.id.btn_layout_grid).isSelected)
+        assertFalse(activity.findViewById<View>(R.id.btn_layout_large).isSelected)
     }
 
     @Test
-    fun layoutChoiceKeepsCurrentBadgeSpaceAligned() {
+    fun layoutSegmentReflectsCurrentStyle() {
         PhoneContactLayoutPreferences(context).set(PhoneContactLayoutStyle.LARGE)
         val intent = PhoneContactActivity.createIntent(context, startInManageMode = true)
         val activity = Robolectric.buildActivity(PhoneContactActivity::class.java, intent).setup().get()
         waitUntil {
             activity.findViewById<TextView>(R.id.tv_mode_action).text.toString() ==
-                activity.getString(R.string.action_add)
+                activity.getString(R.string.action_done)
         }
 
-        activity.findViewById<View>(R.id.btn_change_layout).performClick()
-        shadowOf(Looper.getMainLooper()).idle()
-        val dialog = requireNotNull(ShadowDialog.getLatestDialog())
-
-        assertEquals(View.VISIBLE, dialog.findViewById<View>(R.id.check_layout_large).visibility)
-        assertEquals(View.INVISIBLE, dialog.findViewById<View>(R.id.check_layout_grid).visibility)
+        assertTrue(activity.findViewById<View>(R.id.btn_layout_large).isSelected)
+        assertFalse(activity.findViewById<View>(R.id.btn_layout_grid).isSelected)
     }
 
     private fun resetContactManagerSingleton() {

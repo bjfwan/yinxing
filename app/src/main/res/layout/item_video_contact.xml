@@ -5,14 +5,14 @@
     android:id="@+id/card_video_contact"
     android:layout_width="match_parent"
     android:layout_height="232dp"
-    android:layout_marginStart="2dp"
-    android:layout_marginTop="7dp"
-    android:layout_marginEnd="2dp"
-    android:layout_marginBottom="7dp"
+    android:layout_marginStart="@dimen/launcher_spacing_xs"
+    android:layout_marginTop="@dimen/launcher_spacing_sm"
+    android:layout_marginEnd="@dimen/launcher_spacing_xs"
+    android:layout_marginBottom="@dimen/launcher_spacing_sm"
     android:clickable="false"
     android:focusable="false"
     app:cardBackgroundColor="@color/launcher_surface"
-    app:cardCornerRadius="18dp"
+    app:cardCornerRadius="@dimen/launcher_radius_md"
     app:cardElevation="1dp"
     app:strokeColor="@color/launcher_outline"
     app:strokeWidth="1dp">
@@ -22,7 +22,7 @@
         android:layout_height="match_parent"
         android:gravity="center_vertical"
         android:orientation="horizontal"
-        android:padding="16dp">
+        android:padding="@dimen/launcher_spacing_lg">
 
         <com.google.android.material.imageview.ShapeableImageView
             android:id="@+id/iv_video_contact_photo"
@@ -36,7 +36,7 @@
         <LinearLayout
             android:layout_width="0dp"
             android:layout_height="wrap_content"
-            android:layout_marginStart="14dp"
+            android:layout_marginStart="@dimen/launcher_spacing_md"
             android:layout_weight="1"
             android:gravity="center_horizontal"
             android:orientation="vertical">
@@ -45,25 +45,21 @@
                 android:id="@+id/tv_video_contact_name"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
+                style="@style/TextAppearance.OldLauncher.CardTitle"
                 android:ellipsize="end"
-                android:fontFamily="sans-serif-medium"
                 android:gravity="center"
                 android:maxLines="1"
-                android:text="@string/video_contact_placeholder"
-                android:textColor="@color/launcher_text_primary"
-                android:textSize="28sp"
-                android:textStyle="bold" />
+                android:text="@string/video_contact_placeholder" />
 
             <TextView
                 android:id="@+id/tv_video_contact_subtitle"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="5dp"
+                android:layout_marginTop="@dimen/launcher_spacing_sm"
                 android:ellipsize="end"
                 android:gravity="center"
+                style="@style/TextAppearance.OldLauncher.Meta"
                 android:maxLines="1"
-                android:textColor="@color/launcher_text_secondary"
-                android:textSize="14sp"
                 android:visibility="gone"
                 tools:text="微信：妈妈" />
 
@@ -72,24 +68,22 @@
                 style="@style/Widget.MaterialComponents.Button"
                 android:layout_width="match_parent"
                 android:layout_height="76dp"
-                android:layout_marginTop="12dp"
+                android:layout_marginTop="@dimen/launcher_spacing_md"
                 android:insetTop="0dp"
                 android:insetBottom="0dp"
                 android:maxLines="1"
                 android:minHeight="76dp"
                 android:minWidth="0dp"
-                android:paddingStart="8dp"
-                android:paddingEnd="8dp"
+                android:paddingStart="@dimen/launcher_spacing_sm"
+                android:paddingEnd="@dimen/launcher_spacing_sm"
                 android:singleLine="true"
                 android:text="@string/contact_card_action_wechat_v2"
-                android:textColor="@android:color/white"
-                android:textSize="22sp"
-                android:textStyle="bold"
+                android:textAppearance="@style/TextAppearance.OldLauncher.ButtonPrimary"
                 app:backgroundTint="@color/launcher_phone_action"
-                app:cornerRadius="18dp"
+                app:cornerRadius="@dimen/launcher_radius_md"
                 app:icon="@drawable/ic_settings_action_video"
                 app:iconGravity="textStart"
-                app:iconPadding="5dp"
+                app:iconPadding="@dimen/launcher_spacing_sm"
                 app:iconSize="22dp"
                 app:iconTint="@android:color/white" />
 
@@ -97,14 +91,13 @@
                 android:id="@+id/tv_video_manage_hint"
                 android:layout_width="match_parent"
                 android:layout_height="52dp"
-                android:layout_marginTop="12dp"
+                android:layout_marginTop="@dimen/launcher_spacing_md"
                 android:background="@drawable/bg_settings_mode_capsule"
                 android:gravity="center"
                 android:maxLines="1"
+                style="@style/TextAppearance.OldLauncher.DialogSectionLabel"
                 android:text="@string/contact_manage_hint_edit"
                 android:textColor="@color/launcher_primary"
-                android:textSize="17sp"
-                android:textStyle="bold"
                 android:visibility="gone" />
         </LinearLayout>
     </LinearLayout>

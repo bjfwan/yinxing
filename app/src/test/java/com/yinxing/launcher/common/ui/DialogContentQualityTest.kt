@@ -45,13 +45,6 @@ class DialogContentQualityTest {
         }
     }
 
-    @Test
-    fun `choice dialogs use the shared title and message hierarchy`() {
-        val choiceLayout = layoutRoot.resolve("dialog_phone_layout_choice.xml").toFile().readText()
-
-        assertTrue(DIALOG_TITLE_STYLE in choiceLayout)
-        assertTrue(DIALOG_MESSAGE_STYLE in choiceLayout)
-    }
 
     @Test
     fun `version update status is allowed to wrap`() {
@@ -101,7 +94,7 @@ class DialogContentQualityTest {
             .let { nodes -> (0 until nodes.length).mapNotNull { nodes.item(it) as? Element } }
             .single { it.getAttribute("name") == "action_edit_avatar" }
 
-        assertEquals("选择头像", action.textContent)
+        assertEquals("编辑头像", action.textContent)
     }
 
     @Test
@@ -222,7 +215,6 @@ class DialogContentQualityTest {
     private companion object {
         const val ANDROID_NAMESPACE = "http://schemas.android.com/apk/res/android"
         const val DIALOG_TITLE_STYLE = "@style/TextAppearance.OldLauncher.DialogTitle"
-        const val DIALOG_MESSAGE_STYLE = "@style/TextAppearance.OldLauncher.DialogMessage"
         const val DIALOG_SECTION_STYLE = "@style/TextAppearance.OldLauncher.DialogSectionLabel"
         const val DIALOG_CONTROL_HEIGHT = "@dimen/launcher_dialog_control_height"
 
@@ -236,7 +228,6 @@ class DialogContentQualityTest {
             "dialog_overlay_permission.xml",
             "dialog_permission_group.xml",
             "dialog_phone_contact.xml",
-            "dialog_phone_layout_choice.xml",
             "dialog_set_city.xml",
             "dialog_settings_contacts.xml",
             "dialog_settings_value.xml",
@@ -246,7 +237,7 @@ class DialogContentQualityTest {
 
         val CONTROL_IDS = mapOf(
             "dialog_add_contact.xml" to listOf("et_contact_name", "et_wechat_name"),
-            "dialog_phone_contact.xml" to listOf("et_name", "et_phone", "sw_auto_answer"),
+            "dialog_phone_contact.xml" to listOf("et_name", "et_phone", "btn_auto_answer_toggle"),
             "dialog_settings_value.xml" to listOf("value_dialog_minus", "value_dialog_plus")
         )
 

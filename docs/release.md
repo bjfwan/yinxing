@@ -24,7 +24,7 @@
 ## 测试
 
 ```bash
-.\build.bat :app:testDebugUnitTest
+.\build.bat :app:testDeviceTestUnitTest
 .\build.bat :app:lintDebug
 .\build.bat :benchmark:connectedCheck
 ```

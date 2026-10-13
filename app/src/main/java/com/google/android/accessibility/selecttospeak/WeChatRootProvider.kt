@@ -145,7 +145,7 @@ internal class WeChatRootProvider(
     }
 
     private fun findWeChatRootInWindows(): AccessibilityNodeInfo? {
-        val activeRoot = service.rootInActiveWindow
+        val activeRoot = AccessibilityUtil.safeRootInActiveWindow(service)
         if (isUsableWeChatRoot(activeRoot)) {
             return activeRoot
         }

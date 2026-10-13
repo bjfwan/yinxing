@@ -1,7 +1,10 @@
 package com.yinxing.launcher.common.ui
 
+import android.content.Context
+import android.content.Intent
 import android.graphics.Bitmap
 import android.net.Uri
+import android.provider.MediaStore
 import android.widget.TextView
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
@@ -19,6 +22,17 @@ class AvatarEditorController(
     private val activity: AppCompatActivity,
     private val onAvatarReady: (Uri, Bitmap) -> Unit
 ) {
+    companion object {
+        fun imagePickIntent(context: Context): Intent {
+            val pick = Intent(Intent.ACTION_PICK, MediaStore.Images.Media.EXTERNAL_CONTENT_URI)
+            if (pick.resolveActivity(context.packageManager) != null) return pick
+            return Intent(Intent.ACTION_GET_CONTENT).apply {
+                addCategory(Intent.CATEGORY_OPENABLE)
+                type = "image/*"
+            }
+        }
+    }
+
     fun edit(sourceUri: Uri) {
         activity.lifecycleScope.launch {
             val bitmap = runCatching {

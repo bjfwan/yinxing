@@ -2,20 +2,19 @@
 <resources>
     <string name="video_title">微信视频</string>
     <string name="video_manage_title">管理联系人</string>
-    <string name="video_mode_call_summary">认准头像，点“视频”按钮</string>
 
-    <string name="video_mode_manage_summary">添加、编辑或删除联系人</string>
 
-    <string name="action_add">新增</string>
+    <string name="action_add_contact">新增联系人</string>
     <string name="action_back">返回</string>
     <string name="action_cancel">取消</string>
     <string name="action_confirm">确定</string>
+    <string name="action_done">完成</string>
     <string name="action_edit">编辑</string>
     <string name="action_delete">删除</string>
     <string name="action_manage">管理</string>
     <string name="action_go_to_settings">去设置</string>
     <string name="action_clear">清空</string>
-    <string name="action_edit_avatar">选择头像</string>
+    <string name="action_edit_avatar">编辑头像</string>
     <string name="avatar_editor_title">调整头像</string>
     <string name="avatar_crop_preview">头像裁切预览</string>
     <string name="avatar_crop_tip">单指移动，双指缩放</string>
@@ -26,15 +25,15 @@
     <string name="action_continue">继续</string>
     <string name="action_retry">重新加载</string>
     <string name="label_name">姓名</string>
-    <string name="hint_name">请输入姓名</string>
-    <string name="label_phone">手机号</string>
-    <string name="hint_phone">请输入手机号</string>
+    <string name="hint_name">联系人姓名</string>
+    <string name="label_phone">电话</string>
+    <string name="hint_phone">手机号</string>
     <string name="label_contact_name">桌面显示名</string>
     <string name="hint_wechat_contact_name">请输入桌面上显示的名字</string>
     <string name="label_wechat_search_name">微信搜索名</string>
     <string name="hint_wechat_search_name">请输入微信备注或昵称</string>
 
-    <string name="phone_contact_dialog_add_title">添加联系人</string>
+    <string name="phone_contact_dialog_add_title">新增联系人</string>
     <string name="phone_contact_dialog_edit_title">编辑联系人</string>
     <string name="contact_dialog_add_title">新增联系人</string>
     <string name="contact_dialog_edit_title">编辑联系人</string>
@@ -50,7 +49,7 @@
     <string name="video_contact_wechat_action_description">给 %1$s 发起微信视频</string>
     <string name="video_contact_phone_action_description">给 %1$s 拨打电话</string>
 
-    <string name="contact_search_hint">搜索显示名、手机号或微信搜索名</string>
+    <string name="contact_search_hint">搜索显示名、手机号</string>
     <string name="contact_wechat_search_name_required">默认方式是微信视频时，需要填写微信搜索名</string>
     <string name="contact_wechat_search_name_missing">这个联系人还没有微信搜索名</string>
 

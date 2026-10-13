@@ -93,12 +93,8 @@ class WeatherCityManagerActivitySmokeTest {
         val activity = buildActivity()
 
         assertEquals(
-            ContextCompat.getColor(activity, R.color.launcher_text_primary),
+            ContextCompat.getColor(activity, R.color.launcher_primary_dark),
             activity.findViewById<android.widget.TextView>(R.id.tv_city_page_title).currentTextColor,
-        )
-        assertEquals(
-            ContextCompat.getColor(activity, R.color.launcher_text_secondary),
-            activity.findViewById<android.widget.TextView>(R.id.tv_city_page_hint).currentTextColor,
         )
     }
 

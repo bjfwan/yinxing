@@ -57,11 +57,10 @@ class VideoCallActivitySmokeTest {
     }
 
     @Test
-    fun headerKeepsTitleAndSummaryOnOneLine() {
+    fun headerKeepsTitleOnOneLine() {
         val activity = Robolectric.buildActivity(VideoCallActivity::class.java).setup().get()
 
         assertEquals(1, activity.findViewById<TextView>(R.id.tv_page_title).maxLines)
-        assertEquals(1, activity.findViewById<TextView>(R.id.tv_mode_summary).maxLines)
     }
 
     @Test
@@ -70,10 +69,10 @@ class VideoCallActivitySmokeTest {
         val activity = Robolectric.buildActivity(VideoCallActivity::class.java, intent).setup().get()
         waitUntil {
             activity.findViewById<TextView>(R.id.tv_mode_action).text.toString() ==
-                activity.getString(R.string.action_add)
+                activity.getString(R.string.action_done)
         }
 
-        activity.findViewById<View>(R.id.btn_mode_action).performClick()
+        activity.findViewById<View>(R.id.btn_add_contact).performClick()
         shadowOf(Looper.getMainLooper()).idle()
         val dialog = requireNotNull(ShadowDialog.getLatestDialog())
         val cancel = dialog.findViewById<View>(R.id.btn_cancel)
@@ -92,10 +91,10 @@ class VideoCallActivitySmokeTest {
         val activity = Robolectric.buildActivity(VideoCallActivity::class.java, intent).setup().get()
         waitUntil {
             activity.findViewById<TextView>(R.id.tv_mode_action).text.toString() ==
-                activity.getString(R.string.action_add)
+                activity.getString(R.string.action_done)
         }
 
-        activity.findViewById<View>(R.id.btn_mode_action).performClick()
+        activity.findViewById<View>(R.id.btn_add_contact).performClick()
         shadowOf(Looper.getMainLooper()).idle()
         val dialog = requireNotNull(ShadowDialog.getLatestDialog())
         val preview = dialog.findViewById<ImageView>(R.id.iv_photo_preview)
@@ -119,8 +118,9 @@ class VideoCallActivitySmokeTest {
             searchLayout.visibility == View.VISIBLE && messageView.text.isNotBlank()
         }
 
-        assertEquals(activity.getString(R.string.action_add), modeActionText.text.toString())
+        assertEquals(activity.getString(R.string.action_done), modeActionText.text.toString())
         assertEquals(View.VISIBLE, searchLayout.visibility)
+        assertEquals(View.VISIBLE, activity.findViewById<CardView>(R.id.btn_add_contact).visibility)
         assertEquals(View.VISIBLE, modeActionButton.visibility)
         assertEquals(activity.getString(R.string.state_video_manage_empty_message), messageView.text.toString())
         assertEquals(activity.getString(R.string.state_video_empty_action_add), actionView.text.toString())

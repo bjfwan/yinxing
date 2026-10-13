@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <dimen name="launcher_radius_xs">6dp</dimen>
+    <dimen name="launcher_radius_sm">10dp</dimen>
+    <dimen name="launcher_radius_md">14dp</dimen>
+    <dimen name="launcher_radius_lg">20dp</dimen>
+</resources>

@@ -9,8 +9,8 @@
     <FrameLayout
         android:layout_width="match_parent"
         android:layout_height="56dp"
-        android:paddingStart="12dp"
-        android:paddingEnd="12dp">
+        android:paddingStart="@dimen/launcher_spacing_md"
+        android:paddingEnd="@dimen/launcher_spacing_md">
 
         <ImageButton
             android:id="@+id/legal_document_back"
@@ -19,17 +19,15 @@
             android:layout_gravity="start|center_vertical"
             android:background="@drawable/bg_weather_toolbar_action"
             android:contentDescription="@string/action_back"
-            android:padding="12dp"
+            android:padding="@dimen/launcher_spacing_md"
             android:src="@drawable/ic_weather_detail_back" />
 
         <TextView
+            style="@style/TextAppearance.OldLauncher.PageTitle"
             android:id="@+id/legal_document_title"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_gravity="center"
-            android:textColor="@color/launcher_text_primary"
-            android:textSize="21sp"
-            android:textStyle="bold" />
+            android:layout_gravity="center" />
     </FrameLayout>
 
     <ProgressBar
@@ -58,42 +56,37 @@
             android:background="@drawable/bg_settings_page_gradient"
             android:gravity="center"
             android:orientation="vertical"
-            android:paddingStart="28dp"
-            android:paddingEnd="28dp"
+            android:paddingStart="@dimen/launcher_spacing_xxl"
+            android:paddingEnd="@dimen/launcher_spacing_xxl"
             android:visibility="gone">
 
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:gravity="center"
-                android:text="@string/settings_legal_load_failed"
-                android:textColor="@color/launcher_text_primary"
-                android:textSize="21sp"
-                android:textStyle="bold" />
+                style="@style/TextAppearance.OldLauncher.StateTitle"
+                android:text="@string/settings_legal_load_failed" />
 
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="8dp"
+                android:layout_marginTop="@dimen/launcher_spacing_sm"
                 android:gravity="center"
-                android:text="@string/settings_legal_load_failed_hint"
-                android:textColor="@color/launcher_text_secondary"
-                android:textSize="16sp" />
+                style="@style/TextAppearance.OldLauncher.StateBody"
+                android:text="@string/settings_legal_load_failed_hint" />
 
             <TextView
                 android:id="@+id/legal_document_retry"
                 android:layout_width="180dp"
                 android:layout_height="56dp"
-                android:layout_marginTop="20dp"
+                android:layout_marginTop="@dimen/launcher_spacing_xl"
                 android:background="@drawable/bg_weather_retry_button"
                 android:clickable="true"
                 android:focusable="true"
                 android:foreground="?android:attr/selectableItemBackground"
                 android:gravity="center"
-                android:text="@string/settings_legal_retry"
-                android:textColor="@color/launcher_on_primary"
-                android:textSize="18sp"
-                android:textStyle="bold" />
+                style="@style/TextAppearance.OldLauncher.ButtonPrimary"
+                android:text="@string/settings_legal_retry" />
         </LinearLayout>
     </FrameLayout>
 </LinearLayout>

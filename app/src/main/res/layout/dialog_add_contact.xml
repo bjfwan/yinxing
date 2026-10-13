@@ -29,7 +29,7 @@
                 android:id="@+id/layout_contact_identity"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="14dp"
+                android:layout_marginTop="@dimen/launcher_spacing_lg"
                 android:gravity="center_vertical"
                 android:orientation="horizontal">
 
@@ -39,7 +39,7 @@
                     android:layout_height="88dp"
                     android:background="@color/launcher_surface_soft"
                     android:contentDescription="@string/contact_photo_preview"
-                    android:padding="20dp"
+                    android:padding="@dimen/launcher_spacing_xl"
                     android:scaleType="centerCrop"
                     android:src="@drawable/ic_contact_avatar_placeholder"
                     app:shapeAppearanceOverlay="@style/ShapeAppearance.OldLauncher.ContactPhoto" />
@@ -47,7 +47,7 @@
                 <LinearLayout
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
-                    android:layout_marginStart="14dp"
+                    android:layout_marginStart="@dimen/launcher_spacing_md"
                     android:layout_weight="1"
                     android:orientation="vertical">
 
@@ -62,14 +62,27 @@
                         style="@style/Widget.OldLauncher.DialogButtonSecondary"
                         android:layout_width="match_parent"
                         android:layout_height="@dimen/launcher_dialog_button_height"
-                        android:layout_marginTop="8dp">
+                        android:layout_marginTop="@dimen/launcher_spacing_sm">
 
-                        <TextView
-                            style="@style/TextAppearance.OldLauncher.DialogActionSecondary"
+                        <LinearLayout
                             android:layout_width="match_parent"
                             android:layout_height="match_parent"
                             android:gravity="center"
-                            android:text="@string/action_edit_avatar" />
+                            android:orientation="horizontal">
+
+                            <ImageView
+                                android:layout_width="20dp"
+                                android:layout_height="20dp"
+                                android:importantForAccessibility="no"
+                                android:src="@drawable/ic_image" />
+
+                            <TextView
+                                style="@style/TextAppearance.OldLauncher.DialogActionSecondary"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:layout_marginStart="@dimen/launcher_spacing_xs"
+                                android:text="@string/action_edit_avatar" />
+                        </LinearLayout>
                     </com.google.android.material.card.MaterialCardView>
                 </LinearLayout>
             </LinearLayout>
@@ -77,10 +90,10 @@
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="14dp"
+                android:layout_marginTop="@dimen/launcher_spacing_lg"
                 android:background="@drawable/bg_settings_mode_capsule"
                 android:orientation="vertical"
-                android:padding="14dp">
+                android:padding="@dimen/launcher_spacing_lg">
 
                 <TextView
                     style="@style/TextAppearance.OldLauncher.DialogSectionLabel"
@@ -93,21 +106,21 @@
                     style="@style/TextAppearance.OldLauncher.DialogInput"
                     android:layout_width="match_parent"
                     android:layout_height="@dimen/launcher_dialog_control_height"
-                    android:layout_marginTop="8dp"
+                    android:layout_marginTop="@dimen/launcher_spacing_sm"
                     android:autofillHints="personName"
                     android:background="@drawable/edit_text_background_focused"
                     android:hint="@string/hint_wechat_contact_name"
                     android:imeOptions="actionNext"
                     android:inputType="textPersonName"
                     android:maxLines="1"
-                    android:paddingStart="16dp"
-                    android:paddingEnd="16dp" />
+                    android:paddingStart="@dimen/launcher_spacing_lg"
+                    android:paddingEnd="@dimen/launcher_spacing_lg" />
 
                 <TextView
                     style="@style/TextAppearance.OldLauncher.DialogSectionLabel"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:layout_marginTop="14dp"
+                    android:layout_marginTop="@dimen/launcher_spacing_md"
                     android:text="@string/label_wechat_search_name" />
 
                 <EditText
@@ -115,21 +128,21 @@
                     style="@style/TextAppearance.OldLauncher.DialogInput"
                     android:layout_width="match_parent"
                     android:layout_height="@dimen/launcher_dialog_control_height"
-                    android:layout_marginTop="8dp"
+                    android:layout_marginTop="@dimen/launcher_spacing_sm"
                     android:autofillHints="nickname"
                     android:background="@drawable/edit_text_background_focused"
                     android:hint="@string/hint_wechat_search_name"
                     android:imeOptions="actionDone"
                     android:inputType="text"
                     android:maxLines="1"
-                    android:paddingStart="16dp"
-                    android:paddingEnd="16dp" />
+                    android:paddingStart="@dimen/launcher_spacing_lg"
+                    android:paddingEnd="@dimen/launcher_spacing_lg" />
 
                 <TextView
                     style="@style/TextAppearance.OldLauncher.DialogSupporting"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:layout_marginTop="8dp"
+                    android:layout_marginTop="@dimen/launcher_spacing_sm"
                     android:text="@string/contact_dialog_wechat_tip" />
             </LinearLayout>
 
@@ -144,7 +157,7 @@
                     style="@style/Widget.OldLauncher.DialogButtonSecondary"
                     android:layout_width="0dp"
                     android:layout_height="match_parent"
-                    android:layout_marginEnd="6dp"
+                    android:layout_marginEnd="@dimen/launcher_spacing_xs"
                     android:layout_weight="1">
 
                     <TextView
@@ -161,7 +174,7 @@
                     style="@style/Widget.OldLauncher.DialogButtonPrimary"
                     android:layout_width="0dp"
                     android:layout_height="match_parent"
-                    android:layout_marginStart="6dp"
+                    android:layout_marginStart="@dimen/launcher_spacing_xs"
                     android:layout_weight="1">
 
                     <TextView

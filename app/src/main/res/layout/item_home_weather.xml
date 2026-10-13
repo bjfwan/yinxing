@@ -20,7 +20,7 @@
             android:id="@+id/iv_weather_icon"
             android:layout_width="36dp"
             android:layout_height="36dp"
-            android:layout_marginEnd="8dp"
+            android:layout_marginEnd="@dimen/launcher_spacing_sm"
             android:contentDescription="@null"
             android:importantForAccessibility="no"
             android:src="@drawable/ic_weather_sun"
@@ -39,7 +39,7 @@
             style="@style/TextAppearance.OldLauncher.WeatherTemperature"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_marginStart="10dp"
+            android:layout_marginStart="@dimen/launcher_spacing_md"
             android:text="@string/home_weather_placeholder_temp" />
 
         <TextView
@@ -47,7 +47,7 @@
             style="@style/TextAppearance.OldLauncher.WeatherHeadline"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_marginStart="8dp"
+            android:layout_marginStart="@dimen/launcher_spacing_sm"
             android:maxLines="1"
             android:text="@string/home_weather_placeholder_desc" />
     </LinearLayout>
@@ -61,8 +61,7 @@
         android:gravity="center"
         android:includeFontPadding="false"
         android:maxLines="1"
-        android:text=""
-        android:textColor="@color/launcher_text_secondary"
-        android:textSize="15sp" />
+        style="@style/TextAppearance.OldLauncher.Meta"
+        android:text="" />
 
 </LinearLayout>

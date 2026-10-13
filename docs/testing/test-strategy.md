@@ -15,7 +15,6 @@
 - 2026-08-27：`lintDebug` **0 errors, 85 warnings**，`UnusedResources = 0`。
 - 2026-08-27：`assembleDebug` 通过。
 - 2026-08-27：`assembleRelease` 与 `lintVitalRelease` 通过，Release APK 约 **2.61 MiB**。
-- 设置页、天气详情和城市管理已有 vivo V2285A / Android 15 真机设计验收记录，详见根目录 `design-qa.md`。
 - 本轮尚未完整重跑 `connectedDebugAndroidTest`，不得将自动化基线写成全量设备验收。
 
 ## 3. 最低自动化门禁

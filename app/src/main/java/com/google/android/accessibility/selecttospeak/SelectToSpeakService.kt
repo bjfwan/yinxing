@@ -48,6 +48,7 @@ import com.yinxing.launcher.common.lobster.LobsterReportStatus
 import com.yinxing.launcher.common.lobster.LobsterReportDetails
 import com.yinxing.launcher.common.lobster.LobsterStepOutcome
 import com.yinxing.launcher.common.lobster.LobsterTraceStep
+import com.yinxing.launcher.common.lobster.LobsterUsageEvents
 import com.yinxing.launcher.common.perf.LauncherTraceNames
 import com.yinxing.launcher.common.util.CallAudioStrategy
 import com.yinxing.launcher.common.util.DebugLog
@@ -102,6 +103,8 @@ class SelectToSpeakService : AccessibilityService(), WeChatRequestHost {
         private const val MAX_CONTACT_DETAIL_ATTEMPTS = 4
         private const val MAX_VIDEO_OPTION_ATTEMPTS = 3
         private const val MAX_STEP_RECOVERY_ATTEMPTS = 5
+        private const val PERMISSION_EDUCATION_BUDGET_MS = 8_000L
+        private const val FAILURE_REPLAY_STEP_LIMIT = 40
         private const val HOME_ACTION_SETTLE_DELAY_MS = 500L
         private const val TEACHING_TIMEOUT_MS = 3 * 60 * 1000L
         private const val MAX_TEACHING_OBSERVATIONS = 100
@@ -217,6 +220,9 @@ class SelectToSpeakService : AccessibilityService(), WeChatRequestHost {
         }
 
         if (pkg != WeChatPackage.NAME) {
+            if (WeChatPermissionDialogHandler.matchesPackage(pkg)) {
+                currentSession?.let { scheduleAdaptiveProcess(it, DelayProfile.FAST) }
+            }
             return
         }
         rootProvider.rememberClassName(className)
@@ -475,7 +481,7 @@ class SelectToSpeakService : AccessibilityService(), WeChatRequestHost {
         }
         if (!captureDecision.shouldCapture) return
         val metrics = resources.displayMetrics
-        val teachingRoot = rootInActiveWindow
+        val teachingRoot = AccessibilityUtil.safeRootInActiveWindow(this)
         val snapshot = try {
             teachingSnapshotOf(teachingRoot)
         } finally {
@@ -577,7 +583,7 @@ class SelectToSpeakService : AccessibilityService(), WeChatRequestHost {
         val isVoipWindow = session.currentWindowClass.orEmpty().contains(".plugin.voip.")
         if (!isVoipWindow && audioManager.mode != AudioManager.MODE_IN_COMMUNICATION) return
 
-        val root = rootInActiveWindow
+        val root = AccessibilityUtil.safeRootInActiveWindow(this)
         val snapshot = try {
             teachingSnapshotOf(root)
         } finally {
@@ -915,7 +921,7 @@ class SelectToSpeakService : AccessibilityService(), WeChatRequestHost {
     }
 
     private fun isWeChatForeground(): Boolean {
-        val root = rootInActiveWindow ?: return false
+        val root = AccessibilityUtil.safeRootInActiveWindow(this) ?: return false
         return try {
             root.packageName?.toString() == WeChatPackage.NAME
         } finally {
@@ -1495,6 +1501,7 @@ class SelectToSpeakService : AccessibilityService(), WeChatRequestHost {
                 session.callVerificationState = WeChatCallVerificationState()
                 session.callVerificationPollCount = 0
                 session.lastCallVerificationLogKey = null
+                session.permissionEducationSinceMs = 0L
             }
         }
     }
@@ -1540,9 +1547,17 @@ class SelectToSpeakService : AccessibilityService(), WeChatRequestHost {
                 )
                 return
             }
-            val fallbackPkg = rootInActiveWindow?.packageName?.toString()
+            val fallbackPkg = AccessibilityUtil.safeRootInActiveWindow(this)?.packageName?.toString()
             val now = System.currentTimeMillis()
             if (session.missingRootSince == 0L) session.missingRootSince = now
+            if (
+                fallbackPkg == WeChatPackage.NAME &&
+                WeChatLoginPageDetector.isLoginClassName(rootProvider.lastObservedClassName)
+            ) {
+                logStep(session, "detectLoginPage", true, "class=${rootProvider.lastObservedClassName}")
+                failAndHide("微信未登录，请先登录微信")
+                return
+            }
             if (now - lastMissingRootLogAt >= 2000L) {
                 lastMissingRootLogAt = now
                 WeChatFailureDiagnostics.logDebugLong(
@@ -1577,6 +1592,21 @@ class SelectToSpeakService : AccessibilityService(), WeChatRequestHost {
         }
         session.missingRootSince = 0L
 
+        val currentClass = resolveCurrentWeChatClass(root)
+        when (WeChatLoginPageDetector.detect(snapshotOf(root), currentClass)) {
+            WeChatLoginPageDetector.Gate.LOGIN -> {
+                logStep(session, "detectLoginPage", true)
+                failAndHide("微信未登录，请先登录微信", root)
+                return
+            }
+            WeChatLoginPageDetector.Gate.AGREEMENT -> {
+                logStep(session, "detectAgreementPage", true)
+                failAndHide("微信需要先同意隐私协议", root)
+                return
+            }
+            WeChatLoginPageDetector.Gate.NONE -> Unit
+        }
+
         val now = System.currentTimeMillis()
         if (now < session.dismissingUntil) {
             DebugLog.d(TAG) { "processCurrentWindow: 弹窗冷却中，剩余${session.dismissingUntil - now}ms，跳过" }
@@ -1590,7 +1620,6 @@ class SelectToSpeakService : AccessibilityService(), WeChatRequestHost {
             }
         }
 
-        val currentClass = resolveCurrentWeChatClass(root)
         DebugLog.d(TAG) {
             "processCurrentWindow: step=${session.step} class=$currentClass rawClass=${root.className} lastUiClass=${rootProvider.lastObservedClassName}"
         }
@@ -1947,7 +1976,7 @@ class SelectToSpeakService : AccessibilityService(), WeChatRequestHost {
                     return@launch
                 }
                 val activePackage = getWeChatRoot()?.packageName?.toString()
-                    ?: rootInActiveWindow?.packageName?.toString()
+                    ?: AccessibilityUtil.safeRootInActiveWindow(this@SelectToSpeakService)?.packageName?.toString()
                 if (activePackage == WeChatPackage.NAME) {
                     DebugLog.d(TAG) { "recoverToHome: HOME 后仍停留在微信前台，降级继续 BACK" }
                     fallbackBackFromHomeRecovery(session, currentClass, "$reason, stillInWeChat=true")
@@ -2648,6 +2677,7 @@ class SelectToSpeakService : AccessibilityService(), WeChatRequestHost {
         root: AccessibilityNodeInfo?,
         currentClass: String?
     ) {
+        if (handleSystemPermissionPrompt(session)) return
         val currentAudioMode = currentAudioMode()
         val audioCommunicationStarted = WeChatAudioCallEvidencePolicy.hasCommunicationStarted(
             baselineMode = session.callAudioModeBaseline,
@@ -2708,10 +2738,61 @@ class SelectToSpeakService : AccessibilityService(), WeChatRequestHost {
                 root = root
             )
             WeChatCallVerificationAction.WAIT -> {
-                updateProgress(session, "正在确认视频通话")
-                scheduleAdaptiveProcess(session, DelayProfile.STABLE)
+                if ("permission_education" in assessment.reasons) {
+                    handlePermissionEducationWait(session, root, assessment)
+                } else {
+                    session.permissionEducationSinceMs = 0L
+                    updateProgress(session, "正在确认视频通话")
+                    scheduleAdaptiveProcess(session, DelayProfile.STABLE)
+                }
             }
         }
+    }
+
+    private fun handleSystemPermissionPrompt(session: VideoCallSession): Boolean {
+        val activeRoot = AccessibilityUtil.safeRootInActiveWindow(this) ?: return false
+        try {
+            if (!WeChatPermissionDialogHandler.isPermissionPrompt(activeRoot)) return false
+            val clicked = WeChatPermissionDialogHandler.clickAllow(this, activeRoot)
+            logStep(session, "clickSystemPermissionAllow", clicked, "pkg=${activeRoot.packageName}")
+            if (clicked) {
+                LobsterClient.reportUsage(this, LobsterUsageEvents.WECHAT_PERMISSION_AUTO_GRANTED)
+            }
+            updateProgress(session, if (clicked) "正在为微信开启权限" else "请在弹窗中选择允许")
+            scheduleAdaptiveProcess(
+                session,
+                if (clicked) DelayProfile.TRANSITION else DelayProfile.STABLE,
+                attemptKey = "sys_permission",
+                actionSucceeded = clicked
+            )
+            return true
+        } finally {
+            AccessibilityUtil.safeRecycle(activeRoot)
+        }
+    }
+
+    private fun handlePermissionEducationWait(
+        session: VideoCallSession,
+        root: AccessibilityNodeInfo?,
+        assessment: WeChatCallStartAssessment
+    ) {
+        val now = System.currentTimeMillis()
+        if (session.permissionEducationSinceMs == 0L) {
+            session.permissionEducationSinceMs = now
+        }
+        val permissionLabel = when {
+            "mic" in assessment.reasons -> "麦克风"
+            "camera" in assessment.reasons -> "相机"
+            else -> "音视频"
+        }
+        val waitedMs = now - session.permissionEducationSinceMs
+        if (waitedMs > PERMISSION_EDUCATION_BUDGET_MS) {
+            logStep(session, "permissionEducationTimeout", true, "waited=${waitedMs}ms")
+            failAndHide("微信需要${permissionLabel}权限，请在手机设置中开启", root)
+            return
+        }
+        updateProgress(session, "请在弹窗中允许微信使用${permissionLabel}")
+        scheduleAdaptiveProcess(session, DelayProfile.STABLE)
     }
 
     private fun transitionTo(session: VideoCallSession, nextStep: Step, message: String) {
@@ -2750,7 +2831,7 @@ class SelectToSpeakService : AccessibilityService(), WeChatRequestHost {
                 if (!CallReturnCoordinator.hasConfirmedSession(CallReturnOrigin.WECHAT_VIDEO)) {
                     return@launch
                 }
-                val root = rootInActiveWindow
+                val root = AccessibilityUtil.safeRootInActiveWindow(this@SelectToSpeakService)
                 val packageName = root?.packageName?.toString()
                 AccessibilityUtil.safeRecycle(root)
                 val className = lastWeChatWindowClassForReturn
@@ -2873,7 +2954,7 @@ class SelectToSpeakService : AccessibilityService(), WeChatRequestHost {
 
     @Suppress("DEPRECATION")
     private fun obtainSpeakerTargetRoot(): AccessibilityNodeInfo? {
-        rootInActiveWindow?.let { return AccessibilityNodeInfo.obtain(it) }
+        AccessibilityUtil.safeRootInActiveWindow(this)?.let { return AccessibilityNodeInfo.obtain(it) }
         rootProvider.peekCachedRoot()?.let { return AccessibilityNodeInfo.obtain(it) }
         return null
     }
@@ -2964,6 +3045,13 @@ class SelectToSpeakService : AccessibilityService(), WeChatRequestHost {
             session.stepDurations["${session.step.name.lowercase()}.cancelled"] =
                 System.currentTimeMillis() - session.stepStartedAt
             reportTerminalMetrics(session, success = false)
+            LobsterClient.reportUsage(
+                this,
+                LobsterUsageEvents.WECHAT_VIDEO_CALL_ABORTED.copy(
+                    summary = message,
+                    logLine = "[使用] $message"
+                )
+            )
             notifyState(session, message, success = false, terminal = true, reported = false)
         }
         if (restoreLauncher && session != null) {
@@ -3138,6 +3226,10 @@ class SelectToSpeakService : AccessibilityService(), WeChatRequestHost {
     }
 
     private fun recordStepSuccess(step: Step, duration: Long) {
+        val budget = timeoutFor(step)
+        if (duration * 10 > budget * 7) {
+            LobsterClient.log("[微信自动] 步骤接近超时: $step 用时${duration}ms/预算${budget}ms")
+        }
         when (step) {
             Step.WAITING_HOME -> timeoutManager.recordSuccess("launch", duration)
             Step.WAITING_LAUNCHER_UI -> timeoutManager.recordSuccess("home", duration)
@@ -3205,7 +3297,8 @@ class SelectToSpeakService : AccessibilityService(), WeChatRequestHost {
             taskStep = step.name,
             taskReason = lastCapabilityReason,
             capabilityId = lastCapabilityId?.name,
-            capabilityFailure = lastCapabilityFailure?.name
+            capabilityFailure = lastCapabilityFailure?.name,
+            steps = structuredSteps.takeLast(FAILURE_REPLAY_STEP_LIMIT)
         )
     }
 
@@ -3251,6 +3344,7 @@ class SelectToSpeakService : AccessibilityService(), WeChatRequestHost {
         var callVerificationPollCount: Int = 0,
         var lastCallVerificationLogKey: String? = null,
         var callAudioModeBaseline: Int? = null,
+        var permissionEducationSinceMs: Long = 0L,
         val deviceTestScenario: WeChatDeviceTestScenario? = null,
         val deviceTestPendingFailures: MutableSet<WeChatCapabilityId> = mutableSetOf()
     )

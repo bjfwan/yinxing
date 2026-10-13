@@ -78,9 +78,11 @@ object LobsterClient {
         details: LobsterReportDetails = LobsterReportDetails()
     ) {
         if (!shouldUploadCurrentRuntime(context)) return
-        val logsToReport = takeBufferedLogs()
+        var logsToReport = takeBufferedLogs()
 
-        if (logsToReport.isBlank()) return
+        if (logsToReport.isBlank()) {
+            logsToReport = "[$scene] ${summary ?: status.wireValue}"
+        }
 
         val deviceId = installId(context)
         val sessionEventSequence = eventSequence.next()

@@ -412,12 +412,12 @@ internal fun SettingsActivity.showSetDefaultLauncherDialog(): AlertDialog {
     dialogView.findViewById<TextView>(R.id.tv_dialog_title).text = getString(R.string.set_default_launcher_title)
     dialogView.findViewById<TextView>(R.id.tv_dialog_message).text = getString(profile.messageRes())
     dialogView.findViewById<TextView>(R.id.tv_cancel_label).text = getString(
-        if (hasSecondaryStep) R.string.set_default_launcher_vivo_default_action
+        if (hasSecondaryStep) R.string.set_default_launcher_vivo_security_action
         else R.string.set_default_launcher_later
     )
     dialogView.findViewById<TextView>(R.id.tv_primary_label).text = getString(
         when {
-            hasSecondaryStep -> R.string.set_default_launcher_vivo_security_action
+            hasSecondaryStep -> R.string.set_default_launcher_vivo_default_action
             profile.support == OemLauncherSupport.RESTRICTED -> R.string.set_default_launcher_view_settings
             else -> R.string.set_default_launcher_action
         }
@@ -435,20 +435,56 @@ internal fun SettingsActivity.showSetDefaultLauncherDialog(): AlertDialog {
 
     dialogView.findViewById<View>(R.id.btn_cancel).setOnClickListener {
         dialog.dismiss()
-        if (hasSecondaryStep) {
+        if (secondarySettingsAction != null) {
             SettingsReturnCoordinator.markDeviceSettingsReturn(this)
-            requestDefaultLauncherRole()
+            openSettingsAction(secondarySettingsAction)
         }
     }
     dialogView.findViewById<View>(R.id.btn_open_settings).setOnClickListener {
         dialog.dismiss()
         when {
-            secondarySettingsAction != null -> openSettingsAction(secondarySettingsAction)
+            secondarySettingsAction != null -> {
+                SettingsReturnCoordinator.markDeviceSettingsReturn(this)
+                requestDefaultLauncherRole()
+            }
             profile.support == OemLauncherSupport.RESTRICTED -> {
                 SettingsReturnCoordinator.markDeviceSettingsReturn(this)
                 openDefaultLauncherSettings()
             }
             else -> requestDefaultLauncherRole()
+        }
+    }
+    dialog.show()
+    return dialog
+}
+
+internal fun SettingsActivity.showDefaultLauncherGateHintIfNeeded() {
+    if (isDefaultLauncher()) return
+    val profile = OemLauncherPolicy.profile(Build.MANUFACTURER)
+    if (profile.secondarySettingsAction == null) return
+    showSetDefaultLauncherGateHint(profile)
+}
+
+internal fun SettingsActivity.showSetDefaultLauncherGateHint(
+    profile: OemLauncherProfile
+): AlertDialog {
+    val dialogView = layoutInflater.inflate(R.layout.dialog_accessibility_prompt, null)
+    dialogView.findViewById<TextView>(R.id.tv_dialog_title).text = getString(R.string.set_default_launcher_gate_failed_title)
+    dialogView.findViewById<TextView>(R.id.tv_dialog_message).text = getString(R.string.set_default_launcher_gate_failed_message_vivo)
+    dialogView.findViewById<TextView>(R.id.tv_cancel_label).text = getString(R.string.set_default_launcher_later)
+    dialogView.findViewById<TextView>(R.id.tv_primary_label).text = getString(R.string.set_default_launcher_open_security_action)
+    dialogView.findViewById<ImageView>(R.id.iv_dialog_vendor_icon).apply {
+        setImageDrawable(OemLauncherIconLoader.load(this@showSetDefaultLauncherGateHint, profile))
+        visibility = View.VISIBLE
+    }
+
+    val dialog = LauncherDialogFactory.create(this, dialogView, dismissOnTouchOutside = false)
+    dialogView.findViewById<View>(R.id.btn_cancel).setOnClickListener { dialog.dismiss() }
+    dialogView.findViewById<View>(R.id.btn_open_settings).setOnClickListener {
+        dialog.dismiss()
+        profile.secondarySettingsAction?.let { action ->
+            SettingsReturnCoordinator.markDeviceSettingsReturn(this)
+            openSettingsAction(action)
         }
     }
     dialog.show()

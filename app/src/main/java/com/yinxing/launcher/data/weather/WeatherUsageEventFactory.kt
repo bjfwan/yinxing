@@ -7,6 +7,7 @@ import com.yinxing.launcher.common.lobster.LobsterTraceStep
 import com.yinxing.launcher.common.lobster.LobsterUsageEvent
 import com.yinxing.launcher.common.lobster.LobsterEventType
 import com.yinxing.launcher.common.lobster.LobsterLogCategory
+import java.security.MessageDigest
 
 object WeatherUsageEventFactory {
     fun from(state: WeatherState, durationMs: Long, occurredAt: String): LobsterUsageEvent {
@@ -50,12 +51,22 @@ object WeatherUsageEventFactory {
                         stepName = "获取天气",
                         action = "request",
                         outcome = outcome,
+                        detail = if (status == LobsterReportStatus.ERROR) {
+                            "city_hash=${cityFingerprint(state.cityName)}"
+                        } else {
+                            null
+                        },
                         durationMs = durationMs.coerceAtLeast(0L),
                         occurredAt = occurredAt
                     )
                 )
             )
         )
+    }
+
+    private fun cityFingerprint(cityName: String): String {
+        val digest = MessageDigest.getInstance("SHA-256").digest(cityName.toByteArray(Charsets.UTF_8))
+        return digest.joinToString("") { "%02x".format(it) }.take(16)
     }
 
     private fun WeatherFailureReason.toErrorCode(): String = when (this) {

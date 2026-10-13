@@ -4,23 +4,22 @@
     android:layout_height="76dp"
     android:gravity="center_vertical"
     android:orientation="horizontal"
-    android:paddingTop="6dp"
-    android:paddingBottom="6dp">
+    android:paddingTop="@dimen/launcher_spacing_sm"
+    android:paddingBottom="@dimen/launcher_spacing_sm">
 
     <TextView
         android:id="@+id/tv_day_relative"
         android:layout_width="58dp"
         android:layout_height="wrap_content"
+        style="@style/TextAppearance.OldLauncher.Meta"
         android:textColor="@color/launcher_text_primary"
-        android:textSize="18sp"
         android:textStyle="bold" />
 
     <TextView
+        style="@style/TextAppearance.OldLauncher.Caption"
         android:id="@+id/tv_day_weekday"
         android:layout_width="40dp"
-        android:layout_height="wrap_content"
-        android:textColor="@color/launcher_text_secondary"
-        android:textSize="15sp" />
+        android:layout_height="wrap_content" />
 
     <ImageView
         android:id="@+id/iv_day_weather"
@@ -33,33 +32,29 @@
         android:id="@+id/tv_day_condition"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
-        android:layout_marginStart="8dp"
+        android:layout_marginStart="@dimen/launcher_spacing_sm"
         android:layout_weight="1"
+        style="@style/TextAppearance.OldLauncher.Meta"
         android:textColor="@color/launcher_text_primary"
-        android:textSize="18sp"
         android:textStyle="bold" />
 
     <TextView
+        style="@style/TextAppearance.OldLauncher.ListTitle"
         android:id="@+id/tv_day_high"
         android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:textColor="@color/launcher_text_primary"
-        android:textSize="23sp"
-        android:textStyle="bold" />
+        android:layout_height="wrap_content" />
 
     <TextView
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:paddingStart="3dp"
-        android:paddingEnd="3dp"
-        android:text="/"
-        android:textColor="@color/launcher_text_secondary"
-        android:textSize="18sp" />
+        android:paddingStart="@dimen/launcher_spacing_xs"
+        android:paddingEnd="@dimen/launcher_spacing_xs"
+        style="@style/TextAppearance.OldLauncher.Meta"
+        android:text="/" />
 
     <TextView
+        style="@style/TextAppearance.OldLauncher.Meta"
         android:id="@+id/tv_day_low"
         android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:textColor="@color/launcher_text_secondary"
-        android:textSize="18sp" />
+        android:layout_height="wrap_content" />
 </LinearLayout>

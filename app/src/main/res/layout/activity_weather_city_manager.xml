@@ -16,10 +16,10 @@
             android:layout_width="56dp"
             android:layout_height="56dp"
             android:layout_gravity="start|center_vertical"
-            android:layout_marginStart="8dp"
+            android:layout_marginStart="@dimen/launcher_spacing_sm"
             android:background="@drawable/bg_weather_toolbar_action"
             android:contentDescription="@string/weather_detail_back"
-            android:padding="14dp"
+            android:padding="@dimen/launcher_spacing_lg"
             android:src="@drawable/ic_weather_detail_back"
             app:tint="@color/launcher_primary_dark" />
 
@@ -28,43 +28,29 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_gravity="center"
-            android:text="@string/weather_city_title"
-            android:textColor="@color/launcher_text_primary"
-            android:textSize="26sp"
-            android:textStyle="bold" />
+            style="@style/TextAppearance.OldLauncher.PageTitle"
+            android:text="@string/weather_city_title" />
 
         <TextView
             android:id="@+id/btn_manage"
             android:layout_width="88dp"
             android:layout_height="56dp"
             android:layout_gravity="end|center_vertical"
-            android:layout_marginEnd="8dp"
+            android:layout_marginEnd="@dimen/launcher_spacing_sm"
             android:background="@drawable/bg_weather_toolbar_action"
             android:gravity="center"
+            style="@style/TextAppearance.OldLauncher.ButtonSecondary"
             android:text="@string/weather_city_manage"
-            android:textColor="@color/launcher_text_primary"
-            android:textSize="19sp"
-            android:textStyle="bold" />
+            android:textColor="@color/launcher_text_primary" />
     </FrameLayout>
-
-    <TextView
-        android:id="@+id/tv_city_page_hint"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_marginStart="20dp"
-        android:layout_marginTop="2dp"
-        android:layout_marginBottom="10dp"
-        android:text="@string/weather_city_switch_hint"
-        android:textColor="@color/launcher_text_secondary"
-        android:textSize="16sp" />
 
     <LinearLayout
         android:id="@+id/btn_use_current_location"
         android:layout_width="match_parent"
         android:layout_height="58dp"
-        android:layout_marginStart="18dp"
-        android:layout_marginEnd="18dp"
-        android:layout_marginBottom="14dp"
+        android:layout_marginStart="@dimen/launcher_spacing_lg"
+        android:layout_marginEnd="@dimen/launcher_spacing_lg"
+        android:layout_marginBottom="@dimen/launcher_spacing_md"
         android:background="@drawable/bg_weather_city_location"
         android:clickable="true"
         android:contentDescription="@string/weather_city_use_current_location"
@@ -78,10 +64,8 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:importantForAccessibility="no"
-            android:text="@string/weather_city_use_current_location"
-            android:textColor="@color/launcher_text_primary"
-            android:textSize="20sp"
-            android:textStyle="bold" />
+            style="@style/TextAppearance.OldLauncher.ListTitle"
+            android:text="@string/weather_city_use_current_location" />
     </LinearLayout>
 
     <ScrollView
@@ -97,19 +81,19 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:orientation="vertical"
-            android:paddingStart="18dp"
-            android:paddingEnd="18dp"
-            android:paddingBottom="12dp" />
+            android:paddingStart="@dimen/launcher_spacing_lg"
+            android:paddingEnd="@dimen/launcher_spacing_lg"
+            android:paddingBottom="@dimen/launcher_spacing_md" />
     </ScrollView>
 
     <LinearLayout
         android:id="@+id/btn_search_city"
         android:layout_width="match_parent"
         android:layout_height="68dp"
-        android:layout_marginStart="20dp"
-        android:layout_marginTop="10dp"
-        android:layout_marginEnd="20dp"
-        android:layout_marginBottom="14dp"
+        android:layout_marginStart="@dimen/launcher_spacing_xl"
+        android:layout_marginTop="@dimen/launcher_spacing_md"
+        android:layout_marginEnd="@dimen/launcher_spacing_xl"
+        android:layout_marginBottom="@dimen/launcher_spacing_md"
         android:background="@drawable/bg_weather_city_search"
         android:clickable="true"
         android:contentDescription="@string/weather_city_search_entry"
@@ -123,9 +107,7 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:importantForAccessibility="no"
-            android:text="@string/weather_city_search_entry"
-            android:textColor="@color/launcher_on_primary"
-            android:textSize="22sp"
-            android:textStyle="bold" />
+            style="@style/TextAppearance.OldLauncher.ButtonPrimary"
+            android:text="@string/weather_city_search_entry" />
     </LinearLayout>
 </LinearLayout>

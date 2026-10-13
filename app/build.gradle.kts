@@ -57,12 +57,14 @@ android {
         viewBinding = true
     }
 
+    testBuildType = "deviceTest"
+
     defaultConfig {
         applicationId = "com.yinxing.launcher"
         minSdk = 24
         targetSdk = 36
-        versionCode = 20
-        versionName = "2.2.0"
+        versionCode = 21
+        versionName = "2.3.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
 

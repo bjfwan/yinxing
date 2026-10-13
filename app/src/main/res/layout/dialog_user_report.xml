@@ -42,13 +42,13 @@
                     style="@style/TextAppearance.OldLauncher.DialogSectionLabel"
                     android:layout_width="wrap_content"
                     android:layout_height="@dimen/launcher_dialog_control_height"
-                    android:layout_marginStart="10dp"
+                    android:layout_marginStart="@dimen/launcher_spacing_md"
                     android:clickable="true"
                     android:focusable="true"
                     android:foreground="?android:attr/selectableItemBackgroundBorderless"
                     android:gravity="center"
-                    android:paddingStart="8dp"
-                    android:paddingEnd="8dp"
+                    android:paddingStart="@dimen/launcher_spacing_sm"
+                    android:paddingEnd="@dimen/launcher_spacing_sm"
                     android:text="@string/settings_user_report_privacy_show"
                     android:textColor="@color/launcher_action_dark" />
             </LinearLayout>
@@ -58,7 +58,7 @@
                 style="@style/TextAppearance.OldLauncher.DialogSupporting"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="6dp"
+                android:layout_marginTop="@dimen/launcher_spacing_sm"
                 android:accessibilityLiveRegion="polite"
                 android:text="@string/settings_user_report_privacy_details"
                 android:visibility="gone" />
@@ -73,13 +73,13 @@
                 android:clickable="true"
                 android:contentDescription="@string/settings_user_report_type"
                 android:drawableEnd="@drawable/ic_settings_expand_more"
-                android:drawablePadding="10dp"
+                android:drawablePadding="@dimen/launcher_spacing_md"
                 android:drawableTint="@color/launcher_text_secondary"
                 android:focusable="true"
                 android:foreground="?android:attr/selectableItemBackground"
                 android:gravity="center_vertical"
-                android:paddingStart="12dp"
-                android:paddingEnd="12dp"
+                android:paddingStart="@dimen/launcher_spacing_md"
+                android:paddingEnd="@dimen/launcher_spacing_md"
                 android:text="@string/settings_user_report_type_default" />
 
             <EditText
@@ -87,20 +87,20 @@
                 style="@style/TextAppearance.OldLauncher.DialogInput"
                 android:layout_width="match_parent"
                 android:layout_height="96dp"
-                android:layout_marginTop="12dp"
+                android:layout_marginTop="@dimen/launcher_spacing_md"
                 android:background="@drawable/edit_text_background"
                 android:gravity="start|top"
                 android:hint="@string/settings_user_report_description_hint"
                 android:inputType="textCapSentences|textMultiLine"
                 android:maxLength="800"
-                android:padding="14dp" />
+                android:padding="@dimen/launcher_spacing_lg" />
 
             <TextView
                 android:id="@+id/user_report_error"
                 style="@style/TextAppearance.OldLauncher.DialogSupporting"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="6dp"
+                android:layout_marginTop="@dimen/launcher_spacing_sm"
                 android:text="@string/settings_user_report_required"
                 android:textColor="@color/launcher_danger"
                 android:visibility="gone" />
@@ -110,13 +110,13 @@
                 style="@style/TextAppearance.OldLauncher.DialogInput"
                 android:layout_width="match_parent"
                 android:layout_height="80dp"
-                android:layout_marginTop="12dp"
+                android:layout_marginTop="@dimen/launcher_spacing_md"
                 android:background="@drawable/edit_text_background"
                 android:gravity="start|top"
                 android:hint="@string/settings_user_report_steps_hint"
                 android:inputType="textCapSentences|textMultiLine"
                 android:maxLength="800"
-                android:padding="14dp" />
+                android:padding="@dimen/launcher_spacing_lg" />
 
             <LinearLayout
                 android:layout_width="match_parent"
