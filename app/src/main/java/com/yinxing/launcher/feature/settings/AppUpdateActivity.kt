@@ -1,10 +1,15 @@
 package com.yinxing.launcher.feature.settings
 
+import android.Manifest
+import android.content.ContentValues
 import android.content.Context
 import android.content.Intent
+import android.content.pm.PackageManager
 import android.net.Uri
 import android.os.Build
 import android.os.Bundle
+import android.os.Environment
+import android.provider.MediaStore
 import android.view.View
 import android.widget.ProgressBar
 import android.widget.TextView
@@ -19,8 +24,10 @@ import com.yinxing.launcher.common.lobster.LobsterClient
 import com.yinxing.launcher.common.lobster.LobsterSettingEventFactory
 import com.yinxing.launcher.common.ui.FontScaleActivity
 import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import java.io.File
 
 class AppUpdateActivity : FontScaleActivity() {
@@ -35,6 +42,10 @@ class AppUpdateActivity : FontScaleActivity() {
     private var checkJob: Job? = null
     private var downloadJob: Job? = null
     private var installLaunched = false
+    private var signatureMismatch = false
+    private var backupLocation: String? = null
+    private var pendingBackupFile: File? = null
+    private var pendingBackupName: String? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -59,7 +70,27 @@ class AppUpdateActivity : FontScaleActivity() {
         }
         if (installLaunched && BuildConfig.VERSION_CODE < info.versionCode) {
             installLaunched = false
-            findViewById<TextView>(R.id.tv_update_hint).setText(R.string.settings_update_install_pending)
+            findViewById<TextView>(R.id.tv_update_hint).text =
+                if (signatureMismatch) signatureMismatchHint()
+                else getString(R.string.settings_update_install_pending)
+        }
+    }
+
+    override fun onRequestPermissionsResult(
+        requestCode: Int,
+        permissions: Array<out String>,
+        grantResults: IntArray
+    ) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults)
+        if (requestCode == REQ_WRITE_STORAGE &&
+            grantResults.firstOrNull() == PackageManager.PERMISSION_GRANTED
+        ) {
+            val file = pendingBackupFile ?: return
+            val name = pendingBackupName ?: return
+            lifecycleScope.launch {
+                backupLocation = withContext(Dispatchers.IO) { writeLegacyCopy(file, name) }
+                findViewById<TextView>(R.id.tv_update_hint).text = signatureMismatchHint()
+            }
         }
     }
 
@@ -77,6 +108,7 @@ class AppUpdateActivity : FontScaleActivity() {
                     updateInfo = state.info
                     if (AppUpdateDownloader.isDownloaded(this@AppUpdateActivity, state.info)) {
                         setPhase(Phase.DOWNLOADED)
+                        evaluateInstallCompatibility(state.info)
                     } else {
                         setPhase(Phase.AVAILABLE)
                     }
@@ -137,6 +169,7 @@ class AppUpdateActivity : FontScaleActivity() {
                         LobsterSettingEventFactory.appUpdateDownloaded()
                     )
                     setPhase(Phase.DOWNLOADED)
+                    evaluateInstallCompatibility(info)
                 }
                 is AppUpdateDownloader.Result.Failure -> {
                     LobsterClient.reportUsage(
@@ -185,8 +218,9 @@ class AppUpdateActivity : FontScaleActivity() {
                     this,
                     LobsterSettingEventFactory.appUpdateInstallLaunched()
                 )
-                findViewById<TextView>(R.id.tv_update_hint)
-                    .setText(R.string.settings_update_install_system_hint)
+                findViewById<TextView>(R.id.tv_update_hint).text =
+                    if (signatureMismatch) signatureMismatchHint()
+                    else getString(R.string.settings_update_install_system_hint)
             }
             .onFailure {
                 LobsterClient.reportUsage(
@@ -199,6 +233,94 @@ class AppUpdateActivity : FontScaleActivity() {
                 findViewById<TextView>(R.id.tv_update_hint)
                     .setText(R.string.settings_update_open_failed)
             }
+    }
+
+    private fun evaluateInstallCompatibility(info: AppUpdateInfo) {
+        val file = AppUpdateDownloader.targetFile(this, info.versionCode)
+        if (!file.isFile) return
+        signatureMismatch = !isSignatureCompatible(file)
+        if (!signatureMismatch) return
+        LobsterClient.reportUsage(
+            this,
+            LobsterSettingEventFactory.appUpdateFailed(
+                step = "prepare_install",
+                errorCode = "UPDATE_SIGNATURE_MISMATCH"
+            )
+        )
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.Q &&
+            checkSelfPermission(Manifest.permission.WRITE_EXTERNAL_STORAGE) !=
+            PackageManager.PERMISSION_GRANTED
+        ) {
+            pendingBackupFile = file
+            pendingBackupName = "yinxing-v${info.versionName}.apk"
+            requestPermissions(
+                arrayOf(Manifest.permission.WRITE_EXTERNAL_STORAGE), REQ_WRITE_STORAGE
+            )
+            findViewById<TextView>(R.id.tv_update_hint).text = signatureMismatchHint()
+            return
+        }
+        lifecycleScope.launch {
+            backupLocation = withContext(Dispatchers.IO) { savePublicCopy(file, info) }
+            findViewById<TextView>(R.id.tv_update_hint).text = signatureMismatchHint()
+        }
+    }
+
+    @Suppress("DEPRECATION")
+    private fun isSignatureCompatible(apk: File): Boolean = runCatching {
+        val pm = packageManager
+        val archive = pm.getPackageArchiveInfo(apk.absolutePath, PackageManager.GET_SIGNATURES)
+        val installed = pm.getPackageInfo(packageName, PackageManager.GET_SIGNATURES)
+        val archiveSigs = archive?.signatures?.map { it.toCharsString() }?.toSet().orEmpty()
+        val installedSigs = installed.signatures?.map { it.toCharsString() }?.toSet().orEmpty()
+        archiveSigs.isEmpty() || installedSigs.isEmpty() || archiveSigs == installedSigs
+    }.getOrDefault(true)
+
+    private fun savePublicCopy(file: File, info: AppUpdateInfo): String? {
+        val name = "yinxing-v${info.versionName}.apk"
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+            return runCatching {
+                val relativePath = Environment.DIRECTORY_DOWNLOADS + "/Yinxing"
+                val values = ContentValues().apply {
+                    put(MediaStore.MediaColumns.DISPLAY_NAME, name)
+                    put(MediaStore.MediaColumns.MIME_TYPE, "application/vnd.android.package-archive")
+                    put(MediaStore.MediaColumns.RELATIVE_PATH, relativePath)
+                    put(MediaStore.MediaColumns.IS_PENDING, 1)
+                }
+                val resolver = contentResolver
+                val uri = resolver.insert(MediaStore.Downloads.EXTERNAL_CONTENT_URI, values)
+                    ?: return null
+                try {
+                    resolver.openOutputStream(uri)?.use { out ->
+                        file.inputStream().use { it.copyTo(out) }
+                    } ?: return null
+                } catch (e: Exception) {
+                    resolver.delete(uri, null, null)
+                    return null
+                }
+                values.clear()
+                values.put(MediaStore.MediaColumns.IS_PENDING, 0)
+                resolver.update(uri, values, null, null)
+                "Download/Yinxing/$name"
+            }.getOrNull()
+        }
+        return writeLegacyCopy(file, name)
+    }
+
+    private fun writeLegacyCopy(file: File, name: String): String? = runCatching {
+        @Suppress("DEPRECATION")
+        val dir = File(
+            Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS),
+            "Yinxing"
+        )
+        dir.mkdirs()
+        file.copyTo(File(dir, name), overwrite = true)
+        "Download/Yinxing/$name"
+    }.getOrNull()
+
+    private fun signatureMismatchHint(): String {
+        val location = backupLocation
+            ?: return getString(R.string.settings_update_signature_mismatch)
+        return getString(R.string.settings_update_signature_mismatch_saved, location)
     }
 
     private fun canInstallPackages(): Boolean =
@@ -351,6 +473,7 @@ class AppUpdateActivity : FontScaleActivity() {
     }
 
     companion object {
+        private const val REQ_WRITE_STORAGE = 41
         fun createIntent(context: Context): Intent = Intent(context, AppUpdateActivity::class.java)
     }
 }

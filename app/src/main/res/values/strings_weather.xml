@@ -35,4 +35,5 @@
     <string name="weather_location_failed">暂时无法定位，仍使用原来的城市</string>
     <string name="weather_location_weather_failed">已定位到%1$s，但天气暂时不可用</string>
     <string name="weather_location_success">已切换到%1$s</string>
+    <string name="weather_location_success_ip">已按网络定位到%1$s，位置可能有偏差，可手动搜索城市修正</string>
 </resources>

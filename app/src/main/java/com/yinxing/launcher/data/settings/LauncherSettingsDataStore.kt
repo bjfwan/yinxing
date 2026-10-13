@@ -34,7 +34,8 @@ data class LauncherSettings(
     val iconScale: Int = LauncherSettingsDataStore.DEFAULT_ICON_SCALE,
     val fallDetectionEnabled: Boolean = false,
     val fallEmergencyContact: String = "",
-    val diagnosticsSharingEnabled: Boolean = true
+    val diagnosticsSharingEnabled: Boolean = true,
+    val locationSharingEnabled: Boolean = false
 )
 
 data class LauncherSettingsMigration(
@@ -109,6 +110,7 @@ class LauncherSettingsDataStore private constructor(context: Context) {
         private val KEY_FALL_DETECTION_ENABLED = booleanPreferencesKey("fall_detection_enabled")
         private val KEY_FALL_EMERGENCY_CONTACT = stringPreferencesKey("fall_emergency_contact")
         private val KEY_DIAGNOSTICS_SHARING_ENABLED = booleanPreferencesKey("diagnostics_sharing_enabled")
+        private val KEY_LOCATION_SHARING_ENABLED = booleanPreferencesKey("location_sharing_enabled")
 
         @Volatile
         private var instance: LauncherSettingsDataStore? = null
@@ -222,6 +224,13 @@ class LauncherSettingsDataStore private constructor(context: Context) {
         mutate(
             update = { it.copy(diagnosticsSharingEnabled = enabled) },
             persist = { it[KEY_DIAGNOSTICS_SHARING_ENABLED] = enabled }
+        )
+    }
+
+    fun setLocationSharingEnabled(enabled: Boolean) {
+        mutate(
+            update = { it.copy(locationSharingEnabled = enabled) },
+            persist = { it[KEY_LOCATION_SHARING_ENABLED] = enabled }
         )
     }
 
@@ -344,7 +353,8 @@ class LauncherSettingsDataStore private constructor(context: Context) {
             iconScale = (this[KEY_ICON_SCALE] ?: DEFAULT_ICON_SCALE).coerceIn(MIN_ICON_SCALE, MAX_ICON_SCALE),
             fallDetectionEnabled = this[KEY_FALL_DETECTION_ENABLED] ?: false,
             fallEmergencyContact = this[KEY_FALL_EMERGENCY_CONTACT].orEmpty(),
-            diagnosticsSharingEnabled = this[KEY_DIAGNOSTICS_SHARING_ENABLED] ?: true
+            diagnosticsSharingEnabled = this[KEY_DIAGNOSTICS_SHARING_ENABLED] ?: true,
+            locationSharingEnabled = this[KEY_LOCATION_SHARING_ENABLED] ?: false
         )
     }
 

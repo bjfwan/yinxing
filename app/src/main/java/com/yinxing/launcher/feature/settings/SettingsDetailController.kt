@@ -935,6 +935,23 @@ internal class SettingsDetailController(private val activity: SettingsActivity) 
             )
             bind(SettingsScreen.Advanced)
         }
+        addSwitchRow(
+            R.string.settings_location_sharing_title,
+            if (launcherPreferences.isLocationSharingEnabled()) {
+                R.string.settings_location_sharing_summary_on
+            } else {
+                R.string.settings_location_sharing_summary_off
+            },
+            R.drawable.ic_settings_category_system,
+            launcherPreferences.isLocationSharingEnabled()
+        ) {
+            launcherPreferences.setLocationSharingEnabled(it)
+            LobsterClient.reportUsage(
+                this,
+                LobsterSettingEventFactory.toggleChanged(LobsterSetting.LOCATION_SHARING, it)
+            )
+            bind(SettingsScreen.Advanced)
+        }
         addRow(
             R.string.settings_diagnostic_export_title,
             R.string.settings_diagnostic_export_summary,

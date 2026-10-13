@@ -6,7 +6,8 @@ enum class LobsterSetting(val action: String, val label: String) {
     FALL_DETECTION("change_fall_detection", "跌倒检测"),
     LOW_PERFORMANCE_MODE("change_low_performance_mode", "低性能模式"),
     FULL_CARD_TAP("change_full_card_tap", "整卡点击"),
-    DIAGNOSTICS_SHARING("change_diagnostics_sharing", "诊断日志上报")
+    DIAGNOSTICS_SHARING("change_diagnostics_sharing", "诊断日志上报"),
+    LOCATION_SHARING("change_location_sharing", "定位数据贡献")
 }
 
 enum class LobsterContactChannel(val actionPart: String, val label: String) {

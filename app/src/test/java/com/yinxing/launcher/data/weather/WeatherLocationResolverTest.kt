@@ -96,4 +96,29 @@ class WeatherLocationResolverTest {
             )
         )
     }
+
+    @Test
+    fun `ip sb payload parses valid coordinates`() {
+        val location = WeatherLocationResolver.ipSbLocation(
+            JSONObject("""{"city":"Beijing","region":"Beijing","latitude":39.9,"longitude":116.4}""")
+        )
+
+        assertEquals("Beijing", location?.cityName)
+        assertEquals(39.9, location?.latitude ?: 0.0, 0.001)
+        assertEquals(true, location?.approximate)
+        assertNull(WeatherLocationResolver.ipSbLocation(JSONObject("""{}""")))
+    }
+
+    @Test
+    fun `cell tower payload keeps only fully identified cells`() {
+        val tower = WeatherLocationResolver.cellTower("lte", 460, 0, 26927, 140653779)
+
+        assertEquals("lte", tower?.getString("radioType"))
+        assertEquals(460, tower?.getInt("mobileCountryCode"))
+        assertEquals(140653779L, tower?.getLong("cellId"))
+        assertNull(WeatherLocationResolver.cellTower("lte", null, 0, 26927, 140653779))
+        assertNull(WeatherLocationResolver.cellTower("lte", 460, null, 26927, 140653779))
+        assertNull(WeatherLocationResolver.cellTower("lte", 460, 0, 0, 140653779))
+        assertNull(WeatherLocationResolver.cellTower("lte", 460, 0, 26927, -1))
+    }
 }

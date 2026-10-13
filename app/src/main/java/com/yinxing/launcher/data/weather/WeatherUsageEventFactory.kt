@@ -64,6 +64,45 @@ object WeatherUsageEventFactory {
         )
     }
 
+    /**
+     * 定位来源命中统计：只上报 source 与耗时，不含坐标和城市名。
+     * 用于观察 beaconDB 指纹库（radio）在真实设备上的命中率，
+     * 决定后续是否需要自建/补充指纹数据。
+     */
+    fun locationResolved(
+        source: String,
+        durationMs: Long,
+        approximate: Boolean,
+        occurredAt: String,
+    ): LobsterUsageEvent {
+        val failed = source == "none"
+        val outcome = if (failed) LobsterStepOutcome.ERROR else LobsterStepOutcome.SUCCESS
+        return LobsterUsageEvent(
+            scene = "天气定位",
+            status = if (failed) LobsterReportStatus.ERROR else LobsterReportStatus.SUCCESS,
+            summary = if (failed) "定位失败" else "定位成功($source)",
+            logLine = "[天气] 定位 source=$source duration=${durationMs}ms approximate=$approximate",
+            category = LobsterLogCategory.WEATHER,
+            eventType = if (failed) LobsterEventType.ERROR else LobsterEventType.DIAGNOSTIC,
+            action = "resolve_location",
+            details = LobsterReportDetails(
+                errorCode = if (failed) "LOCATION_FAILED" else null,
+                failedStep = if (failed) "resolve_location" else null,
+                steps = listOf(
+                    LobsterTraceStep(
+                        stepCode = "resolve_location",
+                        stepName = "定位",
+                        action = "request",
+                        outcome = outcome,
+                        detail = "source=$source approximate=$approximate",
+                        durationMs = durationMs.coerceAtLeast(0L),
+                        occurredAt = occurredAt
+                    )
+                )
+            )
+        )
+    }
+
     private fun cityFingerprint(cityName: String): String {
         val digest = MessageDigest.getInstance("SHA-256").digest(cityName.toByteArray(Charsets.UTF_8))
         return digest.joinToString("") { "%02x".format(it) }.take(16)

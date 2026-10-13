@@ -35,4 +35,30 @@ class HttpWeatherApiClient(
             conn.disconnect()
         }
     }
+
+    suspend fun post(url: String, body: String): String = withContext(Dispatchers.IO) {
+        val conn = URL(url).openConnection() as HttpURLConnection
+        conn.apply {
+            requestMethod = "POST"
+            connectTimeout = connectTimeoutMs
+            readTimeout = readTimeoutMs
+            doOutput = true
+            setRequestProperty("Content-Type", "application/json")
+            setRequestProperty("Accept", "application/json")
+        }
+        try {
+            conn.outputStream.use { it.write(body.toByteArray(Charsets.UTF_8)) }
+            val responseCode = conn.responseCode
+            val stream = if (responseCode in 200..299) {
+                conn.inputStream
+            } else {
+                conn.errorStream ?: conn.inputStream
+            }
+            val text = stream.use { it.bufferedReader().readText() }
+            check(responseCode in 200..299) { "HTTP $responseCode" }
+            text
+        } finally {
+            conn.disconnect()
+        }
+    }
 }

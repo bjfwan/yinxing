@@ -3,6 +3,7 @@ package com.yinxing.launcher.feature.weather
 import android.app.Activity
 import android.Manifest
 import android.content.pm.PackageManager
+import android.os.Build
 import android.os.Bundle
 import android.view.View
 import android.view.WindowManager
@@ -36,8 +37,10 @@ class WeatherCityManagerActivity : FontScaleActivity() {
     private var managementMode = false
     private var selectionChanged = false
     private val locationPermissionLauncher = registerForActivityResult(
-        ActivityResultContracts.RequestPermission(),
-    ) { granted ->
+        ActivityResultContracts.RequestMultiplePermissions(),
+    ) { grants ->
+        val granted = grants[Manifest.permission.ACCESS_COARSE_LOCATION] == true ||
+            grants[Manifest.permission.ACCESS_FINE_LOCATION] == true
         if (granted) locateCurrentCity() else showLocationFailure(R.string.weather_location_denied)
     }
 
@@ -87,14 +90,23 @@ class WeatherCityManagerActivity : FontScaleActivity() {
     }
 
     private fun requestOrLocateCurrentCity() {
-        if (ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION) ==
-            PackageManager.PERMISSION_GRANTED
-        ) {
+        val coarseGranted = ContextCompat.checkSelfPermission(
+            this, Manifest.permission.ACCESS_COARSE_LOCATION
+        ) == PackageManager.PERMISSION_GRANTED
+        val fineGranted = ContextCompat.checkSelfPermission(
+            this, Manifest.permission.ACCESS_FINE_LOCATION
+        ) == PackageManager.PERMISSION_GRANTED
+        // Android 12+ 用户若已选“大致位置”则尊重选择直接定位；
+        // Android 11 及以下补申请 FINE 会静默授予，用于 WiFi 辅助定位。
+        if (fineGranted || (coarseGranted && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S)) {
             locateCurrentCity()
         } else {
             PermissionUtil.launchSafely(
                 locationPermissionLauncher,
-                Manifest.permission.ACCESS_COARSE_LOCATION,
+                arrayOf(
+                    Manifest.permission.ACCESS_FINE_LOCATION,
+                    Manifest.permission.ACCESS_COARSE_LOCATION,
+                ),
                 this
             )
         }
@@ -126,8 +138,12 @@ class WeatherCityManagerActivity : FontScaleActivity() {
             selectionChanged = true
             Toast.makeText(
                 this@WeatherCityManagerActivity,
-                getString(R.string.weather_location_success, location.cityName),
-                Toast.LENGTH_SHORT,
+                getString(
+                    if (location.approximate) R.string.weather_location_success_ip
+                    else R.string.weather_location_success,
+                    location.cityName,
+                ),
+                Toast.LENGTH_LONG,
             ).show()
             finishWithResult()
         }

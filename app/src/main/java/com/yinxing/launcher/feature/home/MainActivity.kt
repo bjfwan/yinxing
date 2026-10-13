@@ -83,8 +83,10 @@ class MainActivity : FontScaleActivity() {
         }
     }
     private val locationPermissionLauncher = registerForActivityResult(
-        ActivityResultContracts.RequestPermission(),
-    ) { granted ->
+        ActivityResultContracts.RequestMultiplePermissions(),
+    ) { grants ->
+        val granted = grants[Manifest.permission.ACCESS_COARSE_LOCATION] == true ||
+            grants[Manifest.permission.ACCESS_FINE_LOCATION] == true
         val traceId = locationPermissionTraceId ?: LobsterTrace.newId()
         locationPermissionTraceId = null
         LobsterClient.reportUsage(
@@ -168,7 +170,10 @@ class MainActivity : FontScaleActivity() {
                 )
                 PermissionUtil.launchSafely(
                     locationPermissionLauncher,
-                    Manifest.permission.ACCESS_COARSE_LOCATION,
+                    arrayOf(
+                        Manifest.permission.ACCESS_FINE_LOCATION,
+                        Manifest.permission.ACCESS_COARSE_LOCATION,
+                    ),
                     this
                 )
             }

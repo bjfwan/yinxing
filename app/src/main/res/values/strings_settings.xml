@@ -111,7 +111,7 @@
     <string name="settings_about_contact_summary">2632507193@qq.com</string>
     <string name="settings_about_privacy_title">隐私政策</string>
     <string name="settings_about_privacy_summary">了解信息收集、使用与保护方式</string>
-    <string name="settings_about_privacy_message">生效日期：2026 年 8 月 29 日\n\n银杏会在手机本地保存联系人、紧急联系人、天气城市、应用设置和微信视频示教路线。天气、版本更新等功能需要联网。为排查问题和改进稳定性，应用会向项目维护的日志服务发送设备型号、Android 版本、随机安装标识、应用版本、使用与性能事件，以及经过脱敏处理的诊断日志。\n\n微信视频示教可选择上传脱敏后的控件结构、状态指纹、设备和微信版本、结果与回放状态，不包含联系人姓名、搜索文字、聊天内容、图片、截图、录音或视频；每次开始前都可取消上传，不影响本地保存和使用。\n\n诊断日志的上传由你自主选择：可在“设置 → 高级设置 → 诊断日志上报”中随时开启或关闭，关闭后应用不再向服务器发送诊断日志，也不影响其他功能的使用。\n\n银杏不提供广告，不出售个人信息。电话、联系人、通话记录、位置、无障碍和传感器权限仅用于对应功能。需要咨询、撤回同意、查询或删除相关数据时，可通过“联系作者”发送邮件。</string>
+    <string name="settings_about_privacy_message">生效日期：2026 年 8 月 29 日\n\n银杏会在手机本地保存联系人、紧急联系人、天气城市、应用设置和微信视频示教路线。天气、版本更新等功能需要联网。为排查问题和改进稳定性，应用会向项目维护的日志服务发送设备型号、Android 版本、随机安装标识、应用版本、使用与性能事件，以及经过脱敏处理的诊断日志。\n\n微信视频示教可选择上传脱敏后的控件结构、状态指纹、设备和微信版本、结果与回放状态，不包含联系人姓名、搜索文字、聊天内容、图片、截图、录音或视频；每次开始前都可取消上传，不影响本地保存和使用。\n\n诊断日志的上传由你自主选择：可在“设置 → 高级设置 → 诊断日志上报”中随时开启或关闭，关闭后应用不再向服务器发送诊断日志，也不影响其他功能的使用。\n\n天气定位可选择参与“定位数据贡献”（设置 → 高级设置）：开启后，当系统成功取得当前位置时，应用会匿名把附近公共 WiFi 和基站的标识连同位置一起提交到公共定位数据库（beaconDB，数据进入公共领域），帮助自己和其他用户改进定位精度。该数据不包含联系人、账号或设备标识，可随时关闭，关闭后不再上传任何位置相关数据，也不影响天气功能本身。\n\n银杏不提供广告，不出售个人信息。电话、联系人、通话记录、位置、无障碍和传感器权限仅用于对应功能。需要咨询、撤回同意、查询或删除相关数据时，可通过“联系作者”发送邮件。</string>
     <string name="settings_about_terms_title">服务条款</string>
     <string name="settings_about_terms_summary">了解功能边界、使用规则与责任</string>
     <string name="settings_about_license_title">软件许可证</string>
@@ -173,6 +173,9 @@
     <string name="settings_diagnostics_sharing_title">诊断日志上报</string>
     <string name="settings_diagnostics_sharing_summary_on">已开启，上传脱敏诊断日志帮助排查问题</string>
     <string name="settings_diagnostics_sharing_summary_off">已关闭，不向服务器上传诊断日志</string>
+    <string name="settings_location_sharing_title">定位数据贡献</string>
+    <string name="settings_location_sharing_summary_on">已开启：定位成功时匿名分享附近公共 WiFi 和基站标识到公共定位库（beaconDB），自己和其他人的定位都会更准</string>
+    <string name="settings_location_sharing_summary_off">已关闭，不上传位置相关数据</string>
     <string name="settings_diagnostic_export_title">导出诊断信息</string>
     <string name="settings_diagnostic_export_summary">生成脱敏诊断文件</string>
     <string name="settings_diagnostic_export_subject">银杏诊断信息</string>
@@ -239,6 +242,8 @@
     <string name="settings_update_install_hint">点击后将打开系统安装页面，请选择【安装】。</string>
     <string name="settings_update_install_system_hint">系统安装页面已打开，请选择【安装】。如未完成，可回到本页再次点击。</string>
     <string name="settings_update_install_pending">还没有完成安装。点击【安装更新】重新打开系统安装页面，并选择【安装】。</string>
+    <string name="settings_update_signature_mismatch_saved">检测到本机当前版本与官方安装包签名不一致（可能是非官方渠道安装的版本），无法覆盖安装。新版安装包已备份到「%1$s」，卸载后不会丢失。请先卸载当前应用，再从文件管理中打开该安装包完成安装。</string>
+    <string name="settings_update_signature_mismatch">检测到本机当前版本与官方安装包签名不一致（可能是非官方渠道安装的版本），无法覆盖安装。请先卸载当前应用，再从官网 yinxing.722688.xyz 重新下载安装。</string>
     <string name="settings_update_install_blocked_status">需要先允许本应用安装更新</string>
     <string name="settings_update_install_blocked_hint">系统出于安全考虑需要授权。点击下方按钮，在打开的页面中允许本应用安装应用，然后返回继续。</string>
     <string name="settings_update_open_install_settings">去允许安装</string>
