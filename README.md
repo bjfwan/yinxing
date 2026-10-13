@@ -9,7 +9,7 @@
 [![License: GPL-3.0](https://img.shields.io/badge/license-GPL--3.0-B8882A?labelColor=1C1914&style=flat-square)](LICENSE)
 [![Download](https://img.shields.io/badge/下载-APK-B8882A?labelColor=1C1914&style=flat-square&logo=android&logoColor=white)](https://yinxing.722688.xyz)
 [![Platform](https://img.shields.io/badge/Android-7.0%2B-0369A1?labelColor=1C1914&style=flat-square&logo=android&logoColor=white)](#下载安装)
-[![Source Version](https://img.shields.io/badge/source-v2.2.0-B8882A?labelColor=1C1914&style=flat-square)](https://github.com/bjfwan/yinxing/releases/tag/v2.2.0)
+[![Source Version](https://img.shields.io/badge/source-v2.3.0-B8882A?labelColor=1C1914&style=flat-square)](https://github.com/bjfwan/yinxing/releases/tag/v2.3.0)
 [![Stars](https://img.shields.io/github/stars/bjfwan/yinxing?color=B8882A&labelColor=1C1914&style=flat-square)](https://github.com/bjfwan/yinxing/stargazers)
 
 **大字、大图标只是起点。银杏真正想解决的是：长辈能不能稳定地找到家人、拨出电话，并在不同手机和软件版本上继续用下去。**
@@ -18,15 +18,18 @@
 
 ---
 
-## v2.2.0 发布重点
+## v2.3.0 发布重点
 
-- 🔄 新增应用内更新：在应用内检查、下载并安装新版本，支持多条下载线路自动切换、断点续传和完整性校验；
-- 🛠️ 修复部分机型来电与权限弹窗闪退、平板无法直接拨号等问题，拨号失败时自动回落到系统拨号盘；
-- 🔐 新增“诊断日志上报”开关，用户可自主选择是否上传脱敏诊断日志，隐私政策已同步说明；
-- ⏱️ 减少息屏时的卡顿误报与天气城市查询的重复上报；
-- ✅ `822 tests, 0 failed`，Lint、Release 构建和 APK v2 签名校验通过。
+- 🌤️ 天气定位重写为三路并行：系统定位、WiFi/基站指纹（beaconDB 公共库）、IP 双源同时发起，几秒内返回结果；定位失败与天气获取失败分开提示；
+- 🗺️ 内置民政部口径全国省市区县地名库（3240 条含坐标），城市搜索支持模糊匹配、错别字纠正、省市拼接写法和常见简称，重名地区自动消歧；
+- 🎨 界面改版：设置、联系人、视频通话、应用管理等页面按统一设计规范重构，色彩语义、圆角、字号全面统一；
+- � 修复部分小米手机定位回调崩溃与来电弹窗异常，建议小米/红米用户尽快更新；
+- 🎥 微信视频：识别“微信未登录”与权限申请页面并明确提示，界面读取异常时自动重新拉起恢复；
+- 🤝 新增“定位数据贡献”开关（默认开启，可关闭）：真实定位成功时匿名向公共定位库上报 WiFi/基站观测，自己定位也会更准；
+- 🔄 应用内更新安装前校验 APK 签名，签名不匹配时保留备份到公共下载目录；
+- ✅ `862 tests`（1 例已知 Robolectric 并发 flaky，与本次改动无关），Release 构建和 APK v2 签名校验通过。
 
-[查看 v2.2.0 完整发布说明](https://github.com/bjfwan/yinxing/releases/tag/v2.2.0) · [前往官网下载](https://yinxing.722688.xyz)
+[查看 v2.3.0 完整发布说明](https://github.com/bjfwan/yinxing/releases/tag/v2.3.0) · [前往官网下载](https://yinxing.722688.xyz)
 
 ---
 
@@ -202,7 +205,7 @@
 
 ### [下载最新 APK](https://yinxing.722688.xyz)
 
-当前源码版本：`v2.2.0`
+当前源码版本：`v2.3.0`
 
 </div>
 

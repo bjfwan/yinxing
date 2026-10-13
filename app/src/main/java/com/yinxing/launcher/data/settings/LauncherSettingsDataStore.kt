@@ -35,7 +35,7 @@ data class LauncherSettings(
     val fallDetectionEnabled: Boolean = false,
     val fallEmergencyContact: String = "",
     val diagnosticsSharingEnabled: Boolean = true,
-    val locationSharingEnabled: Boolean = false
+    val locationSharingEnabled: Boolean = true
 )
 
 data class LauncherSettingsMigration(
@@ -354,7 +354,7 @@ class LauncherSettingsDataStore private constructor(context: Context) {
             fallDetectionEnabled = this[KEY_FALL_DETECTION_ENABLED] ?: false,
             fallEmergencyContact = this[KEY_FALL_EMERGENCY_CONTACT].orEmpty(),
             diagnosticsSharingEnabled = this[KEY_DIAGNOSTICS_SHARING_ENABLED] ?: true,
-            locationSharingEnabled = this[KEY_LOCATION_SHARING_ENABLED] ?: false
+            locationSharingEnabled = this[KEY_LOCATION_SHARING_ENABLED] ?: true
         )
     }
 

@@ -80,8 +80,9 @@ class SettingsClassificationTest {
         assertTrue(activity.findSecondaryDetailText("减少动态效果").isNotEmpty())
         assertTrue(activity.findSecondaryDetailText("诊断日志上报").isNotEmpty())
         assertTrue(activity.findSecondaryDetailText("导出诊断信息").isNotEmpty())
+        assertTrue(activity.findSecondaryDetailText("定位数据贡献").isNotEmpty())
         assertEquals(3, activity.findViewById<LinearLayout>(R.id.settings_detail_rows).childCount)
-        assertEquals(3, activity.findViewById<LinearLayout>(R.id.settings_detail_rows_secondary).childCount)
+        assertEquals(4, activity.findViewById<LinearLayout>(R.id.settings_detail_rows_secondary).childCount)
         assertTrue(activity.findDetailText("首页显示大小").isEmpty())
         assertTrue(activity.findDetailText("外观模式").isEmpty())
     }
