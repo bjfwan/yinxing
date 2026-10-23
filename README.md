@@ -9,7 +9,7 @@
 [![License: GPL-3.0](https://img.shields.io/badge/license-GPL--3.0-B8882A?labelColor=1C1914&style=flat-square)](LICENSE)
 [![Download](https://img.shields.io/badge/下载-APK-B8882A?labelColor=1C1914&style=flat-square&logo=android&logoColor=white)](https://yinxing.722688.xyz)
 [![Platform](https://img.shields.io/badge/Android-7.0%2B-0369A1?labelColor=1C1914&style=flat-square&logo=android&logoColor=white)](#下载安装)
-[![Source Version](https://img.shields.io/badge/source-v2.3.0-B8882A?labelColor=1C1914&style=flat-square)](https://github.com/bjfwan/yinxing/releases/tag/v2.3.0)
+[![Source Version](https://img.shields.io/badge/source-v2.4.0-B8882A?labelColor=1C1914&style=flat-square)](https://github.com/bjfwan/yinxing/releases/tag/v2.3.0)
 [![Stars](https://img.shields.io/github/stars/bjfwan/yinxing?color=B8882A&labelColor=1C1914&style=flat-square)](https://github.com/bjfwan/yinxing/stargazers)
 
 **大字、大图标只是起点。银杏真正想解决的是：长辈能不能稳定地找到家人、拨出电话，并在不同手机和软件版本上继续用下去。**
@@ -18,18 +18,18 @@
 
 ---
 
-## v2.3.0 发布重点
+## v2.4.0 发布重点
 
-- 🌤️ 天气定位重写为三路并行：系统定位、WiFi/基站指纹（beaconDB 公共库）、IP 双源同时发起，几秒内返回结果；定位失败与天气获取失败分开提示；
-- 🗺️ 内置民政部口径全国省市区县地名库（3240 条含坐标），城市搜索支持模糊匹配、错别字纠正、省市拼接写法和常见简称，重名地区自动消歧；
-- 🎨 界面改版：设置、联系人、视频通话、应用管理等页面按统一设计规范重构，色彩语义、圆角、字号全面统一；
-- � 修复部分小米手机定位回调崩溃与来电弹窗异常，建议小米/红米用户尽快更新；
-- 🎥 微信视频：识别“微信未登录”与权限申请页面并明确提示，界面读取异常时自动重新拉起恢复；
-- 🤝 新增“定位数据贡献”开关（默认开启，可关闭）：真实定位成功时匿名向公共定位库上报 WiFi/基站观测，自己定位也会更准；
-- 🔄 应用内更新安装前校验 APK 签名，签名不匹配时保留备份到公共下载目录；
-- ✅ `862 tests`（1 例已知 Robolectric 并发 flaky，与本次改动无关），Release 构建和 APK v2 签名校验通过。
+- 🧹 清理缓存：设置里一键清理本应用缓存和临时文件，显示可清理大小、带进度和取消，不碰照片、联系人；
+- 🖼️ 首页卡片大小：每个首页入口可设小（一行三个）、中（一行两个）、大（独占一行），也可一键统一；大小混排自动铺满不留缝；
+- ✅ 使用前检查：设置首页一屏看全来电、视频、保活三条链路是否就绪，未就绪点进去直接修；
+- 🏷️ 新功能「新」角标：设置里的新功能带“新”标记，进入一次即消失；
+- 👆 家属入口提示：连点两次“银杏”进家属设置，最多提示 3 次，用过就不再打扰；
+- 🚫 开屏广告自动跳过（实验性）：自动点“跳过”、绝不点广告本体，依赖无障碍服务；
+- 📉 诊断降噪：天气退避等待不再记为错误，失败上报 15 分钟去重，弱网不再刷错误日志；
+- ✅ `940 tests, 0 failed`，Lint `0 errors`，Release 构建和 APK v2 签名校验通过。
 
-[查看 v2.3.0 完整发布说明](https://github.com/bjfwan/yinxing/releases/tag/v2.3.0) · [前往官网下载](https://yinxing.722688.xyz)
+[查看 v2.4.0 完整发布说明](docs/release/v2.4.0.md) · [前往官网下载](https://yinxing.722688.xyz)
 
 ---
 
@@ -158,9 +158,13 @@
 - 电话联系人、微信视频联系人和首页应用集中管理；
 - 自动接听、倒计时、通话后回首页和紧急联系人均可单独设置；
 - 字体支持跟随系统、标准、较大和特大；
+- 首页应用支持按入口设置卡片大小（小=一行三个、中=一行两个、大=独占一行），也可统一大小；
 - 首页图标大小、整卡点击、布局锁定和长按时间可调整；
+- 「使用前检查」一屏看全来电、视频、保活三条链路是否就绪；
 - 支持浅色、深色和跟随系统；
 - 低性能模式可减少非必要动画，照顾性能较弱的旧手机；
+- 「清理缓存」只清本应用缓存和临时文件，带进度和可取消，不碰照片、联系人；
+- 「自动跳过开屏广告」默认保守识别“跳过”按钮、绝不点广告本身；
 - 权限页会分别检查电话、通知、无障碍、电池、自启动和后台弹出能力；
 - 默认桌面优先使用 Android 正式 Home 能力，厂商限制下提供明确引导和可选回退。
 
@@ -168,6 +172,7 @@
 
 - 无账号体系，联系人、桌面配置和适配资料优先保存在本机；
 - 日志上传用于故障诊断，不作为广告画像或账号识别；
+- “定位数据贡献”默认开启：真实定位成功时只匿名上报附近公共 WiFi/基站标识到公共定位库（beaconDB），可随时关闭；
 - 微信示教是否上传由用户选择，本地保存不依赖上传成功；
 - 上传前过滤联系人、聊天文字和媒体内容；
 - 不在老人机上运行大模型，主流程使用确定性的语义识别、状态验证和行为树，降低性能与不可控风险。
@@ -182,8 +187,11 @@
 | 微信视频主动拨打 | 能力树、语义识别、备用路线、示教校准和失败样本已接入，仍持续验证更多微信版本与机型 |
 | 系统电话自动接听 | 软件链路已完成，仍需扩大真实 SIM 和厂商 ROM 验证 |
 | 跌倒检测 | 实验性安全能力，公开数据离线回放不代表所有真机准确率 |
+| 自动跳过开屏广告 | 实验性能力，默认保守策略，只点“跳过”、不点广告 |
 | 微信来电自动接听 | 未交付 |
 | 远程协助、云同步、账号体系 | 当前不在范围内 |
+
+本地工程基线（2026-10-23，v2.4.0）：单元测试 `940 tests, 0 failed`；`lintDebug` `0 errors, 233 warnings`；Debug 构建通过。清理缓存、首页卡片大小、使用前检查、「新」角标、家属入口提示、开屏广告跳过已随 v2.4.0 发布。
 
 任何基于无障碍服务操作第三方应用的方案都会受到系统、微信版本和厂商 ROM 的影响。银杏的目标不是假装这些差异不存在，而是让流程能够识别状态、有限恢复，并在失败后留下可分析的证据。
 
@@ -205,7 +213,9 @@
 
 ### [下载最新 APK](https://yinxing.722688.xyz)
 
-当前源码版本：`v2.3.0`
+当前源码版本：`v2.4.0`
+
+> 本仓库源码公开至 `v2.3.0`；`v2.4.0` 起仅提供 APK，详见下方「许可与开源范围」。
 
 </div>
 
@@ -227,8 +237,8 @@
 环境要求：JDK 17+、Android SDK Platform 36，推荐使用 Android Studio。
 
 ```powershell
-# 单元测试
-.\gradlew.bat :app:testDebugUnitTest --no-parallel
+# 单元测试（项目 testBuildType = deviceTest，任务名是 testDeviceTestUnitTest）
+.\gradlew.bat :app:testDeviceTestUnitTest --no-parallel
 
 # Debug APK
 .\gradlew.bat :app:assembleDebug --no-parallel
@@ -238,6 +248,13 @@
 
 # Release APK
 .\gradlew.bat :app:assembleRelease --no-parallel
+```
+
+`build.bat` 会把 `JAVA_HOME` 固定为 `D:\Android\jbr`；本机没有该路径时，直接设置自己的 JDK 再调 `gradlew.bat` 即可：
+
+```powershell
+$env:JAVA_HOME = "<你的 JDK 17+ 路径>"
+.\gradlew.bat :app:testDeviceTestUnitTest --no-parallel
 ```
 
 Debug 输出目录：`app/build/outputs/apk/debug/`
@@ -250,10 +267,11 @@ Debug 输出目录：`app/build/outputs/apk/debug/`
 yinxing/
 ├── app/
 │   └── src/main/java/com/yinxing/launcher/
-│       ├── feature/      # 首页、电话、视频、天气、设置、安全能力
+│       ├── feature/      # 首页、电话、视频、天气、设置、来电、跌倒、通话返回、首次配置
 │       ├── data/         # 联系人、桌面、天气与设置数据
-│       ├── automation/   # 微信示教与自动化领域模型
-│       └── common/       # UI、日志、性能、权限等公共能力
+│       ├── automation/   # 微信示教与自动化领域模型、开屏广告跳过
+│       ├── common/       # UI、日志、性能、权限、诊断等公共能力
+│       └── (com.google.android.accessibility.selecttospeak)  # 无障碍执行层
 ├── benchmark/            # Baseline Profile 与 Macrobenchmark
 ├── docs/                 # 产品、架构、开发、隐私与发布文档
 └── scripts/              # 文档与发布契约检查
@@ -268,12 +286,19 @@ yinxing/
 | 文档 | 内容 |
 |------|------|
 | [当前功能状态](docs/product/current-feature-status.md) | 已实现、待验证和明确不交付的边界 |
+| [产品需求](docs/product/product-requirements.md) | 产品定位、范围与非功能要求 |
+| [设计规范](DESIGN.md) | UI 唯一设计契约：色彩、字号、间距、组件与提示八式 |
 | [当前架构](docs/architecture/current-architecture.md) | 模块、数据和外部依赖 |
 | [微信能力树迁移](docs/specs/wechat-capability-behavior-tree-migration.md) | 语义能力、多路线与通话返回设计 |
 | [微信视频示教](docs/specs/wechat-video-teaching.md) | 校准、隐私和安全边界 |
+| [应用内更新与设备诊断](docs/specs/in-app-update-and-device-observability.md) | 更新链路、签名校验与结构化诊断契约 |
+| [结构化诊断 v5](docs/specs/structured-diagnostics-v5.md) | 日志与性能指标字段契约 |
 | [首页兼容策略](docs/architecture/home-navigation-compatibility.md) | 默认桌面与厂商回退原则 |
+| [项目结构](docs/development/project-structure.md) | 目录、分层与命名规则 |
 | [构建说明](docs/development/setup-and-build.md) | 环境、命令和产物位置 |
+| [测试策略](docs/testing/test-strategy.md) | 测试分层、门禁与真机清单 |
 | [项目路线图](docs/roadmap/project-roadmap.md) | 后续工作 |
+| [发布检查清单](docs/release/release-checklist.md) | 发布前回归与提测检查 |
 
 ---
 
@@ -289,9 +314,15 @@ yinxing/
 
 ---
 
-## 许可
+## 许可与开源范围
 
-银杏当前源码采用 [GNU General Public License v3.0](LICENSE)（`GPL-3.0-only`），允许使用、学习、修改、分发及商业使用；分发原版或修改版时，须继续采用 GPL v3 并按许可要求提供完整对应源代码。完整边界见 [LICENSING.md](LICENSING.md)。
+**v2.4.0 起，银杏不再公开新版本源码；v2.3.0 及以前的源码继续按 GPL-3.0 公开，可自由获取、使用和修改。**
+
+- **APK 继续免费提供**：所有版本安装包都从[官网](https://yinxing.722688.xyz)免费下载，应用内更新照常工作。
+- **承诺永不收费**：不收费、不设付费功能、不因为不付费削减任何能力；这一承诺与许可文件具有同等效力。
+- **为什么不继续开源**：微信视频自动化、开屏广告跳过等能力依赖对第三方 App 界面的适配，公开细节容易被定向绕过和滥用，也会引来大量"能不能加上某某 App"的维护负担。源码停止公开不影响你免费用上新功能。
+- **旧版本不受影响**：v2.3.0 及以前的源码与 [GNU General Public License v3.0](LICENSE)（`GPL-3.0-only`）许可继续有效，已经获取的副本和权利不受任何影响。
+- 完整许可边界见 [LICENSING.md](LICENSING.md)。
 
 版权持有人有权许可的全部历史原创代码现同时按 `GPL-3.0-only` 提供；已经取得的旧许可证权利仍然有效。详见 [LICENSING.md](LICENSING.md)。
 
