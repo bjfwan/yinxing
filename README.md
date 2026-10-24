@@ -9,7 +9,7 @@
 [![License: GPL-3.0](https://img.shields.io/badge/license-GPL--3.0-B8882A?labelColor=1C1914&style=flat-square)](LICENSE)
 [![Download](https://img.shields.io/badge/下载-APK-B8882A?labelColor=1C1914&style=flat-square&logo=android&logoColor=white)](https://yinxing.722688.xyz)
 [![Platform](https://img.shields.io/badge/Android-7.0%2B-0369A1?labelColor=1C1914&style=flat-square&logo=android&logoColor=white)](#下载安装)
-[![Source Version](https://img.shields.io/badge/source-v2.4.0-B8882A?labelColor=1C1914&style=flat-square)](https://github.com/bjfwan/yinxing/releases/tag/v2.3.0)
+[![Source Version](https://img.shields.io/badge/source-v2.4.1-B8882A?labelColor=1C1914&style=flat-square)](https://github.com/bjfwan/yinxing/releases/tag/v2.3.0)
 [![Stars](https://img.shields.io/github/stars/bjfwan/yinxing?color=B8882A&labelColor=1C1914&style=flat-square)](https://github.com/bjfwan/yinxing/stargazers)
 
 **大字、大图标只是起点。银杏真正想解决的是：长辈能不能稳定地找到家人、拨出电话，并在不同手机和软件版本上继续用下去。**
@@ -18,18 +18,17 @@
 
 ---
 
-## v2.4.0 发布重点
+## v2.4.1 发布重点
 
-- 🧹 清理缓存：设置里一键清理本应用缓存和临时文件，显示可清理大小、带进度和取消，不碰照片、联系人；
-- 🖼️ 首页卡片大小：每个首页入口可设小（一行三个）、中（一行两个）、大（独占一行），也可一键统一；大小混排自动铺满不留缝；
-- ✅ 使用前检查：设置首页一屏看全来电、视频、保活三条链路是否就绪，未就绪点进去直接修；
-- 🏷️ 新功能「新」角标：设置里的新功能带“新”标记，进入一次即消失；
-- 👆 家属入口提示：连点两次“银杏”进家属设置，最多提示 3 次，用过就不再打扰；
-- 🚫 开屏广告自动跳过（实验性）：自动点“跳过”、绝不点广告本体，依赖无障碍服务；
-- 📉 诊断降噪：天气退避等待不再记为错误，失败上报 15 分钟去重，弱网不再刷错误日志；
-- ✅ `940 tests, 0 failed`，Lint `0 errors`，Release 构建和 APK v2 签名校验通过。
+本版是对 v2.4.0 的细节优化，没有新增功能，不在意的用户可以不升级。
 
-[查看 v2.4.0 完整发布说明](docs/release/v2.4.0.md) · [前往官网下载](https://yinxing.722688.xyz)
+- 📱 联系人 / 视频通话管理：管理模式下不再重复出现「新增联系人」按钮，退出管理统一走左上角返回；
+- 🖼️ 空状态排版：空提示卡片靠上排布，间距更紧凑；
+- 🔐 软件许可证：说明按版本区分（v2.3.0 及以前 GPL 开源；v2.4.0 起源码不公开，APK 继续免费）；
+- 📜 长内容弹窗：正文可滚动并显示滚动条，关闭按钮固定底部，不再被长文顶出屏幕；
+- ✅ `942 tests, 0 failed`，Lint `0 errors`，Release 构建和 APK v2 签名校验通过。
+
+[查看 v2.4.1 完整发布说明](docs/release/v2.4.1.md) · [前往官网下载](https://yinxing.722688.xyz)
 
 ---
 
@@ -191,7 +190,7 @@
 | 微信来电自动接听 | 未交付 |
 | 远程协助、云同步、账号体系 | 当前不在范围内 |
 
-本地工程基线（2026-10-23，v2.4.0）：单元测试 `940 tests, 0 failed`；`lintDebug` `0 errors, 233 warnings`；Debug 构建通过。清理缓存、首页卡片大小、使用前检查、「新」角标、家属入口提示、开屏广告跳过已随 v2.4.0 发布。
+本地工程基线（2026-10-24，v2.4.1）：单元测试 `942 tests, 0 failed`；`lintRelease` `0 errors, 233 warnings`；Release 构建通过，APK 通过 v2 签名校验。清理缓存、首页卡片大小、使用前检查、「新」角标、家属入口提示、开屏广告跳过已随 v2.4.0 发布；v2.4.1 为细节优化。
 
 任何基于无障碍服务操作第三方应用的方案都会受到系统、微信版本和厂商 ROM 的影响。银杏的目标不是假装这些差异不存在，而是让流程能够识别状态、有限恢复，并在失败后留下可分析的证据。
 
@@ -213,7 +212,7 @@
 
 ### [下载最新 APK](https://yinxing.722688.xyz)
 
-当前源码版本：`v2.4.0`
+当前源码版本：`v2.4.1`
 
 > 本仓库源码公开至 `v2.3.0`；`v2.4.0` 起仅提供 APK，详见下方「许可与开源范围」。
 
