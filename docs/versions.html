@@ -76,8 +76,8 @@
       </div>
       <div class="versions-current" aria-label="当前版本信息">
         <span>当前稳定版</span>
-        <strong data-latest-version>v2.3.0</strong>
-        <time data-latest-date datetime="2026-10-13">2026.10.13</time>
+        <strong data-latest-version>v2.4.1</strong>
+        <time data-latest-date datetime="2026-10-24">2026.10.24</time>
         <a class="button button-primary" data-latest-download href="./app-release.apk" download="银杏.apk">下载当前版本</a>
       </div>
     </section>
@@ -85,15 +85,61 @@
     <section class="release-ledger" id="all-releases" aria-labelledby="release-ledger-title">
       <div class="release-ledger-head">
         <h2 id="release-ledger-title">发布记录</h2>
-        <p><span data-release-count>20</span> 个正式版本，每页显示 5 个。<span data-release-sync aria-live="polite">正在同步 GitHub 发布记录。</span></p>
+        <p><span data-release-count>22</span> 个正式版本，每页显示 5 个。<span data-release-sync aria-live="polite">正在同步 GitHub 发布记录。</span></p>
       </div>
 
       <ol class="release-list" data-release-list>
         <li>
           <article class="release-entry release-entry-current">
             <div class="release-meta">
-              <time datetime="2026-10-13">2026.10.13</time>
+              <time datetime="2026-10-24">2026.10.24</time>
               <span class="release-status">当前版本</span>
+            </div>
+            <div class="release-content">
+              <h3><span>v2.4.1</span> 细节优化</h3>
+              <p>对 v2.4.0 的细节优化，没有新增功能，不在意的用户可以不升级。</p>
+              <ul>
+                <li>联系人 / 视频通话管理：管理模式下不再重复出现「新增联系人」按钮，退出管理统一走左上角返回</li>
+                <li>空状态排版：空提示卡片靠上排布，间距更紧凑</li>
+                <li>管理工具卡收紧：联系人管理模式下的显示模式切换条整体缩小，不再占掉半屏</li>
+                <li>软件许可证：说明按版本区分（v2.3.0 及以前 GPL 开源；v2.4.0 起源码不公开，APK 继续免费），关于页副标题改为「免费使用」</li>
+                <li>长内容弹窗：正文可滚动并显示滚动条，关闭按钮固定底部，不再被长文顶出屏幕</li>
+              </ul>
+            </div>
+            <div class="release-actions">
+              <a class="release-download" href="./app-release.apk" download="银杏.apk">下载 APK</a>
+            </div>
+          </article>
+        </li>
+
+        <li>
+          <article class="release-entry">
+            <div class="release-meta">
+              <time datetime="2026-10-23">2026.10.23</time>
+            </div>
+            <div class="release-content">
+              <h3><span>v2.4.0</span> 设置新能力与诊断降噪</h3>
+              <p>新增清理缓存、首页卡片大小、使用前检查等设置能力；开屏广告自动跳过（实验性）；诊断日志降噪，弱网不再刷错误。</p>
+              <ul>
+                <li>清理缓存：只清本应用缓存和临时文件，带大小、进度和取消</li>
+                <li>首页卡片大小：每个入口可设小/中/大三档，混排自动铺满不留缝</li>
+                <li>使用前检查：一屏看全来电、视频、保活三条链路是否就绪</li>
+                <li>新功能「新」角标与家属入口提示，进入一次即消失</li>
+                <li>开屏广告自动跳过（实验性）：只点“跳过”，绝不点广告本体</li>
+                <li>诊断降噪：退避等待不再记为错误，失败上报 15 分钟去重</li>
+              </ul>
+            </div>
+            <div class="release-actions">
+              <a class="release-download" href="https://github.com/bjfwan/yinxing/releases/download/v2.4.0/app-release.apk">下载 APK</a>
+              <a href="https://github.com/bjfwan/yinxing/releases/tag/v2.4.0" target="_blank" rel="noopener noreferrer">完整说明</a>
+            </div>
+          </article>
+        </li>
+
+        <li>
+          <article class="release-entry">
+            <div class="release-meta">
+              <time datetime="2026-10-13">2026.10.13</time>
             </div>
             <div class="release-content">
               <h3><span>v2.3.0</span> 界面改版与天气定位重构</h3>
