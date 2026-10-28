@@ -9,7 +9,8 @@
 [![License: GPL-3.0](https://img.shields.io/badge/license-GPL--3.0-B8882A?labelColor=1C1914&style=flat-square)](LICENSE)
 [![Download](https://img.shields.io/badge/下载-APK-B8882A?labelColor=1C1914&style=flat-square&logo=android&logoColor=white)](https://yinxing.722688.xyz)
 [![Platform](https://img.shields.io/badge/Android-7.0%2B-0369A1?labelColor=1C1914&style=flat-square&logo=android&logoColor=white)](#下载安装)
-[![Source Version](https://img.shields.io/badge/source-v2.4.1-B8882A?labelColor=1C1914&style=flat-square)](https://github.com/bjfwan/yinxing/releases/tag/v2.3.0)
+[![Source Version](https://img.shields.io/badge/source-v2.3.0-B8882A?labelColor=1C1914&style=flat-square)](https://github.com/bjfwan/yinxing/releases/tag/v2.3.0)
+[![Latest Release](https://img.shields.io/badge/release-v2.4.1-B8882A?labelColor=1C1914&style=flat-square)](https://github.com/bjfwan/yinxing/releases/tag/v2.4.1)
 [![Stars](https://img.shields.io/github/stars/bjfwan/yinxing?color=B8882A&labelColor=1C1914&style=flat-square)](https://github.com/bjfwan/yinxing/stargazers)
 
 **大字、大图标只是起点。银杏真正想解决的是：长辈能不能稳定地找到家人、拨出电话，并在不同手机和软件版本上继续用下去。**
@@ -18,7 +19,11 @@
 
 ---
 
-## v2.4.0 发布重点
+## 最新发布：v2.4.1（2026-10-24）
+
+v2.4.1 是细节优化版本，没有新增功能：联系人 / 视频通话管理模式下不再重复出现「新增联系人」；空状态排版更紧凑；管理工具卡收紧；软件许可证说明按版本区分（关于页副标题改为「免费使用」）；长内容弹窗正文可滚动、关闭按钮固定底部。
+
+v2.4.0（2026-10-23）主要能力：
 
 - 🧹 清理缓存：设置里一键清理本应用缓存和临时文件，显示可清理大小、带进度和取消，不碰照片、联系人；
 - 🖼️ 首页卡片大小：每个首页入口可设小（一行三个）、中（一行两个）、大（独占一行），也可一键统一；大小混排自动铺满不留缝；
@@ -26,10 +31,11 @@
 - 🏷️ 新功能「新」角标：设置里的新功能带“新”标记，进入一次即消失；
 - 👆 家属入口提示：连点两次“银杏”进家属设置，最多提示 3 次，用过就不再打扰；
 - 🚫 开屏广告自动跳过（实验性）：自动点“跳过”、绝不点广告本体，依赖无障碍服务；
-- 📉 诊断降噪：天气退避等待不再记为错误，失败上报 15 分钟去重，弱网不再刷错误日志；
-- ✅ `942 tests, 0 failed`，Lint `0 errors`，Release 构建和 APK v2 签名校验通过。
+- 📉 诊断降噪：天气退避等待不再记为错误，失败上报 15 分钟去重，弱网不再刷错误日志。
 
-[查看 v2.4.0 完整发布说明](docs/release/v2.4.0.md) · [查看 v2.4.1 细节优化](docs/release/v2.4.1.md) · [前往官网下载](https://yinxing.722688.xyz)
+✅ v2.4.1 发布基线：`942 tests, 0 failed`（174 个测试类），Lint `0 errors`，Release 构建和 APK v2 签名校验通过。
+
+[查看 v2.4.1 完整发布说明](docs/release/v2.4.1.md) · [查看 v2.4.0 发布说明](docs/release/v2.4.0.md) · [前往官网下载](https://yinxing.722688.xyz)
 
 ---
 
@@ -119,7 +125,7 @@
 - 失败原因、状态指纹和能力时间线；
 - 设备、Android 与微信版本信息。
 
-用户同意上传后，样本会进入项目开发者使用的私有 LogAnalyse 维护后台。该后台不是银杏的公开功能，也不向普通用户或公众开放。开发者可以在后台将相同指纹的失败自动聚类，按能力、页面、路线、失败原因和处理状态筛选，查看一次完整能力链，并把样本标记为待处理、已复现、已修复或已忽略。
+用户同意上传后，样本会进入项目维护者使用的内部排障后台。该后台不是银杏的公开功能，也不向普通用户或公众开放。维护者可以在后台将相同指纹的失败自动聚类，按能力、页面、路线、失败原因和处理状态筛选，查看一次完整能力链，并把样本标记为待处理、已复现、已修复或已忽略。
 
 因此，陌生机型上的失败可以沉淀为明确的适配任务，而不是继续堆新的固定坐标。
 
@@ -183,15 +189,15 @@
 
 | 项目 | 状态 |
 |------|------|
-| 桌面、联系人、天气、家属设置 | 主流程已实现 |
+| 桌面、联系人、天气、家属设置 | 主流程已实现（含清理缓存、首页卡片大小、使用前检查、「新」角标、家属入口提示） |
 | 微信视频主动拨打 | 能力树、语义识别、备用路线、示教校准和失败样本已接入，仍持续验证更多微信版本与机型 |
 | 系统电话自动接听 | 软件链路已完成，仍需扩大真实 SIM 和厂商 ROM 验证 |
 | 跌倒检测 | 实验性安全能力，公开数据离线回放不代表所有真机准确率 |
 | 自动跳过开屏广告 | 实验性能力，默认保守策略，只点“跳过”、不点广告 |
-| 微信来电自动接听 | 未交付 |
+| 微信来电自动接听 | 发行版未交付，不作为已交付能力宣传 |
 | 远程协助、云同步、账号体系 | 当前不在范围内 |
 
-本地工程基线（2026-10-24，v2.4.1）：单元测试 `942 tests, 0 failed`；`lintRelease` `0 errors, 233 warnings`；Release 构建通过，APK 通过 v2 签名校验。清理缓存、首页卡片大小、使用前检查、「新」角标、家属入口提示、开屏广告跳过已随 v2.4.0 发布；v2.4.1 为细节优化。
+发布基线（v2.4.1，2026-10-24）：单元测试 `942 tests, 0 failed`（174 个测试类）；`lintRelease` `0 errors`；Release 构建通过，APK 通过 v2 签名校验。v2.4.1 为 v2.4.0 的细节优化。
 
 任何基于无障碍服务操作第三方应用的方案都会受到系统、微信版本和厂商 ROM 的影响。银杏的目标不是假装这些差异不存在，而是让流程能够识别状态、有限恢复，并在失败后留下可分析的证据。
 
@@ -283,22 +289,18 @@ yinxing/
 
 ## 文档
 
+> 公开仓只保留对外读者需要的文档；内部工程、自动化规格、测试与发布流程资料不对外发布。
+
 | 文档 | 内容 |
 |------|------|
-| [当前功能状态](docs/product/current-feature-status.md) | 已实现、待验证和明确不交付的边界 |
-| [产品需求](docs/product/product-requirements.md) | 产品定位、范围与非功能要求 |
+| [文档总览](docs/README.md) | 公开文档索引与维护原则 |
+| [当前功能状态](docs/product/current-feature-status.md) | 已发布能力、实验性边界与未交付范围 |
+| [产品需求](docs/product/product-requirements.md) | 产品定位、已发布范围与非功能要求 |
 | [设计规范](DESIGN.md) | UI 唯一设计契约：色彩、字号、间距、组件与提示八式 |
-| [当前架构](docs/architecture/current-architecture.md) | 模块、数据和外部依赖 |
-| [微信能力树迁移](docs/specs/wechat-capability-behavior-tree-migration.md) | 语义能力、多路线与通话返回设计 |
-| [微信视频示教](docs/specs/wechat-video-teaching.md) | 校准、隐私和安全边界 |
-| [应用内更新与设备诊断](docs/specs/in-app-update-and-device-observability.md) | 更新链路、签名校验与结构化诊断契约 |
-| [结构化诊断 v5](docs/specs/structured-diagnostics-v5.md) | 日志与性能指标字段契约 |
+| [产品原则](PRODUCT.md) | 产品目标、原则与无障碍要求 |
 | [首页兼容策略](docs/architecture/home-navigation-compatibility.md) | 默认桌面与厂商回退原则 |
-| [项目结构](docs/development/project-structure.md) | 目录、分层与命名规则 |
-| [构建说明](docs/development/setup-and-build.md) | 环境、命令和产物位置 |
-| [测试策略](docs/testing/test-strategy.md) | 测试分层、门禁与真机清单 |
-| [项目路线图](docs/roadmap/project-roadmap.md) | 后续工作 |
-| [发布检查清单](docs/release/release-checklist.md) | 发布前回归与提测检查 |
+| [许可说明](LICENSING.md) | 分版本许可与免费承诺 |
+| 版本发布说明 | [v2.4.1](docs/release/v2.4.1.md)、[v2.4.0](docs/release/v2.4.0.md)、[v2.3.0](docs/release/v2.3.0.md)、[v2.2.0](docs/release/v2.2.0.md)、[v2.1.1](docs/release/v2.1.1.md)、[v2.1.0](docs/release/v2.1.0.md)、[v2.0.0](docs/release/v2.0.0.md) |
 
 ---
 
