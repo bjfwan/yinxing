@@ -1,11 +1,10 @@
 name: Android CI
 
+# 公开仓是「公告 + 下载窗口」，源码冻结在 v2.3.0；官网物料会随版本更新，
+# 版本号与冻结源码天然不一致，push 触发的构建校验必然失败。
+# 因此改为手动触发，只在需要验证 v2.3.0 源码快照时手动跑。
 on:
-  push:
-    branches:
-      - main
-      - master
-  pull_request:
+  workflow_dispatch:
 
 jobs:
   verify:
