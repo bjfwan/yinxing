@@ -10,7 +10,7 @@
 [![Download](https://img.shields.io/badge/下载-APK-B8882A?labelColor=1C1914&style=flat-square&logo=android&logoColor=white)](https://yinxing.722688.xyz)
 [![Platform](https://img.shields.io/badge/Android-7.0%2B-0369A1?labelColor=1C1914&style=flat-square&logo=android&logoColor=white)](#下载安装)
 [![Source Version](https://img.shields.io/badge/source-v2.3.0-B8882A?labelColor=1C1914&style=flat-square)](https://github.com/bjfwan/yinxing/releases/tag/v2.3.0)
-[![Latest Release](https://img.shields.io/badge/release-v2.5.0-B8882A?labelColor=1C1914&style=flat-square)](https://github.com/bjfwan/yinxing/releases/tag/v2.5.0)
+[![Latest Release](https://img.shields.io/badge/release-v2.4.1-B8882A?labelColor=1C1914&style=flat-square)](https://github.com/bjfwan/yinxing/releases/tag/v2.4.1)
 [![Stars](https://img.shields.io/github/stars/bjfwan/yinxing?color=B8882A&labelColor=1C1914&style=flat-square)](https://github.com/bjfwan/yinxing/stargazers)
 
 **大字、大图标只是起点。银杏真正想解决的是：长辈能不能稳定地找到家人、拨出电话，并在不同手机和软件版本上继续用下去。**
@@ -19,9 +19,18 @@
 
 ---
 
-## 最新发布：v2.5.0（2026-10-31）
+## 最新发布：v2.4.1（2026-10-24）
 
-v2.5.0 把**微信语音 / 视频来电自动接听**从实验转为正式能力，并补齐通话声音辅助、后台保活、反馈入口与版本特性页。
+v2.4.1 是 v2.4.0 的细节优化，没有新增功能，不在意的用户可以继续用 v2.4.0：联系人 / 视频通话管理模式收敛、空状态排版、管理工具卡收紧、软件许可证按版本说明、长内容弹窗可滚动。
+
+[查看 v2.4.1 发布说明](docs/release/v2.4.1.md) · [查看 v2.4.0 发布说明](docs/release/v2.4.0.md) · [前往官网下载](https://yinxing.722688.xyz)
+
+### v2.5.0：打磨中，线上已撤回
+
+> **v2.5.0 曾于 2026-10-31 上线，因微信来电自动接听稳定性、开屏广告跳过等问题已撤回**：官网与 `update.json` 已回滚至 v2.4.1，当前可下载、可自动更新的仍是 **v2.4.1（versionCode 23）**。
+> 下面列的是**打磨中**的内容，尚未作为已发布能力提供；v2.5.0 修完问题并跑完真机回归后才会重新发布。
+
+v2.5.0 计划把**微信语音 / 视频来电自动接听**从实验转为正式能力，并补齐通话声音辅助、后台保活、反馈入口与版本特性页。
 
 - 📞 **微信来电自动接听**（默认开启）：语音或视频来电自动接听，只接一对一、群呼叫不接；接听倒计时 1～30 秒独立保存，可单独关闭；缺通知访问或无障权时显示「未就绪」并引导，不会静默失败；
 - 🔊 **通话声音辅助**（默认开启）：接听或拨打系统电话、接听微信来电、发起微信视频时把通话音量调到最大并尝试开免提；使用耳机 / 蓝牙时保持原输出；
@@ -32,9 +41,9 @@ v2.5.0 把**微信语音 / 视频来电自动接听**从实验转为正式能力
 - 🧾 **关于页「特性」页签**：当前版本一张重点卡，历史版本收进弹窗，不再平铺成长列表；
 - 🔔 **条款更新提醒**：隐私政策 / 服务条款有新版时，设置首页亮红点、关于页顶部提示，打开文档即记为已读。
 
-✅ v2.5.0 发布基线：`1112 tests, 0 failed, 0 skipped`（192 个测试类，连续两轮），Lint `0 errors`，Release 构建和 APK v2 签名校验通过。
+⚠️ v2.5.0 代码基线（2026-10-31 构建，**未发布**）：`1112 tests, 0 failed, 0 skipped`（192 个测试类，连续两轮），Lint `0 errors`，Release 构建和 APK v2 签名校验通过；工程验证通过不等于真机稳定，撤回原因即来自真机反馈。
 
-[查看 v2.5.0 完整发布说明](docs/release/v2.5.0.md) · [查看 v2.4.1 发布说明](docs/release/v2.4.1.md) · [前往官网下载](https://yinxing.722688.xyz)
+线上可下载版本：[v2.4.1 发布说明](docs/release/v2.4.1.md) · [前往官网下载](https://yinxing.722688.xyz)
 
 ---
 
@@ -138,7 +147,7 @@ v2.5.0 把**微信语音 / 视频来电自动接听**从实验转为正式能力
 - 普通手动通话、来电和跌倒求助不会触发；
 - 通话期间用户主动切到其他应用时，不会强行抢回桌面；
 - 微信语音 / 视频挂断后同样回到银杏首页，不停在微信聊天页；
-- v2.5.0 补强了返回判定，并记录返回动作日志，挂断后没回桌面时可以定位原因；
+- v2.5.0（未发布）补强了返回判定，并记录返回动作日志，挂断后没回桌面时可以定位原因；
 - 可在家属设置中完全关闭。
 
 这让长辈打完电话后回到熟悉的首页，同时不影响手机的正常使用。
@@ -198,10 +207,10 @@ v2.5.0 把**微信语音 / 视频来电自动接听**从实验转为正式能力
 | 系统电话自动接听 | 软件链路已完成，仍需扩大真实 SIM 和厂商 ROM 验证 |
 | 跌倒检测 | 实验性安全能力，公开数据离线回放不代表所有真机准确率 |
 | 自动跳过开屏广告 | 实验性能力，默认保守策略，只点“跳过”、不点广告 |
-| 微信来电自动接听 | v2.5.0 起正式交付（默认开启、可关闭、只接一对一）；vivo V1938CT 连续 6 通语音 / 视频验证通过，息屏 / 锁屏与多厂商 ROM 未验证 |
+| 微信来电自动接听 | 未发布（v2.5.0 打磨中，已撤回线上）：曾单机型连续 6 通语音 / 视频验证通过，但真机反馈接通不稳；息屏 / 锁屏与多厂商 ROM 未验证 |
 | 远程协助、云同步、账号体系 | 当前不在范围内 |
 
-发布基线（v2.5.0，2026-10-31）：单元测试 `1112 tests, 0 failed, 0 skipped`（192 个测试类，连续两轮）；`lintRelease` `0 errors`；Release 构建通过，APK 通过 v2 签名校验。v2.5.0 交付微信来电自动接听、通话声音辅助、后台保活、反馈入口与版本特性页。
+线上发布基线（v2.4.1，2026-10-24）：单元测试 `942 tests, 0 failed`（174 个测试类）；`lintRelease` `0 errors`；Release 构建通过，APK 通过 v2 签名校验。v2.5.0（未发布）代码基线为 `1112 tests, 0 failed, 0 skipped`（192 个测试类，连续两轮），含微信来电自动接听、通话声音辅助、后台保活、反馈入口与版本特性页，因真机问题已撤回线上。
 
 任何基于无障碍服务操作第三方应用的方案都会受到系统、微信版本和厂商 ROM 的影响。银杏的目标不是假装这些差异不存在，而是让流程能够识别状态、有限恢复，并在失败后留下可分析的证据。
 
@@ -223,7 +232,7 @@ v2.5.0 把**微信语音 / 视频来电自动接听**从实验转为正式能力
 
 ### [下载最新 APK](https://yinxing.722688.xyz)
 
-当前源码版本：`v2.5.0`
+当前源码版本：`v2.3.0`（本仓库源码公开至 v2.3.0）；线上最新发布：`v2.4.1`（versionCode 23）
 
 > 本仓库源码公开至 `v2.3.0`；`v2.4.0` 起仅提供 APK，详见下方「许可与开源范围」。
 
@@ -304,7 +313,7 @@ yinxing/
 | [产品原则](PRODUCT.md) | 产品目标、原则与无障碍要求 |
 | [首页兼容策略](docs/architecture/home-navigation-compatibility.md) | 默认桌面与厂商回退原则 |
 | [许可说明](LICENSING.md) | 分版本许可与免费承诺 |
-| 版本发布说明 | [v2.5.0](docs/release/v2.5.0.md)、[v2.4.1](docs/release/v2.4.1.md)、[v2.4.0](docs/release/v2.4.0.md)、[v2.3.0](docs/release/v2.3.0.md)、[v2.2.0](docs/release/v2.2.0.md)、[v2.1.1](docs/release/v2.1.1.md)、[v2.1.0](docs/release/v2.1.0.md)、[v2.0.0](docs/release/v2.0.0.md) |
+| 版本发布说明 | [v2.4.1](docs/release/v2.4.1.md)、[v2.4.0](docs/release/v2.4.0.md)、[v2.3.0](docs/release/v2.3.0.md)、[v2.2.0](docs/release/v2.2.0.md)、[v2.1.1](docs/release/v2.1.1.md)、[v2.1.0](docs/release/v2.1.0.md)、[v2.0.0](docs/release/v2.0.0.md) |
 
 ---
 

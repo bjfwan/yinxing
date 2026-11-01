@@ -20,7 +20,7 @@
 ### 许可与发布
 
 - [许可说明（根目录）](../LICENSING.md)：分版本许可与免费承诺
-- 版本发布说明：[v2.5.0](release/v2.5.0.md)、[v2.4.1](release/v2.4.1.md)、[v2.4.0](release/v2.4.0.md)、[v2.3.0](release/v2.3.0.md)、[v2.2.0](release/v2.2.0.md)、[v2.1.1](release/v2.1.1.md)、[v2.1.0](release/v2.1.0.md)、[v2.0.0](release/v2.0.0.md)
+- 版本发布说明：[v2.4.1](release/v2.4.1.md)、[v2.4.0](release/v2.4.0.md)、[v2.3.0](release/v2.3.0.md)、[v2.2.0](release/v2.2.0.md)、[v2.1.1](release/v2.1.1.md)、[v2.1.0](release/v2.1.0.md)、[v2.0.0](release/v2.0.0.md)
 
 ### 官网与下载页物料
 
