@@ -1,0 +1,135 @@
+{
+  "module": "yinxing-diagnostics",
+  "appVersionName": "2.5.0",
+  "appVersionCode": 25,
+  "diagnosticSchemaVersion": 5,
+  "sourceCommit": "dd2bf18",
+  "generatedAt": "2026-11-01T15:32:41.754Z",
+  "apk": {
+    "file": "app-release.apk",
+    "sha256": "3cd2c95077c9c5ed5e599349613facdb03c87addbaff4efe45dee84b21499f03",
+    "bytes": 3241475
+  },
+  "files": [
+    {
+      "path": "app/src/main/java/com/yinxing/launcher/common/diagnostics/LauncherDiagnosticReport.kt",
+      "mirrorPath": "src/com/yinxing/launcher/common/diagnostics/LauncherDiagnosticReport.kt",
+      "sha256": "f56cc51477f784d8556fad56f0469095f7e952708203f9b0fded9658a73bce89",
+      "bytes": 3720
+    },
+    {
+      "path": "app/src/main/java/com/yinxing/launcher/common/lobster/LobsterAnrEventFactory.kt",
+      "mirrorPath": "src/com/yinxing/launcher/common/lobster/LobsterAnrEventFactory.kt",
+      "sha256": "6a1e2fc178d685ce1b164f392a08632ac639f1b86f06278c1a150fe2ea3be187",
+      "bytes": 2629
+    },
+    {
+      "path": "app/src/main/java/com/yinxing/launcher/common/lobster/LobsterBuildIdentity.kt",
+      "mirrorPath": "src/com/yinxing/launcher/common/lobster/LobsterBuildIdentity.kt",
+      "sha256": "fc90c198a735bdf0337bb44eb9933f1046e4635d7e05765f0ca13a71826613df",
+      "bytes": 1440
+    },
+    {
+      "path": "app/src/main/java/com/yinxing/launcher/common/lobster/LobsterClient.kt",
+      "mirrorPath": "src/com/yinxing/launcher/common/lobster/LobsterClient.kt",
+      "sha256": "00210add3be79204fc9e13a11f80acf59f8dd43224c17126e5807f78aae5106a",
+      "bytes": 17577
+    },
+    {
+      "path": "app/src/main/java/com/yinxing/launcher/common/lobster/LobsterCrashReporter.kt",
+      "mirrorPath": "src/com/yinxing/launcher/common/lobster/LobsterCrashReporter.kt",
+      "sha256": "abb81d16fe197924a9c809755ce305d3fe0c838e790a28726327de9d6a2cf419",
+      "bytes": 3521
+    },
+    {
+      "path": "app/src/main/java/com/yinxing/launcher/common/lobster/LobsterDeviceIdentity.kt",
+      "mirrorPath": "src/com/yinxing/launcher/common/lobster/LobsterDeviceIdentity.kt",
+      "sha256": "cad3e409c8b226265f8b37b30f5c9beeb9de12b6faf0530ae5c5adbfb9398add",
+      "bytes": 860
+    },
+    {
+      "path": "app/src/main/java/com/yinxing/launcher/common/lobster/LobsterDeviceState.kt",
+      "mirrorPath": "src/com/yinxing/launcher/common/lobster/LobsterDeviceState.kt",
+      "sha256": "c1a2313a63e0465a6642a6aabb0acdafd2e5c2b8e8ceba13c4f6fbbd926cfbe4",
+      "bytes": 8382
+    },
+    {
+      "path": "app/src/main/java/com/yinxing/launcher/common/lobster/LobsterEventSequence.kt",
+      "mirrorPath": "src/com/yinxing/launcher/common/lobster/LobsterEventSequence.kt",
+      "sha256": "64ed7fc3c65001d7a51ac91b688ab5da36af67644fb857501a08fd9dbeeb728f",
+      "bytes": 219
+    },
+    {
+      "path": "app/src/main/java/com/yinxing/launcher/common/lobster/LobsterEventTaxonomy.kt",
+      "mirrorPath": "src/com/yinxing/launcher/common/lobster/LobsterEventTaxonomy.kt",
+      "sha256": "68c9ac9b434784a12d6a41d341ce4b92769917e7b448c1037ba972fbc0e82b8b",
+      "bytes": 3648
+    },
+    {
+      "path": "app/src/main/java/com/yinxing/launcher/common/lobster/LobsterFailureSample.kt",
+      "mirrorPath": "src/com/yinxing/launcher/common/lobster/LobsterFailureSample.kt",
+      "sha256": "7a30b0e4bd7a5da3002e8a0178182684e20ca9c1fc350e3ba85556da44ac44f3",
+      "bytes": 10149
+    },
+    {
+      "path": "app/src/main/java/com/yinxing/launcher/common/lobster/LobsterLogSanitizer.kt",
+      "mirrorPath": "src/com/yinxing/launcher/common/lobster/LobsterLogSanitizer.kt",
+      "sha256": "e371bbc709f63b3396e0afdaf691939a187fe03e283e3378c9df08c30ac5cd23",
+      "bytes": 1408
+    },
+    {
+      "path": "app/src/main/java/com/yinxing/launcher/common/lobster/LobsterMainThreadWatchdog.kt",
+      "mirrorPath": "src/com/yinxing/launcher/common/lobster/LobsterMainThreadWatchdog.kt",
+      "sha256": "fd9f6be35a893b8f6f689b29a40d29de04362e08c385f782e0c8f75ea8a3df16",
+      "bytes": 3887
+    },
+    {
+      "path": "app/src/main/java/com/yinxing/launcher/common/lobster/LobsterPendingReport.kt",
+      "mirrorPath": "src/com/yinxing/launcher/common/lobster/LobsterPendingReport.kt",
+      "sha256": "f67ecb31c9aff65a5bf4f96c95aee727b78fa8a08f32f39f7fe67ebed4cd73c3",
+      "bytes": 3114
+    },
+    {
+      "path": "app/src/main/java/com/yinxing/launcher/common/lobster/LobsterProcessExitReporter.kt",
+      "mirrorPath": "src/com/yinxing/launcher/common/lobster/LobsterProcessExitReporter.kt",
+      "sha256": "6d5433a87b26396447be063789f61d633bed073cdfc11bb2dd381553e8b38aed",
+      "bytes": 3049
+    },
+    {
+      "path": "app/src/main/java/com/yinxing/launcher/common/lobster/LobsterRuntimePolicy.kt",
+      "mirrorPath": "src/com/yinxing/launcher/common/lobster/LobsterRuntimePolicy.kt",
+      "sha256": "32fa30ad6ffd3921b179860619b352bf869835871f69d36e9695f4a680b1fff6",
+      "bytes": 900
+    },
+    {
+      "path": "app/src/main/java/com/yinxing/launcher/common/lobster/LobsterSettingEventFactory.kt",
+      "mirrorPath": "src/com/yinxing/launcher/common/lobster/LobsterSettingEventFactory.kt",
+      "sha256": "30fd434389e31380e8ec6af9af8b6c4547f920ef4a3a16e6fefef3966ea0adeb",
+      "bytes": 8608
+    },
+    {
+      "path": "app/src/main/java/com/yinxing/launcher/common/lobster/LobsterStructuredReport.kt",
+      "mirrorPath": "src/com/yinxing/launcher/common/lobster/LobsterStructuredReport.kt",
+      "sha256": "cc77e3210ffdef2ab2e2949b98dc1b89226669309ab0a2bfc3f3a6ea6496d117",
+      "bytes": 2591
+    },
+    {
+      "path": "app/src/main/java/com/yinxing/launcher/common/lobster/LobsterTrace.kt",
+      "mirrorPath": "src/com/yinxing/launcher/common/lobster/LobsterTrace.kt",
+      "sha256": "9160d266bacd2851419ec2bd414f58df661a614071a2bb5562a23f2506a1d858",
+      "bytes": 272
+    },
+    {
+      "path": "app/src/main/java/com/yinxing/launcher/common/lobster/LobsterUsageEvent.kt",
+      "mirrorPath": "src/com/yinxing/launcher/common/lobster/LobsterUsageEvent.kt",
+      "sha256": "e45985173ed0cff0bdfe78cdbc8d9c7774326ee313e4d0f09aa7743f981ffec7",
+      "bytes": 6213
+    },
+    {
+      "path": "app/src/main/java/com/yinxing/launcher/common/lobster/LobsterUserReportFactory.kt",
+      "mirrorPath": "src/com/yinxing/launcher/common/lobster/LobsterUserReportFactory.kt",
+      "sha256": "9f47c6f50fca54129eced90ffac17dff32b37c1f043a9d346ec0500f92cf0310",
+      "bytes": 1595
+    }
+  ]
+}
