@@ -1,5 +1,6 @@
 package com.yinxing.launcher.common.lobster
 
+import android.app.ActivityManager
 import android.content.Context
 import android.os.Debug
 import android.os.Handler
@@ -39,6 +40,13 @@ object LobsterMainThreadWatchdog {
     private const val STALL_THRESHOLD_MS = 8_000L
     private const val MAX_ACTIONABLE_STALL_MS = 120_000L
 
+    // 一个指标名曾混装 4 种情况（休眠 / 超 120s / 空闲恢复 / watchdog 自身采样），
+    // 线上 p90 被拉到 6 分钟以上、指标不可用；现在按原因拆成独立指标名。
+    private const val STALL_ASLEEP_METRIC = "main_thread_stall_asleep_sample"
+    private const val STALL_TOO_LONG_METRIC = "main_thread_stall_too_long_sample"
+    private const val STALL_IDLE_METRIC = "main_thread_stall_idle_recovered_sample"
+    private const val STALL_WATCHDOG_SELF_METRIC = "main_thread_stall_watchdog_self_sample"
+
     @Volatile
     private var started = false
 
@@ -71,22 +79,37 @@ object LobsterMainThreadWatchdog {
                 )
                 if (durationMs != null) {
                     val deviceAsleep = powerManager?.isInteractive == false
-                    if (deviceAsleep || durationMs > MAX_ACTIONABLE_STALL_MS) {
+                    val appForeground = isAppForeground()
+                    if (deviceAsleep) {
                         LobsterClient.reportMetrics(
                             appContext,
-                            listOf("main_thread_stall_recovered_sample" to durationMs)
+                            listOf(STALL_ASLEEP_METRIC to durationMs)
+                        )
+                    } else if (durationMs > MAX_ACTIONABLE_STALL_MS) {
+                        LobsterClient.reportMetrics(
+                            appContext,
+                            listOf(STALL_TOO_LONG_METRIC to durationMs)
                         )
                     } else {
                         val frames = mainThread.stackTrace.toList()
                         when (MainThreadStallSampleClassifier.classify(frames)) {
                             MainThreadStallSample.ACTIONABLE -> LobsterClient.reportUsage(
                                 appContext,
-                                LobsterAnrEventFactory.from(frames, durationMs)
+                                LobsterAnrEventFactory.from(
+                                    frames,
+                                    durationMs,
+                                    sample = MainThreadStallSample.ACTIONABLE,
+                                    screenOn = !deviceAsleep,
+                                    appForeground = appForeground
+                                )
                             )
-                            MainThreadStallSample.RECOVERED_IDLE,
+                            MainThreadStallSample.RECOVERED_IDLE -> LobsterClient.reportMetrics(
+                                appContext,
+                                listOf(STALL_IDLE_METRIC to durationMs)
+                            )
                             MainThreadStallSample.WATCHDOG_SELF -> LobsterClient.reportMetrics(
                                 appContext,
-                                listOf("main_thread_stall_recovered_sample" to durationMs)
+                                listOf(STALL_WATCHDOG_SELF_METRIC to durationMs)
                             )
                         }
                     }
@@ -97,4 +120,11 @@ object LobsterMainThreadWatchdog {
             TimeUnit.MILLISECONDS
         )
     }
+
+    /** 主线程卡顿时本应用是否在前台；取不到状态时按前台处理，宁可多报不漏报。 */
+    private fun isAppForeground(): Boolean = runCatching {
+        val info = ActivityManager.RunningAppProcessInfo()
+        ActivityManager.getMyMemoryState(info)
+        info.importance <= ActivityManager.RunningAppProcessInfo.IMPORTANCE_FOREGROUND
+    }.getOrDefault(true)
 }

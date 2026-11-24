@@ -1,15 +1,15 @@
 # 银杏日志上报链路（源码镜像）
 
-当前镜像对应：银杏 App **v2.5.0**（versionCode 25）·
+导出时的 App 版本字段：银杏 **v2.5.1**（versionCode 26）·
 诊断 `schema_version 5` ·
-导出源码提交 `dd2bf18` ·
-导出于 2026-11-01T15:32:41.754Z ·
-文件数 20
+导出源码提交 `3669e2b` ·
+导出于 2026-11-24T04:10:47.922Z ·
+文件数 28
 
-对应安装包 `app-release.apk` 的 SHA-256：
+对应安装包 `app-release.apk` 的 SHA-256（导出时读取的发布文件指纹）：
 
 ```
-3cd2c95077c9c5ed5e599349613facdb03c87addbaff4efe45dee84b21499f03
+e9705ba27c125e7abd7a16eb0faa547c7d88f94e2ce8080e9f78319b40e91f38
 ```
 
 ---
@@ -18,7 +18,7 @@
 
 银杏从 v2.4.0 起不再公开新版本源码，只分发 APK。这带来一个合理的问题：**闭源之后，用户凭什么相信"日志上传"这件事说的是真话？**
 
-所以这里公开银杏**日志上报链路**的全部源码，逐字节镜像自发布版本的 App 源码：
+所以这里展示银杏**日志上报链路**的全部源码，逐字节镜像自导出时的 App 源码。正式发布按下方同步规则绑定 APK；本地开发期间的导出仅用于源码核对，安装包指纹本身不能证明这些未发布改动已经进入该 APK。
 
 | 内容 | 文件 |
 |------|------|
@@ -26,7 +26,9 @@
 | **发送前脱敏** | `src/com/yinxing/launcher/common/lobster/LobsterLogSanitizer.kt` |
 | 上报结构定义（schema） | `LobsterStructuredReport.kt`、`LobsterFailureSample.kt`、`LobsterDeviceState.kt` |
 | 事件分类与开关策略 | `LobsterEventTaxonomy.kt`、`LobsterRuntimePolicy.kt` |
-| 待发送队列 | `LobsterPendingReport.kt` |
+| 待发送队列与 no-backup SQLite 存储 | `LobsterPendingReport.kt`、`LobsterAtomicStorage.kt` |
+| 投递调度、HTTP 与授权代次 | `LobsterDeliveryEngine.kt`、`LobsterHttpTransport.kt`、`LobsterDeliveryConsent.kt`、`LobsterDeliveryTriggers.kt` |
+| 有限通话证据与返回结果 | `LobsterCallEvidence.kt`、`src/com/yinxing/launcher/feature/callreturn/CallReturnDiagnostics.kt` |
 
 范围之外的 App 代码不在这里。这个目录只有一个目的：**让"上报了什么、怎么脱敏的"可被任何人逐行阅读**，不需要相信任何承诺。
 
@@ -100,26 +102,34 @@
 
 ## 本版文件指纹
 
-- `src/com/yinxing/launcher/common/diagnostics/LauncherDiagnosticReport.kt` — `f56cc51477f784d8`
-- `src/com/yinxing/launcher/common/lobster/LobsterAnrEventFactory.kt` — `6a1e2fc178d685ce`
-- `src/com/yinxing/launcher/common/lobster/LobsterBuildIdentity.kt` — `fc90c198a735bdf0`
-- `src/com/yinxing/launcher/common/lobster/LobsterClient.kt` — `00210add3be79204`
-- `src/com/yinxing/launcher/common/lobster/LobsterCrashReporter.kt` — `abb81d16fe197924`
+- `src/com/yinxing/launcher/common/diagnostics/LauncherDiagnosticReport.kt` — `2cda90dcacc84da3`
+- `src/com/yinxing/launcher/common/lobster/LobsterAnrEventFactory.kt` — `cf2f9fb489f83bde`
+- `src/com/yinxing/launcher/common/lobster/LobsterAtomicStorage.kt` — `fb1868f0a69e4dbc`
+- `src/com/yinxing/launcher/common/lobster/LobsterBuildIdentity.kt` — `451be979f60a305e`
+- `src/com/yinxing/launcher/common/lobster/LobsterCallEvidence.kt` — `dc1463ba6f1814d5`
+- `src/com/yinxing/launcher/common/lobster/LobsterClient.kt` — `224e224e0e675881`
+- `src/com/yinxing/launcher/common/lobster/LobsterCrashReporter.kt` — `74de8d3fd2ed822a`
+- `src/com/yinxing/launcher/common/lobster/LobsterDeliveryConsent.kt` — `599b68ecf803fbc8`
+- `src/com/yinxing/launcher/common/lobster/LobsterDeliveryEngine.kt` — `9018646bbbc9cf5a`
+- `src/com/yinxing/launcher/common/lobster/LobsterDeliveryTriggers.kt` — `681769399b0a05d0`
 - `src/com/yinxing/launcher/common/lobster/LobsterDeviceIdentity.kt` — `cad3e409c8b22626`
-- `src/com/yinxing/launcher/common/lobster/LobsterDeviceState.kt` — `c1a2313a63e0465a`
+- `src/com/yinxing/launcher/common/lobster/LobsterDeviceState.kt` — `c3dbffdd6c8e22da`
 - `src/com/yinxing/launcher/common/lobster/LobsterEventSequence.kt` — `64ed7fc3c65001d7`
 - `src/com/yinxing/launcher/common/lobster/LobsterEventTaxonomy.kt` — `68c9ac9b434784a1`
-- `src/com/yinxing/launcher/common/lobster/LobsterFailureSample.kt` — `7a30b0e4bd7a5da3`
+- `src/com/yinxing/launcher/common/lobster/LobsterFailureSample.kt` — `5862a63d2c9fc2a8`
+- `src/com/yinxing/launcher/common/lobster/LobsterHeartbeat.kt` — `ece98431fcf7b938`
+- `src/com/yinxing/launcher/common/lobster/LobsterHttpTransport.kt` — `b52f85178d3ee59a`
 - `src/com/yinxing/launcher/common/lobster/LobsterLogSanitizer.kt` — `e371bbc709f63b33`
-- `src/com/yinxing/launcher/common/lobster/LobsterMainThreadWatchdog.kt` — `fd9f6be35a893b8f`
-- `src/com/yinxing/launcher/common/lobster/LobsterPendingReport.kt` — `f67ecb31c9aff65a`
+- `src/com/yinxing/launcher/common/lobster/LobsterMainThreadWatchdog.kt` — `0a2974d9f3bf0d0e`
+- `src/com/yinxing/launcher/common/lobster/LobsterPendingReport.kt` — `762c5c89fb17fd71`
 - `src/com/yinxing/launcher/common/lobster/LobsterProcessExitReporter.kt` — `6d5433a87b263964`
-- `src/com/yinxing/launcher/common/lobster/LobsterRuntimePolicy.kt` — `32fa30ad6ffd3921`
-- `src/com/yinxing/launcher/common/lobster/LobsterSettingEventFactory.kt` — `30fd434389e31380`
-- `src/com/yinxing/launcher/common/lobster/LobsterStructuredReport.kt` — `cc77e3210ffdef2a`
+- `src/com/yinxing/launcher/common/lobster/LobsterRuntimePolicy.kt` — `485f853c68adf17e`
+- `src/com/yinxing/launcher/common/lobster/LobsterSettingEventFactory.kt` — `be25feec67291f3c`
+- `src/com/yinxing/launcher/common/lobster/LobsterStructuredReport.kt` — `ef1eabe828b6ca59`
 - `src/com/yinxing/launcher/common/lobster/LobsterTrace.kt` — `9160d266bacd2851`
-- `src/com/yinxing/launcher/common/lobster/LobsterUsageEvent.kt` — `e45985173ed0cff0`
+- `src/com/yinxing/launcher/common/lobster/LobsterUsageEvent.kt` — `863611a93097b425`
 - `src/com/yinxing/launcher/common/lobster/LobsterUserReportFactory.kt` — `9f47c6f50fca5412`
+- `src/com/yinxing/launcher/feature/callreturn/CallReturnDiagnostics.kt` — `d9f836d3894a6b7a`
 
 完整清单见 `MANIFEST.json`。
 

@@ -2,6 +2,7 @@ package com.yinxing.launcher.common.lobster
 
 import android.content.Context
 import java.io.File
+import java.util.Locale
 import org.json.JSONArray
 import org.json.JSONObject
 
@@ -55,6 +56,8 @@ data class LobsterFailureSample(
     val uiState: LobsterFailureUiState,
     val targetVersionName: String? = null,
     val targetVersionCode: Long? = null,
+    /** 采集时的系统字体倍率：waiting_contact_detail 在大字机型上集中失败，先留证据。 */
+    val fontScale: Float? = null,
 ) {
     fun toJson(): JSONObject = JSONObject().apply {
         put("sample_version", sampleVersion.coerceIn(1, 99))
@@ -69,6 +72,10 @@ data class LobsterFailureSample(
             put("target_version_name", it)
         }
         targetVersionCode?.takeIf { it >= 0L }?.let { put("target_version_code", it) }
+        // 保留两位小数再入库：1.3f 直接转 double 会写成 1.2999999523162842，控制台里同一档大字被拆成多值。
+        fontScale?.takeIf { it > 0f }?.let {
+            put("font_scale", String.format(Locale.US, "%.2f", it).toDouble())
+        }
         put("ui_state", uiState.toJson())
     }
 
@@ -89,6 +96,11 @@ data class LobsterFailureSample(
                 targetVersionName = json.optString("target_version_name").takeIf(String::isNotEmpty),
                 targetVersionCode = if (json.has("target_version_code") && !json.isNull("target_version_code")) {
                     json.optLong("target_version_code").takeIf { it >= 0L }
+                } else {
+                    null
+                },
+                fontScale = if (json.has("font_scale") && !json.isNull("font_scale")) {
+                    json.optDouble("font_scale").takeIf { it > 0.0 }?.toFloat()
                 } else {
                     null
                 },

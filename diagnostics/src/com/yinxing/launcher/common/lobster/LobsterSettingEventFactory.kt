@@ -31,6 +31,14 @@ enum class LobsterPermissionTarget(val actionPart: String, val label: String) {
     CONTACTS("contacts", "通讯录权限")
 }
 
+/** 权限/白名单引导返回后的结果分类：已就绪 / 用户取消 / 系统限制 / 未授予。 */
+enum class LobsterPermissionGuidanceOutcome(val wireValue: String, val label: String) {
+    GRANTED("granted", "已就绪"),
+    USER_CANCELLED("user_cancelled", "用户取消"),
+    SYSTEM_RESTRICTED("system_restricted", "系统限制"),
+    NOT_GRANTED("not_granted", "未授予")
+}
+
 object LobsterSettingEventFactory {
     private val screenActions = mapOf(
         "StandardOverview" to "open_settings_standard",
@@ -121,9 +129,10 @@ object LobsterSettingEventFactory {
 
     fun permissionResult(
         target: LobsterPermissionTarget,
-        granted: Boolean
+        granted: Boolean,
+        deniedOutcome: LobsterPermissionGuidanceOutcome? = null
     ): LobsterUsageEvent {
-        val result = if (granted) "已授予" else "未授予"
+        val result = if (granted) "已授予" else "未授予${deniedOutcome?.let { "（${it.label}）" } ?: ""}"
         return LobsterUsageEvent(
             scene = "权限申请",
             status = if (granted) LobsterReportStatus.SUCCESS else LobsterReportStatus.ERROR,
@@ -131,13 +140,45 @@ object LobsterSettingEventFactory {
             logLine = "[权限] ${target.label}$result",
             details = if (granted) LobsterReportDetails() else LobsterReportDetails(
                 errorCode = "PERMISSION_DENIED",
-                failedStep = "request_permission"
+                failedStep = deniedOutcome?.wireValue ?: "request_permission"
             ),
             category = LobsterLogCategory.SETTINGS,
             eventType = if (granted) LobsterEventType.OPERATION else LobsterEventType.ERROR,
             action = "request_${target.actionPart}_permission"
         )
     }
+
+    /** 跳转系统设置返回后的闭环结果：只报结论与原因，不展开设备细节。 */
+    fun permissionGuidanceResult(
+        targetLabel: String,
+        action: String,
+        outcome: LobsterPermissionGuidanceOutcome
+    ): LobsterUsageEvent {
+        val granted = outcome == LobsterPermissionGuidanceOutcome.GRANTED
+        return LobsterUsageEvent(
+            scene = "权限引导",
+            status = if (granted) LobsterReportStatus.SUCCESS else LobsterReportStatus.ERROR,
+            summary = "$targetLabel${outcome.label}",
+            logLine = "[权限引导] $targetLabel${outcome.label}",
+            details = if (granted) LobsterReportDetails() else LobsterReportDetails(
+                errorCode = "PERMISSION_GUIDANCE_${outcome.wireValue.uppercase()}",
+                failedStep = "verify_after_return"
+            ),
+            category = LobsterLogCategory.SETTINGS,
+            eventType = if (granted) LobsterEventType.OPERATION else LobsterEventType.ERROR,
+            action = action
+        )
+    }
+
+    fun permissionGuidanceRequested(targetLabel: String, action: String): LobsterUsageEvent = LobsterUsageEvent(
+        scene = "权限引导",
+        status = LobsterReportStatus.REPORTED,
+        summary = "开始申请$targetLabel",
+        logLine = "[权限引导] 开始申请$targetLabel",
+        category = LobsterLogCategory.SETTINGS,
+        eventType = LobsterEventType.OPERATION,
+        action = action
+    )
 
     fun permissionRequested(target: LobsterPermissionTarget) = LobsterUsageEvent(
         scene = "权限申请",
@@ -147,6 +188,13 @@ object LobsterSettingEventFactory {
         category = LobsterLogCategory.SETTINGS,
         eventType = LobsterEventType.OPERATION,
         action = "request_${target.actionPart}_permission"
+    )
+
+    fun defaultLauncherSwitchResult(stillDefault: Boolean) = operation(
+        summary = if (stillDefault) "仍保留银杏为默认桌面" else "已切换到其他默认桌面",
+        action = "switch_default_launcher",
+        status = LobsterReportStatus.REPORTED,
+        eventType = LobsterEventType.OPERATION
     )
 
     fun defaultLauncherResult(enabled: Boolean) = operation(

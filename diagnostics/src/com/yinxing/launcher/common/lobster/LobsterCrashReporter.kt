@@ -7,6 +7,7 @@ import kotlin.system.exitProcess
 
 data class LobsterCrashSnapshot(
     val exceptionType: String,
+    val exceptionMessage: String?,
     val threadKind: String,
     val stackFrames: List<String>
 ) {
@@ -21,12 +22,14 @@ data class LobsterCrashSnapshot(
             action = "uncaught_exception",
             logLine = buildString {
                 append("[崩溃] 异常类型=").append(exceptionType)
+                exceptionMessage?.let { append(" 异常信息=").append(it) }
                 append("\n[崩溃] 线程=").append(threadKind)
                 if (stack.isNotBlank()) append("\n[崩溃] 堆栈=").append(stack)
             },
             details = LobsterReportDetails(
                 errorCode = "UNCAUGHT_EXCEPTION",
-                failedStep = threadKind
+                failedStep = threadKind,
+                exceptionMessage = exceptionMessage
             )
         )
     }
@@ -37,6 +40,9 @@ data class LobsterCrashSnapshot(
         private const val FRAMES_PER_THROWABLE = 25
 
         fun from(threadName: String, throwable: Throwable): LobsterCrashSnapshot {
+            val exceptionMessage = throwable.message
+                ?.takeIf { it.isNotBlank() }
+                ?.let { LobsterLogSanitizer.sanitize(it.take(300)) }
             val lines = mutableListOf<String>()
             var current: Throwable? = throwable
             var depth = 0
@@ -58,6 +64,7 @@ data class LobsterCrashSnapshot(
             }
             return LobsterCrashSnapshot(
                 exceptionType = throwable.javaClass.simpleName.take(120),
+                exceptionMessage = exceptionMessage,
                 threadKind = if (threadName == "main") "main_thread" else "background_thread",
                 stackFrames = lines.take(MAX_STACK_LINES)
             )

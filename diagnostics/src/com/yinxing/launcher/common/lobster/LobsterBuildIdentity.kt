@@ -5,12 +5,14 @@ import org.json.JSONObject
 
 data class LobsterBuildIdentity(
     val sha: String,
+    val buildId: String,
     val buildType: String,
     val applicationId: String,
     val sourceState: String,
 ) {
     fun toJson(): JSONObject = JSONObject().apply {
         put("build_sha", sha.lowercase().takeIf(SHA::matches) ?: "unknown")
+        put("build_id", buildId.lowercase().takeIf(SHA::matches) ?: "unknown")
         put("build_type", buildType.trim().lowercase().takeIf(BUILD_TYPE::matches) ?: "unknown")
         put("application_id", applicationId.trim().lowercase().takeIf(APPLICATION_ID::matches) ?: "unknown")
         put("build_source_state", sourceState.trim().lowercase().takeIf(SOURCE_STATES::contains) ?: "unknown")
@@ -29,6 +31,7 @@ data class LobsterBuildIdentity(
 
         fun current(): LobsterBuildIdentity = LobsterBuildIdentity(
             sha = BuildConfig.LOBSTER_BUILD_SHA,
+            buildId = BuildConfig.LOBSTER_BUILD_ID,
             buildType = BuildConfig.BUILD_TYPE,
             applicationId = BuildConfig.APPLICATION_ID,
             sourceState = BuildConfig.LOBSTER_BUILD_SOURCE_STATE,

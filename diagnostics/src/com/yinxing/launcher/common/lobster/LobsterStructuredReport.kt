@@ -23,19 +23,29 @@ data class LobsterReportDetails(
     val traceId: String? = null,
     val errorCode: String? = null,
     val failedStep: String? = null,
+    val exceptionMessage: String? = null,
     val reportType: String? = null,
     val userDescription: String? = null,
     val reproductionSteps: String? = null,
     val stallDurationMs: Long? = null,
     val steps: List<LobsterTraceStep> = emptyList(),
     val failureSample: LobsterFailureSample? = null,
-    val sensitiveValues: List<String> = emptyList()
+    val sensitiveValues: List<String> = emptyList(),
+    val terminal: Boolean = false,
+    val resultCode: String? = null,
+    val callEvidence: LobsterCallEvidence? = null
 ) {
     fun toJson(): JSONObject = JSONObject().apply {
         traceId.clean(120)?.let { put("trace_id", it) }
         errorCode.clean(120)?.let { put("error_code", it) }
         failedStep.clean(120)?.let { put("failed_step", it) }
+        exceptionMessage.clean(300)?.let {
+            put("exception_message", LobsterLogSanitizer.sanitize(it, sensitiveValues))
+        }
         reportType.clean(40)?.let { put("report_type", it) }
+        if (terminal) put("terminal", true)
+        resultCode.clean(120)?.let { put("result_code", it) }
+        callEvidence?.let { put("call_evidence", it.toJson()) }
         userDescription.clean(800)?.let {
             put("user_description", LobsterLogSanitizer.sanitize(it, sensitiveValues))
         }

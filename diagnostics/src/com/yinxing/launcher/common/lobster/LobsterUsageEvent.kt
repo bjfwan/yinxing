@@ -28,6 +28,7 @@ object LobsterUsageEvents {
         errorCode = "APP_LAUNCH_FAILED",
         failedStep = "start_activity"
     )
+    val DIALER_OPENED = event("电话拨出", LobsterReportStatus.REPORTED, "已打开拨号盘，等待用户拨号", LobsterLogCategory.PHONE, LobsterEventType.OPERATION, "open_dialer")
     val OUTGOING_CALL_STARTED = event("电话拨出", LobsterReportStatus.SUCCESS, "系统已受理拨号", LobsterLogCategory.PHONE, LobsterEventType.OPERATION, "place_call")
     val OUTGOING_CALL_FAILED = event(
         "电话拨出",
@@ -123,6 +124,14 @@ object LobsterUsageEvents {
         LobsterEventType.OPERATION,
         "grant_wechat_permission"
     )
+    val HEARTBEAT = event(
+        "每日心跳",
+        LobsterReportStatus.SUCCESS,
+        "客户端在线心跳",
+        LobsterLogCategory.TELEMETRY,
+        LobsterEventType.DIAGNOSTIC,
+        "daily_heartbeat"
+    )
 
     val all = listOf(
         APP_STARTED,
@@ -132,6 +141,7 @@ object LobsterUsageEvents {
         CAREGIVER_SETTINGS_OPENED,
         APP_OPENED,
         APP_OPEN_FAILED,
+        DIALER_OPENED,
         OUTGOING_CALL_STARTED,
         OUTGOING_CALL_FAILED,
         CALL_PERMISSION_DENIED,
@@ -143,7 +153,8 @@ object LobsterUsageEvents {
         FALL_FAMILY_CALL_FAILED,
         MAIN_THREAD_STALLED,
         WECHAT_VIDEO_CALL_ABORTED,
-        WECHAT_PERMISSION_AUTO_GRANTED
+        WECHAT_PERMISSION_AUTO_GRANTED,
+        HEARTBEAT
     )
 
     private fun event(

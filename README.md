@@ -10,7 +10,7 @@
 [![Download](https://img.shields.io/badge/下载-APK-B8882A?labelColor=1C1914&style=flat-square&logo=android&logoColor=white)](https://yinxing.722688.xyz)
 [![Platform](https://img.shields.io/badge/Android-7.0%2B-0369A1?labelColor=1C1914&style=flat-square&logo=android&logoColor=white)](#下载安装)
 [![Source Version](https://img.shields.io/badge/source-v2.3.0-B8882A?labelColor=1C1914&style=flat-square)](https://github.com/bjfwan/yinxing/releases/tag/v2.3.0)
-[![Latest Release](https://img.shields.io/badge/release-v2.5.0-B8882A?labelColor=1C1914&style=flat-square)](https://yinxing.722688.xyz)
+[![Latest Release](https://img.shields.io/badge/release-v2.5.1-B8882A?labelColor=1C1914&style=flat-square)](https://yinxing.722688.xyz)
 [![Stars](https://img.shields.io/github/stars/bjfwan/yinxing?color=B8882A&labelColor=1C1914&style=flat-square)](https://github.com/bjfwan/yinxing/stargazers)
 
 **大字、大图标只是起点。银杏真正想解决的是：长辈能不能稳定地找到家人、拨出电话，并在不同手机和软件版本上继续用下去。**
@@ -206,9 +206,9 @@ v2.5.0 代码基线（2026-11-01，versionCode 25）：`1188 tests, 0 failed, 0 
 | 条款更新提醒 | 已发布（v2.5.0：v2.4.1 及以前无此能力） |
 | 远程协助、云同步、账号体系 | 当前不在范围内 |
 
-工程基线：线上最新发布包 v2.5.0（2026-11-01，versionCode 25）为 `1188 tests, 0 failed, 0 skipped`（201 个测试类）、`lintRelease` `0 errors`，Release 构建与 APK v2 签名校验通过。修复后的真机回归（微信语音 / 视频自动接听、挂断回首页、开屏广告）已完成。
+工程基线：线上最新发布包 v2.5.1（2026-11-24，versionCode 26）为 `1518 tests, 0 failed, 0 skipped`（248 个测试类）、`lintRelease` `0 errors / 284 warnings`，Release 构建与 APK v2 签名校验通过。该版为纯修复版，改动来自诊断日志上报的失败样本。
 
-2026-11-01 验证边界：Node 发布 / 法务 / 站点契约 **31 项全通过**；真机在 vivo V1938CT / Android 10 / 微信 8.0.79 上连续多通微信语音 / 视频来电自动接通并在挂断后回到银杏首页（修复后回归）；**息屏 / 锁屏、多厂商 ROM、更多微信版本、耳机真实输出尚未验收**。
+2026-11-24 验证边界：Node 发布 / 法务 / 站点契约 **46 项全通过**；真机只在 vivo V1938CT（Android 10）做覆盖升级冒烟（版本号、权限判定、无障碍跳转返回、版本特性、正式包隐藏排障入口、无崩溃）；**微信真实通话、通知四种异常状态、更新安装拒绝分支、跌倒授权接续、同名城市切换未复走**；息屏 / 锁屏、多厂商 ROM、更多微信版本、耳机真实输出、真实 SIM 系统电话未验收。
 
 任何基于无障碍服务操作第三方应用的方案都会受到系统、微信版本和厂商 ROM 的影响。银杏的目标不是假装这些差异不存在，而是让流程能够识别状态、有限恢复，并在失败后留下可分析的证据。
 
@@ -257,7 +257,7 @@ v2.5.0 代码基线（2026-11-01，versionCode 25）：`1188 tests, 0 failed, 0 
 
 ### [下载最新 APK](https://yinxing.722688.xyz)
 
-线上最新发布：`v2.5.0`（versionCode 25，2026-11-01）
+线上最新发布：`v2.5.1`（versionCode 26，2026-11-24）
 
 > 本仓库源码公开至 `v2.3.0`；`v2.4.0` 起仅提供 APK，详见下方「许可与开源范围」。
 

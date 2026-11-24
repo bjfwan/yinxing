@@ -15,14 +15,21 @@ object LobsterRuntimePolicy {
     }
 
     fun shouldUpload(context: Context): Boolean {
-        val sharingEnabled = runCatching {
-            LauncherPreferences.getInstance(context).isDiagnosticsSharingEnabled()
-        }.getOrDefault(true)
         return shouldUpload(
             android.os.Build.MANUFACTURER,
             android.os.Build.MODEL,
             android.os.Build.FINGERPRINT,
-            sharingEnabled
+            shouldUploadByUserPreference(context)
         )
+    }
+
+    /**
+     * 反馈弹窗用的“用户是否允许上传”口径：只看诊断总开关，不含测试运行时护栏。
+     * robolectric 护栏只应该让实际上报静默跳过，不该让 UI 把测试环境当成“用户关闭了诊断”。
+     */
+    fun shouldUploadByUserPreference(context: Context): Boolean {
+        return runCatching {
+            LauncherPreferences.getInstance(context).isDiagnosticsSharingEnabled()
+        }.getOrDefault(false)
     }
 }

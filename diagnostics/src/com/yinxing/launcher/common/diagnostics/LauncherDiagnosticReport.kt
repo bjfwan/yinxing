@@ -4,7 +4,7 @@ import android.content.Context
 import android.os.Build
 import com.yinxing.launcher.BuildConfig
 import com.yinxing.launcher.common.lobster.LobsterDeviceStateCollector
-import com.yinxing.launcher.common.lobster.LobsterPendingReportStore
+import com.yinxing.launcher.common.lobster.LobsterClient
 import com.yinxing.launcher.data.home.LauncherPreferences
 import java.text.SimpleDateFormat
 import java.util.Date
@@ -80,7 +80,7 @@ object LauncherDiagnosticReportCollector {
             },
             lowPerformanceMode = preferences.isLowPerformanceModeEnabled(),
             iconScale = preferences.getIconScale(),
-            pendingReportCount = LobsterPendingReportStore.read(appContext).size,
+            pendingReportCount = LobsterClient.pendingReportCount(),
             deviceState = deviceState
         )
     }

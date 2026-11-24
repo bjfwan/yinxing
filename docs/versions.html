@@ -76,8 +76,8 @@
       </div>
       <div class="versions-current" aria-label="当前版本信息">
         <span>当前稳定版</span>
-        <strong data-latest-version>v2.5.0</strong>
-        <time data-latest-date datetime="2026-11-01">2026.11.01</time>
+        <strong data-latest-version>v2.5.1</strong>
+        <time data-latest-date datetime="2026-11-24">2026.11.24</time>
         <a class="button button-primary" data-latest-download href="./app-release.apk" download="银杏.apk">下载当前版本</a>
       </div>
     </section>
@@ -85,7 +85,7 @@
     <section class="release-ledger" id="all-releases" aria-labelledby="release-ledger-title">
       <div class="release-ledger-head">
         <h2 id="release-ledger-title">发布记录</h2>
-        <p><span data-release-count>23</span> 个正式版本，每页显示 5 个。<span data-release-sync aria-live="polite">正在同步 GitHub 发布记录。</span></p>
+        <p><span data-release-count>24</span> 个正式版本，每页显示 5 个。<span data-release-sync aria-live="polite">正在同步 GitHub 发布记录。</span></p>
       </div>
 
       <ol class="release-list" data-release-list>
@@ -93,8 +93,30 @@
         <li>
           <article class="release-entry release-entry-current">
             <div class="release-meta">
-              <time datetime="2026-11-01">2026.11.01</time>
+              <time datetime="2026-11-24">2026.11.24</time>
               <span class="release-status">当前版本</span>
+            </div>
+            <div class="release-content">
+              <h3><span>v2.5.1</span> 权限与通知说清楚，微信读取加固</h3>
+              <p>没有新增功能，全部是修复，问题来自用户开启的诊断日志上报：通知状态拆成四项分别判定，缺哪项写哪项；基础拨号、跌倒求助、自动接听各用各的授权；更新安装授权点一次就够；微信节点回收与读取预算加固，减少长时间使用后的卡顿。</p>
+              <ul>
+                <li>通知分四项判定：总开关 / 通知权限 / 来电通道 / 全屏提醒</li>
+                <li>基础拨号只申请打电话权限，跌倒求助单独授权并自动接续</li>
+                <li>拒绝权限不再强制跳设置，留在原页说明影响</li>
+                <li>更新安装：授权后返回直接继续，一次点击一次接续</li>
+                <li>微信节点归属与读取预算加固，节点树扫描移出主线程</li>
+                <li>同名地点天气按坐标隔离；设置保存失败明确提示</li>
+              </ul>
+            </div>
+            <div class="release-actions">
+              <a class="release-download" href="./app-release.apk" download="银杏.apk">下载 APK</a>
+            </div>
+          </article>
+        </li>
+        <li>
+          <article class="release-entry">
+            <div class="release-meta">
+              <time datetime="2026-11-01">2026.11.01</time>
             </div>
             <div class="release-content">
               <h3><span>v2.5.0</span> 微信接听转正与设置页重排</h3>

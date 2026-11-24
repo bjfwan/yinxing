@@ -2,6 +2,7 @@ package com.yinxing.launcher.common.lobster
 
 import android.Manifest
 import android.app.ActivityManager
+import android.app.usage.UsageStatsManager
 import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
@@ -14,6 +15,8 @@ import android.os.Build
 import android.os.PowerManager
 import android.provider.Settings
 import android.webkit.WebView
+import com.yinxing.launcher.common.util.AccessibilityServiceMatcher
+import com.yinxing.launcher.common.util.PermissionUtil
 import org.json.JSONObject
 
 data class LobsterDeviceState(
@@ -42,7 +45,12 @@ data class LobsterDeviceState(
     val batteryOptimizationIgnored: Boolean,
     val accelerometerAvailable: Boolean,
     val callPermissionGranted: Boolean,
-    val notificationPermissionGranted: Boolean
+    val notificationPermissionGranted: Boolean,
+    val accessibilityServiceEnabled: Boolean,
+    val screenOn: Boolean,
+    val appForeground: Boolean,
+    val deviceDoze: Boolean,
+    val standbyBucket: Int
 ) {
     fun toJson(): JSONObject = JSONObject().apply {
         put("sdk_int", sdkInt)
@@ -71,6 +79,11 @@ data class LobsterDeviceState(
         put("accelerometer_available", accelerometerAvailable)
         put("call_permission_granted", callPermissionGranted)
         put("notification_permission_granted", notificationPermissionGranted)
+        put("accessibility_service_enabled", accessibilityServiceEnabled)
+        put("screen_on", screenOn)
+        put("app_foreground", appForeground)
+        put("doze", deviceDoze)
+        put("standby_bucket", standbyBucket)
     }
 
     fun toLogLine(): String {
@@ -94,6 +107,11 @@ data class LobsterDeviceState(
             append("; 加速度传感器=").append(accelerometerAvailable.yesOrNo())
             append("; 拨号权限=").append(callPermissionGranted.yesOrNo())
             append("; 通知权限=").append(notificationPermissionGranted.yesOrNo())
+            append("; 无障碍服务=").append(accessibilityServiceEnabled.yesOrNo())
+            append("; 亮屏=").append(screenOn.yesOrNo())
+            append("; 前台=").append(appForeground.yesOrNo())
+            append("; Doze=").append(deviceDoze.yesOrNo())
+            append("; 待机分组=").append(standbyBucket)
         }
     }
 
@@ -121,6 +139,27 @@ internal object LobsterDeviceStateCollector {
         val powerSaveMode = (appContext.getSystemService(Context.POWER_SERVICE) as? PowerManager)
             ?.isPowerSaveMode == true
         val powerManager = appContext.getSystemService(Context.POWER_SERVICE) as? PowerManager
+        val screenOn = powerManager?.isInteractive == true
+        val deviceDoze = powerManager?.isDeviceIdleMode == true
+        val processInfo = ActivityManager.RunningAppProcessInfo()
+        runCatching { ActivityManager.getMyMemoryState(processInfo) }
+        val appForeground =
+            processInfo.importance <= ActivityManager.RunningAppProcessInfo.IMPORTANCE_FOREGROUND
+        val standbyBucket = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+            runCatching {
+                (appContext.getSystemService(Context.USAGE_STATS_SERVICE) as? UsageStatsManager)
+                    ?.appStandbyBucket
+            }.getOrNull() ?: -1
+        } else {
+            -1
+        }
+        val accessibilityServiceEnabled = PermissionUtil.isAccessibilityServiceEnabled(
+            appContext,
+            AccessibilityServiceMatcher.componentName(
+                appContext.packageName,
+                AccessibilityServiceMatcher.YINXING_ACCESSIBILITY_SERVICE_CLASS
+            )
+        )
         val configuration = appContext.resources.configuration
         val displayMetrics = appContext.resources.displayMetrics
         val navigationMode = runCatching {
@@ -161,7 +200,12 @@ internal object LobsterDeviceStateCollector {
                 PackageManager.PERMISSION_GRANTED,
             notificationPermissionGranted = Build.VERSION.SDK_INT < 33 ||
                 appContext.checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS) ==
-                PackageManager.PERMISSION_GRANTED
+                PackageManager.PERMISSION_GRANTED,
+            accessibilityServiceEnabled = accessibilityServiceEnabled,
+            screenOn = screenOn,
+            appForeground = appForeground,
+            deviceDoze = deviceDoze,
+            standbyBucket = standbyBucket
         )
     }
 
